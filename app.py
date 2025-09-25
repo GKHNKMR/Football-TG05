@@ -1,5 +1,5 @@
 # app.py
-# Streamlit UI for "Over 0.5 – 6 Lig" predictions
+# Streamlit UI for "Over 0.5 – 6 League Predictions"
 # - Shows weekly P(Over 0.5) for EPL, Championship, Serie A, Bundesliga, La Liga, Primeira Liga
 # - Works with a Python function `run_week_predictions(...)` in over05_prediction.py
 #   OR falls back to reading a local predictions.json file.
@@ -12,7 +12,7 @@ import pandas as pd
 import streamlit as st
 
 # ---------- Config ----------
-APP_TITLE = "Over 0.5 – 6 Lig Tahminleri"
+APP_TITLE = "Over 0.5 – 6 League Predictions"
 ULTRA_TH = 0.98
 HIGH_TH = 0.95
 
@@ -64,7 +64,6 @@ def to_dataframe(data) -> pd.DataFrame:
     else:
         df = pd.DataFrame(data or [])
     # Normalize expected columns
-    # Accept alternative keys and rename to standard
     rename_map = {
         "fixture_id": "match_id",
         "matchId": "match_id",
@@ -115,7 +114,7 @@ def load_predictions_cached(
             )
             return to_dataframe(data)
         except Exception as e:
-            st.warning(f"run_week_predictions çağrısı başarısız oldu: {e}")
+            st.warning(f"run_week_predictions call failed: {e}")
 
     # 2) Fallback: read predictions.json (should be created by your offline pipeline)
     fallback_path = os.path.join(os.getcwd(), "predictions.json")
@@ -136,7 +135,7 @@ def load_predictions_cached(
                     df = df[df["kickoff_utc"] <= pd.to_datetime(date_to_utc) + pd.Timedelta(days=1)]
             return df
         except Exception as e:
-            st.error(f"predictions.json okunamadı: {e}")
+            st.error(f"Could not read predictions.json: {e}")
 
     # Nothing worked
     return pd.DataFrame()
@@ -193,13 +192,60 @@ st.set_page_config(page_title="Over 0.5 Radar", layout="wide")
 st.title(APP_TITLE)
 
 with st.sidebar:
-    st.subheader("Filtreler")
-    selected_leagues = st.multiselect("Lig seç (boş = hepsi)", SUPPORTED_LEAGUES, default=SUPPORTED_LEAGUES)
+    st.subheader("Filters")
+    selected_leagues = st.multiselect("Select League (empty = all)", SUPPORTED_LEAGUES, default=SUPPORTED_LEAGUES)
 
     start_default, end_default = date_range_default()
-    date_from = st.date_input("Başlangıç (UTC)", value=start_default)
-    date_to = st.date_input("Bitiş (UTC)", value=end_default)
+    date_from = st.date_input("Start Date (UTC)", value=start_default)
+    date_to = st.date_input("End Date (UTC)", value=end_default)
 
-    min_prob = st.slider("Minimum olasılık eşiği P(>0.5)", min_value=0.50, max_value=0.99, value=0.95, step=0.01)
-    top_n = st.slider("Gösterilece_
+    min_prob = st.slider("Minimum probability threshold P(>0.5)", min_value=0.50, max_value=0.99, value=0.95, step=0.01)
+    top_n = st.slider("Top N matches to display", min_value=10, max_value=200, value=50, step=10)
 
+    st.caption("Label thresholds: ULTRA ≥ 0.98, HIGH ≥ 0.95")
+
+col_left, col_right = st.columns([3, 2])
+
+with col_left:
+    if st.button("Fetch / Refresh Predictions", type="primary"):
+        st.session_state["refresh_ts"] = datetime.now().isoformat()
+
+# Use session key to control cache invalidation when user clicks the button
+refresh_key = st.session_state.get("refresh_ts", "init")
+
+with st.spinner("Loading predictions..."):
+    df_all = load_predictions_cached(
+        leagues=selected_leagues if selected_leagues else None,
+        date_from_utc=str(date_from),
+        date_to_utc=str(date_to),
+    )
+
+if df_all.empty:
+    st.warning("No predictions found. (run_week_predictions might not be working or predictions.json missing.)")
+else:
+    df_view = filtered_view(df_all, min_prob=min_prob, top_n=top_n)
+    st.subheader("Results")
+    st.dataframe(df_view, use_container_width=True, height=600)
+
+    # Summary
+    with st.expander("Summary / Stats"):
+        total = len(df_all)
+        shown = len(df_view)
+        ultra_cnt = (df_view["label"] == "ULTRA").sum() if "label" in df_view.columns else 0
+        high_cnt = (df_view["label"] == "HIGH").sum() if "label" in df_view.columns else 0
+        st.markdown(
+            f"- Total matches (before filters): **{total}**\n"
+            f"- Displayed matches: **{shown}**\n"
+            f"- ULTRA (≥98%): **{ultra_cnt}** | HIGH (≥95%): **{high_cnt}**"
+        )
+
+    # Download filtered JSON
+    json_payload = to_download_json(df_view)
+    st.download_button(
+        label="Download Filtered Results as JSON",
+        data=json_payload.encode("utf-8"),
+        file_name="predictions_filtered.json",
+        mime="application/json",
+    )
+
+st.caption("⚠️ This app provides statistical predictions only; it is not betting advice. Users are responsible for following local laws.")

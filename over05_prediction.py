@@ -1,537 +1,259 @@
-"""Generate simulated football fixture probabilities for over 0.5 total goals.
+import os
+import json
+import time
+import argparse
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional, Any
 
-This module mirrors the workflow described in the user prompt:
-
-1. Simulate historical results for a set of leagues.
-2. Engineer several match features (head-to-head, team form, etc.).
-3. Train and calibrate a Gradient Boosting model.
-4. Predict the probability of ``Total Goals Over 0.5`` for upcoming fixtures.
-5. Pretty-print the resulting table of predictions.
-
-Running the script will output a ranked list of the simulated fixtures
-along with their predicted probability of finishing with at least one goal.
-"""
-from __future__ import annotations
-
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-import random
-from typing import Dict, Iterable, List
-
+import requests
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import GradientBoostingClassifier
 
 
-@dataclass(frozen=True)
-class LeagueConfig:
-    """Configuration of the leagues for which we simulate data."""
+# =========================
+# Configuration
+# =========================
 
-    name: str
-    historical_matches: int = 1000
-    upcoming_fixtures: int = 5
+# API key (hardcoded as requested). Prefer env var in the future for security.
+API_KEY = os.getenv("API_FOOTBALL_KEY") or "a8b70416d123b5cc9a82aae8ea5ec065"
 
+# API base
+BASE_URL = "https://v3.football.api-sports.io"
 
-def create_historical_data(leagues: Iterable[LeagueConfig]) -> pd.DataFrame:
-    """Simulate historical match data for roughly the last 5.5 years."""
+# Supported leagues (API-Football league IDs)
+LEAGUE_IDS: Dict[str, int] = {
+    "Premier League": 39,
+    "Championship": 40,
+    "Serie A": 135,
+    "Bundesliga": 78,
+    "La Liga": 140,
+    "Primeira Liga": 94,
+}
 
-    data: List[List[object]] = []
-    end_date = datetime(2025, 9, 25)
-    start_date = end_date - timedelta(days=int(5 * 365 + 365 / 2))
+# Simple league baselines for P(Over 0.5) – replace with model outputs when ready
+LEAGUE_BASELINES: Dict[str, float] = {
+    "Premier League": 0.95,
+    "Championship": 0.93,
+    "Serie A": 0.95,
+    "Bundesliga": 0.96,
+    "La Liga": 0.94,
+    "Primeira Liga": 0.94,
+}
 
-    for league in leagues:
-        for _ in range(league.historical_matches):
-            match_date = start_date + timedelta(
-                days=random.randint(0, (end_date - start_date).days)
-            )
-            home_team = f"{league.name} Home Team {random.randint(1, 20)}"
-            away_team = f"{league.name} Away Team {random.randint(1, 20)}"
-            home_goals = random.randint(0, 5)
-            away_goals = random.randint(0, 5)
-            data.append(
-                [match_date, league.name, home_team, away_team, home_goals, away_goals]
-            )
-
-    df = pd.DataFrame(
-        data,
-        columns=[
-            "match_date",
-            "league",
-            "home_team",
-            "away_team",
-            "home_goals",
-            "away_goals",
-        ],
-    )
-    df["match_date"] = pd.to_datetime(df["match_date"])
-    return df
+# Label thresholds
+ULTRA_TH = 0.98
+HIGH_TH = 0.95
 
 
-def create_current_fixtures(leagues: Iterable[LeagueConfig]) -> pd.DataFrame:
-    """Simulate a small slate of upcoming fixtures."""
+# =========================
+# Low-level HTTP
+# =========================
 
-    data: List[List[object]] = []
-    fixture_date = datetime(2025, 9, 28)
-
-    for league in leagues:
-        for _ in range(league.upcoming_fixtures):
-            home_team = f"{league.name} Home Team {random.randint(1, 20)}"
-            away_team = f"{league.name} Away Team {random.randint(1, 20)}"
-            data.append([fixture_date, league.name, home_team, away_team])
-
-    df = pd.DataFrame(data, columns=["match_date", "league", "home_team", "away_team"])
-    df["match_date"] = pd.to_datetime(df["match_date"])
-    return df
+def _headers() -> Dict[str, str]:
+    if not API_KEY or API_KEY.strip() == "":
+        raise RuntimeError(
+            "API key is missing. Set env var API_FOOTBALL_KEY or keep the hardcoded key."
+        )
+    return {"x-apisports-key": API_KEY}
 
 
-def calculate_h2h_stats(
-    df: pd.DataFrame, team1: str, team2: str, end_date: datetime, years: int = 5
-) -> Dict[str, int]:
-    """Calculate head-to-head summary statistics."""
-
-    start_date = end_date - timedelta(days=years * 365)
-    h2h_matches = df[
-        ((df["home_team"] == team1) & (df["away_team"] == team2))
-        | ((df["home_team"] == team2) & (df["away_team"] == team1))
-    ]
-    recent_h2h_matches = h2h_matches[h2h_matches["match_date"] >= start_date]
-
-    if recent_h2h_matches.empty:
-        return {
-            "h2h_wins": 0,
-            "h2h_losses": 0,
-            "h2h_draws": 0,
-            "h2h_goals_scored": 0,
-            "h2h_goals_conceded": 0,
-            "h2h_total_matches": 0,
-        }
-
-    team1_wins = 0
-    team2_wins = 0
-    draws = 0
-    team1_goals_scored = 0
-    team1_goals_conceded = 0
-
-    for _, row in recent_h2h_matches.iterrows():
-        if row["home_team"] == team1 and row["away_team"] == team2:
-            if row["home_goals"] > row["away_goals"]:
-                team1_wins += 1
-            elif row["home_goals"] < row["away_goals"]:
-                team2_wins += 1
-            else:
-                draws += 1
-            team1_goals_scored += row["home_goals"]
-            team1_goals_conceded += row["away_goals"]
-        elif row["home_team"] == team2 and row["away_team"] == team1:
-            if row["away_goals"] > row["home_goals"]:
-                team1_wins += 1
-            elif row["home_goals"] > row["away_goals"]:
-                team2_wins += 1
-            else:
-                draws += 1
-            team1_goals_scored += row["away_goals"]
-            team1_goals_conceded += row["home_goals"]
-
-    return {
-        "h2h_wins": team1_wins,
-        "h2h_losses": team2_wins,
-        "h2h_draws": draws,
-        "h2h_goals_scored": team1_goals_scored,
-        "h2h_goals_conceded": team1_goals_conceded,
-        "h2h_total_matches": len(recent_h2h_matches),
-    }
+def _get(endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    """GET wrapper with basic retry/backoff."""
+    url = f"{BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}"
+    last_exc = None
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, headers=_headers(), params=params, timeout=30)
+            if resp.status_code == 200:
+                return resp.json()
+            # Rate-limit or transient issues: brief backoff
+            time.sleep(1 + attempt)
+            last_exc = Exception(f"HTTP {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            last_exc = e
+            time.sleep(1 + attempt)
+    if last_exc:
+        raise last_exc
+    return {}
 
 
-def calculate_team_form(
-    df: pd.DataFrame, team: str, end_date: datetime, recent_matches: int = 10
-) -> Dict[str, int]:
-    team_matches = df[
-        (df["home_team"] == team) | (df["away_team"] == team)
-    ].sort_values(by="match_date", ascending=False)
-    recent_team_matches = team_matches[
-        team_matches["match_date"] <= end_date
-    ].head(recent_matches)
+# =========================
+# Data Fetch
+# =========================
 
-    if recent_team_matches.empty:
-        return {
-            "form_wins": 0,
-            "form_losses": 0,
-            "form_draws": 0,
-            "form_goals_scored": 0,
-            "form_goals_conceded": 0,
-            "form_total_matches": 0,
-        }
+def get_fixtures(
+    league_id: int,
+    date_from_utc: Optional[str] = None,
+    date_to_utc: Optional[str] = None,
+    season: Optional[int] = None,
+    status: str = "NS,1H,HT,2H,ET,BT,P"  # upcoming + in-play statuses (keeps near-future too)
+) -> List[Dict[str, Any]]:
+    """
+    Fetch fixtures for a league. Filter by date range (YYYY-MM-DD) and season if provided.
+    Returns API 'response' array (list of fixtures).
+    """
+    params: Dict[str, Any] = {"league": league_id}
+    if season is not None:
+        params["season"] = season
+    if date_from_utc:
+        params["from"] = date_from_utc
+    if date_to_utc:
+        params["to"] = date_to_utc
+    if status:
+        params["status"] = status
 
-    wins = losses = draws = goals_scored = goals_conceded = 0
-
-    for _, row in recent_team_matches.iterrows():
-        if row["home_team"] == team:
-            if row["home_goals"] > row["away_goals"]:
-                wins += 1
-            elif row["home_goals"] < row["away_goals"]:
-                losses += 1
-            else:
-                draws += 1
-            goals_scored += row["home_goals"]
-            goals_conceded += row["away_goals"]
-        else:  # team is away
-            if row["away_goals"] > row["home_goals"]:
-                wins += 1
-            elif row["away_goals"] < row["home_goals"]:
-                losses += 1
-            else:
-                draws += 1
-            goals_scored += row["away_goals"]
-            goals_conceded += row["home_goals"]
-
-    return {
-        "form_wins": wins,
-        "form_losses": losses,
-        "form_draws": draws,
-        "form_goals_scored": goals_scored,
-        "form_goals_conceded": goals_conceded,
-        "form_total_matches": len(recent_team_matches),
-    }
+    data = _get("fixtures", params)
+    return data.get("response", [])
 
 
-def calculate_home_form(
-    df: pd.DataFrame, team: str, end_date: datetime, recent_matches: int = 5
-) -> Dict[str, int]:
-    home_matches = df[df["home_team"] == team].sort_values(
-        by="match_date", ascending=False
-    )
-    recent_home_matches = home_matches[
-        home_matches["match_date"] <= end_date
-    ].head(recent_matches)
+# =========================
+# Feature / Prediction (Placeholder)
+# =========================
 
-    if recent_home_matches.empty:
-        return {
-            "home_form_wins": 0,
-            "home_form_losses": 0,
-            "home_form_draws": 0,
-            "home_form_goals_scored": 0,
-            "home_form_goals_conceded": 0,
-            "home_form_total_matches": 0,
-        }
-
-    wins = losses = draws = goals_scored = goals_conceded = 0
-
-    for _, row in recent_home_matches.iterrows():
-        if row["home_goals"] > row["away_goals"]:
-            wins += 1
-        elif row["home_goals"] < row["away_goals"]:
-            losses += 1
-        else:
-            draws += 1
-        goals_scored += row["home_goals"]
-        goals_conceded += row["away_goals"]
-
-    return {
-        "home_form_wins": wins,
-        "home_form_losses": losses,
-        "home_form_draws": draws,
-        "home_form_goals_scored": goals_scored,
-        "home_form_goals_conceded": goals_conceded,
-        "home_form_total_matches": len(recent_home_matches),
-    }
+def _baseline_probability(league_name: str) -> float:
+    """Return a baseline probability for Over 0.5 by league."""
+    return float(LEAGUE_BASELINES.get(league_name, 0.94))
 
 
-def calculate_away_form(
-    df: pd.DataFrame, team: str, end_date: datetime, recent_matches: int = 5
-) -> Dict[str, int]:
-    away_matches = df[df["away_team"] == team].sort_values(
-        by="match_date", ascending=False
-    )
-    recent_away_matches = away_matches[
-        away_matches["match_date"] <= end_date
-    ].head(recent_matches)
+def _light_adjustment_by_time_to_kickoff(kickoff_iso: str, base: float) -> float:
+    """
+    Tiny demo-only adjustment to avoid identical numbers:
+    - If the match is soon (< 24h), add +0.005 (capped to 0.995)
+    - If it's far (> 14 days), subtract -0.005 (floored to 0.90)
+    Replace with real model logic later.
+    """
+    try:
+        dt = datetime.fromisoformat(kickoff_iso.replace("Z", "+00:00"))
+    except Exception:
+        return base
 
-    if recent_away_matches.empty:
-        return {
-            "away_form_wins": 0,
-            "away_form_losses": 0,
-            "away_form_draws": 0,
-            "away_form_goals_scored": 0,
-            "away_form_goals_conceded": 0,
-            "away_form_total_matches": 0,
-        }
-
-    wins = losses = draws = goals_scored = goals_conceded = 0
-
-    for _, row in recent_away_matches.iterrows():
-        if row["away_goals"] > row["home_goals"]:
-            wins += 1
-        elif row["away_goals"] < row["home_goals"]:
-            losses += 1
-        else:
-            draws += 1
-        goals_scored += row["away_goals"]
-        goals_conceded += row["home_goals"]
-
-    return {
-        "away_form_wins": wins,
-        "away_form_losses": losses,
-        "away_form_draws": draws,
-        "away_form_goals_scored": goals_scored,
-        "away_form_goals_conceded": goals_conceded,
-        "away_form_total_matches": len(recent_away_matches),
-    }
+    now = datetime.now(timezone.utc)
+    delta = dt - now
+    if delta <= timedelta(hours=24):
+        return min(base + 0.005, 0.995)
+    if delta >= timedelta(days=14):
+        return max(base - 0.005, 0.90)
+    return base
 
 
-def build_features(
-    historical_df: pd.DataFrame,
-    fixtures_df: pd.DataFrame,
-    league_base_rates: Dict[str, float],
-    include_results: bool = True,
-) -> pd.DataFrame:
-    """Construct the feature table used for training/prediction."""
+def _label_for_prob(p: float) -> str:
+    if p >= ULTRA_TH:
+        return "ULTRA"
+    if p >= HIGH_TH:
+        return "HIGH"
+    return ""
 
-    records: List[Dict[str, object]] = []
-    source_df = historical_df if include_results else fixtures_df
 
-    for _, row in source_df.iterrows():
-        match_date = row["match_date"]
-        league = row["league"]
-        home_team = row["home_team"]
-        away_team = row["away_team"]
+# =========================
+# Public API
+# =========================
 
-        h2h_stats = calculate_h2h_stats(historical_df, home_team, away_team, match_date)
-        home_form = calculate_team_form(historical_df, home_team, match_date)
-        away_form = calculate_team_form(historical_df, away_team, match_date)
-        home_home_form = calculate_home_form(historical_df, home_team, match_date)
-        away_away_form = calculate_away_form(historical_df, away_team, match_date)
+def run_week_predictions(
+    leagues: Optional[List[str]] = None,
+    date_from_utc: Optional[str] = None,
+    date_to_utc: Optional[str] = None,
+    season: Optional[int] = None,
+    save_json: bool = True,
+    output_path: str = "predictions.json",
+) -> List[Dict[str, Any]]:
+    """
+    Main entry point (used by app.py or CLI).
+    - leagues: list of league names; None = all supported
+    - date_from_utc / date_to_utc: filter fixtures by UTC date ("YYYY-MM-DD")
+    - season: optional season year (e.g., 2025)
+    - save_json: write predictions.json
+    Returns: list of normalized prediction dicts.
+    """
+    # Defaults: next 7 days if not provided
+    if not date_from_utc or not date_to_utc:
+        today = datetime.now(timezone.utc).date()
+        if not date_from_utc:
+            date_from_utc = today.isoformat()
+        if not date_to_utc:
+            date_to_utc = (today + timedelta(days=7)).isoformat()
 
-        base_rate = league_base_rates.get(
-            league,
-            (historical_df["home_goals"] + historical_df["away_goals"] > 0).mean(),
+    target_leagues = leagues or list(LEAGUE_IDS.keys())
+    results: List[Dict[str, Any]] = []
+
+    for league_name in target_leagues:
+        league_id = LEAGUE_IDS.get(league_name)
+        if not league_id:
+            # Skip unknown league names silently
+            continue
+
+        fixtures = get_fixtures(
+            league_id=league_id,
+            date_from_utc=date_from_utc,
+            date_to_utc=date_to_utc,
+            season=season,
         )
 
-        record: Dict[str, object] = {
-            "match_date": match_date,
-            "league": league,
-            "home_team": home_team,
-            "away_team": away_team,
-            "league_base_rate": base_rate,
-            **h2h_stats,
-            **{f"home_{k}": v for k, v in home_form.items()},
-            **{f"away_{k}": v for k, v in away_form.items()},
-            **{f"home_home_{k}": v for k, v in home_home_form.items()},
-            **{f"away_away_{k}": v for k, v in away_away_form.items()},
-        }
+        # Normalize & score
+        for fx in fixtures:
+            try:
+                fixture_id = fx["fixture"]["id"]
+                kickoff_iso = fx["fixture"]["date"]
+                home = fx["teams"]["home"]["name"]
+                away = fx["teams"]["away"]["name"]
+            except Exception:
+                # Skip malformed fixture
+                continue
 
-        if include_results:
-            record["home_goals"] = row["home_goals"]
-            record["away_goals"] = row["away_goals"]
-            record["total_goals_over_0_5"] = int(row["home_goals"] + row["away_goals"] > 0)
+            # --- Placeholder probability logic (swap with your trained model later) ---
+            p = _baseline_probability(league_name)
+            p = _light_adjustment_by_time_to_kickoff(kickoff_iso, p)
+            # ----------------------------------------------------------------------------
 
-        records.append(record)
+            results.append({
+                "match_id": fixture_id,
+                "league": league_name,
+                "kickoff_utc": kickoff_iso.replace("+00:00", "Z"),
+                "home": home,
+                "away": away,
+                "p_over_0_5": round(float(p), 3),
+                "label": _label_for_prob(p),
+            })
 
-    return pd.DataFrame(records)
+        # be nice to the API (avoid hammering)
+        time.sleep(0.35)
 
+    # Sort by probability desc
+    results.sort(key=lambda r: r.get("p_over_0_5", 0.0), reverse=True)
 
-def proxy_for_missing_h2h(row: pd.Series) -> float:
-    """Fallback probability estimate when head-to-head data is missing."""
+    if save_json:
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
 
-    total_matches = row["home_form_total_matches"] + row["away_form_total_matches"]
-    if total_matches > 0:
-        total_goals = (
-            row["home_form_goals_scored"]
-            + row["home_form_goals_conceded"]
-            + row["away_form_goals_scored"]
-            + row["away_form_goals_conceded"]
-        )
-        return total_goals / total_matches
-    return row["league_base_rate"]
-
-
-def apply_h2h_proxy(features: pd.DataFrame) -> pd.DataFrame:
-    """Replace empty H2H stats with a proxy derived from team form."""
-
-    proxy_values = features.apply(proxy_for_missing_h2h, axis=1)
-    for col in [
-        "h2h_wins",
-        "h2h_losses",
-        "h2h_draws",
-        "h2h_goals_scored",
-        "h2h_goals_conceded",
-    ]:
-        if col in features.columns:
-            features[col] = features.apply(
-                lambda row: proxy_values[row.name]
-                if row.get("h2h_total_matches", 0) == 0
-                else row[col],
-                axis=1,
-            )
-    return features.drop(columns=["h2h_total_matches"], errors="ignore")
+    return results
 
 
-def prepare_training_data(features_df: pd.DataFrame) -> pd.DataFrame:
-    """Ensure numeric dtypes and handle any missing values for training."""
+# =========================
+# CLI
+# =========================
 
-    numeric_df = features_df.copy()
-    numeric_df.fillna(0, inplace=True)
-    return numeric_df
-
-
-def train_model(features_df: pd.DataFrame) -> CalibratedClassifierCV:
-    """Train the gradient boosting model and calibrate it."""
-
-    feature_columns = [
-        col
-        for col in features_df.columns
-        if col
-        not in {
-            "match_date",
-            "league",
-            "home_team",
-            "away_team",
-            "home_goals",
-            "away_goals",
-            "total_goals_over_0_5",
-        }
-    ]
-
-    sorted_df = features_df.sort_values(by="match_date")
-    X = sorted_df[feature_columns]
-    y = sorted_df["total_goals_over_0_5"]
-
-    split_index = int(len(sorted_df) * 0.8)
-    X_train, X_val = X.iloc[:split_index], X.iloc[split_index:]
-    y_train, y_val = y.iloc[:split_index], y.iloc[split_index:]
-
-    model = GradientBoostingClassifier(
-        n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42
-    )
-    model.fit(X_train, y_train)
-
-    calibrated_model = CalibratedClassifierCV(model, method="isotonic", cv="prefit")
-    calibrated_model.fit(X_val, y_val)
-
-    return calibrated_model
-
-
-def generate_predictions(
-    calibrated_model: CalibratedClassifierCV,
-    training_features: pd.DataFrame,
-    fixture_features: pd.DataFrame,
-) -> pd.DataFrame:
-    """Predict probabilities for the upcoming fixtures."""
-
-    feature_columns = [
-        col
-        for col in training_features.columns
-        if col
-        not in {
-            "match_date",
-            "league",
-            "home_team",
-            "away_team",
-            "home_goals",
-            "away_goals",
-            "total_goals_over_0_5",
-        }
-    ]
-
-    X_fixture = fixture_features[feature_columns]
-    fixture_features = fixture_features.copy()
-    fixture_features["predicted_proba_over_0_5"] = calibrated_model.predict_proba(
-        X_fixture
-    )[:, 1]
-    return fixture_features.sort_values(by="predicted_proba_over_0_5", ascending=False)
-
-
-def format_justification(row: pd.Series) -> str:
-    base_rate_pct = row["league_base_rate"] * 100
-    home_avg = (
-        row["home_form_goals_scored"] / row["home_form_total_matches"]
-        if row["home_form_total_matches"]
-        else 0
-    )
-    away_avg = (
-        row["away_form_goals_scored"] / row["away_form_total_matches"]
-        if row["away_form_total_matches"]
-        else 0
-    )
-    return (
-        f"League base over-0.5 rate {base_rate_pct:.1f}%, "
-        f"recent home attack {home_avg:.2f} goals/match, "
-        f"recent away attack {away_avg:.2f} goals/match."
-    )
-
-
-def print_predictions(predictions: pd.DataFrame) -> None:
-    for _, row in predictions.iterrows():
-        probability = row["predicted_proba_over_0_5"] * 100
-        output_lines = [
-            f"Match: {row['match_date'].strftime('%Y-%m-%d')} | {row['league']} | "
-            f"{row['home_team']} vs {row['away_team']}",
-            f"Predicted P(Over 0.5): {probability:.2f}%",
-            f"Justification: {format_justification(row)}",
-        ]
-
-        if probability >= 98:
-            output_lines.append("Threshold: Exceeds 98% threshold (Highly Likely)")
-        elif probability >= 95:
-            output_lines.append("Threshold: Exceeds 95% threshold (Likely)")
-
-        print("\n".join(output_lines))
-        print("-" * 50)
-
-
-def main() -> None:
-    random.seed(42)
-
-    leagues = [
-        LeagueConfig("English Premier League"),
-        LeagueConfig("English Championship"),
-        LeagueConfig("Italian Serie A"),
-        LeagueConfig("German Bundesliga"),
-        LeagueConfig("Spanish La Liga"),
-        LeagueConfig("Portuguese Primeira Liga"),
-    ]
-
-    historical_df = create_historical_data(leagues)
-    fixtures_df = create_current_fixtures(leagues)
-
-    # Introduce inconsistencies and clean them.
-    historical_df.loc[
-        historical_df.sample(frac=0.01, random_state=42).index, "home_team"
-    ] = "Manchester Utd"
-    historical_df.loc[
-        historical_df.sample(frac=0.005, random_state=99).index, "away_goals"
-    ] = None
-
-    team_name_mapping = {"Manchester Utd": "English Premier League Home Team 17"}
-    historical_df["home_team"] = historical_df["home_team"].replace(team_name_mapping)
-    historical_df["away_team"] = historical_df["away_team"].replace(team_name_mapping)
-
-    historical_df["away_goals"].fillna(historical_df["away_goals"].median(), inplace=True)
-    historical_df["home_goals"] = historical_df["home_goals"].astype(int)
-    historical_df["away_goals"] = historical_df["away_goals"].astype(int)
-
-    league_base_rates = (
-        historical_df.groupby("league")[["home_goals", "away_goals"]]
-        .apply(lambda x: (x["home_goals"] + x["away_goals"] > 0).mean())
-        .to_dict()
-    )
-
-    features_df = build_features(historical_df, historical_df, league_base_rates)
-    features_df = apply_h2h_proxy(features_df)
-    features_df = prepare_training_data(features_df)
-
-    fixture_features_df = build_features(
-        historical_df, fixtures_df, league_base_rates, include_results=False
-    )
-    fixture_features_df = apply_h2h_proxy(fixture_features_df)
-    fixture_features_df = prepare_training_data(fixture_features_df)
-
-    calibrated_model = train_model(features_df)
-    predictions = generate_predictions(
-        calibrated_model, features_df, fixture_features_df
-    )
-
-    print_predictions(predictions)
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate Over 0.5 predictions JSON.")
+    parser.add_argument("--leagues", type=str, default="", help="Comma-separated league names (empty=all).")
+    parser.add_argument("--from", dest="date_from_utc", type=str, default="", help="Start date (UTC) YYYY-MM-DD.")
+    parser.add_argument("--to", dest="date_to_utc", type=str, default="", help="End date (UTC) YYYY-MM-DD.")
+    parser.add_argument("--season", type=int, default=None, help="Season year (e.g., 2025).")
+    parser.add_argument("--out", dest="output_path", type=str, default="predictions.json", help="Output JSON path.")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    main()
+    args = _parse_args()
+
+    # Build league list
+    leagues_arg = [s.strip() for s in args.leagues.split(",") if s.strip()] if args.leagues else None
+
+    # Run
+    preds = run_week_predictions(
+        leagues=leagues_arg,
+        date_from_utc=args.date_from_utc or None,
+        date_to_utc=args.date_to_utc or None,
+        season=args.season,
+        save_json=True,
+        output_path=args.output_path,
+    )
+
+    print(f"Predictions written to {args.output_path}. Items: {len(preds)}")

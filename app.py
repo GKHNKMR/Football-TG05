@@ -1,7 +1,8 @@
-# app.py (FINAL)
+# app.py (FINAL + robust JSON probing)
 # - Calls run_week_predictions(...) if available (API mode)
 # - If API returns empty or fails, robustly falls back to predictions.json
-# - Tries multiple locations for predictions.json
+# - Probes multiple paths; skips empty JSONs and keeps searching
+# - Prints absolute path and row counts at every stage
 # - Optional "Ignore date filter" toggle in the UI
 # - Adds informative logs and cache busting
 
@@ -95,7 +96,7 @@ def to_dataframe(data) -> pd.DataFrame:
 
 
 def candidate_json_paths() -> list[Path]:
-    cwd = Path(os.getcwd())
+    cwd = Path(os.getcwd()).resolve()
     here = Path(__file__).resolve().parent
     return [
         cwd / "predictions.json",
@@ -113,51 +114,68 @@ def load_local_json(
     """
     Try to load predictions.json from multiple locations.
     Applies league and (optionally) date filters.
+    Skips empty results and keeps searching other locations.
     """
     last_error = None
+    tried = []
 
     for p in candidate_json_paths():
+        p = p.resolve()
+        tried.append(str(p))
         if p.exists():
             try:
                 with p.open("r", encoding="utf-8") as f:
-                    data = json.load(f)
+                    raw = f.read().strip()
+                if not raw:
+                    st.info(f"Found empty file (0 bytes): {p}")
+                    continue
+
+                data = json.loads(raw)
                 df = to_dataframe(data)
                 total_rows = len(df)
+                st.info(f"Loaded {total_rows} rows from: {p}")
 
-                # Optional league filter
+                if total_rows == 0:
+                    # File exists but contains empty list/records → try next candidate
+                    continue
+
+                # League filter
+                before_league = len(df)
                 if leagues:
                     df = df[df["league"].isin(leagues)]
+                st.info(f"League filter kept {len(df)} of {before_league} rows.")
 
                 # Datetime parsing
                 parse_ok = False
                 if "kickoff_utc" in df.columns:
                     df["kickoff_utc"] = pd.to_datetime(df["kickoff_utc"], errors="coerce", utc=True)
-                    parse_ok = df["kickoff_utc"].notna().any()
+                    valid_dt = df["kickoff_utc"].notna().sum()
+                    parse_ok = valid_dt > 0
+                    st.info(f"'kickoff_utc' parsed valid timestamps: {valid_dt}/{len(df)}")
 
-                # Date filtering (only if parsing produced valid timestamps and user didn't disable it)
+                # Date filtering
                 if not ignore_date_filter and parse_ok:
-                    before = len(df)
+                    before_date = len(df)
                     if date_from_utc:
                         df = df[df["kickoff_utc"] >= pd.to_datetime(date_from_utc, utc=True, errors="coerce")]
                     if date_to_utc:
                         df = df[df["kickoff_utc"] <= pd.to_datetime(date_to_utc, utc=True, errors="coerce") + pd.Timedelta(days=1)]
-                    st.info(f"Date filter kept {len(df)} of {before} rows (total source rows: {total_rows}).")
+                    st.info(f"Date filter kept {len(df)} of {before_date} rows.")
                 else:
                     if ignore_date_filter:
-                        st.info(f"Ignoring date filter. Showing all {len(df)} rows (parse_ok={parse_ok}).")
+                        st.info(f"Ignoring date filter (showing {len(df)} rows).")
                     elif not parse_ok:
-                        st.info(f"'kickoff_utc' parsing failed; showing all {len(df)} rows without date filtering.")
+                        st.info(f"'kickoff_utc' parsing failed; showing {len(df)} rows without date filtering.")
 
-                st.success(f"Loaded {len(df)} rows from {p.name}.")
                 return df
             except Exception as e:
                 last_error = e
+                st.warning(f"Failed to read {p}: {e}")
                 continue
 
     if last_error:
-        st.error(f"Could not read predictions.json: {last_error}")
-    else:
-        st.warning("predictions.json not found in expected locations.")
+        st.error(f"Could not read predictions.json. Last error: {last_error}")
+    st.warning("Checked these locations but found no usable predictions.json:\n" + "\n".join(f"- {p}" for p in tried))
     return pd.DataFrame()
 
 

@@ -1,14 +1,13 @@
-# app.py (FINAL + robust JSON probing)
-# - Calls run_week_predictions(...) if available (API mode)
-# - If API returns empty or fails, robustly falls back to predictions.json
-# - Probes multiple paths; skips empty JSONs and keeps searching
-# - Supports PREDICTIONS_JSON_PATH env var for explicit path override
-# - Prints absolute path and row counts at every stage
-# - Optional "Ignore date filter" toggle in the UI
-# - Adds informative logs and cache busting
+# app.py (FINAL – robust fallbacks, uploader, embedded seed)
+# - Tries API (run_week_predictions) first
+# - Then tries predictions.json from multiple locations; skips empty JSONs
+# - Supports explicit path via PREDICTIONS_JSON_PATH
+# - Allows user to upload JSON/CSV from the sidebar
+# - If everything fails, uses embedded SEED_PREDICTIONS (so the UI never stays empty)
 
 import os
 import json
+from io import StringIO
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -17,23 +16,30 @@ import pandas as pd
 import streamlit as st
 
 # ---------- Page config ----------
-st.set_page_config(page_title="Over 0.5 Radar", layout="wide")
+st.set_page_config(page_title="Over 0.5 – 6 League Predictions", layout="wide")
 
-# ---------- Constants ----------
-APP_TITLE = "Over 0.5 – 6 League Predictions"
+# ---------- Thresholds & leagues ----------
 ULTRA_TH = 0.98
 HIGH_TH = 0.95
-
 SUPPORTED_LEAGUES = [
-    "Premier League",
-    "Championship",
-    "Serie A",
-    "Bundesliga",
-    "La Liga",
-    "Primeira Liga",
+    "Premier League", "Championship", "Serie A", "Bundesliga", "La Liga", "Primeira Liga"
 ]
 
-# ---------- Optional import of your prediction function ----------
+# ---------- Embedded seed predictions (as a last resort) ----------
+SEED_PREDICTIONS = [
+    {"match_id":"PL20250926-001","league":"Premier League","kickoff_utc":"2025-09-26T19:00:00Z","home":"Arsenal","away":"Chelsea","p_over_0_5":0.981,"label":"ULTRA"},
+    {"match_id":"PL20250927-002","league":"Premier League","kickoff_utc":"2025-09-27T16:30:00Z","home":"Liverpool","away":"Manchester United","p_over_0_5":0.965,"label":"HIGH"},
+    {"match_id":"CH20250929-003","league":"Championship","kickoff_utc":"2025-09-29T19:00:00Z","home":"Leeds United","away":"Sunderland","p_over_0_5":0.942,"label":""},
+    {"match_id":"SA20250928-004","league":"Serie A","kickoff_utc":"2025-09-28T18:45:00Z","home":"AC Milan","away":"Inter Milan","p_over_0_5":0.989,"label":"ULTRA"},
+    {"match_id":"SA20250930-005","league":"Serie A","kickoff_utc":"2025-09-30T17:30:00Z","home":"Juventus","away":"Roma","p_over_0_5":0.958,"label":"HIGH"},
+    {"match_id":"BL20250927-006","league":"Bundesliga","kickoff_utc":"2025-09-27T14:30:00Z","home":"Bayern Munich","away":"Borussia Dortmund","p_over_0_5":0.993,"label":"ULTRA"},
+    {"match_id":"BL20250927-007","league":"Bundesliga","kickoff_utc":"2025-09-27T16:30:00Z","home":"RB Leipzig","away":"Union Berlin","p_over_0_5":0.948,"label":"HIGH"},
+    {"match_id":"LL20250928-008","league":"La Liga","kickoff_utc":"2025-09-28T20:00:00Z","home":"Barcelona","away":"Real Madrid","p_over_0_5":0.991,"label":"ULTRA"},
+    {"match_id":"P120250930-009","league":"Primeira Liga","kickoff_utc":"2025-09-30T20:15:00Z","home":"Benfica","away":"Porto","p_over_0_5":0.977,"label":"ULTRA"},
+    {"match_id":"LL20251001-010","league":"La Liga","kickoff_utc":"2025-10-01T19:00:00Z","home":"Atletico Madrid","away":"Sevilla","p_over_0_5":0.954,"label":"HIGH"}
+]
+
+# ---------- Try importing API function ----------
 run_week_predictions = None
 try:
     from over05_prediction import run_week_predictions as _run
@@ -54,7 +60,6 @@ def add_label(p: float) -> str:
 
 
 def date_range_default():
-    # Default to the next 7 days (UTC)
     today = datetime.now(timezone.utc).date()
     return today, today + timedelta(days=7)
 
@@ -65,7 +70,6 @@ def to_dataframe(data) -> pd.DataFrame:
     else:
         df = pd.DataFrame(data or [])
 
-    # Normalize expected columns
     rename_map = {
         "fixture_id": "match_id",
         "matchId": "match_id",
@@ -79,39 +83,33 @@ def to_dataframe(data) -> pd.DataFrame:
     }
     df = df.rename(columns=rename_map)
 
-    # Ensure required columns exist
     for col in ["league", "home", "away", "p_over_0_5"]:
         if col not in df.columns:
             df[col] = None
 
-    # Label column
     if "label" not in df.columns:
         df["label"] = df["p_over_0_5"].apply(lambda p: add_label(float(p)) if pd.notnull(p) else "")
 
-    # Order columns
-    ordered_cols = ["league", "kickoff_utc", "home", "away", "p_over_0_5", "label", "match_id"]
-    left = [c for c in ordered_cols if c in df.columns]
+    ordered = ["league", "kickoff_utc", "home", "away", "p_over_0_5", "label", "match_id"]
+    left = [c for c in ordered if c in df.columns]
     right = [c for c in df.columns if c not in left]
-    df = df[left + right]
-    return df
+    return df[left + right]
 
 
 def candidate_json_paths() -> list[Path]:
-    # 1) explicit override via env var
-    env_path = os.getenv("PREDICTIONS_JSON_PATH")
     paths = []
+    env_path = os.getenv("PREDICTIONS_JSON_PATH")
     if env_path:
         paths.append(Path(env_path).resolve())
 
-    # 2) common locations around the app
     cwd = Path(os.getcwd()).resolve()
     here = Path(__file__).resolve().parent
     paths.extend([
-        cwd / "predictions.json",
-        here / "predictions.json",
-        here.parent / "predictions.json",
+        (cwd / "predictions.json").resolve(),
+        (here / "predictions.json").resolve(),
+        (here.parent / "predictions.json").resolve(),
     ])
-    # de-duplicate while preserving order
+
     uniq = []
     for p in paths:
         if p not in uniq:
@@ -119,27 +117,16 @@ def candidate_json_paths() -> list[Path]:
     return uniq
 
 
-def load_local_json(
-    leagues: Optional[List[str]],
-    date_from_utc: Optional[str],
-    date_to_utc: Optional[str],
-    ignore_date_filter: bool,
-) -> pd.DataFrame:
-    """
-    Try to load predictions.json from multiple locations.
-    Applies league and (optionally) date filters.
-    Skips empty results and keeps searching other locations.
-    """
+def load_local_json(leagues: Optional[List[str]], date_from_utc: Optional[str],
+                    date_to_utc: Optional[str], ignore_date_filter: bool) -> pd.DataFrame:
     last_error = None
     tried = []
 
     for p in candidate_json_paths():
-        p = p.resolve()
         tried.append(str(p))
         if p.exists():
             try:
-                with p.open("r", encoding="utf-8") as f:
-                    raw = f.read().strip()
+                raw = p.read_text(encoding="utf-8").strip()
                 if not raw:
                     st.info(f"Found empty file (0 bytes): {p}")
                     continue
@@ -148,18 +135,14 @@ def load_local_json(
                 df = to_dataframe(data)
                 total_rows = len(df)
                 st.info(f"Loaded {total_rows} rows from: {p}")
-
                 if total_rows == 0:
-                    # File exists but contains empty list/records → try next candidate
                     continue
 
-                # League filter
                 before_league = len(df)
                 if leagues:
                     df = df[df["league"].isin(leagues)]
                 st.info(f"League filter kept {len(df)} of {before_league} rows.")
 
-                # Datetime parsing
                 parse_ok = False
                 if "kickoff_utc" in df.columns:
                     df["kickoff_utc"] = pd.to_datetime(df["kickoff_utc"], errors="coerce", utc=True)
@@ -167,7 +150,6 @@ def load_local_json(
                     parse_ok = valid_dt > 0
                     st.info(f"'kickoff_utc' parsed valid timestamps: {valid_dt}/{len(df)}")
 
-                # Date filtering
                 if not ignore_date_filter and parse_ok:
                     before_date = len(df)
                     if date_from_utc:
@@ -180,7 +162,6 @@ def load_local_json(
                         st.info(f"Ignoring date filter (showing {len(df)} rows).")
                     elif not parse_ok:
                         st.info(f"'kickoff_utc' parsing failed; showing {len(df)} rows without date filtering.")
-
                 return df
             except Exception as e:
                 last_error = e
@@ -194,34 +175,22 @@ def load_local_json(
 
 
 @st.cache_data(show_spinner=False)
-def load_predictions_cached(
-    leagues: Optional[List[str]],
-    date_from_utc: Optional[str],
-    date_to_utc: Optional[str],
-    ignore_date_filter: bool,
-    refresh_key: Optional[str] = None,  # cache bust key
-) -> pd.DataFrame:
-    """
-    Loads predictions by calling user's function.
-    If the result is empty or the call fails, it falls back to predictions.json.
-    """
-    # 1) Try user's function first
+def load_predictions_cached(leagues: Optional[List[str]], date_from_utc: Optional[str],
+                            date_to_utc: Optional[str], ignore_date_filter: bool,
+                            refresh_key: Optional[str] = None) -> pd.DataFrame:
+    # 1) Try API
     if callable(run_week_predictions):
         try:
-            data = run_week_predictions(
-                leagues=leagues,
-                date_from_utc=date_from_utc,
-                date_to_utc=date_to_utc,
-            )
+            data = run_week_predictions(leagues=leagues, date_from_utc=date_from_utc, date_to_utc=date_to_utc)
             df = to_dataframe(data)
             if not df.empty:
                 return df
             else:
                 st.info("API returned no rows; falling back to local predictions.json.")
         except Exception as e:
-            st.warning(f"run_week_predictions call failed ({e}); falling back to local predictions.json.")
+            st.warning(f"run_week_predictions failed ({e}); falling back to local predictions.json.")
 
-    # 2) Fallback: read predictions.json from multiple candidate paths
+    # 2) Local JSON fallback
     return load_local_json(leagues, date_from_utc, date_to_utc, ignore_date_filter)
 
 
@@ -246,22 +215,18 @@ def filtered_view(df: pd.DataFrame, min_prob: float, top_n: int) -> pd.DataFrame
     if "kickoff_utc" in work.columns:
         work["kickoff_utc"] = pd.to_datetime(work["kickoff_utc"], errors="coerce", utc=True).dt.strftime("%Y-%m-%d %H:%M UTC")
     work["P(>0.5)"] = work["p_over_0_5"].apply(format_percentage)
-    show_cols = ["league", "kickoff_utc", "home", "away", "P(>0.5)", "label"]
-    show_cols = [c for c in show_cols if c in work.columns]
-    return work[show_cols]
+    cols = [c for c in ["league", "kickoff_utc", "home", "away", "P(>0.5)", "label"] if c in work.columns]
+    return work[cols]
 
 
 def to_download_json(df: pd.DataFrame) -> str:
     if df.empty:
         return "[]"
-    out = df.copy()
-    if "P(>0.5)" in out.columns and "p_over_0_5" not in out.columns:
-        out["p_over_0_5"] = out["P(>0.5)"].str.rstrip("%").str.replace(",", "", regex=False).astype(float) / 100.0
-    return json.dumps(out.to_dict(orient="records"), ensure_ascii=False, indent=2)
+    return json.dumps(df.to_dict(orient="records"), ensure_ascii=False, indent=2)
 
 
 # ---------- UI ----------
-st.title(APP_TITLE)
+st.title("Over 0.5 – 6 League Predictions")
 
 with st.sidebar:
     st.subheader("Filters")
@@ -273,19 +238,21 @@ with st.sidebar:
 
     ignore_date_filter = st.checkbox("Ignore date filter", value=False)
 
-    min_prob = st.slider("Minimum probability threshold P(>0.5)", min_value=0.50, max_value=0.99, value=0.95, step=0.01)
-    top_n = st.slider("Top N matches to display", min_value=10, max_value=200, value=50, step=10)
+    st.markdown("---")
+    uploaded = st.file_uploader("Upload predictions file (JSON or CSV)", type=["json", "csv"])
 
+    st.markdown("---")
+    min_prob = st.slider("Minimum probability threshold P(>0.5)", 0.50, 0.99, 0.95, 0.01)
+    top_n = st.slider("Top N matches to display", 10, 200, 50, 10)
     st.caption("Label thresholds: ULTRA ≥ 0.98, HIGH ≥ 0.95")
 
-col_left, col_right = st.columns([3, 2])
-
-with col_left:
-    if st.button("Fetch / Refresh Predictions", type="primary"):
-        st.session_state["refresh_ts"] = datetime.now().isoformat()
+# Refresh button
+if st.button("Fetch / Refresh Predictions", type="primary"):
+    st.session_state["refresh_ts"] = datetime.now().isoformat()
 
 refresh_key = st.session_state.get("refresh_ts", "init")
 
+# 1) Try API / Local JSON cache
 with st.spinner("Loading predictions..."):
     df_all = load_predictions_cached(
         leagues=selected_leagues if selected_leagues else None,
@@ -295,30 +262,47 @@ with st.spinner("Loading predictions..."):
         refresh_key=refresh_key,
     )
 
+# 2) If empty and user uploaded a file, parse it
+if df_all.empty and uploaded is not None:
+    try:
+        if uploaded.type.endswith("json"):
+            data = json.load(uploaded)
+            df_all = to_dataframe(data)
+            st.success(f"Using uploaded JSON file. Rows: {len(df_all)}")
+        else:
+            text = uploaded.getvalue().decode("utf-8", errors="ignore")
+            df_csv = pd.read_csv(StringIO(text))
+            df_all = to_dataframe(df_csv)
+            st.success(f"Using uploaded CSV file. Rows: {len(df_all)}")
+    except Exception as e:
+        st.error(f"Failed to parse uploaded file: {e}")
+
+# 3) If still empty, use embedded seed
 if df_all.empty:
-    st.warning("No predictions found. (API returned nothing and predictions.json fallback is missing or invalid.)")
-else:
-    df_view = filtered_view(df_all, min_prob=min_prob, top_n=top_n)
-    st.subheader("Results")
-    st.dataframe(df_view, use_container_width=True, height=600)
+    st.info("Falling back to embedded demo data (SEED_PREDICTIONS).")
+    df_all = to_dataframe(SEED_PREDICTIONS)
 
-    with st.expander("Summary / Stats"):
-        total = len(df_all)
-        shown = len(df_view)
-        ultra_cnt = (df_view["label"] == "ULTRA").sum() if "label" in df_view.columns else 0
-        high_cnt = (df_view["label"] == "HIGH").sum() if "label" in df_view.columns else 0
-        st.markdown(
-            f"- Total matches (before filters): **{total}**\n"
-            f"- Displayed matches: **{shown}**\n"
-            f"- ULTRA (≥98%): **{ultra_cnt}** | HIGH (≥95%): **{high_cnt}**"
-        )
+# ---- Show table ----
+df_view = filtered_view(df_all, min_prob=min_prob, top_n=top_n)
+st.subheader("Results")
+st.dataframe(df_view, use_container_width=True, height=600)
 
-    json_payload = to_download_json(df_view)
-    st.download_button(
-        label="Download Filtered Results as JSON",
-        data=json_payload.encode("utf-8"),
-        file_name="predictions_filtered.json",
-        mime="application/json",
+with st.expander("Summary / Stats"):
+    total = len(df_all)
+    shown = len(df_view)
+    ultra_cnt = (df_view["label"] == "ULTRA").sum() if "label" in df_view.columns else 0
+    high_cnt = (df_view["label"] == "HIGH").sum() if "label" in df_view.columns else 0
+    st.markdown(
+        f"- Total matches (before filters): **{total}**\n"
+        f"- Displayed matches: **{shown}**\n"
+        f"- ULTRA (≥98%): **{ultra_cnt}** | HIGH (≥95%): **{high_cnt}**"
     )
+
+st.download_button(
+    label="Download Filtered Results as JSON",
+    data=to_download_json(df_view).encode("utf-8"),
+    file_name="predictions_filtered.json",
+    mime="application/json",
+)
 
 st.caption("This app provides statistical predictions only; it is not betting advice. Users are responsible for following local laws.")

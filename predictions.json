@@ -65,4 +65,28 @@
   {
     "match_id": "LL20250928-008",
     "league": "La Liga",
-    "kickoff_utc_
+    "kickoff_utc": "2025-09-28T20:00:00Z",
+    "home": "Barcelona",
+    "away": "Real Madrid",
+    "p_over_0_5": 0.991,
+    "label": "ULTRA"
+  },
+  {
+    "match_id": "LL20250928-009",
+    "league": "La Liga",
+    "kickoff_utc": "2025-09-28T17:30:00Z",
+    "home": "Atletico Madrid",
+    "away": "Sevilla",
+    "p_over_0_5": 0.954,
+    "label": "HIGH"
+  },
+  {
+    "match_id": "PL20250929-010",
+    "league": "Primeira Liga",
+    "kickoff_utc": "2025-09-29T20:15:00Z",
+    "home": "Benfica",
+    "away": "Porto",
+    "p_over_0_5": 0.977,
+    "label": "ULTRA"
+  }
+]

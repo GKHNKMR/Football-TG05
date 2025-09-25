@@ -1,8 +1,9 @@
-# app.py (robust fallback)
-# - Calls run_week_predictions(...) if available
-# - If API returns empty or fails, tries multiple locations for predictions.json
-# - Skips date filtering if datetime parsing fails (to avoid empty results)
-# - Shows helpful info logs
+# app.py (FINAL)
+# - Calls run_week_predictions(...) if available (API mode)
+# - If API returns empty or fails, robustly falls back to predictions.json
+# - Tries multiple locations for predictions.json
+# - Optional "Ignore date filter" toggle in the UI
+# - Adds informative logs and cache busting
 
 import os
 import json
@@ -93,7 +94,7 @@ def to_dataframe(data) -> pd.DataFrame:
     return df
 
 
-def _candidate_json_paths() -> list[Path]:
+def candidate_json_paths() -> list[Path]:
     cwd = Path(os.getcwd())
     here = Path(__file__).resolve().parent
     return [
@@ -103,15 +104,25 @@ def _candidate_json_paths() -> list[Path]:
     ]
 
 
-def _load_local_json(leagues: Optional[List[str]], date_from_utc: Optional[str], date_to_utc: Optional[str]) -> pd.DataFrame:
-    # Try multiple locations
+def load_local_json(
+    leagues: Optional[List[str]],
+    date_from_utc: Optional[str],
+    date_to_utc: Optional[str],
+    ignore_date_filter: bool,
+) -> pd.DataFrame:
+    """
+    Try to load predictions.json from multiple locations.
+    Applies league and (optionally) date filters.
+    """
     last_error = None
-    for p in _candidate_json_paths():
+
+    for p in candidate_json_paths():
         if p.exists():
             try:
                 with p.open("r", encoding="utf-8") as f:
                     data = json.load(f)
                 df = to_dataframe(data)
+                total_rows = len(df)
 
                 # Optional league filter
                 if leagues:
@@ -123,17 +134,21 @@ def _load_local_json(leagues: Optional[List[str]], date_from_utc: Optional[str],
                     df["kickoff_utc"] = pd.to_datetime(df["kickoff_utc"], errors="coerce", utc=True)
                     parse_ok = df["kickoff_utc"].notna().any()
 
-                # Date filtering (only if parsing produced valid timestamps)
-                if parse_ok:
+                # Date filtering (only if parsing produced valid timestamps and user didn't disable it)
+                if not ignore_date_filter and parse_ok:
+                    before = len(df)
                     if date_from_utc:
                         df = df[df["kickoff_utc"] >= pd.to_datetime(date_from_utc, utc=True, errors="coerce")]
                     if date_to_utc:
                         df = df[df["kickoff_utc"] <= pd.to_datetime(date_to_utc, utc=True, errors="coerce") + pd.Timedelta(days=1)]
+                    st.info(f"Date filter kept {len(df)} of {before} rows (total source rows: {total_rows}).")
                 else:
-                    # Avoid wiping out all rows due to parse issues
-                    st.info("kickoff_utc parsing failed; skipping date filtering for local predictions.json.")
+                    if ignore_date_filter:
+                        st.info(f"Ignoring date filter. Showing all {len(df)} rows (parse_ok={parse_ok}).")
+                    elif not parse_ok:
+                        st.info(f"'kickoff_utc' parsing failed; showing all {len(df)} rows without date filtering.")
 
-                st.info(f"Loaded {len(df)} rows from {p.name}.")
+                st.success(f"Loaded {len(df)} rows from {p.name}.")
                 return df
             except Exception as e:
                 last_error = e
@@ -151,6 +166,7 @@ def load_predictions_cached(
     leagues: Optional[List[str]],
     date_from_utc: Optional[str],
     date_to_utc: Optional[str],
+    ignore_date_filter: bool,
     refresh_key: Optional[str] = None,  # cache bust key
 ) -> pd.DataFrame:
     """
@@ -174,7 +190,7 @@ def load_predictions_cached(
             st.warning(f"run_week_predictions call failed ({e}); falling back to local predictions.json.")
 
     # 2) Fallback: read predictions.json from multiple candidate paths
-    return _load_local_json(leagues, date_from_utc, date_to_utc)
+    return load_local_json(leagues, date_from_utc, date_to_utc, ignore_date_filter)
 
 
 def format_percentage(p: float | None) -> str:
@@ -223,6 +239,8 @@ with st.sidebar:
     date_from = st.date_input("Start Date (UTC)", value=start_default)
     date_to = st.date_input("End Date (UTC)", value=end_default)
 
+    ignore_date_filter = st.checkbox("Ignore date filter", value=False)
+
     min_prob = st.slider("Minimum probability threshold P(>0.5)", min_value=0.50, max_value=0.99, value=0.95, step=0.01)
     top_n = st.slider("Top N matches to display", min_value=10, max_value=200, value=50, step=10)
 
@@ -241,6 +259,7 @@ with st.spinner("Loading predictions..."):
         leagues=selected_leagues if selected_leagues else None,
         date_from_utc=str(date_from),
         date_to_utc=str(date_to),
+        ignore_date_filter=ignore_date_filter,
         refresh_key=refresh_key,
     )
 

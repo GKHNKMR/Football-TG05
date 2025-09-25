@@ -3,11 +3,11 @@ name: weekly update predictions
 
 on:
   schedule:
-    - cron: "0 6 * * FRI"   # Her Cuma 06:00 UTC (Amsterdam'da Cuma 08:00 civarı)
-  workflow_dispatch:        # Manuel tetikleme için
+    - cron: "0 6 * * FRI"   # Every Friday 06:00 UTC
+  workflow_dispatch:        # Allow manual trigger
 
 permissions:
-  contents: write           # predictions.json dosyasını commit/push için gerekli
+  contents: write           # Needed to commit/push predictions.json
 
 concurrency:
   group: update-predictions
@@ -19,7 +19,7 @@ jobs:
 
     env:
       PYTHONUNBUFFERED: "1"
-      # API anahtarlarını GitHub Secrets'tan çekin (Settings > Secrets and variables > Actions)
+      # Read API key from GitHub Secrets (configure in Repo Settings)
       API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
 
     steps:
@@ -37,35 +37,34 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run prediction script
-        # over05_prediction.py dosyan, predictions.json üretmeli
+      - name: Generate predictions (API mode)
+        # If API fails/returns empty, you can comment this and keep your manual predictions.json.
         run: |
-          python over05_prediction.py
+          python over05_prediction.py --from $(date -u +'%Y-%m-%d') --to $(date -u -d '+7 days' +'%Y-%m-%d')
 
-      - name: Validate JSON output
+      - name: Validate predictions.json (non-empty guard)
         run: |
           python - << 'PY'
           import json, sys, pathlib
           p = pathlib.Path("predictions.json")
           if not p.exists():
               print("ERROR: predictions.json not found", file=sys.stderr); sys.exit(1)
-          try:
-              data = json.loads(p.read_text(encoding="utf-8"))
-              assert isinstance(data, list), "Root must be a list"
-              # Temel alan kontrolleri (opsiyonel)
-              if data:
-                  sample = data[0]
-                  for key in ("league","home","away","p_over_0_5"):
-                      if key not in sample:
-                          raise AssertionError(f"Missing key: {key}")
-              print("predictions.json OK - items:", len(data))
-          except Exception as e:
-              print("ERROR:", e, file=sys.stderr); sys.exit(1)
+          data = json.loads(p.read_text(encoding="utf-8"))
+          if not isinstance(data, list):
+              print("ERROR: root is not a list", file=sys.stderr); sys.exit(1)
+          if len(data) == 0:
+              print("ERROR: predictions.json is empty; refusing to commit", file=sys.stderr); sys.exit(2)
+          need = {"league","home","away","p_over_0_5"}
+          if data:
+              missing = need - set(data[0].keys())
+              if missing:
+                  print("ERROR: missing keys:", missing, file=sys.stderr); sys.exit(1)
+          print(f"OK. items={len(data)}")
           PY
 
       - name: Commit and push if changed
+        if: success()    # only commit when previous step passed
         run: |
-          set -e
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add predictions.json

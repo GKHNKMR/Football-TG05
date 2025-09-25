@@ -2,6 +2,7 @@
 # - Calls run_week_predictions(...) if available (API mode)
 # - If API returns empty or fails, robustly falls back to predictions.json
 # - Probes multiple paths; skips empty JSONs and keeps searching
+# - Supports PREDICTIONS_JSON_PATH env var for explicit path override
 # - Prints absolute path and row counts at every stage
 # - Optional "Ignore date filter" toggle in the UI
 # - Adds informative logs and cache busting
@@ -96,13 +97,26 @@ def to_dataframe(data) -> pd.DataFrame:
 
 
 def candidate_json_paths() -> list[Path]:
+    # 1) explicit override via env var
+    env_path = os.getenv("PREDICTIONS_JSON_PATH")
+    paths = []
+    if env_path:
+        paths.append(Path(env_path).resolve())
+
+    # 2) common locations around the app
     cwd = Path(os.getcwd()).resolve()
     here = Path(__file__).resolve().parent
-    return [
+    paths.extend([
         cwd / "predictions.json",
         here / "predictions.json",
         here.parent / "predictions.json",
-    ]
+    ])
+    # de-duplicate while preserving order
+    uniq = []
+    for p in paths:
+        if p not in uniq:
+            uniq.append(p)
+    return uniq
 
 
 def load_local_json(

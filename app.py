@@ -1,17 +1,21 @@
 # app.py
 # Streamlit UI for "Over 0.5 – 6 League Predictions"
 # - Shows weekly P(Over 0.5) for EPL, Championship, Serie A, Bundesliga, La Liga, Primeira Liga
-# - Works with a Python function `run_week_predictions(...)` in over05_prediction.py
-#   OR falls back to reading a local predictions.json file.
+# - Calls `run_week_predictions(...)` in over05_prediction.py
+# - Falls back to reading a local predictions.json when API returns empty or fails
 
 import os
 import json
 from datetime import datetime, timedelta, timezone
+from typing import List, Optional
 
 import pandas as pd
 import streamlit as st
 
-# ---------- Config ----------
+# ---------- Page config ----------
+st.set_page_config(page_title="Over 0.5 Radar", layout="wide")
+
+# ---------- Constants ----------
 APP_TITLE = "Over 0.5 – 6 League Predictions"
 ULTRA_TH = 0.98
 HIGH_TH = 0.95
@@ -46,10 +50,6 @@ def add_label(p: float) -> str:
     if p >= HIGH_TH:
         return "HIGH"
     return ""
-
-
-def iso_now_date():
-    return datetime.now(timezone.utc).date().isoformat()
 
 
 def date_range_default():
@@ -96,15 +96,16 @@ def to_dataframe(data) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_predictions_cached(
-    leagues: list[str] | None,
-    date_from_utc: str | None,
-    date_to_utc: str | None,
+    leagues: Optional[List[str]],
+    date_from_utc: Optional[str],
+    date_to_utc: Optional[str],
+    refresh_key: Optional[str] = None,  # cache bust key
 ) -> pd.DataFrame:
     """
-    Loads predictions either by calling user's function or by reading predictions.json.
-    Caches result in Streamlit to avoid recomputation during the session.
+    Loads predictions by calling user's function.
+    If the result is empty or the call fails, it falls back to predictions.json.
     """
-    # 1) Try user's function
+    # 1) Try user's function first
     if callable(run_week_predictions):
         try:
             data = run_week_predictions(
@@ -112,18 +113,22 @@ def load_predictions_cached(
                 date_from_utc=date_from_utc,
                 date_to_utc=date_to_utc,
             )
-            return to_dataframe(data)
+            df = to_dataframe(data)
+            if not df.empty:
+                return df
+            else:
+                st.info("API returned no rows; falling back to local predictions.json.")
         except Exception as e:
-            st.warning(f"run_week_predictions call failed: {e}")
+            st.warning(f"run_week_predictions call failed ({e}); falling back to local predictions.json.")
 
-    # 2) Fallback: read predictions.json (should be created by your offline pipeline)
+    # 2) Fallback: read predictions.json (created by your offline pipeline or Actions)
     fallback_path = os.path.join(os.getcwd(), "predictions.json")
     if os.path.exists(fallback_path):
         try:
             with open(fallback_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             df = to_dataframe(data)
-            # Optional: filter leagues and dates if columns exist
+            # Optional filters
             if leagues:
                 df = df[df["league"].isin(leagues)]
             if "kickoff_utc" in df.columns:
@@ -131,7 +136,6 @@ def load_predictions_cached(
                 if date_from_utc:
                     df = df[df["kickoff_utc"] >= pd.to_datetime(date_from_utc)]
                 if date_to_utc:
-                    # inclusive end-of-day filter
                     df = df[df["kickoff_utc"] <= pd.to_datetime(date_to_utc) + pd.Timedelta(days=1)]
             return df
         except Exception as e:
@@ -162,7 +166,7 @@ def filtered_view(df: pd.DataFrame, min_prob: float, top_n: int) -> pd.DataFrame
     # Top N
     if top_n > 0:
         work = work.head(top_n)
-    # Nice formatting
+    # Pretty formatting
     if "kickoff_utc" in work.columns:
         work["kickoff_utc"] = pd.to_datetime(work["kickoff_utc"], errors="coerce", utc=True).dt.strftime("%Y-%m-%d %H:%M UTC")
     work["P(>0.5)"] = work["p_over_0_5"].apply(format_percentage)
@@ -172,23 +176,17 @@ def filtered_view(df: pd.DataFrame, min_prob: float, top_n: int) -> pd.DataFrame
 
 
 def to_download_json(df: pd.DataFrame) -> str:
-    # Convert visible subset to a clean JSON list of records
     if df.empty:
         return "[]"
-    # Try to reconstruct probabilities from formatted column if necessary
     out = df.copy()
     if "P(>0.5)" in out.columns and "p_over_0_5" not in out.columns:
         out["p_over_0_5"] = out["P(>0.5)"].str.rstrip("%").str.replace(",", "", regex=False).astype(float) / 100.0
-    # Rename columns to API-friendly keys
-    rename = {
-        "P(>0.5)": "p_over_0_5_fmt",
-    }
+    rename = {"P(>0.5)": "p_over_0_5_fmt"}
     out = out.rename(columns=rename)
     return json.dumps(out.to_dict(orient="records"), ensure_ascii=False, indent=2)
 
 
 # ---------- UI ----------
-st.set_page_config(page_title="Over 0.5 Radar", layout="wide")
 st.title(APP_TITLE)
 
 with st.sidebar:
@@ -210,7 +208,7 @@ with col_left:
     if st.button("Fetch / Refresh Predictions", type="primary"):
         st.session_state["refresh_ts"] = datetime.now().isoformat()
 
-# Use session key to control cache invalidation when user clicks the button
+# cache-busting key updated on button click
 refresh_key = st.session_state.get("refresh_ts", "init")
 
 with st.spinner("Loading predictions..."):
@@ -218,16 +216,16 @@ with st.spinner("Loading predictions..."):
         leagues=selected_leagues if selected_leagues else None,
         date_from_utc=str(date_from),
         date_to_utc=str(date_to),
+        refresh_key=refresh_key,  # IMPORTANT: cache bust when user refreshes
     )
 
 if df_all.empty:
-    st.warning("No predictions found. (run_week_predictions might not be working or predictions.json missing.)")
+    st.warning("No predictions found. (API returned nothing and predictions.json fallback is missing or invalid.)")
 else:
     df_view = filtered_view(df_all, min_prob=min_prob, top_n=top_n)
     st.subheader("Results")
     st.dataframe(df_view, use_container_width=True, height=600)
 
-    # Summary
     with st.expander("Summary / Stats"):
         total = len(df_all)
         shown = len(df_view)
@@ -248,4 +246,4 @@ else:
         mime="application/json",
     )
 
-st.caption("⚠️ This app provides statistical predictions only; it is not betting advice. Users are responsible for following local laws.")
+st.caption(" This app provides statistical predictions only; it is not betting advice. Users are responsible for following local laws.")

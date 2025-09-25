@@ -1,0 +1,68 @@
+[
+  {
+    "match_id": "PL20250928-001",
+    "league": "Premier League",
+    "kickoff_utc": "2025-09-28T14:00:00Z",
+    "home": "Arsenal",
+    "away": "Chelsea",
+    "p_over_0_5": 0.981,
+    "label": "ULTRA"
+  },
+  {
+    "match_id": "PL20250928-002",
+    "league": "Premier League",
+    "kickoff_utc": "2025-09-28T16:30:00Z",
+    "home": "Liverpool",
+    "away": "Manchester United",
+    "p_over_0_5": 0.965,
+    "label": "HIGH"
+  },
+  {
+    "match_id": "CH20250929-003",
+    "league": "Championship",
+    "kickoff_utc": "2025-09-29T19:00:00Z",
+    "home": "Leeds United",
+    "away": "Sunderland",
+    "p_over_0_5": 0.942,
+    "label": ""
+  },
+  {
+    "match_id": "SA20250928-004",
+    "league": "Serie A",
+    "kickoff_utc": "2025-09-28T18:45:00Z",
+    "home": "AC Milan",
+    "away": "Inter Milan",
+    "p_over_0_5": 0.989,
+    "label": "ULTRA"
+  },
+  {
+    "match_id": "SA20250929-005",
+    "league": "Serie A",
+    "kickoff_utc": "2025-09-29T17:30:00Z",
+    "home": "Juventus",
+    "away": "Roma",
+    "p_over_0_5": 0.958,
+    "label": "HIGH"
+  },
+  {
+    "match_id": "BL20250928-006",
+    "league": "Bundesliga",
+    "kickoff_utc": "2025-09-28T14:30:00Z",
+    "home": "Bayern Munich",
+    "away": "Borussia Dortmund",
+    "p_over_0_5": 0.993,
+    "label": "ULTRA"
+  },
+  {
+    "match_id": "BL20250928-007",
+    "league": "Bundesliga",
+    "kickoff_utc": "2025-09-28T16:30:00Z",
+    "home": "RB Leipzig",
+    "away": "Union Berlin",
+    "p_over_0_5": 0.948,
+    "label": "HIGH"
+  },
+  {
+    "match_id": "LL20250928-008",
+    "league": "La Liga",
+    "kickoff_utc_

@@ -1,35 +1,30 @@
-# Football-TG05
+---
+title: Over 0.5 Radar
+emoji: ⚽
+colorFrom: green
+colorTo: blue
+sdk: streamlit
+sdk_version: "1.38.0"
+app_file: app.py
+pinned: false
+---
 
-This repository contains a self-contained Python script that simulates football
-fixtures, trains a gradient boosting model and predicts the probability of a
-match finishing with more than 0.5 total goals.
+# Over 0.5 Radar ⚽
 
-## Requirements
+Bu proje, **6 Avrupa ligi** için maçlarda **en az 1 gol (Over 0.5)** ihtimalini tahmin eder ve maçları yüksekten düşüğe sıralar.
 
-The script depends on the scientific Python stack:
+## Desteklenen Ligler
+- Premier League (İngiltere)
+- Championship (İngiltere)
+- Serie A (İtalya)
+- Bundesliga (Almanya)
+- La Liga (İspanya)
+- Primeira Liga (Portekiz)
 
-- Python 3.10+
-- pandas
-- scikit-learn
+## Özellikler
+- Her hafta güncellenen tahminler
+- Maç bazında `P(Over 0.5)` yüzdesi
+- **%95** ve üzeri olan maçlar özel etiketlerle (`HIGH` veya `ULTRA`)
+- JSON çıktısı ve tablo görünümü
 
-If the packages are not available in your environment you can install them via
-`pip install pandas scikit-learn`.
-
-## Usage
-
-```bash
-python over05_prediction.py
-```
-
-The program will:
-
-1. Generate five and a half seasons of synthetic historical data for several
-   major European leagues.
-2. Engineer features such as head-to-head performance, recent form and league
-   scoring rates.
-3. Fit and calibrate a gradient boosting classifier on the simulated results.
-4. Score a set of upcoming fixtures and display them ordered by the predicted
-   probability of finishing with at least one goal.
-
-Each fixture includes a short justification string and annotations when the
-predicted probability surpasses 95% or 98%.
+## Dosya Yapısı

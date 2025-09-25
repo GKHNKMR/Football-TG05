@@ -1,3 +1,4 @@
+
 import os
 import json
 import time
@@ -6,20 +7,20 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 
 import requests
-import pandas as pd
 
 
 # =========================
 # Configuration
 # =========================
 
-# API key (hardcoded as requested). Prefer env var in the future for security.
-API_KEY = os.getenv("API_FOOTBALL_KEY") or "a8b70416d123b5cc9a82aae8ea5ec065"
+# Read API key from environment (recommended).
+# If you must hardcode for local testing, replace the fallback string below,
+# but DO NOT commit secrets to public repositories.
+API_KEY = os.getenv("API_FOOTBALL_KEY") or "REPLACE_WITH_YOUR_API_FOOTBALL_KEY"
 
-# API base
 BASE_URL = "https://v3.football.api-sports.io"
 
-# Supported leagues (API-Football league IDs)
+# Supported Leagues (API-Football IDs)
 LEAGUE_IDS: Dict[str, int] = {
     "Premier League": 39,
     "Championship": 40,
@@ -29,7 +30,7 @@ LEAGUE_IDS: Dict[str, int] = {
     "Primeira Liga": 94,
 }
 
-# Simple league baselines for P(Over 0.5) – replace with model outputs when ready
+# Simple baselines for demo (replace with your trained model when ready)
 LEAGUE_BASELINES: Dict[str, float] = {
     "Premier League": 0.95,
     "Championship": 0.93,
@@ -39,25 +40,25 @@ LEAGUE_BASELINES: Dict[str, float] = {
     "Primeira Liga": 0.94,
 }
 
-# Label thresholds
 ULTRA_TH = 0.98
 HIGH_TH = 0.95
 
 
 # =========================
-# Low-level HTTP
+# HTTP helpers
 # =========================
 
 def _headers() -> Dict[str, str]:
-    if not API_KEY or API_KEY.strip() == "":
+    key = API_KEY.strip() if API_KEY else ""
+    if not key or key == "REPLACE_WITH_YOUR_API_FOOTBALL_KEY":
         raise RuntimeError(
-            "API key is missing. Set env var API_FOOTBALL_KEY or keep the hardcoded key."
+            "API key missing. Set environment variable API_FOOTBALL_KEY."
         )
-    return {"x-apisports-key": API_KEY}
+    return {"x-apisports-key": key}
 
 
 def _get(endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
-    """GET wrapper with basic retry/backoff."""
+    """GET wrapper with light retry/backoff."""
     url = f"{BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}"
     last_exc = None
     for attempt in range(3):
@@ -65,31 +66,29 @@ def _get(endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
             resp = requests.get(url, headers=_headers(), params=params, timeout=30)
             if resp.status_code == 200:
                 return resp.json()
-            # Rate-limit or transient issues: brief backoff
-            time.sleep(1 + attempt)
-            last_exc = Exception(f"HTTP {resp.status_code}: {resp.text[:200]}")
+            last_exc = Exception(f"HTTP {resp.status_code}: {resp.text[:300]}")
         except Exception as e:
             last_exc = e
-            time.sleep(1 + attempt)
+        time.sleep(1 + attempt)  # simple backoff
     if last_exc:
         raise last_exc
     return {}
 
 
 # =========================
-# Data Fetch
+# API calls
 # =========================
 
 def get_fixtures(
     league_id: int,
-    date_from_utc: Optional[str] = None,
-    date_to_utc: Optional[str] = None,
-    season: Optional[int] = None,
-    status: str = "NS,1H,HT,2H,ET,BT,P"  # upcoming + in-play statuses (keeps near-future too)
+    date_from_utc: Optional[str],
+    date_to_utc: Optional[str],
+    season: Optional[int] = 2025,
+    status: Optional[str] = None,  # None → do not filter by status
 ) -> List[Dict[str, Any]]:
     """
-    Fetch fixtures for a league. Filter by date range (YYYY-MM-DD) and season if provided.
-    Returns API 'response' array (list of fixtures).
+    Fetch fixtures from API-Football for the given league and date range (YYYY-MM-DD).
+    Returns API 'response' list.
     """
     params: Dict[str, Any] = {"league": league_id}
     if season is not None:
@@ -106,26 +105,22 @@ def get_fixtures(
 
 
 # =========================
-# Feature / Prediction (Placeholder)
+# Scoring (placeholder)
 # =========================
 
 def _baseline_probability(league_name: str) -> float:
-    """Return a baseline probability for Over 0.5 by league."""
     return float(LEAGUE_BASELINES.get(league_name, 0.94))
 
 
-def _light_adjustment_by_time_to_kickoff(kickoff_iso: str, base: float) -> float:
+def _light_time_adjustment(kickoff_iso: str, base: float) -> float:
     """
-    Tiny demo-only adjustment to avoid identical numbers:
-    - If the match is soon (< 24h), add +0.005 (capped to 0.995)
-    - If it's far (> 14 days), subtract -0.005 (floored to 0.90)
-    Replace with real model logic later.
+    Tiny variation to avoid identical numbers in demo mode:
+    +0.005 if kickoff <24h, -0.005 if kickoff >14d.
     """
     try:
         dt = datetime.fromisoformat(kickoff_iso.replace("Z", "+00:00"))
     except Exception:
         return base
-
     now = datetime.now(timezone.utc)
     delta = dt - now
     if delta <= timedelta(hours=24):
@@ -135,7 +130,7 @@ def _light_adjustment_by_time_to_kickoff(kickoff_iso: str, base: float) -> float
     return base
 
 
-def _label_for_prob(p: float) -> str:
+def _label_for(p: float) -> str:
     if p >= ULTRA_TH:
         return "ULTRA"
     if p >= HIGH_TH:
@@ -144,32 +139,33 @@ def _label_for_prob(p: float) -> str:
 
 
 # =========================
-# Public API
+# Public API for app.py
 # =========================
 
 def run_week_predictions(
     leagues: Optional[List[str]] = None,
     date_from_utc: Optional[str] = None,
     date_to_utc: Optional[str] = None,
-    season: Optional[int] = None,
+    season: Optional[int] = 2025,
     save_json: bool = True,
     output_path: str = "predictions.json",
 ) -> List[Dict[str, Any]]:
     """
-    Main entry point (used by app.py or CLI).
-    - leagues: list of league names; None = all supported
-    - date_from_utc / date_to_utc: filter fixtures by UTC date ("YYYY-MM-DD")
-    - season: optional season year (e.g., 2025)
+    Main entry point used by app.py and CLI.
+    - leagues: subset of league names; None = all supported
+    - date_from_utc / date_to_utc: YYYY-MM-DD strings; defaults to next 14 days if missing
+    - season: integer like 2025
     - save_json: write predictions.json
-    Returns: list of normalized prediction dicts.
+    Returns a list of normalized dicts with keys:
+      match_id, league, kickoff_utc, home, away, p_over_0_5, label
     """
-    # Defaults: next 7 days if not provided
+    # Default date window = next 14 days
     if not date_from_utc or not date_to_utc:
         today = datetime.now(timezone.utc).date()
         if not date_from_utc:
             date_from_utc = today.isoformat()
         if not date_to_utc:
-            date_to_utc = (today + timedelta(days=7)).isoformat()
+            date_to_utc = (today + timedelta(days=14)).isoformat()
 
     target_leagues = leagues or list(LEAGUE_IDS.keys())
     results: List[Dict[str, Any]] = []
@@ -185,23 +181,21 @@ def run_week_predictions(
             date_from_utc=date_from_utc,
             date_to_utc=date_to_utc,
             season=season,
+            status=None,  # be permissive; let API return anything in the window
         )
 
-        # Normalize & score
+        # Normalize + Score
         for fx in fixtures:
             try:
                 fixture_id = fx["fixture"]["id"]
-                kickoff_iso = fx["fixture"]["date"]
+                kickoff_iso = fx["fixture"]["date"]  # ISO8601
                 home = fx["teams"]["home"]["name"]
                 away = fx["teams"]["away"]["name"]
             except Exception:
-                # Skip malformed fixture
                 continue
 
-            # --- Placeholder probability logic (swap with your trained model later) ---
             p = _baseline_probability(league_name)
-            p = _light_adjustment_by_time_to_kickoff(kickoff_iso, p)
-            # ----------------------------------------------------------------------------
+            p = _light_time_adjustment(kickoff_iso, p)
 
             results.append({
                 "match_id": fixture_id,
@@ -210,10 +204,10 @@ def run_week_predictions(
                 "home": home,
                 "away": away,
                 "p_over_0_5": round(float(p), 3),
-                "label": _label_for_prob(p),
+                "label": _label_for(p),
             })
 
-        # be nice to the API (avoid hammering)
+        # Friendly to API rate limits
         time.sleep(0.35)
 
     # Sort by probability desc
@@ -231,22 +225,19 @@ def run_week_predictions(
 # =========================
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate Over 0.5 predictions JSON.")
-    parser.add_argument("--leagues", type=str, default="", help="Comma-separated league names (empty=all).")
-    parser.add_argument("--from", dest="date_from_utc", type=str, default="", help="Start date (UTC) YYYY-MM-DD.")
-    parser.add_argument("--to", dest="date_to_utc", type=str, default="", help="End date (UTC) YYYY-MM-DD.")
-    parser.add_argument("--season", type=int, default=None, help="Season year (e.g., 2025).")
-    parser.add_argument("--out", dest="output_path", type=str, default="predictions.json", help="Output JSON path.")
-    return parser.parse_args()
+    p = argparse.ArgumentParser(description="Generate Over 0.5 predictions JSON (API-Football).")
+    p.add_argument("--leagues", type=str, default="", help="Comma-separated league names (empty=all).")
+    p.add_argument("--from", dest="date_from_utc", type=str, default="", help="Start date (UTC) YYYY-MM-DD.")
+    p.add_argument("--to", dest="date_to_utc", type=str, default="", help="End date (UTC) YYYY-MM-DD.")
+    p.add_argument("--season", type=int, default=2025, help="Season year (e.g., 2025).")
+    p.add_argument("--out", dest="output_path", type=str, default="predictions.json", help="Output JSON path.")
+    return p.parse_args()
 
 
 if __name__ == "__main__":
     args = _parse_args()
-
-    # Build league list
     leagues_arg = [s.strip() for s in args.leagues.split(",") if s.strip()] if args.leagues else None
 
-    # Run
     preds = run_week_predictions(
         leagues=leagues_arg,
         date_from_utc=args.date_from_utc or None,

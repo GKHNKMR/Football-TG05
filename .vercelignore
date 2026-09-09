@@ -1,11 +1,7 @@
 # Vercel serves this repo as a plain static site (see vercel.json).
 # Nothing below is needed at runtime — it exists for the daily GitHub Actions
-# build — so keep it out of the deployment and out of Python auto-detection.
+# build — so keep it out of the deployment.
 
-app.py
-over05_prediction.py
-requirements.txt
-runtime.txt
 scripts/
 .github/
 

@@ -16,13 +16,10 @@ concurrency:
 
 jobs:
   build-and-update:
-    # Run on normal source changes, but do not start a second API-heavy run
-    # when the workflow itself commits predictions.json.
     if: ${{ !startsWith(github.event.head_commit.message, 'Update BETAVUS predictions') }}
     runs-on: ubuntu-latest
     env:
       PYTHONUNBUFFERED: "1"
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,22 +45,24 @@ jobs:
           if not isinstance(data, list):
               print("predictions.json must contain a list", file=sys.stderr)
               sys.exit(1)
+          if not data:
+              print("predictions.json contains no fixtures", file=sys.stderr)
+              sys.exit(1)
           required = {"match_id", "league", "home", "away", "kickoff_utc", "p_over_0_5", "p_over_1_5", "p_over_2_5"}
-          if data:
-              missing = required - set(data[0])
-              if missing:
-                  print(f"Missing keys: {missing}", file=sys.stderr)
-                  sys.exit(1)
+          missing = required - set(data[0])
+          if missing:
+              print(f"Missing keys: {missing}", file=sys.stderr)
+              sys.exit(1)
           print(f"Validated {len(data)} fixtures")
           PY
 
-      - name: Commit updated data
+      - name: Commit updated predictions
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add predictions.json data/cache
+          git add predictions.json
           if git diff --cached --quiet; then
-            echo "No data changes."
+            echo "No prediction changes."
           else
             git commit -m "Update BETAVUS predictions $(date -u +'%Y-%m-%d')"
             git push

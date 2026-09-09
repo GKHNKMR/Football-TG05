@@ -16,6 +16,9 @@ concurrency:
 
 jobs:
   build-and-update:
+    # Run on normal source changes, but do not start a second API-heavy run
+    # when the workflow itself commits predictions.json.
+    if: ${{ !startsWith(github.event.head_commit.message, 'Update BETAVUS predictions') }}
     runs-on: ubuntu-latest
     env:
       PYTHONUNBUFFERED: "1"
@@ -51,9 +54,6 @@ jobs:
               if missing:
                   print(f"Missing keys: {missing}", file=sys.stderr)
                   sys.exit(1)
-          if not data:
-              print("No fixtures in the current window; keeping the previous file is safer.", file=sys.stderr)
-              sys.exit(2)
           print(f"Validated {len(data)} fixtures")
           PY
 

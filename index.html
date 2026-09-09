@@ -31,7 +31,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .tab.active{background:var(--accent);color:var(--accent-ink)}
 .filters{display:flex;gap:8px;overflow:auto;padding-bottom:7px;margin-bottom:14px;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
-.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px}
+.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:7px}
+.flag{border-radius:2px;flex:none;display:inline-block;vertical-align:middle}
 .chip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 14px;color:var(--muted);font-size:13px;flex-wrap:wrap}
 .dbar-right{display:flex;gap:8px;align-items:center}
@@ -203,6 +204,18 @@ function shortDate(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',mo
 function pct(v){return v==null?'—':`${(Number(v)*100).toFixed(1)}%`;}
 function pctI(v){return v==null?'—':`${Math.round(Number(v)*100)}%`;}
 
+// inline SVG country flags — no assets, render everywhere (Windows has no flag emoji)
+const FLAGS={
+ 'Premier League':'<rect width="20" height="14" fill="#fff"/><rect x="8" width="4" height="14" fill="#ce1124"/><rect y="5" width="20" height="4" fill="#ce1124"/>',
+ 'LaLiga':'<rect width="20" height="14" fill="#c60b1e"/><rect y="3.5" width="20" height="7" fill="#ffc400"/>',
+ 'Bundesliga':'<rect width="20" height="14" fill="#000"/><rect y="4.67" width="20" height="4.67" fill="#dd0000"/><rect y="9.33" width="20" height="4.67" fill="#ffce00"/>',
+ 'Serie A':'<rect width="6.67" height="14" fill="#009246"/><rect x="6.67" width="6.66" height="14" fill="#f1f2f1"/><rect x="13.33" width="6.67" height="14" fill="#ce2b37"/>',
+ 'Ligue 1':'<rect width="6.67" height="14" fill="#0055a4"/><rect x="6.67" width="6.66" height="14" fill="#f1f2f1"/><rect x="13.33" width="6.67" height="14" fill="#ef4135"/>',
+ 'Eredivisie':'<rect width="20" height="14" fill="#ae1c28"/><rect y="4.67" width="20" height="4.67" fill="#f1f2f1"/><rect y="9.33" width="20" height="4.67" fill="#21468b"/>'
+};
+function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
+  return `<svg class="flag" viewBox="0 0 20 14" width="${Math.round(h*20/14)}" height="${h}" aria-hidden="true">${f}<rect x=".5" y=".5" width="19" height="13" rx="1.5" fill="none" stroke="rgba(128,128,128,.35)"/></svg>`;}
+
 function pillFor(v,lineKey){
   const h=HL[hlKey];
   const hot=h&&h.key===lineKey&&v!=null&&Number(v)>=h.min;
@@ -222,7 +235,7 @@ function mktNote(m){
 }
 
 function renderFilters(){
-  filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${x}</button>`).join('');
+  filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;save('league',selected);renderFilters();renderAll();});
 }
 function renderHlSel(){
@@ -251,7 +264,7 @@ function renderPred(){
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">
-      <div class="league">${basisBadge(x.basis)} ${esc(x.league)}</div>
+      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
       ${mktNote(x.market)}

@@ -140,10 +140,6 @@ def season_fixtures(league_id, season):
         return []
 
 
-def current_fixtures(league_id, start, end):
-    return api_get("/fixtures", {"league": league_id, "season": 2026, "from": start, "to": end})
-
-
 def h2h_matches(home_id, away_id, cache):
     key = f"{min(home_id, away_id)}-{max(home_id, away_id)}"
     if key in cache:
@@ -234,16 +230,25 @@ def expected_total(f, stats, h2h_avg, league_avg):
 def main():
     if not API_KEY:
         raise SystemExit("API_FOOTBALL_KEY is required")
+
     now = datetime.now(timezone.utc)
-    end = now + timedelta(days=7)
-    start_s = now.date().isoformat()
-    end_s = end.date().isoformat()
+    today = now.date()
+    end_date = today + timedelta(days=7)
     history_from = now - timedelta(days=365)
 
     stats_by_league = {}
     league_baselines = {}
+    season_data = {}
+
+    # One season call is enough to build both the historical statistics and
+    # the current fixture list. This keeps the first daily run below the
+    # Free-plan 100-request quota even when H2H is empty.
     for league_id in LEAGUES:
-        seasons = [season_fixtures(league_id, s) for s in SEASONS]
+        seasons = []
+        for season in SEASONS:
+            data = season_fixtures(league_id, season)
+            seasons.append(data)
+        season_data[league_id] = seasons
         merged = [f for season in seasons for f in season]
         stats_by_league[league_id] = build_stats(merged, history_from, now)
         league_baselines[league_id] = league_average(seasons)
@@ -251,8 +256,14 @@ def main():
     h2h_cache = load_json(H2H_FILE, {})
     output = []
     for league_id, league_name in LEAGUES.items():
-        fixtures = current_fixtures(league_id, start_s, end_s)
-        print(f"{league_name}: {len(fixtures)} fixtures")
+        # The 2026 season response already contains the future fixtures.
+        # Do not spend another API call just to retrieve the same matches.
+        fixtures = [
+            f for f in season_data[league_id][-1]
+            if today <= fixture_date(f).date() <= end_date
+        ]
+        print(f"{league_name}: {len(fixtures)} fixtures in dashboard window")
+
         stats = stats_by_league[league_id]
         for f in fixtures:
             status = f.get("fixture", {}).get("status", {}).get("short")
@@ -262,6 +273,7 @@ def main():
             away = f["teams"]["away"]
             h2h = h2h_matches(home["id"], away["id"], h2h_cache)
             lam = expected_total(f, stats, h2h_average(h2h), league_baselines[league_id])
+            p05 = poisson_tail(lam, 0.5)
             output.append({
                 "match_id": str(f["fixture"]["id"]),
                 "league_id": league_id,
@@ -269,13 +281,14 @@ def main():
                 "kickoff_utc": f["fixture"]["date"],
                 "home": home["name"],
                 "away": away["name"],
-                "p_over_0_5": round(poisson_tail(lam, 0.5), 4),
+                "p_over_0_5": round(p05, 4),
                 "p_over_1_5": round(poisson_tail(lam, 1.5), 4),
                 "p_over_2_5": round(poisson_tail(lam, 2.5), 4),
                 "lambda_total": round(lam, 3),
-                "label": label(poisson_tail(lam, 0.5)),
+                "label": label(p05),
                 "updated_at": now.isoformat(),
             })
+
     output.sort(key=lambda x: x["kickoff_utc"])
     save_json(H2H_FILE, h2h_cache)
     save_json(OUTPUT_FILE, output)

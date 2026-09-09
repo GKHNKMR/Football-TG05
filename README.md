@@ -1,30 +1,39 @@
----
-title: Over 0.5 Radar
-emoji: ⚽
-colorFrom: green
-colorTo: blue
-sdk: streamlit
-sdk_version: "1.38.0"
-app_file: app.py
-pinned: false
----
+# BETAVUS ⚽
 
-# Over 0.5 Radar ⚽
+Football Goal Probability Engine.
 
-Bu proje, **6 Avrupa ligi** için maçlarda **en az 1 gol (Over 0.5)** ihtimalini tahmin eder ve maçları yüksekten düşüğe sıralar.
+BETAVUS is a mobile-friendly football dashboard for the following six leagues:
 
-## Desteklenen Ligler
-- Premier League (İngiltere)
-- Championship (İngiltere)
-- Serie A (İtalya)
-- Bundesliga (Almanya)
-- La Liga (İspanya)
-- Primeira Liga (Portekiz)
+- Premier League
+- LaLiga
+- Bundesliga
+- Serie A
+- Ligue 1
+- Eredivisie
 
-## Özellikler
-- Her hafta güncellenen tahminler
-- Maç bazında `P(Over 0.5)` yüzdesi
-- **%95** ve üzeri olan maçlar özel etiketlerle (`HIGH` veya `ULTRA`)
-- JSON çıktısı ve tablo görünümü
+## Architecture
 
-## Dosya Yapısı
+There is **no serverless backend** in the live app.
+
+`API-Football → GitHub Actions → predictions.json → Vercel static site`
+
+The API key is used only inside the GitHub Actions secret `API_FOOTBALL_KEY`. It is never sent to the browser.
+
+The daily job refreshes fixtures and calculations, keeps historical/H2H data in `data/cache`, and commits the resulting `predictions.json`. The Vercel site only reads that JSON file.
+
+## Model
+
+The first BETAVUS model combines:
+
+1. H2H last 10 matches
+2. Each team's completed matches in the last 365 days
+3. Recent five matches with higher weights
+4. Home/away split
+5. Five-season league goal baseline
+6. Poisson goal distribution
+
+The dashboard displays Over 0.5, Over 1.5 and Over 2.5 goal probabilities.
+
+## Deployment
+
+The repository is connected to Vercel. Any push to `main` triggers a new static deployment.

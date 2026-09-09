@@ -20,49 +20,38 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONUNBUFFERED: "1"
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Build predictions
         run: python scripts/update_predictions.py
-
       - name: Validate predictions
         run: |
           python - << 'PY'
           import json, sys
           from pathlib import Path
           p = Path("predictions.json")
-          if not p.exists():
-              print("predictions.json missing", file=sys.stderr)
-              sys.exit(1)
+          if not p.exists(): sys.exit("predictions.json missing")
           data = json.loads(p.read_text(encoding="utf-8"))
-          if not isinstance(data, list):
-              print("predictions.json must contain a list", file=sys.stderr)
-              sys.exit(1)
-          if not data:
-              print("predictions.json contains no fixtures", file=sys.stderr)
-              sys.exit(1)
+          if not isinstance(data, list): sys.exit("predictions.json must contain a list")
+          if not data: sys.exit("predictions.json contains no fixtures")
           required = {"match_id", "league", "home", "away", "kickoff_utc", "p_over_0_5", "p_over_1_5", "p_over_2_5"}
           missing = required - set(data[0])
-          if missing:
-              print(f"Missing keys: {missing}", file=sys.stderr)
-              sys.exit(1)
+          if missing: sys.exit(f"Missing keys: {missing}")
           print(f"Validated {len(data)} fixtures")
           PY
-
       - name: Commit updated predictions
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add predictions.json
+          git add predictions.json data/cache
           if git diff --cached --quiet; then
-            echo "No prediction changes."
+            echo "No data changes."
           else
             git commit -m "Update BETAVUS predictions $(date -u +'%Y-%m-%d')"
             git push

@@ -15,11 +15,11 @@ BETAVUS is a mobile-friendly football dashboard for the following six leagues:
 
 There is **no serverless backend** in the live app.
 
-`API-Football → GitHub Actions → predictions.json → Vercel static site`
+`API-Football → GitHub Actions → predictions.json → static site`
 
 The API key is used only inside the GitHub Actions secret `API_FOOTBALL_KEY`. It is never sent to the browser.
 
-The daily job refreshes fixtures and calculations, keeps historical/H2H data in `data/cache`, and commits the resulting `predictions.json`. The Vercel site only reads that JSON file.
+The daily job refreshes fixtures and calculations, keeps historical/H2H data in `data/cache`, and commits the resulting `predictions.json`. The static site only reads that JSON file.
 
 ## Model
 
@@ -36,6 +36,7 @@ The dashboard displays Over 0.5, Over 1.5 and Over 2.5 goal probabilities.
 
 ## Deployment
 
-The repository is connected to Vercel. Any push to `main` triggers a new static deployment.
+The repository is connected to the static deployment. Any push to `main` triggers a new static deployment.
 
 <!-- BETAVUS data pipeline verified 2026-09-09 -->
+<!-- Calculation run requested 2026-09-09 -->

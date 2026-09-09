@@ -1,5 +1,6 @@
 import csv, io, json, math, re, time, unicodedata
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -7,34 +8,36 @@ OUTPUT_FILE = Path('predictions.json')
 LEAGUES = {'E0':'Premier League','SP1':'LaLiga','D1':'Bundesliga','I1':'Serie A','F1':'Ligue 1','N1':'Eredivisie'}
 HOSTS = ['https://www.football-data.co.uk/mmz4281','https://football-data.co.uk/mmz4281']
 
-# Cross-season / Football-Data naming differences.
+# Football-Data uses short names in many seasons; current fixtures can use longer names.
 ALIASES = {
     # England
-    'manchesterunited': 'manchesterunited', 'manutd': 'manchesterunited', 'manunited': 'manchesterunited',
-    'manchester': 'manchesterunited', 'nottinghamforest': 'nottinghamforest', 'nottmforest': 'nottinghamforest', 'nottforest': 'nottinghamforest',
-    'newcastle': 'newcastleunited', 'newcastleunited': 'newcastleunited', 'newcastleutd': 'newcastleunited',
-    'wolves': 'wolverhamptonwanderers', 'wolverhampton': 'wolverhamptonwanderers', 'wolverhamptonwanderers': 'wolverhamptonwanderers',
-    'westham': 'westhamunited', 'westhamunited': 'westhamunited', 'brighton': 'brightonandhovealbion', 'brightonandhove': 'brightonandhovealbion',
-    'tottenham': 'tottenhamhotspur', 'tottenhamhotspur': 'tottenhamhotspur', 'spurs': 'tottenhamhotspur',
-    'leicester': 'leicestercity', 'leicestercity': 'leicestercity', 'ipswich': 'ipswichtown', 'ipswichtown': 'ipswichtown',
-    'norwich': 'norwichcity', 'norwichcity': 'norwichcity', 'leeds': 'leedsunited', 'leedsunited': 'leedsunited',
+    'manchesterunited':'manchesterunited', 'manutd':'manchesterunited', 'manunited':'manchesterunited', 'manchesterutd':'manchesterunited',
+    'manchestercity':'mancity', 'mancity':'mancity',
+    'nottinghamforest':'nottinghamforest', 'nottmforest':'nottinghamforest', 'nottforest':'nottinghamforest',
+    'newcastle':'newcastleunited', 'newcastleunited':'newcastleunited', 'newcastleutd':'newcastleunited',
+    'wolves':'wolverhamptonwanderers', 'wolverhampton':'wolverhamptonwanderers', 'wolverhamptonwanderers':'wolverhamptonwanderers',
+    'westham':'westhamunited', 'westhamunited':'westhamunited', 'brighton':'brightonandhovealbion', 'brightonandhove':'brightonandhovealbion',
+    'tottenham':'tottenhamhotspur', 'tottenhamhotspur':'tottenhamhotspur', 'spurs':'tottenhamhotspur',
+    'leicester':'leicestercity', 'leicestercity':'leicestercity', 'ipswich':'ipswichtown', 'ipswichtown':'ipswichtown',
+    'norwich':'norwichcity', 'norwichcity':'norwichcity', 'leeds':'leedsunited', 'leedsunited':'leedsunited',
     # Spain
-    'athleticbilbao': 'athleticclub', 'athleticclub': 'athleticclub', 'atleticomadrid': 'atleticomadrid', 'atleticomadrid': 'atleticomadrid',
-    'realbetis': 'realbetis', 'betis': 'realbetis', 'celta': 'celtavigo', 'celtavigo': 'celtavigo',
-    'deportivo': 'deportivoalaves', 'alaves': 'deportivoalaves', 'deportivoalaves': 'deportivoalaves',
+    'athbilbao':'athleticclub', 'athleticbilbao':'athleticclub', 'athleticclub':'athleticclub',
+    'athmadrid':'atleticomadrid', 'atleticomadrid':'atleticomadrid', 'atletico':'atleticomadrid',
+    'realbetis':'realbetis', 'betis':'realbetis', 'celta':'celtavigo', 'celtavigo':'celtavigo',
+    'deportivoalaves':'deportivoalaves', 'alaves':'deportivoalaves',
     # Germany
-    'bayernmunich': 'bayernmunich', 'bayernmunchen': 'bayernmunich', 'bayern': 'bayernmunich',
-    'borussiadortmund': 'borussiadortmund', 'dortmund': 'borussiadortmund', 'borussiamgladbach': 'borussiamgladbach',
-    'monchengladbach': 'borussiamgladbach', 'gladbach': 'borussiamgladbach',
+    'bayernmunich':'bayernmunich', 'bayernmunchen':'bayernmunich', 'bayern':'bayernmunich',
+    'borussiadortmund':'borussiadortmund', 'dortmund':'borussiadortmund',
+    'borussiamgladbach':'borussiamgladbach', 'monchengladbach':'borussiamgladbach', 'mgladbach':'borussiamgladbach', 'gladbach':'borussiamgladbach',
     # Italy
-    'inter': 'inter', 'internazionale': 'inter', 'intermilan': 'inter', 'milan': 'milan', 'acmilan': 'milan',
-    'roma': 'roma', 'asroma': 'roma', 'lazio': 'lazio', 'juventus': 'juventus', 'juve': 'juventus',
+    'inter':'inter', 'internazionale':'inter', 'intermilan':'inter', 'milan':'milan', 'acmilan':'milan',
+    'roma':'roma', 'asroma':'roma', 'lazio':'lazio', 'juventus':'juventus', 'juve':'juventus',
     # France
-    'parissg': 'parissaintgermain', 'psg': 'parissaintgermain', 'parissaintgermain': 'parissaintgermain',
-    'stetienne': 'saintetienne', 'saintetienne': 'saintetienne', 'monaco': 'monaco',
+    'parissg':'parissaintgermain', 'psg':'parissaintgermain', 'parissaintgermain':'parissaintgermain',
+    'stetienne':'saintetienne', 'saintetienne':'saintetienne', 'monaco':'monaco',
     # Netherlands
-    'ajax': 'ajax', 'psv': 'psveindhoven', 'psveindhoven': 'psveindhoven', 'feyenoord': 'feyenoord',
-    'twente': 'fctwente', 'fctwente': 'fctwente', 'az': 'azalkmaar', 'azalkmaar': 'azalkmaar',
+    'ajax':'ajax', 'psv':'psveindhoven', 'psveindhoven':'psveindhoven', 'feyenoord':'feyenoord',
+    'twente':'fctwente', 'fctwente':'fctwente', 'az':'azalkmaar', 'azalkmaar':'azalkmaar',
 }
 
 
@@ -69,7 +72,13 @@ def norm(s):
 
 
 def same_team(a,b):
-    return norm(a)==norm(b)
+    na, nb = norm(a), norm(b)
+    if na == nb:
+        return True
+    # Handles remaining harmless Football-Data abbreviations without making guesses across leagues.
+    if len(na) >= 6 and len(nb) >= 6 and (na in nb or nb in na):
+        return True
+    return SequenceMatcher(None, na, nb).ratio() >= 0.82
 
 
 def same_pair(h1,a1,h2,a2):

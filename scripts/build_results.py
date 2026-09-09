@@ -35,6 +35,9 @@ ARCHIVE_DAYS = 80
 RESULT_DAYS = 21
 DATE_SLACK = 2
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
+# "high confidence" thresholds = the Vurgu levels highlighted on the site; the
+# Sonuçlar tab reports how the picks above these did (the risk-reduced view).
+HI_MIN = {"05": 0.95, "15": 0.85, "25": 0.70}
 
 
 def _f(v):
@@ -122,7 +125,9 @@ def grade(row, total, score, o25_odds, u25_odds):
     for line, key in LINES:
         p = row[key]
         over = total > line
-        hits[f"hit_{str(line).replace('.', '')}"] = int((p >= 0.5) == over)
+        # round the call the same way the % is shown, so "50%" never contradicts
+        # the ✓/✗ next to it
+        hits[f"hit_{str(line).replace('.', '')}"] = int((round(p, 2) >= 0.5) == over)
         truth.append(p if over else 1 - p)
     g["hits"] = hits
     g["success_pct"] = round(sum(truth) / len(truth) * 100, 1)
@@ -144,10 +149,16 @@ def aggregate(rows):
     if not n:
         return {"n": 0}
     agg = {"n": n}
-    for line, _ in LINES:
-        k = f"hit_{str(line).replace('.', '')}"
-        agg[f"acc_{str(line).replace('.', '')}"] = round(
-            100 * sum(r["hits"][k] for r in rows) / n, 1)
+    for line, key in LINES:
+        tag = str(line).replace('.', '')
+        hk = f"hit_{tag}"
+        agg[f"acc_{tag}"] = round(100 * sum(r["hits"][hk] for r in rows) / n, 1)
+        # same, but only the high-confidence picks for this line
+        hi = [r for r in rows if r.get(key, 0) >= HI_MIN[tag]]
+        if hi:
+            agg[f"hi_n_{tag}"] = len(hi)
+            agg[f"hi_acc_{tag}"] = round(
+                100 * sum(r["hits"][hk] for r in hi) / len(hi), 1)
     agg["success_pct"] = round(sum(r["success_pct"] for r in rows) / n, 1)
     val = [r for r in rows if "value_hit" in r]
     if val:

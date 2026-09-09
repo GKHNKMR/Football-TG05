@@ -1,8 +1,10 @@
 name: daily BETAVUS predictions
 
 on:
+  push:
+    branches: [main]
   schedule:
-    - cron: "15 6 * * *"   # Daily 06:15 UTC
+    - cron: "15 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -49,6 +51,9 @@ jobs:
               if missing:
                   print(f"Missing keys: {missing}", file=sys.stderr)
                   sys.exit(1)
+          if not data:
+              print("No fixtures in the current window; keeping the previous file is safer.", file=sys.stderr)
+              sys.exit(2)
           print(f"Validated {len(data)} fixtures")
           PY
 

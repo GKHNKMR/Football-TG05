@@ -69,20 +69,25 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .tile .v{font-size:23px;font-weight:900;letter-spacing:-.5px}
 .tile .k{color:var(--muted);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
 .tile .n{color:var(--muted);font-size:10.5px;margin-top:5px}
-.rhead,.rrow{display:grid;grid-template-columns:52px minmax(160px,1fr) 76px 58px 44px 64px;gap:8px;align-items:center}
-.rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.rhead,.rrow{display:grid;grid-template-columns:48px minmax(150px,1fr) 46px 74px 58px;gap:8px;align-items:center}
+.rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 .rrow .rsc{font-weight:900}
+.hitset{display:flex;gap:6px;font-weight:900}
+.hitset span{width:12px;text-align:center}
 .hit{color:var(--good);font-weight:900}.miss{color:var(--bad);font-weight:900}
-.edge{font-size:10px;color:var(--muted)}
+.edge{font-size:10px;color:var(--muted);font-weight:600}
+.hint{color:var(--muted);font-size:11px;margin:-4px 0 12px;line-height:1.6}
+.hint .badge{margin:0 1px}
+.rsum{color:var(--muted);font-size:11.5px;margin:2px 2px 12px;line-height:1.6}
 @media(max-width:650px){
   .wrap{padding:18px 10px 32px}.brand{font-size:27px}
   .head,.row{grid-template-columns:minmax(0,1fr) 58px 58px 58px;gap:5px}
   .head{padding:10px 8px;font-size:9px}.row{padding:11px 8px}.teams{font-size:13px}.pill{min-width:52px;padding:7px 2px;font-size:12px}
   .tiles{grid-template-columns:1fr 1fr}
-  .rhead,.rrow{grid-template-columns:44px minmax(0,1fr) 62px 48px 34px 52px;gap:5px;font-size:11.5px}
-  .rhead{padding:9px 8px}.rrow{padding:10px 8px}
+  .rhead,.rrow{grid-template-columns:40px minmax(0,1fr) 40px 66px 46px;gap:5px;font-size:11px}
+  .rhead{padding:9px 7px}.rrow{padding:10px 7px}.hitset{gap:4px}
 }
 /* drawer + info modal */
 .sheet-bg{position:fixed;inset:0;background:rgba(3,5,8,.72);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:38px 16px;overflow:auto;z-index:50}
@@ -140,6 +145,14 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
         <span id="count"></span>
       </span>
     </div>
+    <div class="hint">
+      Tahminin dayanağı:
+      <span class="badge b3">●●●</span> H2H + form ·
+      <span class="badge b2">●●</span> form ·
+      <span class="badge b1">●</span> sınırlı veri ·
+      <span class="badge b0">○</span> sadece lig ortalaması
+      — ayrıntı için sağ üstteki <b>?</b>
+    </div>
     <div class="table">
       <div class="head"><div>Maç</div><div>0.5+</div><div>1.5+</div><div>2.5+</div></div>
       <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
@@ -149,7 +162,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   <section id="pane-res" hidden>
     <div id="resSummary"></div>
     <div class="table">
-      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Tahmin</div><div>Sonuç</div><div>2.5Ü</div><div>Başarı</div></div>
+      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div>0.5·1.5·2.5 Üst</div><div>Başarı</div></div>
       <div id="resRows"><div class="loading">Yükleniyor…</div></div>
     </div>
     <div class="foot" id="resFoot"></div>
@@ -246,7 +259,12 @@ function renderPred(){
   </div>`).join('');
 }
 
-function tile(v,k,n){return `<div class="tile"><div class="v">${v}</div><div class="k">${k}</div><div class="n">${n||''}</div></div>`;}
+function lineTile(label,wk,all){
+  return `<div class="tile"><div class="v">${wk!=null?wk+'%':'—'}</div>
+    <div class="k">${label} isabet · 7 gün</div>
+    <div class="n">tüm dönem ${all!=null?all+'%':'—'}</div></div>`;
+}
+function mark(h){return `<span class="${h?'hit':'miss'}">${h?'✓':'✗'}</span>`;}
 function renderResults(){
   const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
   if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';return;}
@@ -254,26 +272,25 @@ function renderResults(){
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
   const w=RESULTS.last_week||{},o=RESULTS.overall||{};
   wrap.innerHTML=`<div class="tiles">
-    ${tile((w.acc_25??'—')+'%','2.5Ü isabet · son 7 gün',(w.n||0)+' maç')}
-    ${tile((w.success_pct??'—')+'%','ortalama başarı','model doğruya koyduğu olasılık')}
-    ${tile((o.acc_25??'—')+'%','2.5Ü · tüm dönem',(o.n||0)+' maç · '+RESULTS.result_days+' gün')}
-  </div>`;
+    ${lineTile('0.5+',w.acc_05,o.acc_05)}
+    ${lineTile('1.5+',w.acc_15,o.acc_15)}
+    ${lineTile('2.5+',w.acc_25,o.acc_25)}
+  </div>
+  <div class="rsum">Son 7 gün: <b>${w.n||0} maç</b> · ortalama başarı <b>%${w.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b> · tüm dönem ${o.n||0} maç / ${RESULTS.result_days} gün${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}</div>`;
   if(!ms.length){body.innerHTML='<div class="empty"><strong>Bu lig için sonuç yok</strong></div>';foot.textContent='';return;}
   body.innerHTML=ms.map(m=>{
-    const ok=m.hits&&m.hits.hit_25;
+    const H=m.hits||{};
     const edge=('edge25'in m)?`<div class="edge">edge ${m.edge25>=0?'+':''}${Math.round(m.edge25*100)}%</div>`:'';
     return `<div class="rrow">
       <div>${shortDate(m.kickoff_utc)}</div>
-      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}</div>
-      <div>λ ${m.pred_lambda??'—'}<br><span class="edge">2.5Ü ${pctI(m.p_over_2_5)}</span></div>
+      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">λ ${m.pred_lambda??'—'} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
-      <div class="${ok?'hit':'miss'}">${ok?'✓':'✗'}</div>
+      <div class="hitset">${mark(H.hit_05)}${mark(H.hit_15)}${mark(H.hit_25)}</div>
       <div>%${m.success_pct}${edge}</div>
     </div>`;
   }).join('');
   const rc=RESULTS.reconstructed_count||0;
-  foot.innerHTML=`Son ${RESULTS.result_days} gün · λ ortalama hata ${o.lambda_mae??'—'} gol`+
-    (o.value_acc!=null?` · piyasaya karşı yön isabeti %${o.value_acc}`:'')+
+  foot.innerHTML=`"0.5·1.5·2.5 Üst" sütunu: modelin o çizgide Üst/Alt yönünü doğru bilip bilmediği. "Başarı" üç çizginin ortalaması (modelin gerçekleşen sonuca koyduğu olasılık).`+
     (rc?`<br>* ${rc} maç geriye dönük, sızıntısız hesaplandı (arşiv dolana kadar). İlerisi gerçek tahmin arşividir.`:'');
 }
 

@@ -1,27 +1,23 @@
-# .github/workflows/update.yml
-name: weekly update predictions
+name: daily BETAVUS predictions
 
 on:
   schedule:
-    - cron: "0 6 * * FRI"   # Every Friday 06:00 UTC
-  workflow_dispatch:        # Allow manual trigger
+    - cron: "15 6 * * *"   # Daily 06:15 UTC
+  workflow_dispatch:
 
 permissions:
-  contents: write           # Needed to commit/push predictions.json
+  contents: write
 
 concurrency:
-  group: update-predictions
+  group: betavus-predictions
   cancel-in-progress: false
 
 jobs:
   build-and-update:
     runs-on: ubuntu-latest
-
     env:
       PYTHONUNBUFFERED: "1"
-      # Read API key from GitHub Secrets (configure in Repo Settings)
       API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,47 +26,40 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Build predictions
+        run: python scripts/update_predictions.py
 
-      - name: Generate predictions (API mode)
-        # If API fails/returns empty, you can comment this and keep your manual predictions.json.
-        run: |
-          python over05_prediction.py --from $(date -u +'%Y-%m-%d') --to $(date -u -d '+7 days' +'%Y-%m-%d')
-
-      - name: Validate predictions.json (non-empty guard)
+      - name: Validate predictions
         run: |
           python - << 'PY'
-          import json, sys, pathlib
-          p = pathlib.Path("predictions.json")
+          import json, sys
+          from pathlib import Path
+          p = Path("predictions.json")
           if not p.exists():
-              print("ERROR: predictions.json not found", file=sys.stderr); sys.exit(1)
+              print("predictions.json missing", file=sys.stderr)
+              sys.exit(1)
           data = json.loads(p.read_text(encoding="utf-8"))
           if not isinstance(data, list):
-              print("ERROR: root is not a list", file=sys.stderr); sys.exit(1)
-          if len(data) == 0:
-              print("ERROR: predictions.json is empty; refusing to commit", file=sys.stderr); sys.exit(2)
-          need = {"league","home","away","p_over_0_5"}
+              print("predictions.json must contain a list", file=sys.stderr)
+              sys.exit(1)
+          required = {"match_id", "league", "home", "away", "kickoff_utc", "p_over_0_5", "p_over_1_5", "p_over_2_5"}
           if data:
-              missing = need - set(data[0].keys())
+              missing = required - set(data[0])
               if missing:
-                  print("ERROR: missing keys:", missing, file=sys.stderr); sys.exit(1)
-          print(f"OK. items={len(data)}")
+                  print(f"Missing keys: {missing}", file=sys.stderr)
+                  sys.exit(1)
+          print(f"Validated {len(data)} fixtures")
           PY
 
-      - name: Commit and push if changed
-        if: success()    # only commit when previous step passed
+      - name: Commit updated data
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add predictions.json
+          git add predictions.json data/cache
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No data changes."
           else
-            git commit -m "Weekly predictions update: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git commit -m "Update BETAVUS predictions $(date -u +'%Y-%m-%d')"
             git push
           fi

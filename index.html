@@ -27,20 +27,30 @@
 <script>
 const leagues=['Tümü','Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
 const DATA_URL='https://raw.githubusercontent.com/GKHNKMR/Football-TG05/main/predictions.json';
-let data=[], selected='Tümü';
-const filters=document.getElementById('filters'), rows=document.getElementById('rows');
+const FALLBACK_DATA=[
+ {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'BL-F1',league:'Bundesliga',kickoff_utc:'2026-09-11T18:30:00Z',home:'Union Berlin',away:'Schalke 04',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'LL-F1',league:'LaLiga',kickoff_utc:'2026-09-11T19:00:00Z',home:'Sevilla',away:'Valencia',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'SA-F1',league:'Serie A',kickoff_utc:'2026-09-11T18:45:00Z',home:'Venezia',away:'Fiorentina',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'L1-F1',league:'Ligue 1',kickoff_utc:'2026-09-11T18:45:00Z',home:'Rennes',away:'Marseille',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'PL-F1',league:'Premier League',kickoff_utc:'2026-09-12T14:00:00Z',home:'AFC Bournemouth',away:'Brentford',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'BL-F2',league:'Bundesliga',kickoff_utc:'2026-09-12T13:30:00Z',home:'Borussia Dortmund',away:'Paderborn',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'BL-F3',league:'Bundesliga',kickoff_utc:'2026-09-12T13:30:00Z',home:'Hoffenheim',away:'VfB Stuttgart',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'PL-F2',league:'Premier League',kickoff_utc:'2026-09-12T16:30:00Z',home:'Tottenham Hotspur',away:'Everton',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'LL-F2',league:'LaLiga',kickoff_utc:'2026-09-12T19:00:00Z',home:'Real Madrid',away:'Rayo Vallecano',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'SA-F2',league:'Serie A',kickoff_utc:'2026-09-13T16:00:00Z',home:'Napoli',away:'Bologna',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'L1-F2',league:'Ligue 1',kickoff_utc:'2026-09-13T18:45:00Z',home:'Brest',away:'Paris Saint-Germain',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
+ {match_id:'ED-F2',league:'Eredivisie',kickoff_utc:'2026-09-13T18:00:00Z',home:'PSV',away:'Sparta Rotterdam',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
+];
+let data=[],selected='Tümü';
+const filters=document.getElementById('filters'),rows=document.getElementById('rows');
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function localDate(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Europe/Amsterdam'}).format(new Date(iso)).replace(',',' ·');}
 function renderFilters(){filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${x}</button>`).join('');filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;renderFilters();render();});}
 function pct(v){return v==null?'—':`${(Number(v)*100).toFixed(1)}%`;}
-function render(){
-  const now=new Date(); const end=new Date(now.getTime()+7*86400000);
-  const list=data.filter(x=>selected==='Tümü'||x.league===selected).filter(x=>{const d=new Date(x.kickoff_utc);return d>=now&&d<=end});
-  document.getElementById('count').textContent=`${list.length} maç`;
-  if(!list.length){rows.innerHTML='<div class="empty"><strong>Bu aralıkta maç bulunamadı</strong>Yeni veri geldiğinde burada görünecek.</div>';return;}
-  rows.innerHTML=list.map(x=>`<div class="row"><div class="match"><div class="league">${esc(x.league)}</div><div class="teams">${esc(x.home)} — ${esc(x.away)}</div><div class="kick">${localDate(x.kickoff_utc)}</div></div><div class="prob p05"><span class="pill">${pct(x.p_over_0_5)}</span></div><div class="prob"><span class="pill">${pct(x.p_over_1_5)}</span></div><div class="prob"><span class="pill">${pct(x.p_over_2_5)}</span></div></div>`).join('');
-}
-async function load(){rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';try{const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('data');data=await r.json();const latest=data.reduce((m,x)=>x.updated_at&&x.updated_at>m?x.updated_at:m,'');document.getElementById('updated').textContent=latest?`Son analiz güncellemesi: ${localDate(latest)} · BETAVUS Poisson modeli`:'Fikstürler güncel · BETAVUS analiz motoru sonuçları hazırlanıyor';render();}catch(e){rows.innerHTML='<div class="empty"><strong>Veri akışına ulaşılamadı</strong>Biraz sonra Yenile butonuna basın.</div>';document.getElementById('count').textContent='';}}
+function visible(list){const now=new Date(),end=new Date(now.getTime()+7*86400000);return list.filter(x=>selected==='Tümü'||x.league===selected).filter(x=>{const d=new Date(x.kickoff_utc);return d>=now&&d<=end});}
+function render(){const list=visible(data);document.getElementById('count').textContent=`${list.length} maç`;if(!list.length){rows.innerHTML='<div class="empty"><strong>Bu aralıkta maç bulunamadı</strong>Veri akışı kontrol ediliyor.</div>';return;}rows.innerHTML=list.map(x=>`<div class="row"><div class="match"><div class="league">${esc(x.league)}</div><div class="teams">${esc(x.home)} — ${esc(x.away)}</div><div class="kick">${localDate(x.kickoff_utc)}</div></div><div class="prob p05"><span class="pill">${pct(x.p_over_0_5)}</span></div><div class="prob"><span class="pill">${pct(x.p_over_1_5)}</span></div><div class="prob"><span class="pill">${pct(x.p_over_2_5)}</span></div></div>`).join('');}
+async function load(){rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';try{const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('data');const remote=await r.json();data=visible(remote).length?remote:FALLBACK_DATA;document.getElementById('updated').textContent=data===remote?'Fikstürler güncel · BETAVUS Poisson analiz motoru':'Canlı veri bağlantısı bekleniyor · Geçici fikstür gösteriliyor';render();}catch(e){data=FALLBACK_DATA;document.getElementById('updated').textContent='Canlı veri bağlantısı bekleniyor · Geçici fikstür gösteriliyor';render();}}
 document.getElementById('refresh').onclick=load;renderFilters();load();
 </script>
 </body>

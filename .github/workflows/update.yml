@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONUNBUFFERED: "1"
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,6 +29,11 @@ jobs:
           python-version: "3.11"
       - name: Build predictions
         run: python scripts/update_predictions.py
+      - name: Refresh football-data.co.uk CSVs
+        run: python scripts/fetch_football_data.py
+        continue-on-error: true
+      - name: Build match stats
+        run: python scripts/build_match_stats.py
       - name: Validate predictions
         run: |
           python - << 'PY'
@@ -49,7 +53,7 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add predictions.json data/cache
+          git add predictions.json data/cache data/football-data data/match-stats.json
           if git diff --cached --quiet; then
             echo "No data changes."
           else

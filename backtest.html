@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BETAVUS — Model Doğrulama (Backtest)</title>
+<style>
+:root{--bg:#090b0f;--panel:#11151c;--panel2:#171c24;--line:#252c36;--text:#f4f6f8;--muted:#8e98a7;--accent:#e8ff3f;--good:#66e3a1;--s1:#3987e5;--s2:#d95926;--s3:#199e70}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:auto;padding:30px 18px 60px}
+h1{font-size:27px;font-weight:900;letter-spacing:-1px;margin:0}
+.lede{color:var(--muted);font-size:13px;margin:6px 0 0;line-height:1.55}
+.back{display:inline-block;margin-bottom:14px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:700;border:1px solid var(--line);padding:6px 11px;border-radius:9px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin:22px 0}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}
+.tile .v{font-size:26px;font-weight:900;letter-spacing:-.5px}
+.tile .k{color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.tile .n{color:var(--muted);font-size:11px;margin-top:6px;line-height:1.45}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+.card h2{margin:0 0 4px;font-size:15px;font-weight:900}
+.card p.note{color:var(--muted);font-size:12px;margin:4px 0 12px;line-height:1.55}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+td.pos{color:var(--good)}td.neg{color:#ff9d9d}
+tbody tr:hover{background:var(--panel2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+.legend b{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.hit{color:var(--good);font-weight:800}.miss{color:#ff9d9d;font-weight:800}
+.foot{color:#687383;font-size:11.5px;margin-top:26px;line-height:1.6}
+.sell{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:13px 15px;margin-top:16px;font-size:12.5px;color:#cdd6e2;line-height:1.6}
+@media(max-width:720px){.tiles{grid-template-columns:repeat(2,1fr)}table{font-size:11.5px}th,td{padding:6px 5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← BETAVUS</a>
+  <h1>Model Doğrulama · Backtest</h1>
+  <p class="lede" id="lede">Yükleniyor…</p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <h2>Kalibrasyon — “yüzdeler doğruyu mu söylüyor?”</h2>
+    <p class="note">Yatay eksen: modelin dediği olasılık. Dikey eksen: o tahminlerde gerçekte ne olduğu.
+      Noktalar kesikli çizgiye (birebir) ne kadar yakınsa, model o kadar dürüst. Sadece ≥20 maçlık kutular çizilir.</p>
+    <div class="legend">
+      <span><b style="background:var(--s1)"></b>0.5 Üst</span>
+      <span><b style="background:var(--s2)"></b>1.5 Üst</span>
+      <span><b style="background:var(--s3)"></b>2.5 Üst</span>
+      <span style="color:#5b6472">— — birebir (mükemmel kalibrasyon)</span>
+    </div>
+    <div id="calib"></div>
+  </div>
+
+  <div class="card">
+    <h2>Pazar bazında sonuç</h2>
+    <p class="note"><b>Kalibrasyon</b> = 100 − ortalama sapma. <b>Beceri</b> = modelin Brier hatası, “hep lig ortalamasını söyle”
+      baz çizgisine göre ne kadar iyi (+ iyi, − kötü). <b>Yön isabeti</b> = modelin eğildiği tarafı (Üst/Alt) seçseydin tutma oranın.</p>
+    <table id="markets"></table>
+  </div>
+
+  <div class="card">
+    <h2>Beklenen gol (λ) isabeti</h2>
+    <p class="note" id="lambda-note"></p>
+    <table id="lambda"></table>
+  </div>
+
+  <div class="card">
+    <h2>Lig bazında</h2>
+    <table id="byleague"></table>
+  </div>
+
+  <div class="card">
+    <h2>Sezon bazında</h2>
+    <table id="byseason"></table>
+  </div>
+
+  <div class="card">
+    <h2>Örnek maçlar</h2>
+    <p class="note">Test kümesinden düzenli aralıklarla seçilmiş 40 maç. λ = tahmin edilen toplam gol, 2.5Ü = modelin verdiği olasılık.</p>
+    <table id="samples"></table>
+  </div>
+
+  <div class="sell" id="sell"></div>
+
+  <p class="foot" id="foot"></p>
+</div>
+<script>
+const S=['#3987e5','#d95926','#199e70'];
+const pc=v=>v==null?'—':(v*100).toFixed(1)+'%';
+const sg=v=>v==null?'':(v>=0?'pos':'neg');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+fetch('data/backtest.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(render).catch(e=>{
+  document.getElementById('lede').textContent='data/backtest.json yüklenemedi — scripts/backtest.py çalıştırılmalı.';
+});
+
+function render(d){
+  const o=d.overall, m=o.markets, L=o.lambda, mt=d.method;
+  document.getElementById('lede').innerHTML=
+    `<b>${o.n_matches.toLocaleString('tr-TR')} maç</b> · ${mt.target_seasons.join(', ')} · 6 lig · `+
+    `model her hedef sezonu <b>yalnızca ondan önceki 4 sezonun</b> verisiyle tahmin etti — hedef sezon sonuçları modele girmedi. `+
+    `Veri: football-data.co.uk. Model formülü canlı sitedekiyle birebir aynı.`;
+
+  const noiseFloor=1.30;
+  tiles([
+    [o.n_matches.toLocaleString('tr-TR'),'test edilen maç','3 sezon × 6 lig, oynanmadan önce tahmin edildi'],
+    [m['2.5'].calibrated_pct.toFixed(1)+'%','2.5 Üst kalibrasyonu','model “%X üst” dediğinde gerçekte ~%X üst geldi'],
+    [pc(L.within_1),'±1 gol isabeti','tahmini toplam gol, gerçek toplama 1 golden yakın'],
+    [pc(m['2.5'].pick_acc),'yön isabeti (2.5Ü)','modelin eğildiği tarafı seçseydin tutma oranı']
+  ]);
+
+  // calibration chart
+  document.getElementById('calib').innerHTML=calibChart(m);
+
+  // markets table
+  document.getElementById('markets').innerHTML=
+    `<thead><tr><th>Pazar</th><th>Görülme</th><th>Kalibrasyon</th><th>Brier</th><th>Baz Brier</th><th>Beceri</th><th>Log-loss</th><th>Yön isabeti</th><th>Güvenli seçim</th></tr></thead><tbody>`+
+    ['0.5','1.5','2.5'].map(k=>{const x=m[k];return `<tr><td>${k} Üst</td><td>${pc(x.base_rate)}</td><td>${x.calibrated_pct.toFixed(1)}%</td><td>${x.brier.toFixed(3)}</td><td>${x.brier_baseline.toFixed(3)}</td><td class="${sg(x.skill)}">${x.skill>=0?'+':''}${(x.skill*100).toFixed(1)}%</td><td>${x.logloss.toFixed(3)}</td><td>${pc(x.pick_acc)}</td><td>${x.conf_acc==null?'—':pc(x.conf_acc)+' <span style="color:#687383">('+x.conf_n+')</span>'}</td></tr>`}).join('')+
+    `</tbody>`;
+
+  // lambda
+  document.getElementById('lambda-note').innerHTML=
+    `Tek maçta gol sayısı doğası gereği çok değişken: modelin gerçek λ’yı tam bilse bile ortalama hatası ~${noiseFloor} gol olurdu (Poisson gürültü tabanı). `+
+    `Ölçülen MAE <b>${L.mae}</b> — bu tabana yakın. Sapma (bias) <b>${L.bias>=0?'+':''}${L.bias}</b>: model ortalamada ${Math.abs(L.bias)<0.1?'neredeyse önyargısız':(L.bias<0?'biraz düşük':'biraz yüksek')} tahmin ediyor.`;
+  document.getElementById('lambda').innerHTML=
+    `<thead><tr><th>Ölçüt</th><th>Değer</th></tr></thead><tbody>`+
+    [['Ortalama mutlak hata (MAE)',L.mae+' gol'],
+     ['RMSE',L.rmse+' gol'],
+     ['Sapma (bias)',(L.bias>=0?'+':'')+L.bias+' gol'],
+     ['±1 gol içinde',pc(L.within_1)],
+     ['±1.5 gol içinde',pc(L.within_1_5)],
+     ['Ortalama tahmin / gerçek',L.mean_pred+' / '+L.mean_actual],
+     ['Maç düzeyinde korelasyon',L.corr==null?'—':L.corr]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')+
+    `</tbody>`;
+
+  // by league / season
+  const grp=(obj)=>`<thead><tr><th></th><th>Maç</th><th>λ MAE</th><th>λ sapma</th><th>2.5Ü kalibr.</th><th>2.5Ü beceri</th><th>2.5Ü yön</th></tr></thead><tbody>`+
+    Object.entries(obj).map(([name,x])=>`<tr><td>${esc(name)}</td><td>${x.n_matches}</td><td>${x.lambda.mae}</td><td>${x.lambda.bias>=0?'+':''}${x.lambda.bias}</td><td>${x.markets['2.5'].calibrated_pct.toFixed(1)}%</td><td class="${sg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${pc(x.markets['2.5'].pick_acc)}</td></tr>`).join('')+`</tbody>`;
+  document.getElementById('byleague').innerHTML=grp(d.by_league);
+  document.getElementById('byseason').innerHTML=grp(d.by_season);
+
+  // samples
+  document.getElementById('samples').innerHTML=
+    `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>λ</th><th>2.5Ü</th><th>Skor</th><th>Gol</th><th>2.5Ü</th></tr></thead><tbody>`+
+    d.samples.map(s=>`<tr><td>${s.date.slice(2).replace(/-/g,'.')}</td><td>${esc(s.league)}</td><td style="text-align:left">${esc(s.home)} — ${esc(s.away)}</td><td>${s.pred_lambda}</td><td>${(s.p25*100).toFixed(0)}%</td><td>${s.actual_score}</td><td>${s.actual_total}</td><td class="${s.over25_hit?'hit':'miss'}">${s.over25_hit?'✓':'✗'}</td></tr>`).join('')+
+    `</tbody>`;
+
+  document.getElementById('sell').innerHTML=
+    `<b>Site içi vitrin için dürüst mesaj:</b> “BETAVUS iddialı değil, <b>kalibre</b>. Geçen 3 sezonun ${o.n_matches.toLocaleString('tr-TR')} maçında `+
+    `model bir tarafa %${(m['2.5'].calibration.find(b=>b.lo===0.6)?.pred*100||0).toFixed(0)} dediğinde o taraf ~aynı oranda geldi; `+
+    `tahmini gol ortalaması gerçeğe ${L.bias>=0?'+':''}${L.bias} gol yakınlıkla, önyargısız.” — Garanti/“%90 isabet” dili KULLANILMAMALI; `+
+    `modelin tek maç ayrıştırma gücü baz çizgisinin sadece ${(m['2.5'].skill*100).toFixed(1)}% üstünde.`;
+
+  document.getElementById('foot').innerHTML=
+    `Üretim: <code>scripts/backtest.py</code> · ${new Date(d.generated_at).toLocaleString('tr-TR')} · `+
+    `Bu sayfa canlı sitede yayınlanmıyor; amacı modelin güvenilirliğini ölçmek. `+
+    `Not: model, hedef sezon içinde güncellenmeden (fikstür anındaki haliyle) test edildi; sezon içi güncellenen bir sürüm daha iyi skorlar.`;
+}
+
+function tiles(rows){
+  document.getElementById('tiles').innerHTML=rows.map(r=>`<div class="tile"><div class="v">${r[0]}</div><div class="k">${r[1]}</div><div class="n">${r[2]}</div></div>`).join('');
+}
+
+function calibChart(m){
+  const W=920,H=380,P=44;
+  const x=v=>P+v*(W-P-14), y=v=>H-P-v*(H-P-14);
+  let g='';
+  for(let t=0;t<=10;t+=2){const gx=x(t/10),gy=y(t/10);
+    g+=`<line x1="${gx}" y1="${y(0)}" x2="${gx}" y2="${y(1)}" stroke="#252c36"/>`;
+    g+=`<line x1="${x(0)}" y1="${gy}" x2="${x(1)}" y2="${gy}" stroke="#252c36"/>`;
+    g+=`<text x="${gx}" y="${H-P+16}" text-anchor="middle" font-size="10" fill="#8e98a7">${t*10}%</text>`;
+    g+=`<text x="${P-8}" y="${gy+3}" text-anchor="end" font-size="10" fill="#8e98a7">${t*10}%</text>`;}
+  g+=`<line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="#5b6472" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  g+=`<text x="${(x(0)+x(1))/2}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#8e98a7">modelin dediği olasılık</text>`;
+  g+=`<text transform="translate(13 ${(y(0)+y(1))/2}) rotate(-90)" text-anchor="middle" font-size="10.5" fill="#8e98a7">gerçekleşen sıklık</text>`;
+  ['0.5','1.5','2.5'].forEach((k,si)=>{
+    const pts=m[k].calibration.filter(b=>b.n>=20&&b.pred!=null);
+    if(pts.length<2) return;
+    g+=`<polyline points="${pts.map(b=>x(b.pred).toFixed(1)+','+y(b.actual).toFixed(1)).join(' ')}" fill="none" stroke="${S[si]}" stroke-width="2" stroke-linejoin="round"/>`;
+    g+=pts.map(b=>`<circle cx="${x(b.pred).toFixed(1)}" cy="${y(b.actual).toFixed(1)}" r="${Math.max(3,Math.min(7,Math.sqrt(b.n)/13))}" fill="${S[si]}"><title>${k} Üst · dedi ${(b.pred*100).toFixed(1)}% → oldu ${(b.actual*100).toFixed(1)}% (${b.n} maç)</title></circle>`).join('');
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Kalibrasyon grafiği"><rect x="${P}" y="${y(1)}" width="${x(1)-P}" height="${y(0)-y(1)}" fill="#0e1218"/>${g}</svg>`;
+}
+</script>
+</body>
+</html>

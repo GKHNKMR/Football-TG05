@@ -1,0 +1,17 @@
+# Vercel serves this repo as a plain static site (see vercel.json).
+# Nothing below is needed at runtime — it exists for the daily GitHub Actions
+# build — so keep it out of the deployment and out of Python auto-detection.
+
+app.py
+over05_prediction.py
+requirements.txt
+runtime.txt
+scripts/
+.github/
+
+# Historical datasets used only by the build scripts, not by the pages.
+data/football-data/
+data/cache/
+
+# Backtest CSV is not fetched by any page.
+data/backtest-pl-2526.csv

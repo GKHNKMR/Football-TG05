@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 BASE_URL = "https://v3.football.api-sports.io"
 API_KEY = os.environ.get("API_FOOTBALL_KEY", "").strip()
@@ -24,24 +25,46 @@ LEAGUES = {
     88: "Eredivisie",
 }
 SEASONS = [2022, 2023, 2024, 2025, 2026]
+MIN_SECONDS_BETWEEN_CALLS = 6.2  # Free plan: 10 requests/minute.
+_last_request_at = 0.0
 
 
 def api_get(path, params):
+    global _last_request_at
     if not API_KEY:
         raise RuntimeError("API_FOOTBALL_KEY is missing")
     query = urlencode(params)
     req = Request(f"{BASE_URL}{path}?{query}", headers={"x-apisports-key": API_KEY})
     for attempt in range(3):
+        wait = MIN_SECONDS_BETWEEN_CALLS - (time.monotonic() - _last_request_at)
+        if wait > 0:
+            time.sleep(wait)
         try:
-            with urlopen(req, timeout=30) as response:
+            with urlopen(req, timeout=45) as response:
+                _last_request_at = time.monotonic()
                 payload = json.loads(response.read().decode("utf-8"))
             if payload.get("errors"):
-                raise RuntimeError(str(payload["errors"]))
+                errors = payload["errors"]
+                if "rateLimit" in str(errors):
+                    time.sleep(65)
+                    continue
+                raise RuntimeError(str(errors))
             return payload.get("response", [])
-        except Exception:
+        except HTTPError as exc:
+            _last_request_at = time.monotonic()
+            if exc.code == 429:
+                print("API rate limit reached; waiting 65 seconds...")
+                time.sleep(65)
+                continue
             if attempt == 2:
                 raise
-            time.sleep(2 * (attempt + 1))
+            time.sleep(5)
+        except Exception:
+            _last_request_at = time.monotonic()
+            if attempt == 2:
+                raise
+            time.sleep(5)
+    raise RuntimeError("API request failed after retries")
 
 
 def load_json(path, default):
@@ -63,9 +86,7 @@ def fixture_date(f):
 
 
 def completed(f):
-    return f.get("fixture", {}).get("status", {}).get("short") in {
-        "FT", "AET", "PEN"
-    }
+    return f.get("fixture", {}).get("status", {}).get("short") in {"FT", "AET", "PEN"}
 
 
 def goals(f):
@@ -79,7 +100,6 @@ def goals(f):
 def weighted_mean(values):
     if not values:
         return None
-    # Newest match receives the highest weight: 5,4,3,2,1.
     values = values[:5]
     weights = list(range(len(values), 0, -1))
     return sum(v * w for v, w in zip(values, weights)) / sum(weights)
@@ -121,12 +141,7 @@ def season_fixtures(league_id, season):
 
 
 def current_fixtures(league_id, start, end):
-    return api_get("/fixtures", {
-        "league": league_id,
-        "season": 2026,
-        "from": start,
-        "to": end,
-    })
+    return api_get("/fixtures", {"league": league_id, "season": 2026, "from": start, "to": end})
 
 
 def h2h_matches(home_id, away_id, cache):
@@ -134,11 +149,7 @@ def h2h_matches(home_id, away_id, cache):
     if key in cache:
         return cache[key]
     try:
-        data = api_get("/fixtures/headtohead", {
-            "h2h": f"{home_id}-{away_id}",
-            "last": 10,
-        })
-        # Store only completed matches; keep raw fixture objects small enough for git.
+        data = api_get("/fixtures/headtohead", {"h2h": f"{home_id}-{away_id}", "last": 10})
         result = [f for f in data if completed(f) and goals(f) is not None]
         cache[key] = result[:10]
         return cache[key]
@@ -153,7 +164,6 @@ def build_stats(all_fixtures, start_dt, end_dt):
     team_home = defaultdict(list)
     team_away = defaultdict(list)
     league_totals = []
-
     for f in all_fixtures:
         if not completed(f):
             continue
@@ -171,12 +181,10 @@ def build_stats(all_fixtures, start_dt, end_dt):
             team_all[away_id].append((dt, total))
             team_home[home_id].append((dt, total))
             team_away[away_id].append((dt, total))
-
     for d in (team_all, team_home, team_away):
         for team_id in d:
             d[team_id].sort(key=lambda x: x[0], reverse=True)
             d[team_id] = [v for _, v in d[team_id]]
-
     return team_all, team_home, team_away, league_totals
 
 
@@ -202,15 +210,12 @@ def expected_total(f, stats, h2h_avg, league_avg):
     team_all, team_home, team_away, _ = stats
     home_id = f["teams"]["home"]["id"]
     away_id = f["teams"]["away"]["id"]
-
     candidates = []
-    for d in (team_all,):
-        if team_all.get(home_id):
-            candidates.append(weighted_mean(team_all[home_id]))
-        if team_all.get(away_id):
-            candidates.append(weighted_mean(team_all[away_id]))
+    if team_all.get(home_id):
+        candidates.append(weighted_mean(team_all[home_id]))
+    if team_all.get(away_id):
+        candidates.append(weighted_mean(team_all[away_id]))
     base = sum(candidates) / len(candidates) if candidates else None
-
     split = []
     if team_home.get(home_id):
         split.append(weighted_mean(team_home[home_id]))
@@ -219,39 +224,32 @@ def expected_total(f, stats, h2h_avg, league_avg):
     if split:
         split_avg = sum(split) / len(split)
         base = split_avg if base is None else 0.70 * base + 0.30 * split_avg
-
     if h2h_avg is not None:
         base = h2h_avg if base is None else 0.55 * base + 0.45 * h2h_avg
-
     if league_avg is not None:
         base = league_avg if base is None else 0.65 * base + 0.35 * league_avg
-
     return max(0.25, min(5.5, base if base is not None else 2.5))
 
 
 def main():
     if not API_KEY:
         raise SystemExit("API_FOOTBALL_KEY is required")
-
     now = datetime.now(timezone.utc)
     end = now + timedelta(days=7)
     start_s = now.date().isoformat()
     end_s = end.date().isoformat()
     history_from = now - timedelta(days=365)
 
-    all_history = {}
     stats_by_league = {}
     league_baselines = {}
     for league_id in LEAGUES:
         seasons = [season_fixtures(league_id, s) for s in SEASONS]
-        all_history[league_id] = seasons
         merged = [f for season in seasons for f in season]
         stats_by_league[league_id] = build_stats(merged, history_from, now)
         league_baselines[league_id] = league_average(seasons)
 
     h2h_cache = load_json(H2H_FILE, {})
     output = []
-
     for league_id, league_name in LEAGUES.items():
         fixtures = current_fixtures(league_id, start_s, end_s)
         print(f"{league_name}: {len(fixtures)} fixtures")
@@ -263,11 +261,7 @@ def main():
             home = f["teams"]["home"]
             away = f["teams"]["away"]
             h2h = h2h_matches(home["id"], away["id"], h2h_cache)
-            h2h_avg = h2h_average(h2h)
-            lam = expected_total(f, stats, h2h_avg, league_baselines[league_id])
-            p05 = poisson_tail(lam, 0.5)
-            p15 = poisson_tail(lam, 1.5)
-            p25 = poisson_tail(lam, 2.5)
+            lam = expected_total(f, stats, h2h_average(h2h), league_baselines[league_id])
             output.append({
                 "match_id": str(f["fixture"]["id"]),
                 "league_id": league_id,
@@ -275,14 +269,13 @@ def main():
                 "kickoff_utc": f["fixture"]["date"],
                 "home": home["name"],
                 "away": away["name"],
-                "p_over_0_5": round(p05, 4),
-                "p_over_1_5": round(p15, 4),
-                "p_over_2_5": round(p25, 4),
+                "p_over_0_5": round(poisson_tail(lam, 0.5), 4),
+                "p_over_1_5": round(poisson_tail(lam, 1.5), 4),
+                "p_over_2_5": round(poisson_tail(lam, 2.5), 4),
                 "lambda_total": round(lam, 3),
-                "label": label(p05),
+                "label": label(poisson_tail(lam, 0.5)),
                 "updated_at": now.isoformat(),
             })
-
     output.sort(key=lambda x: x["kickoff_utc"])
     save_json(H2H_FILE, h2h_cache)
     save_json(OUTPUT_FILE, output)

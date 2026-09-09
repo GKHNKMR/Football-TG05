@@ -1,4 +1,4 @@
-import csv, io, json, math, time
+import csv, io, json, math, re, time, unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -6,6 +6,36 @@ from urllib.request import Request, urlopen
 OUTPUT_FILE = Path('predictions.json')
 LEAGUES = {'E0':'Premier League','SP1':'LaLiga','D1':'Bundesliga','I1':'Serie A','F1':'Ligue 1','N1':'Eredivisie'}
 HOSTS = ['https://www.football-data.co.uk/mmz4281','https://football-data.co.uk/mmz4281']
+
+# Cross-season / Football-Data naming differences.
+ALIASES = {
+    # England
+    'manchesterunited': 'manchesterunited', 'manutd': 'manchesterunited', 'manunited': 'manchesterunited',
+    'manchester': 'manchesterunited', 'nottinghamforest': 'nottinghamforest', 'nottmforest': 'nottinghamforest', 'nottforest': 'nottinghamforest',
+    'newcastle': 'newcastleunited', 'newcastleunited': 'newcastleunited', 'newcastleutd': 'newcastleunited',
+    'wolves': 'wolverhamptonwanderers', 'wolverhampton': 'wolverhamptonwanderers', 'wolverhamptonwanderers': 'wolverhamptonwanderers',
+    'westham': 'westhamunited', 'westhamunited': 'westhamunited', 'brighton': 'brightonandhovealbion', 'brightonandhove': 'brightonandhovealbion',
+    'tottenham': 'tottenhamhotspur', 'tottenhamhotspur': 'tottenhamhotspur', 'spurs': 'tottenhamhotspur',
+    'leicester': 'leicestercity', 'leicestercity': 'leicestercity', 'ipswich': 'ipswichtown', 'ipswichtown': 'ipswichtown',
+    'norwich': 'norwichcity', 'norwichcity': 'norwichcity', 'leeds': 'leedsunited', 'leedsunited': 'leedsunited',
+    # Spain
+    'athleticbilbao': 'athleticclub', 'athleticclub': 'athleticclub', 'atleticomadrid': 'atleticomadrid', 'atleticomadrid': 'atleticomadrid',
+    'realbetis': 'realbetis', 'betis': 'realbetis', 'celta': 'celtavigo', 'celtavigo': 'celtavigo',
+    'deportivo': 'deportivoalaves', 'alaves': 'deportivoalaves', 'deportivoalaves': 'deportivoalaves',
+    # Germany
+    'bayernmunich': 'bayernmunich', 'bayernmunchen': 'bayernmunich', 'bayern': 'bayernmunich',
+    'borussiadortmund': 'borussiadortmund', 'dortmund': 'borussiadortmund', 'borussiamgladbach': 'borussiamgladbach',
+    'monchengladbach': 'borussiamgladbach', 'gladbach': 'borussiamgladbach',
+    # Italy
+    'inter': 'inter', 'internazionale': 'inter', 'intermilan': 'inter', 'milan': 'milan', 'acmilan': 'milan',
+    'roma': 'roma', 'asroma': 'roma', 'lazio': 'lazio', 'juventus': 'juventus', 'juve': 'juventus',
+    # France
+    'parissg': 'parissaintgermain', 'psg': 'parissaintgermain', 'parissaintgermain': 'parissaintgermain',
+    'stetienne': 'saintetienne', 'saintetienne': 'saintetienne', 'monaco': 'monaco',
+    # Netherlands
+    'ajax': 'ajax', 'psv': 'psveindhoven', 'psveindhoven': 'psveindhoven', 'feyenoord': 'feyenoord',
+    'twente': 'fctwente', 'fctwente': 'fctwente', 'az': 'azalkmaar', 'azalkmaar': 'azalkmaar',
+}
 
 
 def fetch_csv(season, code):
@@ -32,7 +62,18 @@ def parse_date(s):
 
 
 def norm(s):
-    return ''.join(c.lower() for c in (s or '') if c.isalnum())
+    s=unicodedata.normalize('NFKD',s or '')
+    s=''.join(c for c in s if not unicodedata.combining(c)).lower()
+    s=re.sub(r'[^a-z0-9]','',s)
+    return ALIASES.get(s,s)
+
+
+def same_team(a,b):
+    return norm(a)==norm(b)
+
+
+def same_pair(h1,a1,h2,a2):
+    return (same_team(h1,h2) and same_team(a1,a2)) or (same_team(h1,a2) and same_team(a1,h2))
 
 
 def poisson_over(lam,n):
@@ -63,7 +104,7 @@ def main():
         for r in current:
             d=parse_date(r.get('Date')); home=r.get('HomeTeam','').strip(); away=r.get('AwayTeam','').strip()
             if not d or not home or not away or not (today<=d.date()<=end): continue
-            h2h=[x for x in history if {norm(x[1]),norm(x[2])}=={norm(home),norm(away)}]
+            h2h=[x for x in history if same_pair(x[1],x[2],home,away)]
             h2h=sorted(h2h,key=lambda x:x[0],reverse=True)[:10]
             if not h2h: continue
             lam=sum(x[3] for x in h2h)/len(h2h)

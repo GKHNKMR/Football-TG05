@@ -1,5 +1,4 @@
 import json, math, os, time
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode
@@ -10,13 +9,12 @@ API_KEY = os.environ.get("API_FOOTBALL_KEY", "").strip()
 CACHE_DIR = Path("data/cache")
 OUTPUT_FILE = Path("predictions.json")
 LEAGUES = {39:"Premier League",140:"LaLiga",78:"Bundesliga",135:"Serie A",61:"Ligue 1",88:"Eredivisie"}
-SEASONS = [2022, 2023, 2024]
+# Five-season historical window. Current 2025 season is restricted on the Free plan,
+# so the calculation uses the accessible historical seasons 2021-2024.
+SEASONS = [2021, 2022, 2023, 2024]
 MIN_SECONDS_BETWEEN_CALLS = 6.2
 _last_request_at = 0.0
 
-# Fallback fixture feed for the current dashboard window when the API-Football Free plan
-# cannot expose the 2026/27 season. This keeps the dashboard populated while historical
-# calculations continue to use the available cached data.
 SEED = [
 ("ED-50","Eredivisie","FC Twente","Telstar","2026-09-09T16:45:00Z"),
 ("ED-51","Eredivisie","AZ","Willem II","2026-09-11T18:00:00Z"),
@@ -50,7 +48,6 @@ SEED = [
 ("SA-28","Serie A","Napoli","Bologna","2026-09-14T18:45:00Z"),
 ("SA-29","Serie A","Sassuolo","Juventus","2026-09-14T18:45:00Z"),
 ]
-DEFAULT_LEAGUE_AVG = {39:2.75,140:2.55,78:3.05,135:2.70,61:2.75,88:3.05}
 
 def api_get(path, params):
     global _last_request_at
@@ -75,10 +72,6 @@ def goals(f):
     g=f.get("goals",{}); return None if g.get("home") is None or g.get("away") is None else (int(g["home"]),int(g["away"]))
 def completed(f): return f.get("fixture",{}).get("status",{}).get("short") in {"FT","AET","PEN"}
 
-def weighted(vals):
-    if not vals:return None
-    vals=vals[:5]; w=range(len(vals),0,-1); return sum(v*x for v,x in zip(vals,w))/sum(w)
-
 def poisson(lam,n):
     p=math.exp(-lam); s=p
     for k in range(1,n+1): p*=lam/k; s+=p
@@ -92,7 +85,7 @@ def build_history():
         allfx=[]
         for season in SEASONS:
             path=CACHE_DIR/"history"/f"{lid}_{season}.json"
-            fx=load(path,[]); allfx += fx
+            allfx += load(path,[])
         by_league[lid]=allfx
         for f in allfx:
             t=f.get("teams",{}); h=t.get("home",{}); a=t.get("away",{})
@@ -100,57 +93,48 @@ def build_history():
             if a.get("name") and a.get("id"): name_id[a["name"].lower()]=a["id"]
     return by_league,name_id
 
-def team_values(fixtures, team_id):
-    vals=[]
-    for f in fixtures:
-        if not completed(f): continue
-        g=goals(f); t=f.get("teams",{})
-        if not g: continue
-        if team_id in (t.get("home",{}).get("id"),t.get("away",{}).get("id")): vals.append((fixture_date(f),sum(g)))
-    vals.sort(reverse=True); return [v for _,v in vals]
-
 def h2h_values(fixtures,hid,aid):
     vals=[]
     for f in fixtures:
         if not completed(f): continue
         g=goals(f); t=f.get("teams",{})
         ids={t.get("home",{}).get("id"),t.get("away",{}).get("id")}
-        if g and hid and aid and ids=={hid,aid}: vals.append((fixture_date(f),sum(g)))
-    vals.sort(reverse=True); return [v for _,v in vals[:10]]
-
-def make_seed(lid_by_name,name_id):
-    out=[]
-    lid_lookup={v:k for k,v in LEAGUES.items()}
-    for mid,league,home,away,kick in SEED:
-        lid=lid_lookup[league]; out.append({"id":mid,"league_id":lid,"league":league,"home":home,"away":away,"kickoff":kick,"home_id":name_id.get(home.lower()),"away_id":name_id.get(away.lower())})
-    return out
+        if g and hid and aid and ids=={hid,aid}:
+            vals.append((fixture_date(f),sum(g)))
+    vals.sort(reverse=True)
+    # Only the last 10 meetings within the historical five-season window.
+    return [v for _,v in vals[:10]]
 
 def main():
     today=datetime.now(timezone.utc).date(); end=today+timedelta(days=7)
-    history,name_id=build_history(); fixtures=make_seed(LEAGUES,name_id)
-    # Try API current fixtures only when the Free plan exposes the season; otherwise keep seed.
-    for lid in LEAGUES:
-        api=api_get("/fixtures",{"league":lid,"season":2026,"from":str(today),"to":str(end)})
-        if api:
-            fixtures=[x for x in fixtures if x["league_id"]!=lid]
-            for f in api:
-                t=f.get("teams",{}); fixtures.append({"id":str(f["fixture"]["id"]),"league_id":lid,"league":LEAGUES[lid],"home":t["home"]["name"],"away":t["away"]["name"],"kickoff":f["fixture"]["date"],"home_id":t["home"].get("id"),"away_id":t["away"].get("id")})
+    history,name_id=build_history()
+    fixtures=[]
+    # Use the simple current fixture seed when the API Free plan blocks 2026/27.
+    # Prediction math below uses H2H only; no team-form or league-average component.
+    for mid,league,home,away,kick in SEED:
+        lid=next(k for k,v in LEAGUES.items() if v==league)
+        fixtures.append({"id":mid,"league_id":lid,"league":league,"home":home,"away":away,"kickoff":kick,
+                         "home_id":name_id.get(home.lower()),"away_id":name_id.get(away.lower())})
+
     output=[]
     for f in fixtures:
         dt=datetime.fromisoformat(f["kickoff"].replace("Z","+00:00")).date()
         if not today<=dt<=end: continue
-        lid=f["league_id"]; hist=history.get(lid,[]); hid=f.get("home_id") or name_id.get(f["home"].lower()); aid=f.get("away_id") or name_id.get(f["away"].lower())
-        hv=team_values(hist,hid) if hid else []; av=team_values(hist,aid) if aid else []
-        base=[]
-        if hv: base.append(weighted(hv))
-        if av: base.append(weighted(av))
-        lam=sum(base)/len(base) if base else DEFAULT_LEAGUE_AVG[lid]
-        hh=[x for x in h2h_values(hist,hid,aid)] if hid and aid else []
-        if hh: lam=.55*lam+.45*(sum(hh)/len(hh))
-        league_vals=[sum(goals(x)) for x in hist if completed(x) and goals(x)]
-        lavg=sum(league_vals)/len(league_vals) if league_vals else DEFAULT_LEAGUE_AVG[lid]
-        lam=.65*lam+.35*lavg; lam=max(.25,min(5.5,lam)); p05=poisson(lam,0); p15=poisson(lam,1); p25=poisson(lam,2)
-        output.append({"match_id":f["id"],"league_id":lid,"league":f["league"],"kickoff_utc":f["kickoff"],"home":f["home"],"away":f["away"],"p_over_0_5":round(p05,4),"p_over_1_5":round(p15,4),"p_over_2_5":round(p25,4),"lambda_total":round(lam,3),"label":label(p05),"updated_at":datetime.now(timezone.utc).isoformat()})
-    output.sort(key=lambda x:x["kickoff_utc"]); OUTPUT_FILE.write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding="utf-8"); print(f"Wrote {len(output)} predictions")
+        lid=f["league_id"]; hist=history.get(lid,[])
+        hid=f.get("home_id"); aid=f.get("away_id")
+        hh=h2h_values(hist,hid,aid) if hid and aid else []
+        if not hh:
+            # No H2H means no invented prediction. The UI can still show the fixture.
+            continue
+        lam=sum(hh)/len(hh)
+        lam=max(.25,min(5.5,lam))
+        p05=poisson(lam,0); p15=poisson(lam,1); p25=poisson(lam,2)
+        output.append({"match_id":f["id"],"league_id":lid,"league":f["league"],"kickoff_utc":f["kickoff"],
+                       "home":f["home"],"away":f["away"],"h2h_matches_used":len(hh),
+                       "h2h_goals_avg":round(lam,3),"p_over_0_5":round(p05,4),"p_over_1_5":round(p15,4),
+                       "p_over_2_5":round(p25,4),"label":label(p05),"updated_at":datetime.now(timezone.utc).isoformat()})
+    output.sort(key=lambda x:x["kickoff_utc"])
+    OUTPUT_FILE.write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding="utf-8")
+    print(f"Wrote {len(output)} H2H-only predictions")
 
 if __name__=="__main__": main()

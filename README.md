@@ -37,3 +37,5 @@ The dashboard displays Over 0.5, Over 1.5 and Over 2.5 goal probabilities.
 ## Deployment
 
 The repository is connected to Vercel. Any push to `main` triggers a new static deployment.
+
+<!-- BETAVUS data pipeline verified 2026-09-09 -->

@@ -1,100 +1,65 @@
+import csv
+import io
 import json
 import math
-import os
-import time
+import urllib.request
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError
 
-BASE_URL = "https://v3.football.api-sports.io"
-API_KEY = os.environ.get("API_FOOTBALL_KEY", "").strip()
-CACHE_DIR = Path("data/cache")
-HISTORY_DIR = CACHE_DIR / "history"
-H2H_FILE = CACHE_DIR / "h2h.json"
 OUTPUT_FILE = Path("predictions.json")
+CACHE_DIR = Path("data/cache/football_data")
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Football-Data.co.uk publishes free, machine-readable results and current fixtures.
+# Season codes are the starting year of the football season, e.g. 2526 = 2025/26.
 LEAGUES = {
-    39: "Premier League",
-    140: "LaLiga",
-    78: "Bundesliga",
-    135: "Serie A",
-    61: "Ligue 1",
-    88: "Eredivisie",
+    "E0": "Premier League",
+    "SP1": "LaLiga",
+    "D1": "Bundesliga",
+    "I1": "Serie A",
+    "F1": "Ligue 1",
+    "N1": "Eredivisie",
 }
-SEASONS = [2022, 2023, 2024, 2025, 2026]
-MIN_SECONDS_BETWEEN_CALLS = 6.2  # Free plan: 10 requests/minute.
-_last_request_at = 0.0
+HIST_SEASONS = ["2122", "2223", "2324", "2425", "2526"]
+CURRENT_SEASON = "2627"
+BASE_URL = "https://www.football-data.co.uk/mmz4281/{season}/{code}.csv"
 
 
-def api_get(path, params):
-    global _last_request_at
-    if not API_KEY:
-        raise RuntimeError("API_FOOTBALL_KEY is missing")
-    query = urlencode(params)
-    req = Request(f"{BASE_URL}{path}?{query}", headers={"x-apisports-key": API_KEY})
-    for attempt in range(3):
-        wait = MIN_SECONDS_BETWEEN_CALLS - (time.monotonic() - _last_request_at)
-        if wait > 0:
-            time.sleep(wait)
-        try:
-            with urlopen(req, timeout=45) as response:
-                _last_request_at = time.monotonic()
-                payload = json.loads(response.read().decode("utf-8"))
-            if payload.get("errors"):
-                errors = payload["errors"]
-                if "rateLimit" in str(errors):
-                    time.sleep(65)
-                    continue
-                raise RuntimeError(str(errors))
-            return payload.get("response", [])
-        except HTTPError as exc:
-            _last_request_at = time.monotonic()
-            if exc.code == 429:
-                print("API rate limit reached; waiting 65 seconds...")
-                time.sleep(65)
-                continue
-            if attempt == 2:
-                raise
-            time.sleep(5)
-        except Exception:
-            _last_request_at = time.monotonic()
-            if attempt == 2:
-                raise
-            time.sleep(5)
-    raise RuntimeError("API request failed after retries")
+def fetch_csv(code, season):
+    path = CACHE_DIR / f"{season}_{code}.csv"
+    if path.exists():
+        text = path.read_text(encoding="latin-1")
+    else:
+        url = BASE_URL.format(season=season, code=code)
+        req = urllib.request.Request(url, headers={"User-Agent": "BETAVUS/1.0"})
+        with urllib.request.urlopen(req, timeout=45) as response:
+            text = response.read().decode("latin-1")
+        path.write_text(text, encoding="latin-1")
+    return list(csv.DictReader(io.StringIO(text)))
 
 
-def load_json(path, default):
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
-
-
-def save_json(path, data):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def fixture_date(f):
-    return datetime.fromisoformat(f["fixture"]["date"].replace("Z", "+00:00"))
-
-
-def completed(f):
-    return f.get("fixture", {}).get("status", {}).get("short") in {"FT", "AET", "PEN"}
-
-
-def goals(f):
-    h = f.get("goals", {}).get("home")
-    a = f.get("goals", {}).get("away")
-    if h is None or a is None:
+def parse_date(value):
+    if not value:
         return None
-    return int(h), int(a)
+    value = value.strip()
+    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return None
+
+
+def goals(row):
+    try:
+        return int(float(row["FTHG"])), int(float(row["FTAG"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def completed(row):
+    return goals(row) is not None
 
 
 def weighted_mean(values):
@@ -103,6 +68,10 @@ def weighted_mean(values):
     values = values[:5]
     weights = list(range(len(values), 0, -1))
     return sum(v * w for v, w in zip(values, weights)) / sum(weights)
+
+
+def simple_mean(values):
+    return sum(values) / len(values) if values else None
 
 
 def poisson_tail(lam, threshold):
@@ -126,161 +95,147 @@ def label(p05):
     return ""
 
 
-def season_fixtures(league_id, season):
-    path = HISTORY_DIR / f"{league_id}_{season}.json"
-    cached = load_json(path, None)
-    if cached is not None:
-        return cached
-    try:
-        data = api_get("/fixtures", {"league": league_id, "season": season})
-        save_json(path, data)
-        return data
-    except Exception as exc:
-        print(f"History unavailable league={league_id} season={season}: {exc}")
-        return []
+def normalize_team(name):
+    aliases = {
+        "Man United": "Manchester United",
+        "Man City": "Manchester City",
+        "Spurs": "Tottenham Hotspur",
+        "Nott'm Forest": "Nottingham Forest",
+        "Wolves": "Wolverhampton Wanderers",
+        "Leicester": "Leicester City",
+        "West Ham": "West Ham United",
+        "Newcastle": "Newcastle United",
+        "Brighton": "Brighton & Hove Albion",
+        "QPR": "Queens Park Rangers",
+        "PSG": "Paris Saint-Germain",
+        "Paris SG": "Paris Saint-Germain",
+        "AC Milan": "Milan",
+        "Inter": "Internazionale",
+        "Bayern Munich": "Bayern München",
+        "M'gladbach": "Borussia Mönchengladbach",
+        "FC Koln": "Cologne",
+        "Köln": "Cologne",
+    }
+    return aliases.get(name.strip(), name.strip())
 
 
-def h2h_matches(home_id, away_id, cache):
-    key = f"{min(home_id, away_id)}-{max(home_id, away_id)}"
-    if key in cache:
-        return cache[key]
-    try:
-        data = api_get("/fixtures/headtohead", {"h2h": f"{home_id}-{away_id}", "last": 10})
-        result = [f for f in data if completed(f) and goals(f) is not None]
-        cache[key] = result[:10]
-        return cache[key]
-    except Exception as exc:
-        print(f"H2H unavailable {key}: {exc}")
-        cache[key] = []
-        return []
-
-
-def build_stats(all_fixtures, start_dt, end_dt):
+def build_stats(rows, history_from, now):
     team_all = defaultdict(list)
     team_home = defaultdict(list)
     team_away = defaultdict(list)
-    league_totals = []
-    for f in all_fixtures:
-        if not completed(f):
+    league_goals = 0
+    league_matches = 0
+    h2h = defaultdict(list)
+
+    for row in rows:
+        if not completed(row):
             continue
-        dt = fixture_date(f)
-        ga = goals(f)
-        if ga is None:
+        dt = parse_date(row.get("Date"))
+        ga = goals(row)
+        if not dt or not ga:
             continue
         hg, ag = ga
-        league_totals.append(hg + ag)
-        home_id = f["teams"]["home"]["id"]
-        away_id = f["teams"]["away"]["id"]
         total = hg + ag
-        if start_dt <= dt <= end_dt:
-            team_all[home_id].append((dt, total))
-            team_all[away_id].append((dt, total))
-            team_home[home_id].append((dt, total))
-            team_away[away_id].append((dt, total))
+        league_goals += total
+        league_matches += 1
+        home = normalize_team(row.get("HomeTeam", ""))
+        away = normalize_team(row.get("AwayTeam", ""))
+
+        if history_from <= dt <= now:
+            team_all[home].append((dt, total))
+            team_all[away].append((dt, total))
+            team_home[home].append((dt, total))
+            team_away[away].append((dt, total))
+
+        pair = tuple(sorted((home, away)))
+        h2h[pair].append((dt, total))
+
     for d in (team_all, team_home, team_away):
-        for team_id in d:
-            d[team_id].sort(key=lambda x: x[0], reverse=True)
-            d[team_id] = [v for _, v in d[team_id]]
-    return team_all, team_home, team_away, league_totals
+        for team in d:
+            d[team].sort(key=lambda x: x[0], reverse=True)
+            d[team] = [v for _, v in d[team]]
+    for pair in h2h:
+        h2h[pair].sort(key=lambda x: x[0], reverse=True)
+
+    league_avg = league_goals / league_matches if league_matches else None
+    return team_all, team_home, team_away, h2h, league_avg
 
 
-def h2h_average(matches):
-    vals = []
-    for f in sorted(matches, key=fixture_date, reverse=True)[:10]:
-        ga = goals(f)
-        if ga:
-            vals.append(sum(ga))
-    return weighted_mean(vals)
+def expected_total(home, away, stats):
+    team_all, team_home, team_away, h2h, league_avg = stats
 
-
-def league_average(history_by_league):
-    season_means = []
-    for fixtures in history_by_league:
-        vals = [sum(goals(f)) for f in fixtures if completed(f) and goals(f)]
-        if vals:
-            season_means.append(sum(vals) / len(vals))
-    return sum(season_means) / len(season_means) if season_means else None
-
-
-def expected_total(f, stats, h2h_avg, league_avg):
-    team_all, team_home, team_away, _ = stats
-    home_id = f["teams"]["home"]["id"]
-    away_id = f["teams"]["away"]["id"]
     candidates = []
-    if team_all.get(home_id):
-        candidates.append(weighted_mean(team_all[home_id]))
-    if team_all.get(away_id):
-        candidates.append(weighted_mean(team_all[away_id]))
-    base = sum(candidates) / len(candidates) if candidates else None
+    if team_all.get(home):
+        candidates.append(weighted_mean(team_all[home]))
+    if team_all.get(away):
+        candidates.append(weighted_mean(team_all[away]))
+    base = simple_mean(candidates)
+
     split = []
-    if team_home.get(home_id):
-        split.append(weighted_mean(team_home[home_id]))
-    if team_away.get(away_id):
-        split.append(weighted_mean(team_away[away_id]))
+    if team_home.get(home):
+        split.append(weighted_mean(team_home[home]))
+    if team_away.get(away):
+        split.append(weighted_mean(team_away[away]))
     if split:
-        split_avg = sum(split) / len(split)
+        split_avg = simple_mean(split)
         base = split_avg if base is None else 0.70 * base + 0.30 * split_avg
+
+    pair = tuple(sorted((home, away)))
+    h2h_vals = [v for _, v in h2h.get(pair, [])[:10]]
+    h2h_avg = simple_mean(h2h_vals)
     if h2h_avg is not None:
         base = h2h_avg if base is None else 0.55 * base + 0.45 * h2h_avg
+
     if league_avg is not None:
         base = league_avg if base is None else 0.65 * base + 0.35 * league_avg
+
     return max(0.25, min(5.5, base if base is not None else 2.5))
 
 
 def main():
-    if not API_KEY:
-        raise SystemExit("API_FOOTBALL_KEY is required")
-
     now = datetime.now(timezone.utc)
     today = now.date()
     end_date = today + timedelta(days=7)
     history_from = now - timedelta(days=365)
-
-    stats_by_league = {}
-    league_baselines = {}
-    season_data = {}
-
-    # One season call is enough to build both the historical statistics and
-    # the current fixture list. This keeps the first daily run below the
-    # Free-plan 100-request quota even when H2H is empty.
-    for league_id in LEAGUES:
-        seasons = []
-        for season in SEASONS:
-            data = season_fixtures(league_id, season)
-            seasons.append(data)
-        season_data[league_id] = seasons
-        merged = [f for season in seasons for f in season]
-        stats_by_league[league_id] = build_stats(merged, history_from, now)
-        league_baselines[league_id] = league_average(seasons)
-
-    h2h_cache = load_json(H2H_FILE, {})
     output = []
-    for league_id, league_name in LEAGUES.items():
-        # The 2026 season response already contains the future fixtures.
-        # Do not spend another API call just to retrieve the same matches.
-        fixtures = [
-            f for f in season_data[league_id][-1]
-            if today <= fixture_date(f).date() <= end_date
-        ]
-        print(f"{league_name}: {len(fixtures)} fixtures in dashboard window")
 
-        stats = stats_by_league[league_id]
-        for f in fixtures:
-            status = f.get("fixture", {}).get("status", {}).get("short")
-            if status in {"CANC", "PST", "ABD", "AWD", "WO"}:
+    for code, league_name in LEAGUES.items():
+        historical = []
+        for season in HIST_SEASONS:
+            try:
+                historical.extend(fetch_csv(code, season))
+            except Exception as exc:
+                print(f"Historical CSV unavailable {code} {season}: {exc}")
+
+        stats = build_stats(historical, history_from, now)
+
+        try:
+            current_rows = fetch_csv(code, CURRENT_SEASON)
+        except Exception as exc:
+            print(f"Current CSV unavailable {code}: {exc}")
+            current_rows = []
+
+        fixtures = []
+        for row in current_rows:
+            dt = parse_date(row.get("Date"))
+            if not dt or not (today <= dt.date() <= end_date):
                 continue
-            home = f["teams"]["home"]
-            away = f["teams"]["away"]
-            h2h = h2h_matches(home["id"], away["id"], h2h_cache)
-            lam = expected_total(f, stats, h2h_average(h2h), league_baselines[league_id])
+            home = normalize_team(row.get("HomeTeam", ""))
+            away = normalize_team(row.get("AwayTeam", ""))
+            if not home or not away:
+                continue
+            fixtures.append((dt, home, away))
+
+        print(f"{league_name}: {len(fixtures)} fixtures in dashboard window")
+        for dt, home, away in fixtures:
+            lam = expected_total(home, away, stats)
             p05 = poisson_tail(lam, 0.5)
             output.append({
-                "match_id": str(f["fixture"]["id"]),
-                "league_id": league_id,
+                "match_id": f"{code}-{dt.strftime('%Y%m%d')}-{home}-{away}",
                 "league": league_name,
-                "kickoff_utc": f["fixture"]["date"],
-                "home": home["name"],
-                "away": away["name"],
+                "kickoff_utc": dt.isoformat().replace("+00:00", "Z"),
+                "home": home,
+                "away": away,
                 "p_over_0_5": round(p05, 4),
                 "p_over_1_5": round(poisson_tail(lam, 1.5), 4),
                 "p_over_2_5": round(poisson_tail(lam, 2.5), 4),
@@ -290,8 +245,7 @@ def main():
             })
 
     output.sort(key=lambda x: x["kickoff_utc"])
-    save_json(H2H_FILE, h2h_cache)
-    save_json(OUTPUT_FILE, output)
+    OUTPUT_FILE.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Wrote {len(output)} predictions to {OUTPUT_FILE}")
 
 

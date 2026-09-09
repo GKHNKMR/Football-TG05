@@ -6,34 +6,107 @@
 <meta name="theme-color" content="#090b0f">
 <title>BETAVUS — Football Goal Probability</title>
 <style>
-:root{--bg:#090b0f;--panel:#11151c;--panel2:#171c24;--line:#252c36;--text:#f4f6f8;--muted:#8e98a7;--accent:#e8ff3f;--good:#66e3a1}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:1120px;margin:auto;padding:28px 18px 44px}.top{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:24px}.brand{font-size:36px;font-weight:900;letter-spacing:-1.8px}.sub{color:var(--muted);font-size:13px;margin-top:3px}.refresh{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700}.refresh:hover{background:var(--panel2)}.filters{display:flex;gap:8px;overflow:auto;padding-bottom:7px;margin-bottom:16px;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:#c7ced8;padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px}.chip.active{background:var(--accent);border-color:var(--accent);color:#0b0d10}.datebar{display:flex;align-items:center;justify-content:space-between;margin:12px 0 14px;color:var(--muted);font-size:13px}.table{background:rgba(17,21,28,.92);border:1px solid var(--line);border-radius:16px;overflow:hidden}.head,.row{display:grid;grid-template-columns:minmax(270px,1fr) 90px 90px 90px;gap:8px;align-items:center}.head{padding:12px 14px;background:#0e1218;color:#697383;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.row{padding:14px;border-top:1px solid var(--line)}.match{min-width:0}.league{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:5px}.teams{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kick{font-size:11px;color:var(--muted);margin-top:5px}.prob{display:flex;justify-content:center}.pill{min-width:68px;text-align:center;padding:8px 5px;border-radius:9px;background:var(--panel2);font-weight:900;font-size:14px}.p05 .pill{border:1px solid rgba(102,227,161,.25)}
-.pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
-@keyframes pillhot{0%,100%{background:var(--panel2);color:var(--good);box-shadow:0 0 0 0 rgba(102,227,161,0)}50%{background:var(--good);color:#0b0d10;box-shadow:0 0 15px 1px rgba(102,227,161,.5)}}
-@media(prefers-reduced-motion:reduce){.pill.hot{animation:none;background:var(--good);color:#0b0d10}}
+:root{
+  --bg:#090b0f;--panel:#11151c;--panel2:#171c24;--line:#252c36;--text:#f4f6f8;
+  --muted:#8e98a7;--accent:#e8ff3f;--accent-ink:#0b0d10;--good:#66e3a1;--good-ink:#0b0d10;
+  --head:#0e1218;--headtext:#697383;--hair:rgba(255,255,255,.06);--bad:#ff9d9d;
+}
+:root[data-theme="light"]{
+  --bg:#f3f5f9;--panel:#ffffff;--panel2:#eceff4;--line:#d7dde6;--text:#141a22;
+  --muted:#5c6672;--accent:#3f6212;--accent-ink:#ffffff;--good:#0f9d58;--good-ink:#ffffff;
+  --head:#eef1f6;--headtext:#8a94a1;--hair:rgba(0,0,0,.07);--bad:#c0392b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+:root[data-theme="light"] body{background:#f3f5f9}
+.wrap{max-width:1120px;margin:auto;padding:26px 18px 44px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.brand{font-size:34px;font-weight:900;letter-spacing:-1.8px}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.topbtns{display:flex;gap:8px}
+.iconbtn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;min-width:38px;height:38px;padding:0 10px;cursor:pointer;font-weight:800;font-size:14px}
+.iconbtn:hover{background:var(--panel2)}
+.tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px;width:max-content}
+.tab{border:0;background:transparent;color:var(--muted);padding:8px 18px;border-radius:9px;font-weight:800;font-size:13px;cursor:pointer}
+.tab.active{background:var(--accent);color:var(--accent-ink)}
+.filters{display:flex;gap:8px;overflow:auto;padding-bottom:7px;margin-bottom:14px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px}
+.chip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 14px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+.dbar-right{display:flex;gap:8px;align-items:center}
+.sel{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer}
 .hotbtn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
-.hotbtn.on{border-color:var(--good);color:#0b0d10;background:var(--good)}
-.dbar-right{display:flex;gap:9px;align-items:center}
-.empty{padding:48px 20px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--text);font-size:17px;margin-bottom:7px}.foot{margin-top:14px;color:#687383;font-size:11px;text-align:center}.loading{padding:38px;text-align:center;color:var(--muted)}.row{cursor:pointer}.row:hover{background:var(--panel2)}.row .teams::after{content:"›";color:var(--muted);font-weight:900;margin-left:7px}
-@media(max-width:650px){.wrap{padding:20px 10px 32px}.top{align-items:center}.brand{font-size:29px}.sub{font-size:11px}.refresh{padding:9px 11px}.head,.row{grid-template-columns:minmax(0,1fr) 64px 64px 64px;gap:5px}.head{padding:10px 8px;font-size:9px}.row{padding:12px 8px}.teams{font-size:13px}.kick{font-size:10px}.pill{min-width:57px;padding:7px 2px;font-size:12px}.league{font-size:9px}.datebar{padding:0 2px}}
-/* match stats drawer */
+.hotbtn.on{border-color:var(--good);color:var(--good-ink);background:var(--good)}
+.table{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.head,.row{display:grid;grid-template-columns:minmax(250px,1fr) 88px 88px 88px;gap:8px;align-items:center}
+.head{padding:12px 14px;background:var(--head);color:var(--headtext);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.row{padding:13px 14px;border-top:1px solid var(--line)}
+.match{min-width:0}
+.league{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.teams{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kick{font-size:11px;color:var(--muted);margin-top:5px}
+.mkt{font-size:10.5px;color:var(--muted);margin-top:4px}
+.prob{display:flex;justify-content:center}
+.pill{min-width:66px;text-align:center;padding:8px 5px;border-radius:9px;background:var(--panel2);font-weight:900;font-size:14px}
+.p05 .pill{border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
+.pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
+@keyframes pillhot{0%,100%{background:var(--panel2);color:var(--good);box-shadow:0 0 0 0 transparent}50%{background:var(--good);color:var(--good-ink);box-shadow:0 0 15px 1px color-mix(in srgb,var(--good) 50%,transparent)}}
+@media(prefers-reduced-motion:reduce){.pill.hot{animation:none;background:var(--good);color:var(--good-ink)}}
+.badge{font-size:9px;letter-spacing:1px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 4px;font-weight:900}
+.badge.b3{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,transparent)}
+.badge.b2{color:var(--text)}
+.row{cursor:pointer}.row:hover{background:var(--panel2)}
+.row .teams::after{content:"›";color:var(--muted);font-weight:900;margin-left:7px}
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--text);font-size:17px;margin-bottom:7px}
+.foot{margin-top:16px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+.foot a{color:var(--muted);font-weight:800}
+.loading{padding:38px;text-align:center;color:var(--muted)}
+/* results */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px}
+.tile .v{font-size:23px;font-weight:900;letter-spacing:-.5px}
+.tile .k{color:var(--muted);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.tile .n{color:var(--muted);font-size:10.5px;margin-top:5px}
+.rhead,.rrow{display:grid;grid-template-columns:52px minmax(160px,1fr) 76px 58px 44px 64px;gap:8px;align-items:center}
+.rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
+.rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.rrow .rsc{font-weight:900}
+.hit{color:var(--good);font-weight:900}.miss{color:var(--bad);font-weight:900}
+.edge{font-size:10px;color:var(--muted)}
+@media(max-width:650px){
+  .wrap{padding:18px 10px 32px}.brand{font-size:27px}
+  .head,.row{grid-template-columns:minmax(0,1fr) 58px 58px 58px;gap:5px}
+  .head{padding:10px 8px;font-size:9px}.row{padding:11px 8px}.teams{font-size:13px}.pill{min-width:52px;padding:7px 2px;font-size:12px}
+  .tiles{grid-template-columns:1fr 1fr}
+  .rhead,.rrow{grid-template-columns:44px minmax(0,1fr) 62px 48px 34px 52px;gap:5px;font-size:11.5px}
+  .rhead{padding:9px 8px}.rrow{padding:10px 8px}
+}
+/* drawer + info modal */
 .sheet-bg{position:fixed;inset:0;background:rgba(3,5,8,.72);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:38px 16px;overflow:auto;z-index:50}
+:root[data-theme="light"] .sheet-bg{background:rgba(20,26,34,.45)}
 .sheet-bg[hidden]{display:none}
 .sheet{width:100%;max-width:760px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
 .sheet h2{margin:0;font-size:19px;font-weight:900}
 .sheet .s-sub{color:var(--muted);font-size:12px;margin-top:3px}
 .sheet .s-close{float:right;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer;font-weight:900}
+.sheet p{font-size:13px;line-height:1.65;color:var(--text)}
+.sheet .s-sub b{color:var(--text)}
 .s-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:13px}
-.s-card h3{margin:0 0 9px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#8ea0b6;font-weight:900}
+.s-card h3{margin:0 0 9px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:900}
 .s-cols{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.s-stat{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.s-stat{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--hair)}
 .s-stat b{font-weight:800}
 .s-team{font-size:14px;font-weight:900;margin-bottom:6px}
 .form{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.fchip{min-width:26px;text-align:center;padding:4px 5px;border-radius:7px;font-size:11px;font-weight:900;background:#2a2f38}
-.fchip.W{background:rgba(102,227,161,.20);color:#8ff0c0}.fchip.D{background:rgba(255,255,255,.09);color:#cdd6e2}.fchip.L{background:rgba(255,120,120,.18);color:#ff9d9d}
+.fchip{min-width:26px;text-align:center;padding:4px 5px;border-radius:7px;font-size:11px;font-weight:900;background:var(--panel)}
+.fchip.W{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
+.fchip.D{background:var(--hair);color:var(--muted)}
+.fchip.L{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
 .fchip small{display:block;font-size:9px;font-weight:700;opacity:.75;margin-top:1px}
-.h2h-row{display:grid;grid-template-columns:70px 1fr auto;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid rgba(255,255,255,.05)}
+.h2h-row{display:grid;grid-template-columns:70px 1fr auto;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid var(--hair)}
 .h2h-row .sc{font-weight:900}
 .h2h-tot{color:var(--muted);font-size:11px;margin-left:6px}
 .s-note{color:var(--muted);font-size:12px;padding:6px 0}
@@ -44,67 +117,204 @@
 <div class="wrap">
   <header class="top">
     <div><div class="brand">BETAVUS</div><div class="sub">Football Goal Probability Engine</div></div>
-    <button class="refresh" id="refresh">↻ Yenile</button>
+    <div class="topbtns">
+      <button class="iconbtn" id="infoBtn" type="button" title="Nasıl hesaplanıyor?">?</button>
+      <button class="iconbtn" id="themeBtn" type="button" title="Tema">🌙</button>
+      <button class="iconbtn" id="refresh" type="button" title="Yenile">↻</button>
+    </div>
   </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tab-pred" type="button">Tahminler</button>
+    <button class="tab" id="tab-res" type="button">Sonuçlar</button>
+  </div>
+
   <nav class="filters" id="filters"></nav>
-  <div class="datebar"><span id="window">Pazar–Pazar</span><span class="dbar-right"><button id="hotToggle" class="hotbtn" type="button">🟢 sadece yüksek 0.5+</button><span id="count"></span></span></div>
-  <section class="table">
-    <div class="head"><div>Maç</div><div>0.5+</div><div>1.5+</div><div>2.5+</div></div>
-    <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
+
+  <section id="pane-pred">
+    <div class="datebar">
+      <span id="window">Pazar–Pazar</span>
+      <span class="dbar-right">
+        <select class="sel" id="hlSel" title="Vurgu"></select>
+        <button id="hotToggle" class="hotbtn" type="button">sadece bunlar</button>
+        <span id="count"></span>
+      </span>
+    </div>
+    <div class="table">
+      <div class="head"><div>Maç</div><div>0.5+</div><div>1.5+</div><div>2.5+</div></div>
+      <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
+    </div>
   </section>
-  <div class="foot" id="updated">Fixture kaynağı: BETAVUS veri akışı · Analizler hazırlanıyor</div>
+
+  <section id="pane-res" hidden>
+    <div id="resSummary"></div>
+    <div class="table">
+      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Tahmin</div><div>Sonuç</div><div>2.5Ü</div><div>Başarı</div></div>
+      <div id="resRows"><div class="loading">Yükleniyor…</div></div>
+    </div>
+    <div class="foot" id="resFoot"></div>
+  </section>
+
+  <div class="foot" id="updated">Analizler hazırlanıyor</div>
 </div>
+
 <div id="sheet" class="sheet-bg" hidden></div>
 <script>
 const leagues=['Tümü','Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
-const DATA_URL='predictions.json';
-const STATS_URL='data/match-stats.json';
-let STATS={matches:{}};
+const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json';
+let STATS={matches:{}},RESULTS=null;
 const FALLBACK_DATA=[
- {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'BL-F1',league:'Bundesliga',kickoff_utc:'2026-09-11T18:30:00Z',home:'Union Berlin',away:'Schalke 04',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'LL-F1',league:'LaLiga',kickoff_utc:'2026-09-11T19:00:00Z',home:'Sevilla',away:'Valencia',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'SA-F1',league:'Serie A',kickoff_utc:'2026-09-11T18:45:00Z',home:'Venezia',away:'Fiorentina',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'L1-F1',league:'Ligue 1',kickoff_utc:'2026-09-11T18:45:00Z',home:'Rennes',away:'Marseille',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'PL-F1',league:'Premier League',kickoff_utc:'2026-09-12T14:00:00Z',home:'AFC Bournemouth',away:'Brentford',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'BL-F2',league:'Bundesliga',kickoff_utc:'2026-09-12T13:30:00Z',home:'Borussia Dortmund',away:'Paderborn',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'BL-F3',league:'Bundesliga',kickoff_utc:'2026-09-12T13:30:00Z',home:'Hoffenheim',away:'VfB Stuttgart',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'PL-F2',league:'Premier League',kickoff_utc:'2026-09-12T16:30:00Z',home:'Tottenham Hotspur',away:'Everton',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'LL-F2',league:'LaLiga',kickoff_utc:'2026-09-12T19:00:00Z',home:'Real Madrid',away:'Rayo Vallecano',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'SA-F2',league:'Serie A',kickoff_utc:'2026-09-13T16:00:00Z',home:'Napoli',away:'Bologna',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'L1-F2',league:'Ligue 1',kickoff_utc:'2026-09-13T18:45:00Z',home:'Brest',away:'Paris Saint-Germain',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null},
- {match_id:'ED-F2',league:'Eredivisie',kickoff_utc:'2026-09-13T18:00:00Z',home:'PSV',away:'Sparta Rotterdam',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
+ {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
 ];
-// Backtest'te 0.5+ için sürdürülebilir en yüksek isabet bölgesi ~%95; bu eşiğin
-// üstündeki yüzdeler listede yeşil yanıp söner. Değiştirmek için tek yer burası.
-const GREEN_MIN=0.95;
-let data=[],selected='Tümü',hotOnly=false;
-const filters=document.getElementById('filters'),rows=document.getElementById('rows');
+
+// Vurgu eşikleri — backtest'te her pazarın sürdürülebilir güven bölgesi
+const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
+         o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ %85'},
+         o25:{key:'p_over_2_5',min:0.70,label:'2.5+ ≥ %70'}};
+const store=(k,d)=>{try{return localStorage.getItem('betavus.'+k)??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
+
+let tab=store('tab','pred');
+let selected=store('league','Tümü');
+let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off')hlKey='o05';
+let hotOnly=false;
+
+const $=id=>document.getElementById(id);
+const filters=$('filters'),rows=$('rows');
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function localDate(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Europe/Amsterdam'}).format(new Date(iso)).replace(',',' ·');}
-function renderFilters(){filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${x}</button>`).join('');filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;renderFilters();render();});}
+function shortDate(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit'}).format(new Date(iso));}
 function pct(v){return v==null?'—':`${(Number(v)*100).toFixed(1)}%`;}
-function pill(v){const hot=v!=null&&Number(v)>=GREEN_MIN;return `<span class="pill${hot?' hot':''}">${pct(v)}</span>`;}
+function pctI(v){return v==null?'—':`${Math.round(Number(v)*100)}%`;}
+
+function pillFor(v,lineKey){
+  const h=HL[hlKey];
+  const hot=h&&h.key===lineKey&&v!=null&&Number(v)>=h.min;
+  return `<span class="pill${hot?' hot':''}">${pct(v)}</span>`;
+}
+function basisBadge(b){
+  if(b==='form+h2h')return `<span class="badge b3" title="H2H + form'a dayanıyor (en sağlam)">●●●</span>`;
+  if(b==='form')return `<span class="badge b2" title="Form'a dayanıyor">●●</span>`;
+  if(b==='partial-form')return `<span class="badge b1" title="Sınırlı veri">●</span>`;
+  return `<span class="badge b0" title="Sadece lig ortalaması (zayıf)">○</span>`;
+}
+function mktNote(m){
+  if(!m||m.o25_implied==null)return '';
+  const edge=m.edge25;
+  const es=edge==null?'':` · edge ${edge>=0?'+':''}${Math.round(edge*100)}%`;
+  return `<div class="mkt">piyasa 2.5Ü %${Math.round(m.o25_implied*100)}${es}</div>`;
+}
+
+function renderFilters(){
+  filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${x}</button>`).join('');
+  filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;save('league',selected);renderFilters();renderAll();});
+}
+function renderHlSel(){
+  const s=$('hlSel');
+  s.innerHTML=`<option value="off">Vurgu: kapalı</option>`+Object.entries(HL).map(([k,v])=>`<option value="${k}">Vurgu: ${v.label}</option>`).join('');
+  s.value=hlKey;
+}
+
 function weekWindow(){const s=new Date();s.setHours(0,0,0,0);s.setDate(s.getDate()+((7-s.getDay())%7));const e=new Date(s);e.setDate(e.getDate()+8);return[s,e];}
 function fmtDay(d){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit'}).format(d);}
 function visibleAll(list){const[start,end]=weekWindow();return list.filter(x=>selected==='Tümü'||x.league===selected).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
 function visible(list){let r=visibleAll(list);
-  if(hotOnly)r=r.filter(x=>x.p_over_0_5!=null&&Number(x.p_over_0_5)>=GREEN_MIN).slice().sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
-  return r;}
-function render(){const list=visible(data);const[ws,we]=weekWindow();
-  document.getElementById('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · Pazar–Pazar`;
-  const total=visibleAll(data).length;
-  document.getElementById('count').textContent=hotOnly?`${list.length} / ${total} maç`:`${list.length} maç`;
-  const hb=document.getElementById('hotToggle');hb.classList.toggle('on',hotOnly);
-  hb.textContent=`🟢 sadece 0.5+ ≥ %${(GREEN_MIN*100).toFixed(0)}`;
-  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${hotOnly?'Bu hafta 0.5+ ≥ %'+(GREEN_MIN*100).toFixed(0)+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${hotOnly?'Eşiği düşürmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
-  rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}"><div class="match"><div class="league">${esc(x.league)}</div><div class="teams">${esc(x.home)} — ${esc(x.away)}</div><div class="kick">${localDate(x.kickoff_utc)}</div></div><div class="prob p05">${pill(x.p_over_0_5)}</div><div class="prob">${pill(x.p_over_1_5)}</div><div class="prob">${pill(x.p_over_2_5)}</div></div>`).join('');}
-async function load(){rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
+  const h=HL[hlKey];
+  if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
+  return r.slice().sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
+}
+function renderPred(){
+  const list=visible(window.__data||[]);const[ws,we]=weekWindow();
+  $('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · Pazar–Pazar`;
+  const total=visibleAll(window.__data||[]).length;
+  const h=HL[hlKey];
+  $('hotToggle').classList.toggle('on',hotOnly&&!!h);
+  $('hotToggle').disabled=!h;
+  $('hotToggle').style.opacity=h?1:.4;
+  $('count').textContent=(hotOnly&&h)?`${list.length} / ${total} maç`:`${list.length} maç`;
+  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
+  rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
+    <div class="match">
+      <div class="league">${basisBadge(x.basis)} ${esc(x.league)}</div>
+      <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
+      <div class="kick">${localDate(x.kickoff_utc)}</div>
+      ${mktNote(x.market)}
+    </div>
+    <div class="prob p05">${pillFor(x.p_over_0_5,'p_over_0_5')}</div>
+    <div class="prob">${pillFor(x.p_over_1_5,'p_over_1_5')}</div>
+    <div class="prob">${pillFor(x.p_over_2_5,'p_over_2_5')}</div>
+  </div>`).join('');
+}
+
+function tile(v,k,n){return `<div class="tile"><div class="v">${v}</div><div class="k">${k}</div><div class="n">${n||''}</div></div>`;}
+function renderResults(){
+  const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
+  if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';return;}
+  let ms=RESULTS.matches||[];
+  if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
+  const w=RESULTS.last_week||{},o=RESULTS.overall||{};
+  wrap.innerHTML=`<div class="tiles">
+    ${tile((w.acc_25??'—')+'%','2.5Ü isabet · son 7 gün',(w.n||0)+' maç')}
+    ${tile((w.success_pct??'—')+'%','ortalama başarı','model doğruya koyduğu olasılık')}
+    ${tile((o.acc_25??'—')+'%','2.5Ü · tüm dönem',(o.n||0)+' maç · '+RESULTS.result_days+' gün')}
+  </div>`;
+  if(!ms.length){body.innerHTML='<div class="empty"><strong>Bu lig için sonuç yok</strong></div>';foot.textContent='';return;}
+  body.innerHTML=ms.map(m=>{
+    const ok=m.hits&&m.hits.hit_25;
+    const edge=('edge25'in m)?`<div class="edge">edge ${m.edge25>=0?'+':''}${Math.round(m.edge25*100)}%</div>`:'';
+    return `<div class="rrow">
+      <div>${shortDate(m.kickoff_utc)}</div>
+      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}</div>
+      <div>λ ${m.pred_lambda??'—'}<br><span class="edge">2.5Ü ${pctI(m.p_over_2_5)}</span></div>
+      <div class="rsc">${m.score}</div>
+      <div class="${ok?'hit':'miss'}">${ok?'✓':'✗'}</div>
+      <div>%${m.success_pct}${edge}</div>
+    </div>`;
+  }).join('');
+  const rc=RESULTS.reconstructed_count||0;
+  foot.innerHTML=`Son ${RESULTS.result_days} gün · λ ortalama hata ${o.lambda_mae??'—'} gol`+
+    (o.value_acc!=null?` · piyasaya karşı yön isabeti %${o.value_acc}`:'')+
+    (rc?`<br>* ${rc} maç geriye dönük, sızıntısız hesaplandı (arşiv dolana kadar). İlerisi gerçek tahmin arşividir.`:'');
+}
+
+function renderAll(){renderPred();renderResults();}
+
+function setTab(t){
+  tab=t;save('tab',t);
+  $('tab-pred').classList.toggle('active',t==='pred');
+  $('tab-res').classList.toggle('active',t==='res');
+  $('pane-pred').hidden=t!=='pred';
+  $('pane-res').hidden=t!=='res';
+}
+
+async function load(){
+  rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches)STATS=s;}).catch(()=>{});
-  try{const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('data');const remote=await r.json();data=(Array.isArray(remote)&&remote.length)?remote:FALLBACK_DATA;document.getElementById('updated').textContent=data===remote?'Fikstürler güncel · BETAVUS Poisson analiz motoru':'Canlı veri bağlantısı bekleniyor · Geçici fikstür gösteriliyor';render();}catch(e){data=FALLBACK_DATA;document.getElementById('updated').textContent='Canlı veri bağlantısı bekleniyor · Geçici fikstür gösteriliyor';render();}}
+  fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();}}).catch(()=>{});
+  try{
+    const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('data');
+    const remote=await r.json();
+    window.__data=(Array.isArray(remote)&&remote.length)?remote:FALLBACK_DATA;
+    const upd=remote[0]&&remote[0].updated_at;
+    $('updated').innerHTML=`Kaynak: openfootball + football-data.co.uk · Poisson motoru`+
+      (upd?` · güncelleme ${timeAgo(upd)}`:'')+
+      ` · <a href="backtest.html">Model doğruluğu →</a>`;
+  }catch(e){
+    window.__data=FALLBACK_DATA;
+    $('updated').innerHTML='Canlı veri bekleniyor · Geçici fikstür · <a href="backtest.html">Model doğruluğu →</a>';
+  }
+  renderAll();
+}
+function timeAgo(iso){
+  const s=(Date.now()-new Date(iso))/1000;
+  if(s<3600)return Math.max(1,Math.round(s/60))+' dk önce';
+  if(s<86400)return Math.round(s/3600)+' saat önce';
+  return Math.round(s/86400)+' gün önce';
+}
 
 // ---- match stats drawer ----
-const sheet=document.getElementById('sheet');
+const sheet=$('sheet');
 function closeSheet(){sheet.hidden=true;sheet.innerHTML='';}
 sheet.addEventListener('click',e=>{if(e.target===sheet||e.target.classList.contains('s-close'))closeSheet();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
@@ -138,8 +348,8 @@ function goalChart(h,a){
   const X=i=>labels.length>1?L+i*(pw/(labels.length-1)):L+pw/2;
   const Y=v=>T+ph-(v/ymax)*ph;
   let g='';
-  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="#252c36"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="#8e98a7">${t}</text>`;}
-  const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="#8e98a7">${esc(lb)}</text>`).join('');
+  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
+  const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lb)}</text>`).join('');
   const draw=(vals,color,name)=>{
     let segs=[],cur=[];
     vals.forEach((v,i)=>{if(v==null){if(cur.length){segs.push(cur);cur=[];}}else cur.push([X(i),Y(v),i,v]);});
@@ -149,8 +359,8 @@ function goalChart(h,a){
     return lines+dots;
   };
   const lgx2=L+Math.min(pw*0.55,240);
-  const legend=`<circle cx="${L}" cy="12" r="3.5" fill="${S_HOME}"/><text x="${L+9}" y="15.5" font-size="10.5" fill="#8e98a7">${esc(h.name.length>22?h.name.slice(0,21)+'…':h.name)}</text>`+
-    `<circle cx="${lgx2}" cy="12" r="3.5" fill="${S_AWAY}"/><text x="${lgx2+9}" y="15.5" font-size="10.5" fill="#8e98a7">${esc(a.name.length>22?a.name.slice(0,21)+'…':a.name)}</text>`;
+  const legend=`<circle cx="${L}" cy="12" r="3.5" fill="${S_HOME}"/><text x="${L+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(h.name.length>22?h.name.slice(0,21)+'…':h.name)}</text>`+
+    `<circle cx="${lgx2}" cy="12" r="3.5" fill="${S_AWAY}"/><text x="${lgx2+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(a.name.length>22?a.name.slice(0,21)+'…':a.name)}</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" role="img" aria-label="Son 5 sezon maç başına toplam gol ortalaması">`+
     g+xl+legend+draw(hv,S_HOME,h.name)+draw(av,S_AWAY,a.name)+
     `</svg><div class="s-note">Maç başına toplam gol (attığı + yediği), lig maçları · kaynak: football-data.co.uk</div>`;
@@ -171,9 +381,41 @@ function openSheet(mid){
     <div class="s-card"><h3>Form &amp; sezon</h3><div class="s-cols">${teamBlock(h)}${teamBlock(a)}</div></div>
   </div>`;
 }
-document.getElementById('refresh').onclick=load;
-document.getElementById('hotToggle').onclick=()=>{hotOnly=!hotOnly;render();};
-renderFilters();load();
+
+function openInfo(){
+  sheet.hidden=false;
+  sheet.innerHTML=`<div class="sheet">
+    <button class="s-close">×</button>
+    <h2>Nasıl hesaplanıyor?</h2>
+    <div class="s-sub">BETAVUS bir <b>gol olasılığı</b> motoru — kimin kazanacağını değil, kaç gol olacağını tahmin eder.</div>
+    <div class="s-card"><h3>Model</h3>
+      <p>Her takımın <b>ev / deplasman</b> attığı ve yediği gol oranları, son 4 sezon yakın sezona daha çok ağırlık verilerek (1.0 / 0.7 / 0.45 / 0.30) çıkarılır. İki taraf birleştirilip beklenen toplam gol <b>λ</b> bulunur; 2+ kez karşılaşmışlarsa son karşılaşmaların gol ortalaması %28 ağırlıkla karıştırılır. λ bir <b>Poisson</b> dağılımına sokulup "en az 1 / 2 / 3 gol" olasılıkları verilir.</div>
+    <div class="s-card"><h3>Rozetler</h3>
+      <p><span class="badge b3">●●●</span> H2H + form'a dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b0">○</span> sadece lig ortalaması (zayıf)</p>
+      <p><b>Vurgu</b> seçtiğin pazarda backtest'te sürdürülebilir en yüksek isabet bölgesini yeşil yakar — garanti değil, "modelin en emin olduğu" demektir.</p></div>
+    <div class="s-card"><h3>Dürüstlük</h3>
+      <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Ama tek maç ayrıştırma gücü piyasanın çok az üstünde — <b>Sonuçlar</b> sekmesi ve <a href="backtest.html">Model doğruluğu</a> sayfası bunu açıkça gösterir. Kayıp garantisi yoktur.</p></div>
+  </div>`;
+}
+
+// ---- wire ----
+$('tab-pred').onclick=()=>setTab('pred');
+$('tab-res').onclick=()=>setTab('res');
+$('refresh').onclick=load;
+$('infoBtn').onclick=openInfo;
+$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};
+$('hotToggle').onclick=()=>{if(!HL[hlKey])return;hotOnly=!hotOnly;renderPred();};
+
+const themeBtn=$('themeBtn');
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  themeBtn.textContent=t==='light'?'☀️':'🌙';
+  document.querySelector('meta[name=theme-color]').setAttribute('content',t==='light'?'#f3f5f9':'#090b0f');
+}
+applyTheme(store('theme','dark'));
+themeBtn.onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'dark':'light';save('theme',t);applyTheme(t);};
+
+renderHlSel();renderFilters();setTab(tab);load();
 </script>
 </body>
 </html>

@@ -13,11 +13,16 @@ For each of the six leagues the script:
 Standard library only, so it runs on a bare `python` in GitHub Actions.
 """
 
+import csv
 import json
 import math
+import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from teams import DIV_BY_LEAGUE, to_fd  # noqa: E402
 
 try:
     from zoneinfo import ZoneInfo
@@ -276,10 +281,45 @@ class LeagueModel:
         }
 
 
+FIXTURES_CSV = Path("data/football-data/fixtures.csv")
+
+
+def _f(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def load_market_odds():
+    """(league, fd_home, fd_away) -> pre-match odds from fixtures.csv, if present."""
+    if not FIXTURES_CSV.exists():
+        return {}
+    league_by_div = {d: lg for lg, d in DIV_BY_LEAGUE.items()}
+    out = {}
+    with FIXTURES_CSV.open(encoding="utf-8-sig") as fh:
+        for r in csv.DictReader(fh):
+            league = league_by_div.get((r.get("Div") or "").strip())
+            if not league:
+                continue
+            o, u = _f(r.get("Avg>2.5")), _f(r.get("Avg<2.5"))
+            implied = None
+            if o and u:
+                io, iu = 1 / o, 1 / u
+                implied = round(io / (io + iu), 4)
+            out[(league, (r.get("HomeTeam") or "").strip(), (r.get("AwayTeam") or "").strip())] = {
+                "o25_odds": o, "u25_odds": u, "o25_implied": implied,
+                "h": _f(r.get("AvgH")), "d": _f(r.get("AvgD")), "a": _f(r.get("AvgA")),
+            }
+    return out
+
+
 def main():
     now = datetime.now(timezone.utc)
     start, end = sunday_to_sunday(now.date())
     print(f"Window: {start} .. {end}")
+    odds = load_market_odds()
+    print(f"Market odds rows (our leagues): {len(odds)}")
 
     predictions = []
     for lid, (stem, name, code, tz_name) in LEAGUES.items():
@@ -301,19 +341,25 @@ def main():
                 continue
             count += 1
             pred = model.predict(m["team1"], m["team2"])
-            predictions.append(
-                {
-                    "match_id": f"{code}-{match_day.isoformat()}-{count:02d}",
-                    "league_id": lid,
-                    "league": name,
-                    "kickoff_utc": kickoff_utc(day, m.get("time"), tz_name),
-                    "home": clean_name(m["team1"]),
-                    "away": clean_name(m["team2"]),
-                    "source": "openfootball/football.json",
-                    **pred,
-                    "updated_at": now.isoformat(),
-                }
-            )
+            home, away = clean_name(m["team1"]), clean_name(m["team2"])
+            row = {
+                "match_id": f"{code}-{match_day.isoformat()}-{count:02d}",
+                "league_id": lid,
+                "league": name,
+                "kickoff_utc": kickoff_utc(day, m.get("time"), tz_name),
+                "home": home,
+                "away": away,
+                "source": "openfootball/football.json",
+                **pred,
+                "updated_at": now.isoformat(),
+            }
+            mk = odds.get((name, to_fd(name, home), to_fd(name, away)))
+            if mk:
+                edge = None
+                if mk["o25_implied"] is not None:
+                    edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
+                row["market"] = {**mk, "edge25": edge}
+            predictions.append(row)
         print(f"  {count} upcoming fixtures")
 
     predictions.sort(key=lambda x: x["kickoff_utc"])

@@ -13,6 +13,11 @@ Files land in data/football-data/<DIV>/<SEASON>.csv (SEASON = e.g. 2425).
 These raw CSVs are the local stats database; scripts/build_match_stats.py
 folds them into data/match-stats.json for the dashboard.
 
+Also grabs football-data.co.uk/fixtures.csv -> data/football-data/fixtures.csv:
+the next few days' matches across many leagues WITH pre-match odds. Only the
+imminent matches appear (it is repopulated a day or two before each round), so
+scripts/update_predictions.py attaches those odds where it can.
+
 The apex domain serves the files; the www host currently 503s.
 """
 
@@ -22,6 +27,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 BASE = "https://football-data.co.uk/mmz4281"
+FIXTURES_URL = "https://football-data.co.uk/fixtures.csv"
 OUT_DIR = Path("data/football-data")
 
 DIVISIONS = {
@@ -54,9 +60,28 @@ def fetch_csv(div, season):
     return text
 
 
+def fetch_fixtures():
+    """Upcoming matches + odds (small, whatever is within a few days)."""
+    req = Request(FIXTURES_URL, headers={"User-Agent": UA,
+                                         "Referer": "https://football-data.co.uk/"})
+    with urlopen(req, timeout=45) as resp:
+        text = resp.read().decode("utf-8-sig", errors="replace")
+    if not text.lstrip().startswith("Div,"):
+        raise ValueError("unexpected fixtures.csv body")
+    return text
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     ok = skipped = failed = 0
+
+    try:
+        text = fetch_fixtures()
+        (OUT_DIR / "fixtures.csv").write_text(text, encoding="utf-8")
+        print(f"  fixtures.csv  {len(text)} bytes  ~{text.count(chr(10))} rows")
+    except Exception as exc:
+        print(f"  skip fixtures.csv: {exc}")
+
     for div in DIVISIONS:
         (OUT_DIR / div).mkdir(exist_ok=True)
         for season in SEASONS:

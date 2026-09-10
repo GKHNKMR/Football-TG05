@@ -1,3 +1,7 @@
 * text=auto eol=lf
 *.csv text eol=lf
 *.json text eol=lf
+
+# generated data files — store bytes exactly, no EOL normalization
+data/** -text
+predictions.json -text

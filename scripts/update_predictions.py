@@ -301,11 +301,8 @@ def _implied(o, u):
 
 
 def load_market_odds():
-    """(league, fd_home, fd_away) -> pre-match Over/Under 2.5 odds from
-    football-data.co.uk's fixtures.csv: the market average AND Bet365's own
-    price (columns B365>2.5 / B365<2.5, or the closing B365C>2.5 fallback).
-    That file is refreshed a day or two before each round, so this is Bet365's
-    real total-goals line without scraping bet365.nl."""
+    """(league, fd_home, fd_away) -> pre-match Over/Under 2.5 market-average odds
+    from football-data.co.uk's fixtures.csv, when that round is listed there."""
     if not FIXTURES_CSV.exists():
         return {}
     league_by_div = {d: lg for lg, d in DIV_BY_LEAGUE.items()}
@@ -316,11 +313,8 @@ def load_market_odds():
             if not league:
                 continue
             o, u = _f(r.get("Avg>2.5")), _f(r.get("Avg<2.5"))
-            b_o = _f(r.get("B365>2.5")) or _f(r.get("B365C>2.5"))
-            b_u = _f(r.get("B365<2.5")) or _f(r.get("B365C<2.5"))
             out[(league, (r.get("HomeTeam") or "").strip(), (r.get("AwayTeam") or "").strip())] = {
                 "o25_odds": o, "u25_odds": u, "o25_implied": _implied(o, u),
-                "b365_o25": b_o, "b365_u25": b_u, "b365_o25_implied": _implied(b_o, b_u),
                 "h": _f(r.get("AvgH")), "d": _f(r.get("AvgD")), "a": _f(r.get("AvgA")),
             }
     return out
@@ -370,10 +364,7 @@ def main():
                 edge = None
                 if mk["o25_implied"] is not None:
                     edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
-                b_edge = None
-                if mk["b365_o25_implied"] is not None:
-                    b_edge = round(pred["p_over_2_5"] - mk["b365_o25_implied"], 4)
-                row["market"] = {**mk, "edge25": edge, "b365_edge25": b_edge}
+                row["market"] = {**mk, "edge25": edge}
             predictions.append(row)
         print(f"  {count} upcoming fixtures")
 

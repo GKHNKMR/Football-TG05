@@ -52,11 +52,6 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .league{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .teams{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kick{font-size:11px;color:var(--muted);margin-top:5px}
-.mkt{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.5}
-.mkt b{color:var(--text);font-weight:800}
-.mkt .b365{color:#1a8f4a;font-weight:900}
-:root[data-theme="light"] .mkt .b365{color:#0a7d3c}
-.mkt .dim{opacity:.65}
 .prob{display:flex;justify-content:center}
 .pill{min-width:66px;text-align:center;padding:8px 5px;border-radius:9px;background:var(--panel2);font-weight:900;font-size:14px}
 .p05 .pill{border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
@@ -209,8 +204,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .s-btnrow{display:flex;gap:8px;margin-top:14px}
 .s-btn{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:11px;font-weight:900;font-size:13px;cursor:pointer}
 .s-btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-#pane-cpn .tiles{grid-template-columns:repeat(4,1fr)}
-@media(max-width:650px){#pane-cpn .tiles{grid-template-columns:1fr 1fr}}
+#pane-cpn .tiles{grid-template-columns:repeat(3,1fr)}
+@media(max-width:650px){#pane-cpn .tiles{grid-template-columns:1fr}}
 #pane-cpn .rsum{color:var(--muted);font-size:11.5px;margin:4px 2px 0;line-height:1.6}
 #pane-cpn .cpn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
 #pane-cpn .cpn-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
@@ -421,22 +416,6 @@ function basisBadge(b){
   if(b==='partial-form')return `<span class="badge b1" title="Sınırlı veri">●</span>`;
   return `<span class="badge b0" title="Sadece lig ortalaması (zayıf)">○</span>`;
 }
-function mktNote(x){
-  const m=x.market;
-  const etxt=e=>e==null?'':` · edge ${e>=0?'+':''}${Math.round(e*100)}%`;
-  const rows=[];
-  if(m&&m.b365_o25!=null)
-    rows.push(`<span class="b365">Bet365</span> 2.5 Üst <b>${m.b365_o25}</b> · Alt <b>${m.b365_u25}</b>${etxt(m.b365_edge25)}`);
-  if(m&&m.o25_implied!=null)
-    rows.push(`piyasa ort. 2.5Ü %${Math.round(m.o25_implied*100)}${etxt(m.edge25)}`);
-  if(!rows.length){
-    const days=(new Date(x.kickoff_utc)-Date.now())/864e5;
-    if(days<=4&&days>-1)
-      rows.push(`<span class="b365">Bet365</span> 2.5 oranı <span class="dim">— piyasa henüz açmadı</span>`);
-  }
-  return rows.length?`<div class="mkt">${rows.join('<br>')}</div>`:'';
-}
-
 function renderFilters(){
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;save('league',selected);renderFilters();renderAll();});
@@ -587,7 +566,6 @@ function renderPred(){
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
-      ${mktNote(x)}
     </div>
     <div class="prob p05">${pillFor(x,'0.5')}</div>
     <div class="prob">${pillFor(x,'1.5')}</div>
@@ -803,7 +781,6 @@ rows.addEventListener('click',e=>{
 
 // ---- sepet / kupon ----
 function fixtureById(mid){return (window.__data||[]).find(x=>x.match_id===mid);}
-function legOdds(l){return l.side==='Üst'?(l.oddsUst??l.odds??null):(l.oddsAlt??null);}
 function legP(l){const o=l.pOver??l.p;return o==null?null:(l.side==='Üst'?o:1-o);}
 let toastT=null;
 function showToast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200);}
@@ -812,11 +789,8 @@ function toggleLeg(mid,line){
   if(i>=0){slip.splice(i,1);}
   else{
     const x=fixtureById(mid);if(!x)return;
-    const mk=x.market||{};
     slip.push({mid,league:x.league,home:x.home,away:x.away,kickoff_utc:x.kickoff_utc,
-      line,side:'Üst',pOver:x[LINE_KEY[line]],
-      oddsUst:(line==='2.5'&&mk.b365_o25!=null)?mk.b365_o25:null,
-      oddsAlt:(line==='2.5'&&mk.b365_u25!=null)?mk.b365_u25:null});
+      line,side:'Üst',pOver:x[LINE_KEY[line]]});
   }
   saveJSON('slip',slip);renderPred();renderSlipFab();if(!sheet.hidden)openSlip();
 }
@@ -827,18 +801,15 @@ function renderSlipFab(){
 }
 function openSlip(){
   sheet.hidden=false;
-  const legs=slip.map((l,i)=>{const od=legOdds(l),pp=legP(l);return `<div class="slip-leg">
-      <div><div class="leg-pick">${l.line} <button class="sideT" data-k="${i}" title="Üst / Alt">${l.side}</button>${od?` · <span class="b365">${od}</span>`:''}</div>
+  const legs=slip.map((l,i)=>{const pp=legP(l);return `<div class="slip-leg">
+      <div><div class="leg-pick">${l.line} <button class="sideT" data-k="${i}" title="Üst / Alt">${l.side}</button></div>
         <div class="leg-sub">${esc(l.home)} — ${esc(l.away)} · ${dmy(l.kickoff_utc)} · model %${Math.round((pp||0)*100)}</div></div>
       <button class="lx" data-k="${i}" aria-label="Çıkar">×</button>
     </div>`;}).join('')||'<div class="s-note">Sepet boş. Tahminler\'de bir yüzdeye dokun.</div>';
-  const oddsLegs=slip.filter(l=>legOdds(l));
-  const comb=oddsLegs.reduce((a,l)=>a*legOdds(l),1);
-  const combN=oddsLegs.length;
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
     <h2>Sepet · ${slip.length} maç</h2>
-    <div class="s-sub">Bahsi Bet365'te oynadıysan burada "Oyna" ile kaydet; maçlar oynanınca sonuç Kuponlarım'da işlenir. Site bahis oynamaz, kayıt tutar.${combN===slip.length&&combN>1?` Kombine oran ≈ <b>${comb.toFixed(2)}</b>`:''}</div>
+    <div class="s-sub">Bahsi başka yerde oynadıysan burada "Oyna" ile kaydet; maçlar oynanınca sonuç Kuponlarım'da işlenir. Site bahis oynamaz, kayıt tutar.</div>
     <div class="s-card">${legs}</div>
     <div class="s-btnrow">
       <button class="s-btn" id="slipClear">Temizle</button>
@@ -891,8 +862,7 @@ function settleCoupon(c){
   let status='won';
   if(legs.some(l=>l.status==='lost'))status='lost';
   else if(legs.some(l=>l.status==='pending'))status='pending';
-  const comb=legs.every(l=>legOdds(l))?legs.reduce((a,l)=>a*legOdds(l),1):null;
-  return {legs,status,comb};
+  return {legs,status};
 }
 function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
@@ -916,32 +886,24 @@ function renderCoupons(){
     if(x.s.status==='won'){cur=cur>0?cur+1:1;best=Math.max(best,cur);}
     else{cur=cur<0?cur-1:-1;worst=Math.min(worst,cur);}
   });
-  // ROI (kombine oranı olan sonuçlanmış kuponlar, 1 birim yatırım)
-  const withComb=done.filter(x=>x.s.comb!=null);
-  let roi=null;
-  if(withComb.length){
-    const ret=withComb.reduce((a,x)=>a+(x.s.status==='won'?x.s.comb:0),0);
-    roi=Math.round((ret-withComb.length)/withComb.length*100);
-  }
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   sum.innerHTML=`<div class="tiles">
     <div class="tile"><div class="v">${done.length?pct1(won,done.length):'—'}</div><div class="k">kupon başarı</div><div class="n">${won}/${done.length} sonuçlandı${pend?` · ${pend} bekliyor`:''}</div></div>
     <div class="tile"><div class="v">${pct1(legWon,allLegs.length)}</div><div class="k">bacak isabeti</div><div class="n">${legWon}/${allLegs.length} bacak</div></div>
-    <div class="tile"><div class="v">${roi==null?'—':(roi>=0?'+':'')+roi+'%'}</div><div class="k">ROI (kombine oranlı)</div><div class="n">${withComb.length} kupon · 1 birim/kupon</div></div>
     <div class="tile"><div class="v">${best} / ${Math.abs(worst)}</div><div class="k">en uzun seri</div><div class="n">kazanma / kaybetme</div></div>
   </div>
   <div class="rsum">Çizgi bazında bacak: ${['0.5','1.5','2.5'].map(k=>byLine[k]?`${k} ${pct1(byLine[k][0],byLine[k][1])} (${byLine[k][1]})`:`${k} —`).join(' · ')} — yalnızca <b>senin kuponların</b>.</div>`;
   list.innerHTML=settled.map(({c,s})=>{
     const badge=s.status==='won'?'won':s.status==='lost'?'lost':'pending';
     const btxt=s.status==='won'?'KAZANDI':s.status==='lost'?'KAYBETTİ':'BEKLİYOR';
-    const legs=s.legs.map((l,li)=>{const od=legOdds(l);return `<div class="cpn-leg">
-        <div><div class="leg-pick">${l.line} ${l.side}${od?` · <span class="b365">${od}</span>`:''}</div>
+    const legs=s.legs.map((l,li)=>`<div class="cpn-leg">
+        <div><div class="leg-pick">${l.line} ${l.side}</div>
           <div class="leg-sub">${esc(l.home)} — ${esc(l.away)}${l.status!=='pending'?` · ${l.score}`:''}</div></div>
         <div class="lr ${l.status}">${l.status==='won'?'✓':l.status==='lost'?'✗':'⏳'}</div>
         <button class="leg-del" data-cid="${c.id}" data-li="${li}" title="Bu maçı kupondan çıkar">×</button>
-      </div>`;}).join('');
+      </div>`).join('');
     return `<div class="cpn">
-      <div class="cpn-head"><span>${dmy(c.ts)} · ${c.legs.length} maç${s.comb?` · kombine ${s.comb.toFixed(2)}`:''}</span>
+      <div class="cpn-head"><span>${dmy(c.ts)} · ${c.legs.length} maç</span>
         <span class="cbadge ${badge}">${btxt}</span></div>
       ${legs}
       <div style="margin-top:8px"><button class="cpn-del" data-id="${c.id}">Kuponu sil</button></div>

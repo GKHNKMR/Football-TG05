@@ -219,7 +219,6 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cbadge.won{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
 .cbadge.lost{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
 .cbadge.pending{background:var(--hair);color:var(--muted)}
-#pane-cpn .cpn-del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:700;text-decoration:underline}
 #toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #toast[hidden]{display:none}
 #gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -861,11 +860,6 @@ function saveCoupon(){
   renderPred();renderSlipFab();closeSheet();showToast('Kupon kaydedildi — Kuponlarım\'da');
   if(tab==='cpn')renderCoupons();
 }
-function deleteCoupon(id){
-  const c=coupons.find(x=>x.id===id);if(!c)return;
-  if(!confirm(`${c.legs.length} maçlık bu kupon silinsin mi?`))return;
-  coupons=coupons.filter(x=>x.id!==id);saveJSON('coupons',coupons);renderCoupons();
-}
 function removeCouponLeg(cid,li){
   const c=coupons.find(x=>x.id===cid);if(!c)return;
   const leg=c.legs[li];
@@ -944,14 +938,12 @@ function renderCoupons(){
         <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor tahmini</th><th>Gerçek sonuç</th><th>Başarı</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
-      <div style="margin-top:8px"><button class="cpn-del" data-id="${c.id}">Kuponu sil</button></div>
     </div>`;
   }).join('');
 }
 $('cpnList').addEventListener('click',e=>{
   const ld=e.target.closest('.leg-del');
-  if(ld){removeCouponLeg(ld.dataset.cid,+ld.dataset.li);return;}
-  const d=e.target.closest('.cpn-del');if(d)deleteCoupon(d.dataset.id);
+  if(ld)removeCouponLeg(ld.dataset.cid,+ld.dataset.li);
 });
 $('slipFab').onclick=openSlip;
 function n1(v){return v==null?'—':(Math.round(v*10)/10);}

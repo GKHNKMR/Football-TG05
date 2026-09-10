@@ -181,10 +181,13 @@ def score(records):
             for p, o in pairs
         ) / n
         calib, ece = calibration(pairs)
-        # "would you have been right" - side the model leans to, vs actual
-        pick_hits = sum((p >= 0.5) == bool(o) for p, o in pairs)
+        # "would you have been right" - the side the model leans to, vs actual.
+        # Compare on the rounded percentage so a shown "50%" counts as an Over lean
+        # (otherwise a p of 0.499 shows 50% but scores as a miss on an Over match).
+        lean = lambda p: round(p * 100) >= 50
+        pick_hits = sum(lean(p) == bool(o) for p, o in pairs)
         conf = [(p, o) for p, o in pairs if p >= 0.65 or p <= 0.35]
-        conf_hits = sum((p >= 0.5) == bool(o) for p, o in conf)
+        conf_hits = sum(lean(p) == bool(o) for p, o in conf)
         out["markets"][key] = {
             "base_rate": round(base, 4),
             "brier": round(brier, 4),
@@ -248,7 +251,7 @@ def main():
             "pred_lambda": round(r["lam"], 2),
             "p25": round(r["p25"], 3),
             "actual_total": r["total"], "actual_score": r["score"],
-            "over25_hit": (r["p25"] >= 0.5) == (r["total"] > 2.5),
+            "over25_hit": (round(r["p25"] * 100) >= 50) == (r["total"] > 2.5),
             "lambda_err": round(abs(r["lam"] - r["total"]), 2),
         })
 

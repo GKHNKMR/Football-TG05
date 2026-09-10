@@ -168,7 +168,7 @@ function render(d){
   // samples
   document.getElementById('samples').innerHTML=
     `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>λ</th><th>2.5Ü</th><th>Skor</th><th>Gol</th><th>2.5Ü</th></tr></thead><tbody>`+
-    d.samples.map(s=>`<tr><td>${s.date.slice(2).replace(/-/g,'.')}</td><td>${esc(s.league)}</td><td style="text-align:left">${esc(s.home)} — ${esc(s.away)}</td><td>${s.pred_lambda}</td><td>${(s.p25*100).toFixed(0)}%</td><td>${s.actual_score}</td><td>${s.actual_total}</td><td class="${s.over25_hit?'hit':'miss'}">${s.over25_hit?'✓':'✗'}</td></tr>`).join('')+
+    d.samples.map(s=>`<tr><td>${new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(s.date+'T12:00:00'))}</td><td>${esc(s.league)}</td><td style="text-align:left">${esc(s.home)} — ${esc(s.away)}</td><td>${s.pred_lambda}</td><td>${(s.p25*100).toFixed(0)}%</td><td>${s.actual_score}</td><td>${s.actual_total}</td><td class="${s.over25_hit?'hit':'miss'}">${s.over25_hit?'✓':'✗'}</td></tr>`).join('')+
     `</tbody>`;
 
   document.getElementById('sell').innerHTML=

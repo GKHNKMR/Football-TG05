@@ -199,6 +199,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .slipfab{position:fixed;right:16px;bottom:16px;z-index:40;border:1px solid var(--line);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:11px 16px;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 .slipfab[hidden]{display:none}
 .slip-leg,.cpn-leg{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--hair);font-size:12.5px}
+#pane-cpn .cpn-leg{grid-template-columns:1fr auto auto}
+#pane-cpn .leg-del{border:0;background:var(--panel2);color:var(--muted);border-radius:6px;width:24px;height:24px;font-size:14px;font-weight:900;cursor:pointer}
+#pane-cpn .leg-del:hover{color:var(--bad)}
 .slip-leg .lx{border:0;background:var(--panel2);color:var(--muted);border-radius:7px;width:26px;height:26px;font-size:15px;cursor:pointer;font-weight:900}
 .slip-leg .sideT{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:1px 7px;font-weight:900;font-size:11px;cursor:pointer}
 .leg-pick{font-weight:900;white-space:nowrap}
@@ -862,6 +865,14 @@ function saveCoupon(){
 function deleteCoupon(id){
   coupons=coupons.filter(c=>c.id!==id);saveJSON('coupons',coupons);renderCoupons();
 }
+function removeCouponLeg(cid,li){
+  const c=coupons.find(x=>x.id===cid);if(!c)return;
+  const leg=c.legs[li];
+  if(!confirm(`"${leg.home} — ${leg.away} · ${leg.line} ${leg.side}" bu kupondan çıkarılsın mı?`))return;
+  c.legs.splice(li,1);
+  if(!c.legs.length)coupons=coupons.filter(x=>x.id!==cid);   // son maç da silindiyse kuponu kaldır
+  saveJSON('coupons',coupons);renderCoupons();
+}
 // bir bacağı oynanmış sonuçla eşle (RESULTS.matches)
 function settleLeg(l){
   const ms=(RESULTS&&RESULTS.matches)||[];
@@ -921,20 +932,25 @@ function renderCoupons(){
   list.innerHTML=settled.map(({c,s})=>{
     const badge=s.status==='won'?'won':s.status==='lost'?'lost':'pending';
     const btxt=s.status==='won'?'KAZANDI':s.status==='lost'?'KAYBETTİ':'BEKLİYOR';
-    const legs=s.legs.map(l=>{const od=legOdds(l);return `<div class="cpn-leg">
+    const legs=s.legs.map((l,li)=>{const od=legOdds(l);return `<div class="cpn-leg">
         <div><div class="leg-pick">${l.line} ${l.side}${od?` · <span class="b365">${od}</span>`:''}</div>
           <div class="leg-sub">${esc(l.home)} — ${esc(l.away)}${l.status!=='pending'?` · ${l.score}`:''}</div></div>
         <div class="lr ${l.status}">${l.status==='won'?'✓':l.status==='lost'?'✗':'⏳'}</div>
+        <button class="leg-del" data-cid="${c.id}" data-li="${li}" title="Bu maçı kupondan çıkar">×</button>
       </div>`;}).join('');
     return `<div class="cpn">
       <div class="cpn-head"><span>${dmy(c.ts)} · ${c.legs.length} maç${s.comb?` · kombine ${s.comb.toFixed(2)}`:''}</span>
         <span class="cbadge ${badge}">${btxt}</span></div>
       ${legs}
-      <div style="margin-top:8px"><button class="cpn-del" data-id="${c.id}">Sil</button></div>
+      <div style="margin-top:8px"><button class="cpn-del" data-id="${c.id}">Kuponu sil</button></div>
     </div>`;
   }).join('');
 }
-$('cpnList').addEventListener('click',e=>{const d=e.target.closest('.cpn-del');if(d)deleteCoupon(d.dataset.id);});
+$('cpnList').addEventListener('click',e=>{
+  const ld=e.target.closest('.leg-del');
+  if(ld){removeCouponLeg(ld.dataset.cid,+ld.dataset.li);return;}
+  const d=e.target.closest('.cpn-del');if(d)deleteCoupon(d.dataset.id);
+});
 $('slipFab').onclick=openSlip;
 function n1(v){return v==null?'—':(Math.round(v*10)/10);}
 function sline(k,v){return `<div class="s-stat"><span>${k}</span><b>${v}</b></div>`;}

@@ -33,7 +33,7 @@ OUT_FILE = Path("data/backtest.json")
 
 DIVISIONS = {
     "E0": "Premier League", "E1": "Championship", "SP1": "LaLiga", "D1": "Bundesliga",
-    "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie",
+    "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie", "T1": "Turkish Süper Lig",
 }
 ALL_SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526"]
 # five walk-forward seasons; 2122 trains on just 1920+2021, the rest on four

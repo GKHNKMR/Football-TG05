@@ -393,7 +393,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   </div>
 </div>
 <script>
-const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json';
 let STATS={matches:{}},RESULTS=null,BACKTEST=null;
 const FALLBACK_DATA=[
@@ -440,7 +440,8 @@ const FLAGS={
  'Bundesliga':'<rect width="20" height="14" fill="#000"/><rect y="4.67" width="20" height="4.67" fill="#dd0000"/><rect y="9.33" width="20" height="4.67" fill="#ffce00"/>',
  'Serie A':'<rect width="6.67" height="14" fill="#009246"/><rect x="6.67" width="6.66" height="14" fill="#f1f2f1"/><rect x="13.33" width="6.67" height="14" fill="#ce2b37"/>',
  'Ligue 1':'<rect width="6.67" height="14" fill="#0055a4"/><rect x="6.67" width="6.66" height="14" fill="#f1f2f1"/><rect x="13.33" width="6.67" height="14" fill="#ef4135"/>',
- 'Eredivisie':'<rect width="20" height="14" fill="#ae1c28"/><rect y="4.67" width="20" height="4.67" fill="#f1f2f1"/><rect y="9.33" width="20" height="4.67" fill="#21468b"/>'
+ 'Eredivisie':'<rect width="20" height="14" fill="#ae1c28"/><rect y="4.67" width="20" height="4.67" fill="#f1f2f1"/><rect y="9.33" width="20" height="4.67" fill="#21468b"/>',
+ 'Turkish Süper Lig':'<rect width="20" height="14" fill="#e30a17"/><circle cx="7.4" cy="7" r="3.1" fill="#fff"/><circle cx="8.5" cy="7" r="2.5" fill="#e30a17"/><path d="M11 7l2 .65-1.24-1.7v2.1L10.5 6.36z" fill="#fff"/>'
 };
 FLAGS['Championship']=FLAGS['Premier League'];   // İngiltere 2. lig — aynı bayrak
 function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
@@ -709,7 +710,7 @@ function renderResults(){
 function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();renderSlipFab();}
 
 // ---- model doğruluğu (backtest) ----
-const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig'];
 const btPc=v=>v==null?'—':(v*100).toFixed(1)+'%';
 function btTiles(rows){$('bt-tiles').innerHTML=rows.map(r=>`<div class="tile"><div class="v">${r[0]}</div><div class="k">${r[1]}</div><div class="n">${r[2]}</div></div>`).join('');}
 function btSeasonList(){return BACKTEST?Object.keys(BACKTEST.by_season||{}).sort():[];}

@@ -22,7 +22,8 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from teams import DIV_BY_LEAGUE, to_fd  # noqa: E402
+from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
+from backtest import LeagueModel as FDModel, poisson_over as fd_poisson_over  # noqa: E402
 
 try:
     from zoneinfo import ZoneInfo
@@ -59,7 +60,16 @@ SUMMER_OFFSET_HOURS = {
     "Europe/Rome": 2,
     "Europe/Paris": 2,
     "Europe/Amsterdam": 2,
+    "Europe/Istanbul": 3,
 }
+
+# Leagues openfootball does not publish current fixtures for: source both the
+# history and the upcoming round from football-data.co.uk instead.
+#   league_id -> (football-data DIV, display name, short code, stadium tz)
+FD_LEAGUES = {203: ("T1", "Turkish Süper Lig", "TR", "Europe/Istanbul")}
+FD_HIST_SEASONS = ["2223", "2324", "2425", "2526", "2627"]   # oldest -> newest
+FD_MODEL_CODES = ["2627", "2526", "2425", "2324"]            # nearest -> ...
+FD_MODEL_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
 
 RAW_URL = "https://raw.githubusercontent.com/{repo}/{branch}/{path}"
 API_URL = "https://api.github.com/repos/{repo}/contents/{path}?ref={branch}"
@@ -283,7 +293,8 @@ class LeagueModel:
         }
 
 
-FIXTURES_CSV = Path("data/football-data/fixtures.csv")
+FD_DIR = Path("data/football-data")
+FIXTURES_CSV = FD_DIR / "fixtures.csv"
 
 
 def _f(v):
@@ -318,6 +329,104 @@ def load_market_odds():
                 "h": _f(r.get("AvgH")), "d": _f(r.get("AvgD")), "a": _f(r.get("AvgA")),
             }
     return out
+
+
+def _fd_history(div):
+    """Completed DIV matches from the local football-data CSVs, oldest first."""
+    rows = []
+    for s in FD_HIST_SEASONS:
+        p = FD_DIR / div / f"{s}.csv"
+        if not p.exists():
+            continue
+        with p.open(encoding="utf-8-sig") as fh:
+            for r in csv.DictReader(fh):
+                try:
+                    hg, ag = int(r["FTHG"]), int(r["FTAG"])
+                    d = datetime.strptime(r["Date"].strip(), "%d/%m/%Y").date()
+                except (KeyError, ValueError):
+                    continue
+                rows.append({"season": s, "date": d.isoformat(),
+                             "home": r["HomeTeam"].strip(), "away": r["AwayTeam"].strip(),
+                             "hg": hg, "ag": ag, "total": hg + ag})
+    return rows
+
+
+def _fd_upcoming(div, start, end):
+    """Upcoming DIV matches from fixtures.csv inside [start, end]."""
+    if not FIXTURES_CSV.exists():
+        return []
+    out = []
+    with FIXTURES_CSV.open(encoding="utf-8-sig") as fh:
+        for r in csv.DictReader(fh):
+            if (r.get("Div") or "").strip() != div:
+                continue
+            try:
+                d = datetime.strptime(r["Date"].strip(), "%d/%m/%Y").date()
+            except (KeyError, ValueError):
+                continue
+            if start <= d <= end:
+                out.append({"date": d, "time": (r.get("Time") or "").strip(),
+                            "home": (r.get("HomeTeam") or "").strip(),
+                            "away": (r.get("AwayTeam") or "").strip()})
+    return out
+
+
+def _fd_pred_dict(model, home, away):
+    """Same shape as LeagueModel.predict(), but off the backtest FDModel."""
+    lam = model.predict(home, away)
+    known = (home in model.hgf) + (away in model.agf)
+    basis = "form" if known == 2 else "partial-form" if known == 1 else "league-avg"
+    pair = sorted(model.h2h.get(frozenset((home, away)), []), reverse=True)[:H2H_MAX]
+    if len(pair) >= 2:
+        basis += "+h2h"
+    p05 = fd_poisson_over(lam, 0)
+    return {
+        "basis": basis, "h2h_matches_used": len(pair),
+        "exp_goals": round(lam, 3),
+        "p_over_0_5": round(p05, 4),
+        "p_over_1_5": round(fd_poisson_over(lam, 1), 4),
+        "p_over_2_5": round(fd_poisson_over(lam, 2), 4),
+        "label": label(p05) if basis.startswith("form") else "",
+    }
+
+
+def fd_predictions(now, start, end, odds):
+    """Predictions for leagues sourced entirely from football-data.co.uk
+    (openfootball has no current fixtures for them). History trains the model;
+    fixtures.csv supplies the upcoming round, so the horizon is short."""
+    preds = []
+    for lid, (div, name, code, tz_name) in FD_LEAGUES.items():
+        hist = _fd_history(div)
+        by_code = {}
+        for m in hist:
+            by_code.setdefault(m["season"], []).append(m)
+        model = FDModel([(by_code.get(c, []), w)
+                         for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
+        up = _fd_upcoming(div, start, end)
+        n = 0
+        for fx in up:
+            if not fx["home"] or not fx["away"]:
+                continue
+            n += 1
+            pred = _fd_pred_dict(model, fx["home"], fx["away"])
+            home, away = to_pretty(name, fx["home"]), to_pretty(name, fx["away"])
+            row = {
+                "match_id": f"{code}-{fx['date'].isoformat()}-{n:02d}",
+                "league_id": lid, "league": name,
+                "kickoff_utc": kickoff_utc(fx["date"].isoformat(), fx["time"], tz_name),
+                "home": home, "away": away,
+                "source": "football-data.co.uk",
+                **pred, "updated_at": now.isoformat(),
+            }
+            mk = odds.get((name, fx["home"], fx["away"]))
+            if mk:
+                edge = None
+                if mk["o25_implied"] is not None:
+                    edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
+                row["market"] = {**mk, "edge25": edge}
+            preds.append(row)
+        print(f"[{name}] {div} · {len(hist)} history rows · {n} upcoming (fixtures.csv)")
+    return preds
 
 
 def main():
@@ -368,11 +477,14 @@ def main():
             predictions.append(row)
         print(f"  {count} upcoming fixtures")
 
+    predictions += fd_predictions(now, start, end, odds)
+
     predictions.sort(key=lambda x: x["kickoff_utc"])
     OUTPUT_FILE.write_text(
         json.dumps(predictions, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"Wrote {len(predictions)} fixtures across {len(LEAGUES)} leagues")
+    print(f"Wrote {len(predictions)} fixtures across "
+          f"{len(LEAGUES) + len(FD_LEAGUES)} leagues")
 
 
 if __name__ == "__main__":

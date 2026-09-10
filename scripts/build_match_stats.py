@@ -41,6 +41,7 @@ DIVISIONS = {
     "I1": ("Serie A", 135),
     "F1": ("Ligue 1", 61),
     "N1": ("Eredivisie", 88),
+    "T1": ("Turkish Süper Lig", 203),
 }
 
 # BETAVUS display name (from predictions.json) -> football-data.co.uk name.
@@ -86,6 +87,14 @@ CROSSWALK = {
     "Eredivisie": {
         "ADO Den Haag": "Den Haag", "AZ": "AZ Alkmaar", "Fortuna Sittard": "For Sittard",
         "NEC": "Nijmegen", "PEC Zwolle": "Zwolle", "PSV": "PSV Eindhoven",
+    },
+    "Turkish Süper Lig": {
+        "Adana Demirspor": "Ad. Demirspor", "Başakşehir": "Buyuksehyr",
+        "Beşiktaş": "Besiktas", "Fenerbahçe": "Fenerbahce", "Gaziantep FK": "Gaziantep",
+        "Gençlerbirliği": "Genclerbirligi", "Göztepe": "Goztep",
+        "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
+        "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
+        "Erzurumspor": "Erzurum BB",
     },
 }
 

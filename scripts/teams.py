@@ -13,6 +13,7 @@ DIVISIONS = {
     "I1": ("Serie A", 135),
     "F1": ("Ligue 1", 61),
     "N1": ("Eredivisie", 88),
+    "T1": ("Turkish Süper Lig", 203),
 }
 
 LEAGUE_BY_DIV = {d: name for d, (name, _lid) in DIVISIONS.items()}
@@ -61,6 +62,16 @@ CROSSWALK = {
     "Eredivisie": {
         "ADO Den Haag": "Den Haag", "AZ": "AZ Alkmaar", "Fortuna Sittard": "For Sittard",
         "NEC": "Nijmegen", "PEC Zwolle": "Zwolle", "PSV": "PSV Eindhoven",
+    },
+    # football-data.co.uk uses ASCII short forms for Turkish clubs; restore the
+    # names Turkish readers expect.
+    "Turkish Süper Lig": {
+        "Adana Demirspor": "Ad. Demirspor", "Başakşehir": "Buyuksehyr",
+        "Beşiktaş": "Besiktas", "Fenerbahçe": "Fenerbahce", "Gaziantep FK": "Gaziantep",
+        "Gençlerbirliği": "Genclerbirligi", "Giresunspor": "Giresunspor",
+        "Göztepe": "Goztep", "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
+        "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
+        "Erzurumspor": "Erzurum BB",
     },
 }
 

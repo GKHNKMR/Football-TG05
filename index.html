@@ -79,6 +79,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cal[hidden]{display:none}
 .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal-h button{border:1px solid var(--line);background:var(--panel2);color:var(--text);width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:900}
+.cal-h button:disabled{opacity:.3;cursor:default}
 .cal-h b{font-size:13px;font-weight:900}
 .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-g .wd{text-align:center;font-size:9.5px;font-weight:900;color:var(--muted);padding:3px 0}
@@ -327,13 +328,20 @@ function renderCal(){
   const has=keysFor(calFor);
   const sorted=[...has].sort();
   const lo=sorted[0]||'', hi=sorted[sorted.length-1]||'';
+  const loM=lo.slice(0,7), hiM=hi.slice(0,7);          // veri olan ilk/son ay
   const sel=calFor==='pred'?dayPred:dayRes;
   const today=localKey(new Date());
+  // görüntülenen ayı veri aralığına sıkıştır
+  if(loM){const cm=`${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,'0')}`;
+    if(cm<loM)calMonth=new Date(+loM.slice(0,4),+loM.slice(5,7)-1,1);
+    else if(cm>hiM)calMonth=new Date(+hiM.slice(0,4),+hiM.slice(5,7)-1,1);}
   const y=calMonth.getFullYear(),m=calMonth.getMonth();
   const first=new Date(y,m,1);
   const lead=(first.getDay()+6)%7;                 // Pazartesi=0
   const dim=new Date(y,m+1,0).getDate();
   const mName=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric'}).format(first);
+  const curM=`${y}-${String(m+1).padStart(2,'0')}`;
+  const noPrev=loM&&curM<=loM, noNext=hiM&&curM>=hiM;
   let cells='';
   ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'].forEach(w=>cells+=`<div class="wd">${w}</div>`);
   for(let i=0;i<lead;i++)cells+='<div></div>';
@@ -342,7 +350,7 @@ function renderCal(){
     const cls=['',has.has(k)?'has dot':'no',k===today?'today':'',k===sel?'sel':''].filter(Boolean).join(' ');
     cells+=`<button class="${cls}" data-k="${k}">${d}</button>`;
   }
-  cal.innerHTML=`<div class="cal-h"><button data-nav="-1">‹</button><b>${mName}</b><button data-nav="1">›</button></div>
+  cal.innerHTML=`<div class="cal-h"><button data-nav="-1"${noPrev?' disabled':''}>‹</button><b>${mName}</b><button data-nav="1"${noNext?' disabled':''}>›</button></div>
     <div class="cal-g">${cells}</div>
     <label class="cal-man">Tarih yaz: <input type="date" value="${sel||''}"${lo?` min="${lo}" max="${hi}"`:''}></label>
     <div class="cal-f"><button data-act="today">Bugün</button><button data-act="all">Tüm günler</button></div>`;

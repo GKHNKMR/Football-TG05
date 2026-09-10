@@ -319,7 +319,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       </span>
     </div>
     <div class="table">
-      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div>Başarı</div></div>
+      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div title="model, gerçekleşen 0.5 sonucuna ne olasılık vermişti (en az 1 gol / 0-0)">0.5+ başarı</div></div>
       <div id="resRows"><div class="loading">Yükleniyor…</div></div>
     </div>
     <div class="foot" id="resFoot"></div>
@@ -618,6 +618,11 @@ function renderPred(){
 }
 
 const HIMIN={'05':0.95,'15':0.85,'25':0.75};
+// 0.5+ başarısı: model, o maçta gerçekleşen 0.5 sonucuna (en az 1 gol / 0-0) ne olasılık verdi
+function succ05(m){
+  const p=m.p_over_0_5; if(p==null||m.total==null)return null;
+  return Math.round(100*(m.total>0.5?p:1-p));
+}
 function aggr(rows){                       // seçili lig + gün için istatistikleri client'ta hesapla
   const n=rows.length; if(!n)return {n:0};
   const a={n};
@@ -627,7 +632,8 @@ function aggr(rows){                       // seçili lig + gün için istatisti
     const hi=rows.filter(r=>(r[key]||0)>=HIMIN[t]);
     if(hi.length){a['hi_n_'+t]=hi.length;a['hi_acc_'+t]=Math.round(1000*hi.filter(r=>r.hits&&r.hits['hit_'+t]).length/hi.length)/10;}
   });
-  a.success_pct=Math.round(10*rows.reduce((s,r)=>s+(r.success_pct||0),0)/n)/10;
+  const s5=rows.map(succ05).filter(v=>v!=null);
+  a.s05_acc=s5.length?Math.round(10*s5.reduce((s,v)=>s+v,0)/s5.length)/10:null;
   const errs=rows.filter(r=>r.lambda_err!=null);
   if(errs.length)a.lambda_mae=Math.round(100*errs.reduce((s,r)=>s+r.lambda_err,0)/errs.length)/100;
   const val=rows.filter(r=>'value_hit'in r);
@@ -684,26 +690,26 @@ function renderResults(){
     ${lineTile('1.5+',o.acc_15,o.n)}
     ${lineTile('2.5+',o.acc_25,o.n)}
   </div>
-  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · ortalama başarı <b>%${o.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
+  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · 0.5+ başarı ort. <b>%${o.s05_acc??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
   ${o.n?hiStrip(o):''}`;
   if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(qRes?`«${qRes}» için sonuç yok`:dayActive?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   const CAP=400, shown=ms.slice(0,CAP);   // özetler tüm maçlar; liste en yeni CAP satır
   body.innerHTML=(ms.length>CAP?`<div class="rmore">En yeni ${CAP} maç listeleniyor · yüzdeler yukarıda ${ms.length} maçın tamamından</div>`:'')+shown.map(m=>{
     const H=m.hits||{};
-    const edge=('edge25'in m)?`<div class="edge">edge ${m.edge25>=0?'+':''}${Math.round(m.edge25*100)}%</div>`:'';
     const lam=m.pred_lambda, tot=m.total;
     const close=(lam!=null&&Math.abs(lam-tot)<=0.75);
+    const s5=succ05(m), got=tot>0.5;
     return `<div class="rrow">
       <div class="rdate">${dateCell(m.kickoff_utc)}</div>
       <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
       <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
-      <div>%${m.success_pct}${edge}</div>
+      <div><span class="${got?'hit':'miss'}" style="font-weight:800">${s5==null?'—':'%'+s5}</span><div class="edge">0.5Ü ${pctI(m.p_over_0_5)} · ${got?'en az 1 gol ✓':'0-0 ✗'}</div></div>
     </div>`;
   }).join('');
   const rc=RESULTS.reconstructed_count||0;
-  foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "Başarı" üç çizgideki doğru-yön olasılıklarının ortalaması.`+
+  foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "0.5+ başarı" = hedefimiz olan <b>en az 1 gol</b> için: maç ≥1 golle bittiyse modelin "0.5 Üst %"i, 0-0 bittiyse "%(100 − 0.5Ü)". Yüksek + yeşil = model emindi ve gol geldi.`+
     (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'');
 }
 

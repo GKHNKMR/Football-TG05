@@ -21,8 +21,12 @@ Output: data/backtest.json  ->  rendered by backtest.html (standalone screen).
 import csv
 import json
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from teams import to_pretty  # noqa: E402
 
 CSV_DIR = Path("data/football-data")
 OUT_FILE = Path("data/backtest.json")
@@ -246,11 +250,14 @@ def main():
                 by_sl[target][league].append(rec)
 
     all_records.sort(key=lambda r: r["date"])
-    step = max(1, len(all_records) // 40)
-    for r in all_records[::step][:40]:
+    # ~240 evenly-spaced example matches so a league+season slice still has rows
+    step = max(1, len(all_records) // 240)
+    for r in all_records[::step][:240]:
         samples.append({
             "season": season_label(r["season"]), "league": r["league"],
-            "date": r["date"], "home": r["home"], "away": r["away"],
+            "date": r["date"],
+            "home": to_pretty(r["league"], r["home"]),
+            "away": to_pretty(r["league"], r["away"]),
             "pred_lambda": round(r["lam"], 2),
             "p25": round(r["p25"], 3),
             "actual_total": r["total"], "actual_score": r["score"],

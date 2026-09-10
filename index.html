@@ -56,6 +56,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .mkt b{color:var(--text);font-weight:800}
 .mkt .b365{color:#1a8f4a;font-weight:900}
 :root[data-theme="light"] .mkt .b365{color:#0a7d3c}
+.mkt .dim{opacity:.65}
 .prob{display:flex;justify-content:center}
 .pill{min-width:66px;text-align:center;padding:8px 5px;border-radius:9px;background:var(--panel2);font-weight:900;font-size:14px}
 .p05 .pill{border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
@@ -372,14 +373,19 @@ function basisBadge(b){
   if(b==='partial-form')return `<span class="badge b1" title="Sınırlı veri">●</span>`;
   return `<span class="badge b0" title="Sadece lig ortalaması (zayıf)">○</span>`;
 }
-function mktNote(m){
-  if(!m)return '';
+function mktNote(x){
+  const m=x.market;
   const etxt=e=>e==null?'':` · edge ${e>=0?'+':''}${Math.round(e*100)}%`;
   const rows=[];
-  if(m.b365_o25!=null)
+  if(m&&m.b365_o25!=null)
     rows.push(`<span class="b365">Bet365</span> 2.5 Üst <b>${m.b365_o25}</b> · Alt <b>${m.b365_u25}</b>${etxt(m.b365_edge25)}`);
-  if(m.o25_implied!=null)
+  if(m&&m.o25_implied!=null)
     rows.push(`piyasa ort. 2.5Ü %${Math.round(m.o25_implied*100)}${etxt(m.edge25)}`);
+  if(!rows.length){
+    const days=(new Date(x.kickoff_utc)-Date.now())/864e5;
+    if(days<=4&&days>-1)
+      rows.push(`<span class="b365">Bet365</span> 2.5 oranı <span class="dim">— piyasa henüz açmadı</span>`);
+  }
   return rows.length?`<div class="mkt">${rows.join('<br>')}</div>`:'';
 }
 
@@ -533,7 +539,7 @@ function renderPred(){
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
-      ${mktNote(x.market)}
+      ${mktNote(x)}
     </div>
     <div class="prob p05">${pillFor(x.p_over_0_5,'p_over_0_5')}</div>
     <div class="prob">${pillFor(x.p_over_1_5,'p_over_1_5')}</div>

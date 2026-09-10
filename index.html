@@ -423,15 +423,32 @@ function renderPred(){
   </div>`).join('');
 }
 
-function lineTile(label,wk,all){
-  return `<div class="tile"><div class="v">${wk!=null?wk+'%':'—'}</div>
-    <div class="k">${label} isabet · 7 gün</div>
-    <div class="n">tüm dönem ${all!=null?all+'%':'—'}</div></div>`;
+const HIMIN={'05':0.95,'15':0.85,'25':0.75};
+function aggr(rows){                       // seçili lig + gün için istatistikleri client'ta hesapla
+  const n=rows.length; if(!n)return {n:0};
+  const a={n};
+  ['05','15','25'].forEach(t=>{
+    const key='p_over_'+t[0]+'_'+t[1];
+    a['acc_'+t]=Math.round(1000*rows.filter(r=>r.hits&&r.hits['hit_'+t]).length/n)/10;
+    const hi=rows.filter(r=>(r[key]||0)>=HIMIN[t]);
+    if(hi.length){a['hi_n_'+t]=hi.length;a['hi_acc_'+t]=Math.round(1000*hi.filter(r=>r.hits&&r.hits['hit_'+t]).length/hi.length)/10;}
+  });
+  a.success_pct=Math.round(10*rows.reduce((s,r)=>s+(r.success_pct||0),0)/n)/10;
+  const errs=rows.filter(r=>r.lambda_err!=null);
+  if(errs.length)a.lambda_mae=Math.round(100*errs.reduce((s,r)=>s+r.lambda_err,0)/errs.length)/100;
+  const val=rows.filter(r=>'value_hit'in r);
+  if(val.length)a.value_acc=Math.round(1000*val.filter(r=>r.value_hit).length/val.length)/10;
+  return a;
+}
+function lineTile(label,acc,n){
+  return `<div class="tile"><div class="v">${acc!=null?acc+'%':'—'}</div>
+    <div class="k">${label} yön isabeti</div>
+    <div class="n">${n||0} maç</div></div>`;
 }
 function mark(h){return `<span class="${h?'hit':'miss'}">${h?'✓':'✗'}</span>`;}
 function hiStrip(o){
-  const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_n_'+t]} maç)</span>`:`${lbl} → <span class="sm">henüz maç yok</span>`;
-  return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler, tüm dönem:<br>
+  const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_n_'+t]} maç)</span>`:`${lbl} → <span class="sm">bu grupta maç yok</span>`;
+  return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler:<br>
     ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
 function renderResults(){
@@ -445,14 +462,15 @@ function renderResults(){
   const br=$('dayBtnRes');br.innerHTML=dateBtnLabel(dayRes);br.classList.toggle('set',!!dayRes);
   if(calFor==='res'&&!cal.hidden)renderCal();
   if(dayRes)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
-  const w=RESULTS.last_week||{},o=RESULTS.overall||{};
+  const o=aggr(ms);
+  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(dayRes?' · '+dayLabel(dayRes):'');
   wrap.innerHTML=`<div class="tiles">
-    ${lineTile('0.5+',w.acc_05,o.acc_05)}
-    ${lineTile('1.5+',w.acc_15,o.acc_15)}
-    ${lineTile('2.5+',w.acc_25,o.acc_25)}
+    ${lineTile('0.5+',o.acc_05,o.n)}
+    ${lineTile('1.5+',o.acc_15,o.n)}
+    ${lineTile('2.5+',o.acc_25,o.n)}
   </div>
-  <div class="rsum">Son 7 gün: <b>${w.n||0} maç</b> · ortalama başarı <b>%${w.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b> · tüm dönem ${o.n||0} maç / ${RESULTS.result_days} gün${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}</div>
-  ${hiStrip(o)}`;
+  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · ortalama başarı <b>%${o.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''} · son ${RESULTS.result_days} gün</div>
+  ${o.n?hiStrip(o):''}`;
   if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(dayRes?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   body.innerHTML=ms.map(m=>{
     const H=m.hits||{};

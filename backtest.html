@@ -25,6 +25,7 @@ th,td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
 td.pos{color:var(--good)}td.neg{color:#ff9d9d}
+td.mut,th.mut{color:var(--muted);font-size:10px;font-weight:700}
 tbody tr:hover{background:var(--panel2)}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:2px 0 6px}
 .legend b{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
@@ -76,6 +77,12 @@ tbody tr:hover{background:var(--panel2)}
   <div class="card">
     <h2>Sezon bazında</h2>
     <table id="byseason"></table>
+  </div>
+
+  <div class="card">
+    <h2 id="lastseason-h">Geçen sezon · lig bazında</h2>
+    <p class="note">Sadece bir önceki tam sezon. Model o sezonu <b>görmeden</b> (önceki 4 sezonla) tahmin etti. Yön isabeti = modelin eğildiği tarafı seçseydin tutma oranın; kalibrasyon = 100 − ortalama sapma.</p>
+    <table id="lastseason"></table>
   </div>
 
   <div class="card">
@@ -142,6 +149,21 @@ function render(d){
     Object.entries(obj).map(([name,x])=>`<tr><td>${esc(name)}</td><td>${x.n_matches}</td><td>${x.lambda.mae}</td><td>${x.lambda.bias>=0?'+':''}${x.lambda.bias}</td><td>${x.markets['2.5'].calibrated_pct.toFixed(1)}%</td><td class="${sg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${pc(x.markets['2.5'].pick_acc)}</td></tr>`).join('')+`</tbody>`;
   document.getElementById('byleague').innerHTML=grp(d.by_league);
   document.getElementById('byseason').innerHTML=grp(d.by_season);
+
+  // last full season, per league, all three lines
+  const bsl=d.by_season_league||{};
+  const seasons=Object.keys(bsl).sort();
+  const last=seasons[seasons.length-1];
+  if(last){
+    document.getElementById('lastseason-h').textContent=`Geçen sezon (${last}) · lig bazında`;
+    const cell=(x,line)=>{const m=x.markets[line];return `<td>${pc(m.pick_acc)}</td><td class="mut">${m.calibrated_pct.toFixed(0)}%</td>`;};
+    const r3=(name,x)=>`<tr><td>${esc(name)}</td><td>${x.n_matches}</td>${cell(x,'0.5')}${cell(x,'1.5')}${cell(x,'2.5')}<td class="${sg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${x.lambda.mae}</td></tr>`;
+    const order=['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+    document.getElementById('lastseason').innerHTML=
+      `<thead><tr><th></th><th>Maç</th><th>0.5Ü yön</th><th class="mut">kal.</th><th>1.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü beceri</th><th>λ MAE</th></tr></thead><tbody>`+
+      (d.by_season[last]?r3('TÜMÜ',d.by_season[last]).replace('<tr>','<tr style="font-weight:900">'):'')+
+      order.filter(l=>bsl[last][l]).map(l=>r3(l,bsl[last][l])).join('')+`</tbody>`;
+  }
 
   // samples
   document.getElementById('samples').innerHTML=

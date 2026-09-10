@@ -213,6 +213,7 @@ def main():
     all_records = []
     by_league = {v: [] for v in DIVISIONS.values()}
     by_season = {s: [] for s in TARGET_SEASONS}
+    by_sl = {s: {v: [] for v in DIVISIONS.values()} for s in TARGET_SEASONS}
     samples = []
 
     for div, league in DIVISIONS.items():
@@ -241,6 +242,7 @@ def main():
                 all_records.append(rec)
                 by_league[league].append(rec)
                 by_season[target].append(rec)
+                by_sl[target][league].append(rec)
 
     all_records.sort(key=lambda r: r["date"])
     step = max(1, len(all_records) // 40)
@@ -267,6 +269,10 @@ def main():
         "overall": score(all_records),
         "by_league": {k: score(v) for k, v in by_league.items() if v},
         "by_season": {season_label(k): score(v) for k, v in by_season.items() if v},
+        "by_season_league": {
+            season_label(s): {lg: score(recs) for lg, recs in d.items() if recs}
+            for s, d in by_sl.items() if any(d.values())
+        },
         "samples": samples,
     }
     OUT_FILE.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")),

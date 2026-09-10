@@ -357,7 +357,16 @@ function renderCal(){
   cal.querySelectorAll('.cal-g button[data-k]').forEach(b=>b.onclick=()=>pickDay(b.dataset.k));
   cal.querySelectorAll('.cal-h button').forEach(b=>b.onclick=()=>{calMonth.setMonth(calMonth.getMonth()+ +b.dataset.nav);renderCal();});
   cal.querySelector('.cal-man input').onchange=e=>{if(e.target.value)pickDay(e.target.value);};
-  cal.querySelector('[data-act=today]').onclick=()=>{calMonth=new Date();calMonth.setDate(1);renderCal();};
+  cal.querySelector('[data-act=today]').onclick=()=>{
+    // bugüne en yakın maç gününü seç: Tahminler'de bugün/sonrası, Sonuçlar'da bugün/öncesi
+    const t=localKey(new Date());
+    const ks=[...keysFor(calFor)].sort();
+    if(!ks.length){calMonth=new Date();calMonth.setDate(1);renderCal();return;}
+    const pick=ks.includes(t)?t:(calFor==='pred'
+      ?(ks.find(k=>k>=t)||ks[ks.length-1])
+      :([...ks].reverse().find(k=>k<=t)||ks[0]));
+    pickDay(pick);
+  };
   cal.querySelector('[data-act=all]').onclick=()=>pickDay(null);
 }
 document.addEventListener('click',e=>{
@@ -538,20 +547,21 @@ function goalChart(h,a){
   let g='';
   for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
   const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lb)}</text>`).join('');
-  const draw=(vals,color,name)=>{
+  const draw=(vals,src,color,name)=>{
     let segs=[],cur=[];
     vals.forEach((v,i)=>{if(v==null){if(cur.length){segs.push(cur);cur=[];}}else cur.push([X(i),Y(v),i,v]);});
     if(cur.length)segs.push(cur);
     const lines=segs.filter(s=>s.length>1).map(s=>`<polyline points="${s.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
-    const dots=segs.flat().map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.3" fill="${color}"><title>${esc(name)} · ${esc(labels[p[2]])}: ${p[3]} gol/maç</title></circle>`).join('');
+    const dots=segs.flat().map(p=>{const r=src[p[2]]||{};
+      return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.3" fill="${color}"><title>${esc(name)} · ${esc(labels[p[2]])}: ${p[3]} gol/maç${r.gf_avg!=null?` (${r.gf_avg} attı · ${r.ga_avg} yedi)`:''}</title></circle>`;}).join('');
     return lines+dots;
   };
   const lgx2=L+Math.min(pw*0.55,240);
   const legend=`<circle cx="${L}" cy="12" r="3.5" fill="${S_HOME}"/><text x="${L+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(h.name.length>22?h.name.slice(0,21)+'…':h.name)}</text>`+
     `<circle cx="${lgx2}" cy="12" r="3.5" fill="${S_AWAY}"/><text x="${lgx2+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(a.name.length>22?a.name.slice(0,21)+'…':a.name)}</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" role="img" aria-label="Son 5 sezon maç başına toplam gol ortalaması">`+
-    g+xl+legend+draw(hv,S_HOME,h.name)+draw(av,S_AWAY,a.name)+
-    `</svg><div class="s-note">Maç başına toplam gol (attığı + yediği), lig maçları · kaynak: football-data.co.uk</div>`;
+    g+xl+legend+draw(hv,HS,S_HOME,h.name)+draw(av,AS,S_AWAY,a.name)+
+    `</svg><div class="s-note">Her takımın o sezondaki <b>tüm lig maçlarında</b> maç başına toplam gol (attığı + yediği) — bu iki takımın aralarındaki maçlar <b>değil</b>. Noktaya gelince attığı/yediği ayrımı görünür. Kaynak: football-data.co.uk</div>`;
 }
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];

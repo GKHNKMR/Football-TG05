@@ -219,6 +219,19 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cbadge.won{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
 .cbadge.lost{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
 .cbadge.pending{background:var(--hair);color:var(--muted)}
+#pane-gun .lede{color:var(--muted);font-size:12px;line-height:1.65;margin:0 2px 10px}
+#pane-gun .lede b{color:var(--text)}
+#pane-gun .gcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+#pane-gun .gcard h2{font-size:14px;font-weight:900;margin:0}
+#pane-gun .gun-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+#pane-gun .gun-tbl th{text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+#pane-gun .gun-tbl td{padding:9px 8px;border-bottom:1px solid var(--hair);vertical-align:top}
+#pane-gun .gun-tbl td.mL{font-weight:700;min-width:150px}
+#pane-gun .gun-tbl .sub{color:var(--muted);font-size:10px;font-weight:600;margin-top:1px}
+.gtag{font-weight:900;font-size:9.5px;padding:3px 8px;border-radius:999px;white-space:nowrap;display:inline-block}
+.gtag.g{background:var(--good);color:var(--good-ink)}
+.gtag.s{background:var(--accent);color:var(--accent-ink)}
+#pane-gun .g-add{margin-top:12px;border:0;background:var(--accent);color:var(--accent-ink);border-radius:11px;padding:12px 16px;font-size:13px;font-weight:900;cursor:pointer;width:100%}
 #toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #toast[hidden]{display:none}
 #gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -254,6 +267,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <button class="tab" id="tab-res" type="button">Sonuçlar</button>
     <button class="tab" id="tab-bt" type="button">Model doğruluğu</button>
     <button class="tab" id="tab-cpn" type="button">Kuponlarım</button>
+    <button class="tab" id="tab-gun" type="button">Günün Kuponu</button>
   </div>
 
   <nav class="filters" id="filters"></nav>
@@ -273,8 +287,6 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <span class="badge b2">●●</span> form ·
       <span class="badge b1">●</span> sınırlı veri ·
       <span class="badge b0">○</span> sadece lig ortalaması
-      — ayrıntı için sağ üstteki <b>?</b>
-      <br>Bir <b>yüzdeye dokun</b> → sepete eklenir → sağ alttaki <b>Sepet</b>'ten <b>Oyna</b> ile kaydet (Kuponlarım).
     </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
@@ -357,6 +369,10 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   <section id="pane-cpn" hidden>
     <div id="cpnSummary"></div>
     <div id="cpnList"></div>
+  </section>
+
+  <section id="pane-gun" hidden>
+    <div id="gunBody"></div>
   </section>
 
   <div class="foot" id="updated">Analizler hazırlanıyor</div>
@@ -690,7 +706,7 @@ function renderResults(){
     (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'');
 }
 
-function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();renderSlipFab();}
+function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();renderSlipFab();}
 
 // ---- model doğruluğu (backtest) ----
 const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
@@ -759,11 +775,11 @@ function renderBacktest(){
 
 function setTab(t){
   tab=t;save('tab',t);
-  ['pred','res','bt','cpn'].forEach(k=>{
+  ['pred','res','bt','cpn','gun'].forEach(k=>{
     $('tab-'+k).classList.toggle('active',t===k);
     $('pane-'+k).hidden=t!==k;
   });
-  $('filters').hidden=t==='cpn';   // kuponlar tüm ligler — lig filtresi geçersiz
+  $('filters').hidden=t==='cpn'||t==='gun';   // bu sekmeler tüm ligler — lig filtresi geçersiz
   renderAll();
 }
 
@@ -772,7 +788,7 @@ async function load(){
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches)STATS=s;}).catch(()=>{});
   fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='bt')renderBacktest();}else btLoadFailed();}).catch(btLoadFailed);
+    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='bt')renderBacktest();if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
   try{
     const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('data');
@@ -811,14 +827,14 @@ function fixtureById(mid){return (window.__data||[]).find(x=>x.match_id===mid);}
 function legP(l){const o=l.pOver??l.p;return o==null?null:(l.side==='Üst'?o:1-o);}
 let toastT=null;
 function showToast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200);}
+function makeLeg(x,line){
+  return {mid:x.match_id,league:x.league,home:x.home,away:x.away,kickoff_utc:x.kickoff_utc,
+    line,side:'Üst',pOver:x[LINE_KEY[line]],lam:x.exp_goals??null};
+}
 function toggleLeg(mid,line){
   const i=slip.findIndex(l=>l.mid===mid&&l.line===line);
   if(i>=0){slip.splice(i,1);}
-  else{
-    const x=fixtureById(mid);if(!x)return;
-    slip.push({mid,league:x.league,home:x.home,away:x.away,kickoff_utc:x.kickoff_utc,
-      line,side:'Üst',pOver:x[LINE_KEY[line]],lam:x.exp_goals??null});
-  }
+  else{const x=fixtureById(mid);if(!x)return;slip.push(makeLeg(x,line));}
   saveJSON('slip',slip);renderPred();renderSlipFab();if(!sheet.hidden)openSlip();
 }
 function renderSlipFab(){
@@ -946,6 +962,84 @@ $('cpnList').addEventListener('click',e=>{
   if(ld)removeCouponLeg(ld.dataset.cid,+ld.dataset.li);
 });
 $('slipFab').onclick=openSlip;
+
+// ---- Günün Kuponu — tamamen geçmiş verilere dayalı, gün boyu sabit ----
+function histAcc(league,line){
+  const bl=BACKTEST&&BACKTEST.by_league&&BACKTEST.by_league[league];
+  const m=bl&&bl.markets&&bl.markets[line];
+  return m?{acc:m.pick_acc,n:bl.n_matches,cal:m.calibrated_pct}:null;
+}
+function buildDailyCoupon(){
+  const now=Date.now();
+  const up=(window.__data||[]).filter(x=>new Date(x.kickoff_utc)>now&&x.p_over_2_5!=null)
+    .sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
+  if(!up.length)return null;
+  const d0=dayKey(up[0].kickoff_utc), d0d=new Date(d0+'T00:00:00');
+  let pool=up.filter(x=>(new Date(dayKey(x.kickoff_utc)+'T00:00:00')-d0d)/864e5<=2);   // en yakın maç günü + 2 gün
+  if(pool.length<6)pool=up.slice(0,12);
+  const LN=[['0.5','p_over_0_5',0.95],['1.5','p_over_1_5',0.85],['2.5','p_over_2_5',0.75]];
+  const cands=[];
+  pool.forEach(x=>LN.forEach(([ln,key,thr])=>{
+    const p=x[key];if(p==null)return;
+    const h=histAcc(x.league,ln), hacc=h?h.acc:0.5;
+    cands.push({x,line:ln,side:'Üst',p,thr,hacc,hN:h?h.n:0,score:p*hacc});
+  }));
+  const used=new Set();
+  const tie=(a,b)=>String(a.x.match_id).localeCompare(String(b.x.match_id));
+  const take=(f,s,n)=>{const o=[];cands.filter(f).sort(s).forEach(c=>{if(o.length<n&&!used.has(c.x.match_id)){used.add(c.x.match_id);o.push(c);}});return o;};
+  const byScore=(a,b)=>b.score-a.score||tie(a,b);
+  // en fazla 2× 0.5 Üst + 2× 1.5 Üst — çeşitlilik için
+  let g=[...take(c=>c.line==='0.5'&&c.p>=0.95&&c.hacc>=0.55,byScore,2),
+         ...take(c=>c.line==='1.5'&&c.p>=0.85&&c.hacc>=0.55,byScore,2)];
+  if(g.length<4)g=g.concat(take(c=>c.line!=='2.5'&&c.p>=c.thr-0.05&&c.hacc>=0.5,byScore,4-g.length));
+  if(g.length<4)g=g.concat(take(c=>c.p>=0.72,byScore,4-g.length));
+  let s=take(c=>c.line==='2.5'&&c.p>=0.55&&c.p<0.78,(a,b)=>(b.p*b.hacc)-(a.p*a.hacc)||tie(a,b),1);
+  if(!s.length)s=take(c=>c.line==='2.5',(a,b)=>b.p-a.p||tie(a,b),1);
+  if(!g.length&&!s.length)return null;
+  return {day:d0,garanti:g,surpriz:s[0]||null};
+}
+function addDailyToSlip(){
+  const c=buildDailyCoupon();if(!c)return;
+  const legs=[...c.garanti,...(c.surpriz?[c.surpriz]:[])];
+  let n=0;
+  legs.forEach(({x,line})=>{if(!slip.some(l=>l.mid===x.match_id&&l.line===line)){slip.push(makeLeg(x,line));n++;}});
+  saveJSON('slip',slip);renderPred();renderSlipFab();
+  showToast(n?`${n} maç sepete eklendi — Sepet'ten "Oyna"`:'Zaten sepette');
+}
+function renderGun(){
+  const el=$('gunBody');
+  if(!window.__data){el.innerHTML='<div class="loading">Yükleniyor…</div>';return;}
+  const c=buildDailyCoupon();
+  if(!c){el.innerHTML='<div class="empty"><strong>Uygun maç yok</strong>Yaklaşan fikstür bulunamadı.</div>';return;}
+  const back=!!(BACKTEST&&BACKTEST.by_league);
+  const row=(c2,tag)=>{
+    const x=c2.x, p=Math.round(c2.p*100);
+    return `<tr>
+      <td><span class="gtag ${tag==='GARANTİ'?'g':'s'}">${tag}</span></td>
+      <td>${dmy(x.kickoff_utc)}</td>
+      <td class="mL">${flag(x.league,10)} ${esc(x.home)} — ${esc(x.away)}<div class="sub">${esc(x.league)}</div></td>
+      <td><b>${c2.line} Üst</b><div class="sub">λ ${x.exp_goals!=null?(+x.exp_goals).toFixed(1):'—'}</div></td>
+      <td><b>%${p}</b></td>
+      <td>${back?`%${Math.round(c2.hacc*100)}<div class="sub">${c2.hN} maç</div>`:'—'}</td>
+    </tr>`;
+  };
+  el.innerHTML=`<p class="lede">Bu kupon <b>tamamen geçmiş sezon verilerine</b> dayanır: modelin ilgili
+    lig + çizgideki <b>5 sezonluk isabeti</b> ile güncel olasılığın çarpımına göre sıralanır.
+    4 <b>garanti</b> bacak (0.5 / 1.5 Üst, yüksek güven) + 1 <b>sürpriz</b> (2.5 Üst). Herkese aynı, gün boyu sabit.</p>
+    <div class="gcard">
+      <h2>Günün Kuponu · ${dayLabel(c.day)}</h2>
+      <div class="tbl-scroll"><table class="gun-tbl">
+        <thead><tr><th>Tür</th><th>Tarih</th><th>Maç</th><th>Seçim</th><th>Model</th><th>Geçmiş isabet</th></tr></thead>
+        <tbody>
+          ${c.garanti.map(x=>row(x,'GARANTİ')).join('')}
+          ${c.surpriz?row(c.surpriz,'SÜRPRİZ'):''}
+        </tbody>
+      </table></div>
+      <button class="g-add" id="gunAdd" type="button">Bu kuponu sepete ekle</button>
+      ${back?'':'<p class="sub" style="margin-top:8px">Model doğrulama verisi yükleniyor — geçmiş isabet sütunu birazdan dolacak.</p>'}
+    </div>`;
+  $('gunAdd').onclick=addDailyToSlip;
+}
 function n1(v){return v==null?'—':(Math.round(v*10)/10);}
 function sline(k,v){return `<div class="s-stat"><span>${k}</span><b>${v}</b></div>`;}
 function teamBlock(t){
@@ -1031,6 +1125,7 @@ $('tab-pred').onclick=()=>setTab('pred');
 $('tab-res').onclick=()=>setTab('res');
 $('tab-bt').onclick=()=>setTab('bt');
 $('tab-cpn').onclick=()=>setTab('cpn');
+$('tab-gun').onclick=()=>setTab('gun');
 $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};

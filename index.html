@@ -834,11 +834,11 @@ function openSlip(){
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
     <h2>Sepet · ${slip.length} maç</h2>
-    <div class="s-sub">Kaydettiğinde kupon olur; maçlar oynanınca sonucu Kuponlarım'da işlenir.${combN===slip.length&&combN>1?` Kombine oran ≈ <b>${comb.toFixed(2)}</b>`:''}</div>
+    <div class="s-sub">Bahsi Bet365'te oynadıysan burada "Oyna" ile kaydet; maçlar oynanınca sonuç Kuponlarım'da işlenir. Site bahis oynamaz, kayıt tutar.${combN===slip.length&&combN>1?` Kombine oran ≈ <b>${comb.toFixed(2)}</b>`:''}</div>
     <div class="s-card">${legs}</div>
     <div class="s-btnrow">
       <button class="s-btn" id="slipClear">Temizle</button>
-      <button class="s-btn go" id="slipSave"${slip.length?'':' disabled'}>Kuponu kaydet</button>
+      <button class="s-btn go" id="slipSave"${slip.length?'':' disabled'}>Oyna</button>
     </div>
   </div>`;
   $('slipSave').onclick=saveCoupon;
@@ -855,7 +855,7 @@ function saveCoupon(){
   coupons.unshift({id:Date.now()+''+Math.floor(Math.random()*1e3),ts:new Date().toISOString(),legs:slip.slice()});
   saveJSON('coupons',coupons);
   slip=[];saveJSON('slip',slip);
-  renderPred();renderSlipFab();closeSheet();showToast('Kupon kaydedildi');
+  renderPred();renderSlipFab();closeSheet();showToast('Kupon kaydedildi — Kuponlarım\'da');
   if(tab==='cpn')renderCoupons();
 }
 function deleteCoupon(id){
@@ -884,7 +884,7 @@ function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
   if(!coupons.length){
     sum.innerHTML='';
-    list.innerHTML='<div class="empty"><strong>Henüz kupon yok</strong>Tahminler sekmesinde bir yüzdeye dokun, sepete eklensin; sepeti kaydet.</div>';
+    list.innerHTML='<div class="empty"><strong>Henüz kupon yok</strong>Tahminler\'de bir yüzdeye dokun → sepete düşer → Sepet\'te "Oyna" ile kaydet.</div>';
     return;
   }
   const settled=coupons.map(c=>({c,s:settleCoupon(c)}));

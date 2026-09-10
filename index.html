@@ -863,7 +863,9 @@ function saveCoupon(){
   if(tab==='cpn')renderCoupons();
 }
 function deleteCoupon(id){
-  coupons=coupons.filter(c=>c.id!==id);saveJSON('coupons',coupons);renderCoupons();
+  const c=coupons.find(x=>x.id===id);if(!c)return;
+  if(!confirm(`${c.legs.length} maçlık bu kupon silinsin mi?`))return;
+  coupons=coupons.filter(x=>x.id!==id);saveJSON('coupons',coupons);renderCoupons();
 }
 function removeCouponLeg(cid,li){
   const c=coupons.find(x=>x.id===cid);if(!c)return;

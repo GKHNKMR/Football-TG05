@@ -22,7 +22,12 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .wrap{max-width:1120px;margin:auto;padding:26px 18px 44px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
 .brand{font-size:34px;font-weight:900;letter-spacing:-1.8px}
-.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.brand .b1{color:#e8ff3f}
+.brand .b2{color:#4a9eff}
+:root[data-theme="light"] .brand .b1{color:#a88600}
+:root[data-theme="light"] .brand .b2{color:#2563eb}
+.sub{color:var(--text);font-size:12.5px;font-weight:600;margin-top:3px}
+.sub2{color:var(--muted);font-size:12px;margin-top:1px}
 .topbtns{display:flex;gap:8px}
 .iconbtn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;min-width:38px;height:38px;padding:0 10px;cursor:pointer;font-weight:800;font-size:14px}
 .iconbtn:hover{background:var(--panel2)}
@@ -173,7 +178,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <body>
 <div class="wrap">
   <header class="top">
-    <div><div class="brand">BETAVUS</div><div class="sub">Football Goal Probability Engine</div></div>
+    <div>
+      <div class="brand"><span class="b1">BET</span><span class="b2">AVUS</span></div>
+      <div class="sub"><b>B</b>etting <b>A</b>nalysis, <b>V</b>ariance &amp; <b>U</b>ncertainty <b>S</b>ystem</div>
+      <div class="sub2">A Football Goal Probability Engine</div>
+    </div>
     <div class="topbtns">
       <button class="iconbtn" id="infoBtn" type="button" title="Nasıl hesaplanıyor?">?</button>
       <button class="iconbtn" id="themeBtn" type="button" title="Tema">🌙</button>
@@ -250,7 +259,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <div id="sheet" class="sheet-bg" hidden></div>
 <div id="cal" class="cal" hidden></div>
 <script>
-const leagues=['Tümü','Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json';
 let STATS={matches:{}},RESULTS=null,BACKTEST=null;
 const FALLBACK_DATA=[
@@ -290,6 +299,7 @@ const FLAGS={
  'Ligue 1':'<rect width="6.67" height="14" fill="#0055a4"/><rect x="6.67" width="6.66" height="14" fill="#f1f2f1"/><rect x="13.33" width="6.67" height="14" fill="#ef4135"/>',
  'Eredivisie':'<rect width="20" height="14" fill="#ae1c28"/><rect y="4.67" width="20" height="4.67" fill="#f1f2f1"/><rect y="9.33" width="20" height="4.67" fill="#21468b"/>'
 };
+FLAGS['Championship']=FLAGS['Premier League'];   // İngiltere 2. lig — aynı bayrak
 function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
   return `<svg class="flag" viewBox="0 0 20 14" width="${Math.round(h*20/14)}" height="${h}" aria-hidden="true">${f}<rect x=".5" y=".5" width="19" height="13" rx="1.5" fill="none" stroke="rgba(128,128,128,.35)"/></svg>`;}
 
@@ -548,7 +558,7 @@ function renderResults(){
 function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();}
 
 // ---- model doğruluğu (backtest) ----
-const BT_ORDER=['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
 const btPc=v=>v==null?'—':(v*100).toFixed(1)+'%';
 function btTiles(rows){$('bt-tiles').innerHTML=rows.map(r=>`<div class="tile"><div class="v">${r[0]}</div><div class="k">${r[1]}</div><div class="n">${r[2]}</div></div>`).join('');}
 function btSeasonList(){return BACKTEST?Object.keys(BACKTEST.by_season||{}).sort():[];}

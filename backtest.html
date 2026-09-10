@@ -158,7 +158,7 @@ function render(d){
     document.getElementById('lastseason-h').textContent=`Geçen sezon (${last}) · lig bazında`;
     const cell=(x,line)=>{const m=x.markets[line];return `<td>${pc(m.pick_acc)}</td><td class="mut">${m.calibrated_pct.toFixed(0)}%</td>`;};
     const r3=(name,x)=>`<tr><td>${esc(name)}</td><td>${x.n_matches}</td>${cell(x,'0.5')}${cell(x,'1.5')}${cell(x,'2.5')}<td class="${sg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${x.lambda.mae}</td></tr>`;
-    const order=['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+    const order=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
     document.getElementById('lastseason').innerHTML=
       `<thead><tr><th></th><th>Maç</th><th>0.5Ü yön</th><th class="mut">kal.</th><th>1.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü beceri</th><th>λ MAE</th></tr></thead><tbody>`+
       (d.by_season[last]?r3('TÜMÜ',d.by_season[last]).replace('<tr>','<tr style="font-weight:900">'):'')+

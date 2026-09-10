@@ -2,9 +2,10 @@
 
 Football Goal Probability Engine.
 
-BETAVUS is a mobile-friendly football dashboard for the following six leagues:
+BETAVUS is a mobile-friendly football dashboard for the following seven leagues:
 
 - Premier League
+- Championship
 - LaLiga
 - Bundesliga
 - Serie A
@@ -33,6 +34,7 @@ resulting `predictions.json`. The static site only reads that JSON file
 | League | openfootball file |
 | --- | --- |
 | Premier League | `2026-27/en.1.json` |
+| Championship | `2026-27/en.2.json` |
 | LaLiga | `2026-27/es.1.json` |
 | Bundesliga | `2026-27/de.1.json` |
 | Serie A | `2026-27/it.1.json` |
@@ -73,6 +75,7 @@ five completed seasons, drawn as inline SVG).
 | League | football-data division | CSV |
 | --- | --- | --- |
 | Premier League | `E0` | `mmz4281/<season>/E0.csv` |
+| Championship | `E1` | `mmz4281/<season>/E1.csv` |
 | LaLiga | `SP1` | `mmz4281/<season>/SP1.csv` |
 | Bundesliga | `D1` | `mmz4281/<season>/D1.csv` |
 | Serie A | `I1` | `mmz4281/<season>/I1.csv` |
@@ -84,12 +87,11 @@ Use the apex domain `football-data.co.uk` (the `www` host currently 503s).
 ## Backtest (model validation — off-site)
 
 [`scripts/backtest.py`](scripts/backtest.py) walk-forward tests the goal model:
-each target season (2023/24 → 2025/26) is predicted using **only the four seasons
-before it** (no result leakage), then scored against what actually happened, over
-~6,200 matches in all six leagues. Output `data/backtest.json` is rendered by
-[`backtest.html`](backtest.html) — a standalone screen (`/backtest.html`, linked
-from nowhere) with a calibration chart, per-market Brier/skill, expected-goals
-MAE, and per-league / per-season / per-match breakdowns.
+each target season (2021/22 → 2025/26) is predicted using **only the seasons
+before it** (up to four, no result leakage), then scored against what actually
+happened, over ~13k matches in all seven leagues. Output `data/backtest.json` is rendered both by the **Model doğruluğu** tab in the app and by the standalone
+[`backtest.html`](backtest.html) (`/backtest.html`): matches tested plus
+0.5/1.5/2.5 Üst direction accuracy, sliceable by league and season.
 
 Headline: the model is **well calibrated** (a stated 60% comes in near 60%) and
 **unbiased** on expected goals (bias ≈ −0.04), but single-match discrimination

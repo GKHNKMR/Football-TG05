@@ -37,6 +37,7 @@ OUTPUT_FILE = Path("predictions.json")
 # league_id -> (openfootball file stem, display name, short code, stadium tz)
 LEAGUES = {
     39: ("en.1", "Premier League", "PL", "Europe/London"),
+    40: ("en.2", "Championship", "CH", "Europe/London"),
     140: ("es.1", "LaLiga", "LL", "Europe/Madrid"),
     78: ("de.1", "Bundesliga", "BL", "Europe/Berlin"),
     135: ("it.1", "Serie A", "SA", "Europe/Rome"),

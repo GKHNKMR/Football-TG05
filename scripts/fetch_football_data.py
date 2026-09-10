@@ -3,6 +3,7 @@
 Only the six leagues used by BETAVUS are pulled, top division only:
 
     E0  England  - Premier League
+    E1  England  - Championship
     SP1 Spain    - LaLiga
     D1  Germany  - Bundesliga
     I1  Italy    - Serie A
@@ -32,6 +33,7 @@ OUT_DIR = Path("data/football-data")
 
 DIVISIONS = {
     "E0": "Premier League",
+    "E1": "Championship",
     "SP1": "LaLiga",
     "D1": "Bundesliga",
     "I1": "Serie A",

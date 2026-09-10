@@ -222,6 +222,17 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-cpn .cpn-del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:700;text-decoration:underline}
 #toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #toast[hidden]{display:none}
+#gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#gate[hidden]{display:none}
+.gate-box{width:100%;max-width:340px;text-align:center}
+.gate-brand{font-size:38px;font-weight:900;letter-spacing:-2px;margin-bottom:6px}
+.gate-brand .b1{color:#e8ff3f}.gate-brand .b2{color:#2f6fd6}
+.gate-sub{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.5}
+#gateInput{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;padding:13px 14px;font-size:15px;font-weight:700;text-align:center;letter-spacing:1px}
+#gateInput:focus{outline:none;border-color:var(--muted)}
+#gateBtn{width:100%;margin-top:10px;border:0;background:var(--accent);color:var(--accent-ink);border-radius:11px;padding:13px;font-size:14px;font-weight:900;cursor:pointer}
+#gateErr{color:var(--bad);font-size:12.5px;font-weight:700;margin:10px 0 0}
+#gateErr[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -356,6 +367,16 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <div id="toast" hidden></div>
 <div id="sheet" class="sheet-bg" hidden></div>
 <div id="cal" class="cal" hidden></div>
+
+<div id="gate" hidden>
+  <div class="gate-box">
+    <div class="gate-brand"><span class="b1">BET</span><span class="b2">AVUS</span></div>
+    <p class="gate-sub">Bu site davetlidir. Devam etmek için erişim kodunu gir.</p>
+    <input id="gateInput" type="password" placeholder="Erişim kodu" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <button id="gateBtn" type="button">Gir</button>
+    <p id="gateErr" hidden>Kod hatalı.</p>
+  </div>
+</div>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json';
@@ -1043,7 +1064,33 @@ function applyTheme(t){
 applyTheme(store('theme','dark'));
 themeBtn.onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'dark':'light';save('theme',t);applyTheme(t);};
 
-renderHlSel();renderFilters();setTab(tab);load();
+// ---- erişim kapısı (davet kodu) ----
+// Kodu değiştirmek için: tarayıcı konsoluna yapıştır ->
+//   crypto.subtle.digest('SHA-256',new TextEncoder().encode('YENIKOD')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+// çıkan hex'i ACCESS_HASH'e yaz. (Not: bu bir perde, tam güvenlik değil.)
+const ACCESS_HASH='0b0f5bdb108e77bfbfda35e56eaa54066bf47c46cc5fa5fbc92ff95a1ed28ddf';   // "BETAVUS2026"
+async function sha256hex(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function startApp(){renderHlSel();renderFilters();setTab(tab);load();}
+async function bootGate(){
+  let pass=false;
+  try{pass=localStorage.getItem('betavus.access')===ACCESS_HASH;}catch(e){}
+  if(pass){startApp();return;}
+  const g=$('gate'),inp=$('gateInput'),btn=$('gateBtn'),err=$('gateErr');
+  g.hidden=false;setTimeout(()=>inp.focus(),50);
+  const tryCode=async()=>{
+    let h='';try{h=await sha256hex((inp.value||'').trim().toUpperCase());}catch(e){h='';}
+    if(h===ACCESS_HASH){
+      try{localStorage.setItem('betavus.access',ACCESS_HASH);}catch(e){}
+      g.hidden=true;startApp();
+    }else{err.hidden=false;inp.value='';inp.focus();}
+  };
+  btn.onclick=tryCode;
+  inp.onkeydown=e=>{if(e.key==='Enter')tryCode();err.hidden=true;};
+}
+bootGate();
 </script>
 </body>
 </html>

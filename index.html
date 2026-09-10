@@ -98,7 +98,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .sortcol{cursor:pointer;user-select:none}
 .sortcol:hover{color:var(--text)}
 .sortcol.act{color:var(--good)}
-.sortcol.act::after{content:" ▼";font-size:8px}
+.sortcol:not([data-sort="date"]).act::after{content:" ▼";font-size:8px}
+.sarr{display:none;font-size:9px}
+.sortcol[data-sort="date"].act .sarr{display:inline}
 .rhead,.rrow{display:grid;grid-template-columns:46px minmax(120px,1fr) 44px 40px 62px 54px;gap:8px;align-items:center}
 .rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
@@ -189,7 +191,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div class="datectl"><button class="datebtn" id="dayBtnPred" type="button"></button></div>
     <div class="table">
       <div class="head">
-        <div>Maç</div>
+        <div class="sortcol" data-sort="date">Maç <span class="sarr">↑</span></div>
         <div class="sortcol" data-sort="p_over_0_5">0.5+</div>
         <div class="sortcol" data-sort="p_over_1_5">1.5+</div>
         <div class="sortcol" data-sort="p_over_2_5">2.5+</div>
@@ -283,7 +285,12 @@ function renderHlSel(){
   s.value=hlKey;
 }
 
-function weekWindow(){const s=new Date();s.setHours(0,0,0,0);s.setDate(s.getDate()+((7-s.getDay())%7));const e=new Date(s);e.setDate(e.getDate()+8);return[s,e];}
+function weekWindow(){
+  const s=new Date();s.setHours(0,0,0,0);          // bugünden başla — bu haftaki maçlar da düşmesin
+  const cs=new Date(s);cs.setDate(cs.getDate()+((7-cs.getDay())%7));  // gelecek Pazar
+  const e=new Date(cs);e.setDate(e.getDate()+8);   // ...ondan sonraki Pazar dahil
+  return[s,e];
+}
 function fmtDay(d){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit'}).format(d);}
 function dayKey(iso){return String(iso).slice(0,10);}
 function dayLabel(k){return new Intl.DateTimeFormat('tr-TR',{weekday:'short',day:'2-digit',month:'long'}).format(new Date(k+'T12:00:00'));}
@@ -355,7 +362,7 @@ function visible(list){let r=visibleAll(list);
   if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
   if(dayPred)r=r.filter(x=>dayKey(x.kickoff_utc)===dayPred);
   r=r.slice();
-  if(sortLine)r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
+  if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
   else r.sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
   return r;
 }
@@ -366,9 +373,9 @@ function renderPred(){
   if(dayPred&&!dk.has(dayPred))dayPred=null;
   const bp=$('dayBtnPred');bp.innerHTML=dateBtnLabel(dayPred);bp.classList.toggle('set',!!dayPred);
   if(calFor==='pred'&&!cal.hidden)renderCal();
-  document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine));
+  document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine||(c.dataset.sort==='date'&&!sortLine)));
   const list=visible(src);const[ws,we]=weekWindow();
-  $('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · Pazar–Pazar`;
+  $('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
   const total=winMs.length;
   const h=HL[hlKey];
   $('hotToggle').classList.toggle('on',hotOnly&&!!h);
@@ -538,7 +545,7 @@ $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!HL[hlKey])return;hotOnly=!hotOnly;renderPred();};
 document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
-  sortLine=sortLine===c.dataset.sort?null:c.dataset.sort;renderPred();
+  sortLine=c.dataset.sort==='date'?null:(sortLine===c.dataset.sort?null:c.dataset.sort);renderPred();
 });
 
 const themeBtn=$('themeBtn');

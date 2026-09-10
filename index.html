@@ -154,6 +154,27 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .h2h-tot{color:var(--muted);font-size:11px;margin-left:6px}
 .s-note{color:var(--muted);font-size:12px;padding:6px 0}
 @media(max-width:650px){.sheet-bg{padding:0}.sheet{border-radius:0;min-height:100vh;max-width:none}.s-cols{grid-template-columns:1fr}}
+/* model doğruluğu (backtest) sekmesi */
+#pane-bt .lede{color:var(--muted);font-size:12.5px;margin:0 2px 4px;line-height:1.55}
+#pane-bt .tiles{grid-template-columns:repeat(4,1fr)}
+#pane-bt .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+#pane-bt .card h2{margin:0 0 4px;font-size:14px;font-weight:900}
+#pane-bt .card p.note{color:var(--muted);font-size:11.5px;margin:4px 0 12px;line-height:1.55}
+#pane-bt table{width:100%;border-collapse:collapse;font-size:12px}
+#pane-bt th,#pane-bt td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--line)}
+#pane-bt th:first-child,#pane-bt td:first-child{text-align:left}
+#pane-bt th{color:var(--muted);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+#pane-bt td.pos{color:var(--good)}#pane-bt td.neg{color:var(--bad)}
+#pane-bt td.mut,#pane-bt th.mut{color:var(--muted);font-size:10px;font-weight:700}
+#pane-bt tbody tr:hover{background:var(--panel2)}
+#pane-bt .tbl-scroll{overflow-x:auto}
+#pane-bt .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:2px 0 6px}
+#pane-bt .legend b{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+#pane-bt .hit{color:var(--good);font-weight:800}#pane-bt .miss{color:var(--bad);font-weight:800}
+#pane-bt .sell{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:12px;color:var(--text);line-height:1.6}
+#pane-bt .btfoot{color:var(--muted);font-size:11px;margin-top:20px;line-height:1.6}
+#pane-bt .btfoot code{background:var(--panel2);padding:1px 5px;border-radius:5px}
+@media(max-width:650px){#pane-bt .tiles{grid-template-columns:1fr 1fr}#pane-bt table{font-size:11px}#pane-bt th,#pane-bt td{padding:6px 5px}}
 </style>
 </head>
 <body>
@@ -170,6 +191,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   <div class="tabs" role="tablist">
     <button class="tab active" id="tab-pred" type="button">Tahminler</button>
     <button class="tab" id="tab-res" type="button">Sonuçlar</button>
+    <button class="tab" id="tab-bt" type="button">Model doğruluğu</button>
   </div>
 
   <nav class="filters" id="filters"></nav>
@@ -213,6 +235,55 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div class="foot" id="resFoot"></div>
   </section>
 
+  <section id="pane-bt" hidden>
+    <nav class="filters" id="bt-seasons"></nav>
+    <p class="lede" id="bt-lede">Yükleniyor…</p>
+    <div class="tiles" id="bt-tiles"></div>
+    <div class="card">
+      <h2>Kalibrasyon — "yüzdeler doğruyu mu söylüyor?"</h2>
+      <p class="note">Yatay eksen: modelin dediği olasılık. Dikey eksen: o tahminlerde gerçekte ne olduğu.
+        Noktalar kesikli çizgiye (birebir) ne kadar yakınsa model o kadar dürüst. Sadece ≥20 maçlık kutular çizilir —
+        0.5 Üst neredeyse hep %85+ tahmin edildiği için tek bir bölgede toplanır.</p>
+      <div class="legend">
+        <span><b style="background:#3987e5"></b>0.5 Üst</span>
+        <span><b style="background:#d95926"></b>1.5 Üst</span>
+        <span><b style="background:#199e70"></b>2.5 Üst</span>
+        <span>— — birebir</span>
+      </div>
+      <div id="bt-calib"></div>
+    </div>
+    <div class="card">
+      <h2>Pazar bazında sonuç</h2>
+      <p class="note"><b>Kalibrasyon</b> = 100 − ortalama sapma. <b>Beceri</b> = "hep lig ortalamasını söyle" baz çizgisine göre (+ iyi, − kötü). <b>Yön isabeti</b> = modelin eğildiği tarafı seçseydin tutma oranın.</p>
+      <div class="tbl-scroll"><table id="bt-markets"></table></div>
+    </div>
+    <div class="card">
+      <h2>Beklenen gol (λ) isabeti</h2>
+      <p class="note" id="bt-lambda-note"></p>
+      <div class="tbl-scroll"><table id="bt-lambda"></table></div>
+    </div>
+    <div class="card">
+      <h2>Lig bazında</h2>
+      <div class="tbl-scroll"><table id="bt-byleague"></table></div>
+    </div>
+    <div class="card">
+      <h2>Sezon bazında</h2>
+      <div class="tbl-scroll"><table id="bt-byseason"></table></div>
+    </div>
+    <div class="card">
+      <h2 id="bt-lastseason-h">Geçen sezon · lig bazında</h2>
+      <p class="note">Sadece bir önceki tam sezon. Model o sezonu <b>görmeden</b> (önceki 4 sezonla) tahmin etti.</p>
+      <div class="tbl-scroll"><table id="bt-lastseason"></table></div>
+    </div>
+    <div class="card">
+      <h2>Örnek maçlar</h2>
+      <p class="note">Test kümesinden düzenli aralıklarla seçilmiş 40 maç. λ = tahmin edilen toplam gol, 2.5Ü = modelin verdiği olasılık.</p>
+      <div class="tbl-scroll"><table id="bt-samples"></table></div>
+    </div>
+    <div class="sell" id="bt-sell"></div>
+    <p class="btfoot" id="bt-foot"></p>
+  </section>
+
   <div class="foot" id="updated">Analizler hazırlanıyor</div>
 </div>
 
@@ -220,8 +291,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <div id="cal" class="cal" hidden></div>
 <script>
 const leagues=['Tümü','Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
-const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json';
-let STATS={matches:{}},RESULTS=null;
+const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json';
+let STATS={matches:{}},RESULTS=null,BACKTEST=null;
 const FALLBACK_DATA=[
  {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
 ];
@@ -239,6 +310,7 @@ let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off')hlKey='o05';
 let hotOnly=false;
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
+let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
 
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
@@ -498,19 +570,123 @@ function renderResults(){
 
 function renderAll(){renderPred();renderResults();}
 
+// ---- model doğruluğu (backtest) ----
+const BT_S=['#3987e5','#d95926','#199e70'];
+const btPc=v=>v==null?'—':(v*100).toFixed(1)+'%';
+const btSg=v=>v==null?'':(v>=0?'pos':'neg');
+function btTiles(rows){$('bt-tiles').innerHTML=rows.map(r=>`<div class="tile"><div class="v">${r[0]}</div><div class="k">${r[1]}</div><div class="n">${r[2]}</div></div>`).join('');}
+function btSeasonList(){return BACKTEST?Object.keys(BACKTEST.by_season||{}).sort():[];}
+function renderBtSeasons(){
+  const nav=$('bt-seasons'),ss=btSeasonList();
+  if(!ss.length){nav.innerHTML='';return;}
+  if(btSeason&&!ss.includes(btSeason))btSeason='';
+  nav.innerHTML=[['','Tüm sezonlar'],...ss.map(s=>[s,s])]
+    .map(([v,lbl])=>`<button class="chip ${v===btSeason?'active':''}" data-s="${v}">${lbl}</button>`).join('');
+  nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{btSeason=b.dataset.s;save('btseason',btSeason);renderBtSeasons();renderBacktest();});
+}
+function btLoadFailed(){if(!BACKTEST&&tab==='bt')$('bt-lede').textContent='Model doğrulama verisi şu an yüklenemedi — birazdan tekrar denenecek.';}
+function renderBacktest(){
+  const d=BACKTEST;
+  if(!d){$('bt-lede').textContent='Yükleniyor…';return;}
+  renderBtSeasons();
+  const mt=d.method, allSeasons=(mt.target_seasons||[]), ns=allSeasons.length;
+  const seasonSel=btSeason&&d.by_season[btSeason]?btSeason:'';
+  const o=seasonSel?d.by_season[seasonSel]:d.overall;
+  const m=o.markets,L=o.lambda;
+  const scopeTxt=seasonSel?`<b>${seasonSel}</b> sezonu`:`<b>${ns} sezon</b> (${allSeasons.join(', ')})`;
+  $('bt-lede').innerHTML=`${scopeTxt} · ${o.n_matches.toLocaleString('tr-TR')} maç · 6 lig · `+
+    `model her sezonu <b>yalnızca önceki sezonların</b> verisiyle (en fazla 4, yakın sezona daha çok ağırlık) tahmin etti — o sezonun sonuçları modele girmedi. `+
+    `Veri: football-data.co.uk. Formül canlı sitedekiyle birebir aynı.`;
+  const noiseFloor=1.30;
+  btTiles([
+    [o.n_matches.toLocaleString('tr-TR'),'test edilen maç',`${seasonSel?'1 sezon':ns+' sezon'} × 6 lig, oynanmadan önce tahmin edildi`],
+    [m['2.5'].calibrated_pct.toFixed(1)+'%','2.5 Üst kalibrasyonu','model "%X üst" dediğinde gerçekte ~%X üst geldi'],
+    [btPc(L.within_1),'±1 gol isabeti','tahmini toplam gol, gerçek toplama 1 golden yakın'],
+    [btPc(m['2.5'].pick_acc),'yön isabeti (2.5Ü)','modelin eğildiği tarafı seçseydin tutma oranı']
+  ]);
+  $('bt-calib').innerHTML=btCalibChart(m);
+  $('bt-markets').innerHTML=
+    `<thead><tr><th>Pazar</th><th>Görülme</th><th>Kalibr.</th><th>Brier</th><th>Baz Brier</th><th>Beceri</th><th>Log-loss</th><th>Yön isabeti</th><th>Güvenli seçim</th></tr></thead><tbody>`+
+    ['0.5','1.5','2.5'].map(k=>{const x=m[k];return `<tr><td>${k} Üst</td><td>${btPc(x.base_rate)}</td><td>${x.calibrated_pct.toFixed(1)}%</td><td>${x.brier.toFixed(3)}</td><td>${x.brier_baseline.toFixed(3)}</td><td class="${btSg(x.skill)}">${x.skill>=0?'+':''}${(x.skill*100).toFixed(1)}%</td><td>${x.logloss.toFixed(3)}</td><td>${btPc(x.pick_acc)}</td><td>${x.conf_acc==null?'—':btPc(x.conf_acc)+' <span style="color:var(--muted)">('+x.conf_n+')</span>'}</td></tr>`}).join('')+`</tbody>`;
+  $('bt-lambda-note').innerHTML=
+    `Tek maçta gol sayısı doğası gereği çok değişken: model gerçek λ'yı tam bilse bile ortalama hatası ~${noiseFloor} gol olurdu (Poisson gürültü tabanı). `+
+    `Ölçülen MAE <b>${L.mae}</b> — bu tabana yakın. Sapma <b>${L.bias>=0?'+':''}${L.bias}</b>: model ortalamada ${Math.abs(L.bias)<0.1?'neredeyse önyargısız':(L.bias<0?'biraz düşük':'biraz yüksek')} tahmin ediyor.`;
+  $('bt-lambda').innerHTML=
+    `<thead><tr><th>Ölçüt</th><th>Değer</th></tr></thead><tbody>`+
+    [['Ortalama mutlak hata (MAE)',L.mae+' gol'],['RMSE',L.rmse+' gol'],['Sapma (bias)',(L.bias>=0?'+':'')+L.bias+' gol'],
+     ['±1 gol içinde',btPc(L.within_1)],['±1.5 gol içinde',btPc(L.within_1_5)],
+     ['Ortalama tahmin / gerçek',L.mean_pred+' / '+L.mean_actual],
+     ['Maç düzeyinde korelasyon',L.corr==null?'—':L.corr]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')+`</tbody>`;
+  const grp=(obj,hi)=>`<thead><tr><th></th><th>Maç</th><th>λ MAE</th><th>λ sapma</th><th>2.5Ü kalibr.</th><th>2.5Ü beceri</th><th>2.5Ü yön</th></tr></thead><tbody>`+
+    Object.entries(obj).map(([name,x])=>`<tr${name===hi?' style="font-weight:900"':''}><td>${esc(name)}</td><td>${x.n_matches}</td><td>${x.lambda.mae}</td><td>${x.lambda.bias>=0?'+':''}${x.lambda.bias}</td><td>${x.markets['2.5'].calibrated_pct.toFixed(1)}%</td><td class="${btSg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${btPc(x.markets['2.5'].pick_acc)}</td></tr>`).join('')+`</tbody>`;
+  const bsl=d.by_season_league||{};
+  $('bt-byleague').innerHTML=grp(seasonSel?(bsl[seasonSel]||{}):d.by_league);
+  $('bt-byleague').closest('.card').querySelector('h2').textContent=seasonSel?`Lig bazında · ${seasonSel}`:'Lig bazında · tüm sezonlar';
+  $('bt-byseason').innerHTML=grp(d.by_season,seasonSel);
+  // lig × 3 çizgi kartı — seçili sezonu (yoksa en yeniyi) izler
+  const focus=seasonSel||btSeasonList()[btSeasonList().length-1];
+  if(focus&&bsl[focus]){
+    $('bt-lastseason-h').textContent=`${focus} · lig bazında · 3 çizgi (yön / kalibr.)`;
+    const cell=(x,line)=>{const mm=x.markets[line];return `<td>${btPc(mm.pick_acc)}</td><td class="mut">${mm.calibrated_pct.toFixed(0)}%</td>`;};
+    const r3=(name,x)=>`<tr><td>${esc(name)}</td><td>${x.n_matches}</td>${cell(x,'0.5')}${cell(x,'1.5')}${cell(x,'2.5')}<td class="${btSg(x.markets['2.5'].skill)}">${x.markets['2.5'].skill>=0?'+':''}${(x.markets['2.5'].skill*100).toFixed(1)}%</td><td>${x.lambda.mae}</td></tr>`;
+    const order=['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie'];
+    $('bt-lastseason').innerHTML=
+      `<thead><tr><th></th><th>Maç</th><th>0.5Ü yön</th><th class="mut">kal.</th><th>1.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü yön</th><th class="mut">kal.</th><th>2.5Ü beceri</th><th>λ MAE</th></tr></thead><tbody>`+
+      (d.by_season[focus]?r3('TÜMÜ',d.by_season[focus]).replace('<tr>','<tr style="font-weight:900">'):'')+
+      order.filter(l=>bsl[focus][l]).map(l=>r3(l,bsl[focus][l])).join('')+`</tbody>`;
+  }
+  const samp=seasonSel?d.samples.filter(s=>s.season===seasonSel):d.samples;
+  $('bt-samples').innerHTML=
+    `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>λ</th><th>2.5Ü</th><th>Skor</th><th>Gol</th><th>2.5Ü</th></tr></thead><tbody>`+
+    samp.map(s=>`<tr><td>${dmy(s.date)}</td><td>${esc(s.league)}</td><td style="text-align:left">${esc(s.home)} — ${esc(s.away)}</td><td>${s.pred_lambda}</td><td>${(s.p25*100).toFixed(0)}%</td><td>${s.actual_score}</td><td>${s.actual_total}</td><td class="${s.over25_hit?'hit':'miss'}">${s.over25_hit?'✓':'✗'}</td></tr>`).join('')+`</tbody>`;
+  $('bt-sell').innerHTML=
+    `<b>Dürüst mesaj:</b> "BETAVUS iddialı değil, <b>kalibre</b>. ${seasonSel?seasonSel+' sezonunun':ns+' sezonun'} ${o.n_matches.toLocaleString('tr-TR')} maçında `+
+    `model bir tarafa %${(m['2.5'].calibration.find(b=>b.lo===0.6)?.pred*100||0).toFixed(0)} dediğinde o taraf ~aynı oranda geldi; `+
+    `tahmini gol ortalaması gerçeğe ${L.bias>=0?'+':''}${L.bias} gol yakınlıkla, önyargısız." — Garanti/"%90 isabet" dili KULLANILMAMALI; `+
+    `modelin tek maç ayrıştırma gücü baz çizgisinin sadece ${(m['2.5'].skill*100).toFixed(1)}% üstünde.`;
+  $('bt-foot').innerHTML=
+    `Üretim: <code>scripts/backtest.py</code> · ${new Date(d.generated_at).toLocaleString('tr-TR')} · `+
+    `model, hedef sezon içinde güncellenmeden (fikstür anındaki haliyle) test edildi; Sonuçlar sekmesi maç günü bilinen formu da kattığı için oranları biraz daha yüksektir.`;
+}
+function btCalibChart(m){
+  const W=920,H=380,P=44;
+  const x=v=>P+v*(W-P-14),y=v=>H-P-v*(H-P-14);
+  let g='';
+  for(let t=0;t<=10;t+=2){const gx=x(t/10),gy=y(t/10);
+    g+=`<line x1="${gx}" y1="${y(0)}" x2="${gx}" y2="${y(1)}" stroke="var(--line)"/>`;
+    g+=`<line x1="${x(0)}" y1="${gy}" x2="${x(1)}" y2="${gy}" stroke="var(--line)"/>`;
+    g+=`<text x="${gx}" y="${H-P+16}" text-anchor="middle" font-size="10" fill="var(--muted)">${t*10}%</text>`;
+    g+=`<text x="${P-8}" y="${gy+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t*10}%</text>`;}
+  g+=`<line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  g+=`<text x="${(x(0)+x(1))/2}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">modelin dediği olasılık</text>`;
+  g+=`<text transform="translate(13 ${(y(0)+y(1))/2}) rotate(-90)" text-anchor="middle" font-size="10.5" fill="var(--muted)">gerçekleşen sıklık</text>`;
+  ['0.5','1.5','2.5'].forEach((k,si)=>{
+    const pts=m[k].calibration.filter(b=>b.n>=20&&b.pred!=null);
+    if(pts.length<1)return;
+    if(pts.length>=2)g+=`<polyline points="${pts.map(b=>x(b.pred).toFixed(1)+','+y(b.actual).toFixed(1)).join(' ')}" fill="none" stroke="${BT_S[si]}" stroke-width="2" stroke-linejoin="round"/>`;
+    g+=pts.map(b=>`<circle cx="${x(b.pred).toFixed(1)}" cy="${y(b.actual).toFixed(1)}" r="${Math.max(3,Math.min(7,Math.sqrt(b.n)/13))}" fill="${BT_S[si]}"><title>${k} Üst · dedi ${(b.pred*100).toFixed(1)}% → oldu ${(b.actual*100).toFixed(1)}% (${b.n} maç)</title></circle>`).join('');
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Kalibrasyon grafiği"><rect x="${P}" y="${y(1)}" width="${x(1)-P}" height="${y(0)-y(1)}" fill="var(--head)"/>${g}</svg>`;
+}
+
 function setTab(t){
   tab=t;save('tab',t);
   $('tab-pred').classList.toggle('active',t==='pred');
   $('tab-res').classList.toggle('active',t==='res');
+  $('tab-bt').classList.toggle('active',t==='bt');
   $('pane-pred').hidden=t!=='pred';
   $('pane-res').hidden=t!=='res';
-  renderAll();
+  $('pane-bt').hidden=t!=='bt';
+  $('filters').hidden=t==='bt';   // model doğruluğu tüm ligler için — lig filtresi geçersiz
+  if(t==='bt')renderBacktest(); else renderAll();
 }
 
 async function load(){
   rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches)STATS=s;}).catch(()=>{});
   fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();}}).catch(()=>{});
+  fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
+    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='bt')renderBacktest();}else btLoadFailed();}).catch(btLoadFailed);
   try{
     const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('data');
@@ -519,10 +695,10 @@ async function load(){
     const upd=remote[0]&&remote[0].updated_at;
     $('updated').innerHTML=`Kaynak: openfootball + football-data.co.uk · Poisson motoru`+
       (upd?` · güncelleme ${timeAgo(upd)}`:'')+
-      ` · <a href="backtest.html">Model doğruluğu →</a>`;
+      ` · <a href="#" onclick="setTab('bt');return false">Model doğruluğu →</a>`;
   }catch(e){
     window.__data=FALLBACK_DATA;
-    $('updated').innerHTML='Canlı veri bekleniyor · Geçici fikstür · <a href="backtest.html">Model doğruluğu →</a>';
+    $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('bt');return false">Model doğruluğu →</a>`;
   }
   renderAll();
 }
@@ -615,13 +791,14 @@ function openInfo(){
       <p><span class="badge b3">●●●</span> H2H + form'a dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b0">○</span> sadece lig ortalaması (zayıf)</p>
       <p><b>Vurgu</b> seçtiğin pazarda backtest'te sürdürülebilir en yüksek isabet bölgesini yeşil yakar — garanti değil, "modelin en emin olduğu" demektir. <b>Sonuçlar</b> sekmesindeki yeşil şerit tam da bu eşiklerin üstündeki tahminlerin gerçekte nasıl tuttuğunu gösterir — riski azaltmanın yolu bu.</p></div>
     <div class="s-card"><h3>Dürüstlük</h3>
-      <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Tüm tahminlere bakınca tek maç ayrıştırma gücü piyasanın çok az üstünde; ama <b>yüksek güven eşiğinin üstündeki</b> daha az sayıda tahmin belirgin biçimde daha iyi tutuyor. <a href="backtest.html">Model doğruluğu</a> sayfası ve Sonuçlar sekmesi hepsini açıkça verir. Kayıp garantisi yoktur.</p></div>
+      <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Tüm tahminlere bakınca tek maç ayrıştırma gücü piyasanın çok az üstünde; ama <b>yüksek güven eşiğinin üstündeki</b> daha az sayıda tahmin belirgin biçimde daha iyi tutuyor. <a href="#" onclick="closeSheet();setTab('bt');return false">Model doğruluğu</a> sekmesi ve Sonuçlar sekmesi hepsini açıkça verir. Kayıp garantisi yoktur.</p></div>
   </div>`;
 }
 
 // ---- wire ----
 $('tab-pred').onclick=()=>setTab('pred');
 $('tab-res').onclick=()=>setTab('res');
+$('tab-bt').onclick=()=>setTab('bt');
 $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};

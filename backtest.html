@@ -114,7 +114,7 @@ function render(d){
 
   const noiseFloor=1.30;
   tiles([
-    [o.n_matches.toLocaleString('tr-TR'),'test edilen maç','3 sezon × 6 lig, oynanmadan önce tahmin edildi'],
+    [o.n_matches.toLocaleString('tr-TR'),'test edilen maç',`${mt.target_seasons.length} sezon × 6 lig, oynanmadan önce tahmin edildi`],
     [m['2.5'].calibrated_pct.toFixed(1)+'%','2.5 Üst kalibrasyonu','model “%X üst” dediğinde gerçekte ~%X üst geldi'],
     [pc(L.within_1),'±1 gol isabeti','tahmini toplam gol, gerçek toplama 1 golden yakın'],
     [pc(m['2.5'].pick_acc),'yön isabeti (2.5Ü)','modelin eğildiği tarafı seçseydin tutma oranı']
@@ -172,7 +172,7 @@ function render(d){
     `</tbody>`;
 
   document.getElementById('sell').innerHTML=
-    `<b>Site içi vitrin için dürüst mesaj:</b> “BETAVUS iddialı değil, <b>kalibre</b>. Geçen 3 sezonun ${o.n_matches.toLocaleString('tr-TR')} maçında `+
+    `<b>Site içi vitrin için dürüst mesaj:</b> “BETAVUS iddialı değil, <b>kalibre</b>. Son ${mt.target_seasons.length} sezonun ${o.n_matches.toLocaleString('tr-TR')} maçında `+
     `model bir tarafa %${(m['2.5'].calibration.find(b=>b.lo===0.6)?.pred*100||0).toFixed(0)} dediğinde o taraf ~aynı oranda geldi; `+
     `tahmini gol ortalaması gerçeğe ${L.bias>=0?'+':''}${L.bias} gol yakınlıkla, önyargısız.” — Garanti/“%90 isabet” dili KULLANILMAMALI; `+
     `modelin tek maç ayrıştırma gücü baz çizgisinin sadece ${(m['2.5'].skill*100).toFixed(1)}% üstünde.`;

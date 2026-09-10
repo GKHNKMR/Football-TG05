@@ -32,7 +32,8 @@ DIVISIONS = {
     "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie",
 }
 ALL_SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526"]
-TARGET_SEASONS = ["2324", "2425", "2526"]
+# five walk-forward seasons; 2122 trains on just 1920+2021, the rest on four
+TARGET_SEASONS = ["2122", "2223", "2324", "2425", "2526"]
 PRIOR_WEIGHTS = [1.0, 0.7, 0.45, 0.30]  # nearest prior season first
 H2H_MAX = 8
 LINES = [0.5, 1.5, 2.5]

@@ -707,7 +707,7 @@ function renderResults(){
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
       <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
-      <div><span class="${gaCls}" style="font-weight:800">${ga==null?'—':'%'+ga}</span><div class="edge">λ ${lam!=null?lam.toFixed(1):'—'} → ${tot} gol</div></div>
+      <div><span class="${gaCls}" style="font-weight:800">${ga==null?'—':'%'+ga}</span><div class="edge">λ ${lam!=null?lam.toFixed(2):'—'} → ${tot} gol</div></div>
     </div>`;
   }).join('');
   const rc=RESULTS.reconstructed_count||0;

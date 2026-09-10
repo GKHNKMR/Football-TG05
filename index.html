@@ -193,9 +193,15 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .pill.pick{outline:2px solid var(--accent);outline-offset:1px}
 .slipfab{position:fixed;right:16px;bottom:16px;z-index:40;border:1px solid var(--line);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:11px 16px;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 .slipfab[hidden]{display:none}
-.slip-leg,.cpn-leg{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--hair);font-size:12.5px}
-#pane-cpn .cpn-leg{grid-template-columns:1fr auto auto}
-#pane-cpn .leg-del{border:0;background:var(--panel2);color:var(--muted);border-radius:6px;width:24px;height:24px;font-size:14px;font-weight:900;cursor:pointer}
+.slip-leg{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--hair);font-size:12.5px}
+#pane-cpn .cpn-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+#pane-cpn .cpn-tbl th{text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+#pane-cpn .cpn-tbl td{padding:8px;border-bottom:1px solid var(--hair);vertical-align:top}
+#pane-cpn .cpn-tbl td.mL{font-weight:700;min-width:150px}
+#pane-cpn .cpn-tbl .sub{color:var(--muted);font-size:10px;font-weight:600;margin-top:1px}
+#pane-cpn .cpn-tbl .lr{font-weight:900;font-size:14px;text-align:center}
+#pane-cpn .cpn-tbl .lr.won{color:var(--good)}#pane-cpn .cpn-tbl .lr.lost{color:var(--bad)}#pane-cpn .cpn-tbl .lr.pending{color:var(--muted)}
+#pane-cpn .leg-del{border:0;background:var(--panel2);color:var(--muted);border-radius:6px;width:22px;height:22px;font-size:13px;font-weight:900;cursor:pointer}
 #pane-cpn .leg-del:hover{color:var(--bad)}
 .slip-leg .lx{border:0;background:var(--panel2);color:var(--muted);border-radius:7px;width:26px;height:26px;font-size:15px;cursor:pointer;font-weight:900}
 .slip-leg .sideT{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:1px 7px;font-weight:900;font-size:11px;cursor:pointer}
@@ -213,8 +219,6 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cbadge.won{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
 .cbadge.lost{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
 .cbadge.pending{background:var(--hair);color:var(--muted)}
-.cpn-leg .lr{font-weight:900}
-.cpn-leg .lr.won{color:var(--good)}.cpn-leg .lr.lost{color:var(--bad)}.cpn-leg .lr.pending{color:var(--muted)}
 #pane-cpn .cpn-del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:700;text-decoration:underline}
 #toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #toast[hidden]{display:none}
@@ -793,7 +797,7 @@ function toggleLeg(mid,line){
   else{
     const x=fixtureById(mid);if(!x)return;
     slip.push({mid,league:x.league,home:x.home,away:x.away,kickoff_utc:x.kickoff_utc,
-      line,side:'Üst',pOver:x[LINE_KEY[line]]});
+      line,side:'Üst',pOver:x[LINE_KEY[line]],lam:x.exp_goals??null});
   }
   saveJSON('slip',slip);renderPred();renderSlipFab();if(!sheet.hidden)openSlip();
 }
@@ -896,19 +900,29 @@ function renderCoupons(){
     <div class="tile"><div class="v">${best} / ${Math.abs(worst)}</div><div class="k">en uzun seri</div><div class="n">kazanma / kaybetme</div></div>
   </div>
   <div class="rsum">Çizgi bazında bacak: ${['0.5','1.5','2.5'].map(k=>byLine[k]?`${k} ${pct1(byLine[k][0],byLine[k][1])} (${byLine[k][1]})`:`${k} —`).join(' · ')} — yalnızca <b>senin kuponların</b>.</div>`;
+  const mk=st=>st==='won'?'✓':st==='lost'?'✗':'⏳';
   list.innerHTML=settled.map(({c,s})=>{
     const badge=s.status==='won'?'won':s.status==='lost'?'lost':'pending';
     const btxt=s.status==='won'?'KAZANDI':s.status==='lost'?'KAYBETTİ':'BEKLİYOR';
-    const legs=s.legs.map((l,li)=>`<div class="cpn-leg">
-        <div><div class="leg-pick">${l.line} ${l.side}</div>
-          <div class="leg-sub">${esc(l.home)} — ${esc(l.away)}${l.status!=='pending'?` · ${l.score}`:''}</div></div>
-        <div class="lr ${l.status}">${l.status==='won'?'✓':l.status==='lost'?'✗':'⏳'}</div>
-        <button class="leg-del" data-cid="${c.id}" data-li="${li}" title="Bu maçı kupondan çıkar">×</button>
-      </div>`).join('');
+    const rows=s.legs.map((l,li)=>{
+      const p=legP(l), pc=p==null?'—':'%'+Math.round(p*100);
+      return `<tr>
+        <td>${dmy(l.kickoff_utc)}</td>
+        <td>${flag(l.league,10)} ${esc(l.league)}</td>
+        <td class="mL">${esc(l.home)} — ${esc(l.away)}</td>
+        <td><b>${l.line} ${l.side}</b><div class="sub">λ ${l.lam!=null?(+l.lam).toFixed(1):'—'} · güven ${pc}</div></td>
+        <td>${l.status==='pending'?'<span class="sub">bekliyor</span>':`${l.score}<div class="sub">${l.total} gol</div>`}</td>
+        <td class="lr ${l.status}">${mk(l.status)}</td>
+        <td><button class="leg-del" data-cid="${c.id}" data-li="${li}" title="Bu maçı kupondan çıkar">×</button></td>
+      </tr>`;
+    }).join('');
     return `<div class="cpn">
       <div class="cpn-head"><span>${dmy(c.ts)} · ${c.legs.length} maç</span>
         <span class="cbadge ${badge}">${btxt}</span></div>
-      ${legs}
+      <div class="tbl-scroll"><table class="cpn-tbl">
+        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor tahmini</th><th>Gerçek sonuç</th><th>Başarı</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
       <div style="margin-top:8px"><button class="cpn-del" data-id="${c.id}">Kuponu sil</button></div>
     </div>`;
   }).join('');

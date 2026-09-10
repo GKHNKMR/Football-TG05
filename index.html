@@ -352,7 +352,11 @@ function renderCal(){
   cal.querySelector('[data-act=today]').onclick=()=>{calMonth=new Date();calMonth.setDate(1);renderCal();};
   cal.querySelector('[data-act=all]').onclick=()=>pickDay(null);
 }
-document.addEventListener('click',e=>{if(!cal.hidden&&!cal.contains(e.target)&&!e.target.closest('.datebtn'))closeCal();});
+document.addEventListener('click',e=>{
+  // e.target renderCal sonrası DOM'dan koparsa (ay okları, Bugün) takvimi kapatma
+  if(cal.hidden||!e.target.isConnected)return;
+  if(!cal.contains(e.target)&&!e.target.closest('.datebtn'))closeCal();
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCal();});
 $('dayBtnPred').onclick=()=>openCal('pred',$('dayBtnPred'));
 $('dayBtnRes').onclick=()=>openCal('res',$('dayBtnRes'));

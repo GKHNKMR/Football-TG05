@@ -229,6 +229,8 @@ def head_to_head(matches, home_fd, away_fd):
         "away_wins": aw,
         "draws": n - hw - aw,
         "avg_total": round(sum(m["total"] for m in recent) / n, 2),
+        "over05_pct": pct(sum(m["total"] > 0.5 for m in recent), n),
+        "over15_pct": pct(sum(m["total"] > 1.5 for m in recent), n),
         "over25_pct": pct(sum(m["total"] > 2.5 for m in recent), n),
         "btts_pct": pct(sum(m["fthg"] > 0 and m["ftag"] > 0 for m in recent), n),
         "matches": [
@@ -282,7 +284,6 @@ def main():
                 "fd": fd,
                 "matched": ok,
                 "season": season_summary(matches, fd, CURRENT_SEASON) if ok else {"played": 0},
-                "goals5": goals_by_season(matches, fd) if ok else [],
                 "form": form,
             }
 

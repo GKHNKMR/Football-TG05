@@ -37,7 +37,7 @@ DATE_SLACK = 2
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
 # "high confidence" thresholds = the Vurgu levels highlighted on the site; the
 # Sonuçlar tab reports how the picks above these did (the risk-reduced view).
-HI_MIN = {"05": 0.95, "15": 0.85, "25": 0.70}
+HI_MIN = {"05": 0.95, "15": 0.85, "25": 0.75}
 
 
 def _f(v):

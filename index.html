@@ -83,8 +83,12 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-g .wd{text-align:center;font-size:9.5px;font-weight:900;color:var(--muted);padding:3px 0}
 .cal-g button{aspect-ratio:1;border:0;background:transparent;color:var(--text);border-radius:8px;cursor:pointer;font-weight:700;font-size:12px;position:relative}
-.cal-g button:disabled{color:var(--muted);opacity:.35;cursor:default}
-.cal-g button.has:not(:disabled){background:var(--panel2)}
+.cal-g button.no{color:var(--muted);opacity:.5}
+.cal-g button.has{background:var(--panel2)}
+.cal-g button:hover{outline:1px solid var(--line)}
+.cal-man{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:11px;color:var(--muted);font-weight:800}
+.cal-man input{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px;color-scheme:dark}
+:root[data-theme="light"] .cal-man input{color-scheme:light}
 .cal-g button.today{outline:1.5px solid var(--good);outline-offset:-1.5px}
 .cal-g button.sel{background:var(--accent);color:var(--accent-ink)}
 .cal-g button.dot::after{content:"";position:absolute;left:50%;bottom:3px;width:3px;height:3px;border-radius:50%;background:var(--good);transform:translateX(-50%)}
@@ -220,7 +224,7 @@ const FALLBACK_DATA=[
 // Vurgu eşikleri — backtest'te her pazarın sürdürülebilir güven bölgesi
 const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
          o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ %85'},
-         o25:{key:'p_over_2_5',min:0.70,label:'2.5+ ≥ %70'}};
+         o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'}};
 const store=(k,d)=>{try{return localStorage.getItem('betavus.'+k)??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 
@@ -314,6 +318,8 @@ function pickDay(k){
 }
 function renderCal(){
   const has=keysFor(calFor);
+  const sorted=[...has].sort();
+  const lo=sorted[0]||'', hi=sorted[sorted.length-1]||'';
   const sel=calFor==='pred'?dayPred:dayRes;
   const today=localKey(new Date());
   const y=calMonth.getFullYear(),m=calMonth.getMonth();
@@ -326,14 +332,16 @@ function renderCal(){
   for(let i=0;i<lead;i++)cells+='<div></div>';
   for(let d=1;d<=dim;d++){
     const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const cls=['',has.has(k)?'has dot':'',k===today?'today':'',k===sel?'sel':''].filter(Boolean).join(' ');
-    cells+=`<button class="${cls}" data-k="${k}"${has.has(k)?'':' disabled'}>${d}</button>`;
+    const cls=['',has.has(k)?'has dot':'no',k===today?'today':'',k===sel?'sel':''].filter(Boolean).join(' ');
+    cells+=`<button class="${cls}" data-k="${k}">${d}</button>`;
   }
   cal.innerHTML=`<div class="cal-h"><button data-nav="-1">‹</button><b>${mName}</b><button data-nav="1">›</button></div>
     <div class="cal-g">${cells}</div>
+    <label class="cal-man">Tarih yaz: <input type="date" value="${sel||''}"${lo?` min="${lo}" max="${hi}"`:''}></label>
     <div class="cal-f"><button data-act="today">Bugün</button><button data-act="all">Tüm günler</button></div>`;
   cal.querySelectorAll('.cal-g button[data-k]').forEach(b=>b.onclick=()=>pickDay(b.dataset.k));
   cal.querySelectorAll('.cal-h button').forEach(b=>b.onclick=()=>{calMonth.setMonth(calMonth.getMonth()+ +b.dataset.nav);renderCal();});
+  cal.querySelector('.cal-man input').onchange=e=>{if(e.target.value)pickDay(e.target.value);};
   cal.querySelector('[data-act=today]').onclick=()=>{calMonth=new Date();calMonth.setDate(1);renderCal();};
   cal.querySelector('[data-act=all]').onclick=()=>pickDay(null);
 }
@@ -390,7 +398,7 @@ function mark(h){return `<span class="${h?'hit':'miss'}">${h?'✓':'✗'}</span>
 function hiStrip(o){
   const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_n_'+t]} maç)</span>`:`${lbl} → <span class="sm">henüz maç yok</span>`;
   return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler, tüm dönem:<br>
-    ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %70')}</div>`;
+    ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
 function renderResults(){
   const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
@@ -480,60 +488,29 @@ function teamBlock(t){
   const s=t.season||{};
   if(!t.matched||!s.played){return `<div><div class="s-team">${esc(t.name)}</div><div class="s-note">Bu sezon CSV verisi yok.</div></div>`;}
   const form=(t.form||[]).map(f=>`<span class="fchip ${f.res}" title="${f.date} ${f.venue==='H'?'(E)':'(D)'} ${esc(f.opp)} ${f.gf}-${f.ga}">${f.res}<small>${f.gf}-${f.ga}</small></span>`).join('');
+  const p=v=>v!=null?v+'%':'—';
   return `<div>
-    <div class="s-team">${esc(t.name)}</div>
-    ${sline('Bu sezon (O-B-M)',`${s.w}-${s.d}-${s.l} · ${s.played} maç`)}
+    <div class="s-team">${esc(t.name)} <span class="s-note" style="font-weight:600">· ${s.played} maç</span></div>
     ${sline('Attığı / yediği (ort.)',`${n1(s.gf_avg)} / ${n1(s.ga_avg)}`)}
-    ${sline('2.5 Üst',s.over25_pct!=null?s.over25_pct+'%':'—')}
-    ${sline('KG Var (BTTS)',s.btts_pct!=null?s.btts_pct+'%':'—')}
-    ${sline('Gol yemediği',s.cs_pct!=null?s.cs_pct+'%':'—')}
+    ${sline('0.5 Üst',p(s.over05_pct))}
+    ${sline('1.5 Üst',p(s.over15_pct))}
+    ${sline('2.5 Üst',p(s.over25_pct))}
     <div class="form">${form||'<span class="s-note">form verisi yok</span>'}</div>
   </div>`;
-}
-const S_HOME='#3987e5',S_AWAY='#d95926';
-function goalChart(h,a){
-  const HS=h.goals5||[],AS=a.goals5||[];
-  const labels=(HS.length>=AS.length?HS:AS).map(g=>g.label);
-  if(!labels.length) return '<div class="s-note">Sezon verisi yok.</div>';
-  const val=arr=>labels.map((_,i)=>arr[i]&&arr[i].total_avg!=null?arr[i].total_avg:null);
-  const hv=val(HS),av=val(AS),all=hv.concat(av).filter(v=>v!=null);
-  if(all.length<2) return '<div class="s-note">Yeterli sezon verisi yok.</div>';
-  const W=680,H=214,L=34,R=14,T=26,B=26,pw=W-L-R,ph=H-T-B;
-  const ymax=Math.max(4,Math.ceil(Math.max(...all)));
-  const X=i=>labels.length>1?L+i*(pw/(labels.length-1)):L+pw/2;
-  const Y=v=>T+ph-(v/ymax)*ph;
-  let g='';
-  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
-  const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lb)}</text>`).join('');
-  const draw=(vals,color,name)=>{
-    let segs=[],cur=[];
-    vals.forEach((v,i)=>{if(v==null){if(cur.length){segs.push(cur);cur=[];}}else cur.push([X(i),Y(v),i,v]);});
-    if(cur.length)segs.push(cur);
-    const lines=segs.filter(s=>s.length>1).map(s=>`<polyline points="${s.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
-    const dots=segs.flat().map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.3" fill="${color}"><title>${esc(name)} · ${esc(labels[p[2]])}: ${p[3]} gol/maç</title></circle>`).join('');
-    return lines+dots;
-  };
-  const lgx2=L+Math.min(pw*0.55,240);
-  const legend=`<circle cx="${L}" cy="12" r="3.5" fill="${S_HOME}"/><text x="${L+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(h.name.length>22?h.name.slice(0,21)+'…':h.name)}</text>`+
-    `<circle cx="${lgx2}" cy="12" r="3.5" fill="${S_AWAY}"/><text x="${lgx2+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(a.name.length>22?a.name.slice(0,21)+'…':a.name)}</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" role="img" aria-label="Son 5 sezon maç başına toplam gol ortalaması">`+
-    g+xl+legend+draw(hv,S_HOME,h.name)+draw(av,S_AWAY,a.name)+
-    `</svg><div class="s-note">Maç başına toplam gol (attığı + yediği), lig maçları · kaynak: football-data.co.uk</div>`;
 }
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];
   sheet.hidden=false;
   if(!m){sheet.innerHTML=`<div class="sheet"><button class="s-close">×</button><h2>İstatistik yok</h2><div class="s-sub">Bu maç için CSV verisi bulunamadı.</div></div>`;return;}
   const h=m.home,a=m.away,x=m.h2h||{count:0,matches:[]};
-  const h2hHead=x.count?`<div class="s-sub" style="margin-bottom:6px">Son ${x.count} maç · ${h.name} ${x.home_wins} – ${x.draws} B – ${x.away_wins} ${a.name} · ort. ${n1(x.avg_total)} gol · 2.5Ü ${x.over25_pct}% · KG ${x.btts_pct}%</div>`:'<div class="s-note">Kayıtlı karşılaşma yok.</div>';
+  const h2hHead=x.count?`<div class="s-sub" style="margin-bottom:6px">Son ${x.count} maç · ${h.name} ${x.home_wins} – ${x.draws} B – ${x.away_wins} ${a.name} · ort. ${n1(x.avg_total)} gol · 0.5Ü ${x.over05_pct}% · 1.5Ü ${x.over15_pct}% · 2.5Ü ${x.over25_pct}%</div>`:'<div class="s-note">Kayıtlı karşılaşma yok.</div>';
   const h2hRows=(x.matches||[]).map(r=>`<div class="h2h-row"><span>${r.date.slice(2).replace(/-/g,'.')}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
     <h2>${esc(h.name)} — ${esc(a.name)}</h2>
     <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)} · kaynak: football-data.co.uk</div>
     <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
-    <div class="s-card"><h3>Maç başına gol ortalaması · son 5 sezon</h3>${goalChart(h,a)}</div>
-    <div class="s-card"><h3>Form &amp; sezon</h3><div class="s-cols">${teamBlock(h)}${teamBlock(a)}</div></div>
+    <div class="s-card"><h3>Form &amp; sezon · bu sezon</h3><div class="s-cols">${teamBlock(h)}${teamBlock(a)}</div></div>
   </div>`;
 }
 

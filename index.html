@@ -302,8 +302,8 @@ const cal=$('cal');
 let calFor=null, calMonth=new Date();          // calMonth = ilk gün; her açılışta bugünün ayı
 function dateBtnLabel(k){return k?`${CALICON} ${dayLabel(k)}`:`${CALICON} Tüm günler`;}
 function keysFor(which){
-  if(which==='pred')return new Set(visibleAll(window.__data||[]).map(x=>dayKey(x.kickoff_utc)));
-  let ms=(RESULTS&&RESULTS.matches)||[];
+  // takvim, o sekmedeki TÜM verinin tarihlerini gösterir (sadece bu haftayı değil)
+  let ms=which==='pred'?(window.__data||[]):((RESULTS&&RESULTS.matches)||[]);
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
   return new Set(ms.map(m=>dayKey(m.kickoff_utc)));
 }
@@ -356,11 +356,17 @@ document.addEventListener('click',e=>{if(!cal.hidden&&!cal.contains(e.target)&&!
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCal();});
 $('dayBtnPred').onclick=()=>openCal('pred',$('dayBtnPred'));
 $('dayBtnRes').onclick=()=>openCal('res',$('dayBtnRes'));
-function visibleAll(list){const[start,end]=weekWindow();return list.filter(x=>selected==='Tümü'||x.league===selected).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
-function visible(list){let r=visibleAll(list);
-  const h=HL[hlKey];
-  if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
-  if(dayPred)r=r.filter(x=>dayKey(x.kickoff_utc)===dayPred);
+function inLeague(x){return selected==='Tümü'||x.league===selected;}
+function visibleAll(list){const[start,end]=weekWindow();return list.filter(inLeague).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
+function visible(list){
+  let r;
+  if(dayPred){                       // belirli bir gün seçili → tüm fikstür içinden o gün (hafta penceresi devre dışı)
+    r=list.filter(x=>inLeague(x)&&dayKey(x.kickoff_utc)===dayPred);
+  }else{
+    r=visibleAll(list);
+    const h=HL[hlKey];
+    if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
+  }
   r=r.slice();
   if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
   else r.sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
@@ -369,19 +375,19 @@ function visible(list){let r=visibleAll(list);
 function renderPred(){
   const src=window.__data||[];
   const winMs=visibleAll(src);
-  const dk=new Set(winMs.map(x=>dayKey(x.kickoff_utc)));
+  const dk=new Set(src.filter(inLeague).map(x=>dayKey(x.kickoff_utc)));
   if(dayPred&&!dk.has(dayPred))dayPred=null;
   const bp=$('dayBtnPred');bp.innerHTML=dateBtnLabel(dayPred);bp.classList.toggle('set',!!dayPred);
   if(calFor==='pred'&&!cal.hidden)renderCal();
   document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine||(c.dataset.sort==='date'&&!sortLine)));
   const list=visible(src);const[ws,we]=weekWindow();
-  $('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
+  $('window').textContent=dayPred?dayLabel(dayPred):`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
   const total=winMs.length;
   const h=HL[hlKey];
-  $('hotToggle').classList.toggle('on',hotOnly&&!!h);
-  $('hotToggle').disabled=!h;
-  $('hotToggle').style.opacity=h?1:.4;
-  $('count').textContent=(hotOnly&&h)?`${list.length} / ${total} maç`:`${list.length} maç`;
+  $('hotToggle').classList.toggle('on',hotOnly&&!!h&&!dayPred);
+  $('hotToggle').disabled=!h||!!dayPred;
+  $('hotToggle').style.opacity=(h&&!dayPred)?1:.4;
+  $('count').textContent=(hotOnly&&h&&!dayPred)?`${list.length} / ${total} maç`:`${list.length} maç`;
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">

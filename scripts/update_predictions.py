@@ -203,11 +203,12 @@ def kickoff_utc(day, clock, tz_name):
     return naive.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+FORECAST_DAYS = 35  # how far ahead to publish predictions (calendar can reach these)
+
+
 def sunday_to_sunday(today):
-    """Window covering the run-up days plus the next full Sunday->Sunday week."""
-    days_to_sunday = (6 - today.weekday()) % 7  # Mon=0 .. Sun=6
-    next_sunday = today + timedelta(days=days_to_sunday)
-    return today, next_sunday + timedelta(days=7)
+    """From today through FORECAST_DAYS ahead. (Name kept for import stability.)"""
+    return today, today + timedelta(days=FORECAST_DAYS)
 
 
 class LeagueModel:

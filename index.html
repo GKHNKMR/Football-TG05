@@ -226,6 +226,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   </section>
 
   <section id="pane-res" hidden>
+    <nav class="filters" id="res-seasons"></nav>
     <div id="resSummary"></div>
     <div class="datectl"><button class="datebtn" id="dayBtnRes" type="button"></button></div>
     <div class="table">
@@ -311,6 +312,7 @@ let hotOnly=false;
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
+let resSeason=store('resseason','')||'';  // Sonuçlar: '' = tüm sezonlar, yoksa "2025/26"
 
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
@@ -370,6 +372,7 @@ function fmtDay(d){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'
 function dayKey(iso){return String(iso).slice(0,10);}
 function dmy(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(String(iso).slice(0,10)+'T12:00:00'));}
 function dateCell(iso){const s=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(iso));const i=s.lastIndexOf('.');return `${s.slice(0,i)}<span class="yr">${s.slice(i+1)}</span>`;}
+function seasonOf(iso){const d=new Date(iso);let y=d.getUTCFullYear();if(d.getUTCMonth()+1<7)y-=1;return `${y}/${String(y+1).slice(2)}`;}  // Ağustos–Haziran futbol sezonu
 function dayLabel(k){return new Intl.DateTimeFormat('tr-TR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).format(new Date(k+'T12:00:00'));}
 function localKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 const CALICON='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
@@ -382,6 +385,7 @@ function keysFor(which){
   // takvim, o sekmedeki TÜM verinin tarihlerini gösterir (sadece bu haftayı değil)
   let ms=which==='pred'?(window.__data||[]):((RESULTS&&RESULTS.matches)||[]);
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
+  if(which==='res'&&resSeason)ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
   return new Set(ms.map(m=>dayKey(m.kickoff_utc)));
 }
 function openCal(which,btn){
@@ -527,25 +531,39 @@ function hiStrip(o){
   return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler:<br>
     ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
+function resSeasonList(){
+  return RESULTS?[...new Set((RESULTS.matches||[]).map(m=>seasonOf(m.kickoff_utc)))].sort():[];
+}
+function renderResSeasons(){
+  const nav=$('res-seasons'),ss=resSeasonList();
+  if(ss.length<2){nav.innerHTML='';nav.hidden=true;return;}
+  nav.hidden=false;
+  if(resSeason&&!ss.includes(resSeason))resSeason='';
+  nav.innerHTML=[['','Tüm sezonlar'],...ss.map(s=>[s,s])]
+    .map(([v,lbl])=>`<button class="chip ${v===resSeason?'active':''}" data-s="${v}">${lbl}</button>`).join('');
+  nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{resSeason=b.dataset.s;save('resseason',resSeason);renderResSeasons();renderResults();});
+}
 function renderResults(){
   const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
   $('dayBtnRes').innerHTML=dateBtnLabel(dayRes);
   if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';return;}
+  renderResSeasons();
   let ms=RESULTS.matches||[];
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
+  if(resSeason)ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
   const dk=new Set(ms.map(m=>dayKey(m.kickoff_utc)));
   if(dayRes&&!dk.has(dayRes))dayRes=null;
   const br=$('dayBtnRes');br.innerHTML=dateBtnLabel(dayRes);br.classList.toggle('set',!!dayRes);
   if(calFor==='res'&&!cal.hidden)renderCal();
   if(dayRes)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
   const o=aggr(ms);
-  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(dayRes?' · '+dayLabel(dayRes):'');
+  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(dayRes?' · '+dayLabel(dayRes):'');
   wrap.innerHTML=`<div class="tiles">
     ${lineTile('0.5+',o.acc_05,o.n)}
     ${lineTile('1.5+',o.acc_15,o.n)}
     ${lineTile('2.5+',o.acc_25,o.n)}
   </div>
-  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · ortalama başarı <b>%${o.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''} · ${RESULTS.span||'tüm kayıtlar'}</div>
+  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · ortalama başarı <b>%${o.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
   ${o.n?hiStrip(o):''}`;
   if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(dayRes?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   const CAP=400, shown=ms.slice(0,CAP);   // özetler tüm maçlar; liste en yeni CAP satır

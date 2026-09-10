@@ -284,6 +284,7 @@ def main():
                 "fd": fd,
                 "matched": ok,
                 "season": season_summary(matches, fd, CURRENT_SEASON) if ok else {"played": 0},
+                "goals5": goals_by_season(matches, fd) if ok else [],
                 "form": form,
             }
 

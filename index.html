@@ -523,6 +523,36 @@ function teamBlock(t){
     <div class="form">${form||'<span class="s-note">form verisi yok</span>'}</div>
   </div>`;
 }
+const S_HOME='#3987e5',S_AWAY='#d95926';
+function goalChart(h,a){
+  const HS=h.goals5||[],AS=a.goals5||[];
+  const labels=(HS.length>=AS.length?HS:AS).map(g=>g.label);
+  if(!labels.length) return '<div class="s-note">Sezon verisi yok.</div>';
+  const val=arr=>labels.map((_,i)=>arr[i]&&arr[i].total_avg!=null?arr[i].total_avg:null);
+  const hv=val(HS),av=val(AS),all=hv.concat(av).filter(v=>v!=null);
+  if(all.length<2) return '<div class="s-note">Yeterli sezon verisi yok.</div>';
+  const W=680,H=214,L=34,R=14,T=26,B=26,pw=W-L-R,ph=H-T-B;
+  const ymax=Math.max(4,Math.ceil(Math.max(...all)));
+  const X=i=>labels.length>1?L+i*(pw/(labels.length-1)):L+pw/2;
+  const Y=v=>T+ph-(v/ymax)*ph;
+  let g='';
+  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
+  const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lb)}</text>`).join('');
+  const draw=(vals,color,name)=>{
+    let segs=[],cur=[];
+    vals.forEach((v,i)=>{if(v==null){if(cur.length){segs.push(cur);cur=[];}}else cur.push([X(i),Y(v),i,v]);});
+    if(cur.length)segs.push(cur);
+    const lines=segs.filter(s=>s.length>1).map(s=>`<polyline points="${s.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
+    const dots=segs.flat().map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.3" fill="${color}"><title>${esc(name)} · ${esc(labels[p[2]])}: ${p[3]} gol/maç</title></circle>`).join('');
+    return lines+dots;
+  };
+  const lgx2=L+Math.min(pw*0.55,240);
+  const legend=`<circle cx="${L}" cy="12" r="3.5" fill="${S_HOME}"/><text x="${L+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(h.name.length>22?h.name.slice(0,21)+'…':h.name)}</text>`+
+    `<circle cx="${lgx2}" cy="12" r="3.5" fill="${S_AWAY}"/><text x="${lgx2+9}" y="15.5" font-size="10.5" fill="var(--muted)">${esc(a.name.length>22?a.name.slice(0,21)+'…':a.name)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" role="img" aria-label="Son 5 sezon maç başına toplam gol ortalaması">`+
+    g+xl+legend+draw(hv,S_HOME,h.name)+draw(av,S_AWAY,a.name)+
+    `</svg><div class="s-note">Maç başına toplam gol (attığı + yediği), lig maçları · kaynak: football-data.co.uk</div>`;
+}
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];
   sheet.hidden=false;
@@ -535,6 +565,7 @@ function openSheet(mid){
     <h2>${esc(h.name)} — ${esc(a.name)}</h2>
     <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)} · kaynak: football-data.co.uk</div>
     <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
+    <div class="s-card"><h3>Maç başına gol ortalaması · son 5 sezon</h3>${goalChart(h,a)}</div>
     <div class="s-card"><h3>Form &amp; sezon · bu sezon</h3><div class="s-cols">${teamBlock(h)}${teamBlock(a)}</div></div>
   </div>`;
 }

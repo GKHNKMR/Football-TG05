@@ -364,6 +364,10 @@ const FALLBACK_DATA=[
 const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
          o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ %85'},
          o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'}};
+// hlKey: 'off' | 'all' (üçü birden) | HL anahtarı
+function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25]:(HL[hlKey]?[HL[hlKey]]:[]);}
+function hlHot(v,lineKey){return hlActive().some(h=>h.key===lineKey&&v!=null&&Number(v)>=h.min);}
+function hlPass(x){return hlActive().some(h=>x[h.key]!=null&&Number(x[h.key])>=h.min);}
 const store=(k,d)=>{try{return localStorage.getItem('betavus.'+k)??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
@@ -371,7 +375,7 @@ const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}
 
 let tab=store('tab','pred');
 let selected=store('league','Tümü');
-let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off')hlKey='o05';
+let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
@@ -405,8 +409,7 @@ function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
 const LINE_KEY={'0.5':'p_over_0_5','1.5':'p_over_1_5','2.5':'p_over_2_5'};
 function pillFor(x,line){
   const lineKey=LINE_KEY[line], v=x[lineKey];
-  const h=HL[hlKey];
-  const hot=h&&h.key===lineKey&&v!=null&&Number(v)>=h.min;
+  const hot=hlHot(v,lineKey);
   const picked=slip.some(l=>l.mid===x.match_id&&l.line===line);
   return `<span class="pill${hot?' hot':''}${picked?' pick':''}" data-mid="${esc(x.match_id||'')}" data-line="${line}" title="Kupona ekle / çıkar">${pct(v)}</span>`;
 }
@@ -422,7 +425,8 @@ function renderFilters(){
 }
 function renderHlSel(){
   const s=$('hlSel');
-  s.innerHTML=`<option value="off">Vurgu: kapalı</option>`+Object.entries(HL).map(([k,v])=>`<option value="${k}">Vurgu: ${v.label}</option>`).join('');
+  s.innerHTML=`<option value="off">Vurgu: kapalı</option><option value="all">Vurgu: açık (0.5·1.5·2.5)</option>`+
+    Object.entries(HL).map(([k,v])=>`<option value="${k}">Vurgu: ${v.label}</option>`).join('');
   s.value=hlKey;
 }
 
@@ -535,8 +539,7 @@ function visible(list){
     r=list.filter(x=>inLeague(x)&&dayKey(x.kickoff_utc)===dayPred);
   }else{
     r=visibleAll(list);
-    const h=HL[hlKey];
-    if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
+    if(hotOnly&&hlActive().length)r=r.filter(hlPass);
   }
   r=r.slice();
   if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
@@ -554,13 +557,13 @@ function renderPred(){
   const list=visible(src);const[ws,we]=weekWindow();
   $('window').textContent=qPred?`«${qPred}» araması`:dayPred?dayLabel(dayPred):`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
   const total=winMs.length;
-  const h=HL[hlKey];
-  const lock=!!dayPred||!!qPred;
-  $('hotToggle').classList.toggle('on',hotOnly&&!!h&&!lock);
-  $('hotToggle').disabled=!h||lock;
-  $('hotToggle').style.opacity=(h&&!lock)?1:.4;
-  $('count').textContent=(hotOnly&&h&&!lock)?`${list.length} / ${total} maç`:`${list.length} maç`;
-  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
+  const anyHl=hlActive().length, lock=!!dayPred||!!qPred;
+  const hlLabel=hlKey==='all'?'Vurgulu':(HL[hlKey]?HL[hlKey].label:'');
+  $('hotToggle').classList.toggle('on',hotOnly&&anyHl&&!lock);
+  $('hotToggle').disabled=!anyHl||lock;
+  $('hotToggle').style.opacity=(anyHl&&!lock)?1:.4;
+  $('count').textContent=(hotOnly&&anyHl&&!lock)?`${list.length} / ${total} maç`:`${list.length} maç`;
+  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&anyHl?hlLabel+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&anyHl?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
@@ -1003,8 +1006,8 @@ $('tab-bt').onclick=()=>setTab('bt');
 $('tab-cpn').onclick=()=>setTab('cpn');
 $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
-$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};
-$('hotToggle').onclick=()=>{if(!HL[hlKey])return;hotOnly=!hotOnly;renderPred();};
+$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};
+$('hotToggle').onclick=()=>{if(!hlActive().length)return;hotOnly=!hotOnly;renderPred();};
 function wireSearch(inpId,xId,apply){
   const el=$(inpId),xb=$(xId);
   const sync=()=>{xb.hidden=!el.value;};

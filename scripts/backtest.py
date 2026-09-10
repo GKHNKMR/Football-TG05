@@ -253,15 +253,19 @@ def main():
     # ~240 evenly-spaced example matches so a league+season slice still has rows
     step = max(1, len(all_records) // 240)
     for r in all_records[::step][:240]:
+        # for each line: did the side the model leaned to (rounded %, >=50 = Over)
+        # match what happened?
+        hit = lambda p, line: (round(p * 100) >= 50) == (r["total"] > line)
         samples.append({
             "season": season_label(r["season"]), "league": r["league"],
             "date": r["date"],
             "home": to_pretty(r["league"], r["home"]),
             "away": to_pretty(r["league"], r["away"]),
             "pred_lambda": round(r["lam"], 2),
-            "p25": round(r["p25"], 3),
+            "p05": round(r["p05"], 3), "p15": round(r["p15"], 3), "p25": round(r["p25"], 3),
             "actual_total": r["total"], "actual_score": r["score"],
-            "over25_hit": (round(r["p25"] * 100) >= 50) == (r["total"] > 2.5),
+            "hit05": hit(r["p05"], 0.5), "hit15": hit(r["p15"], 1.5), "hit25": hit(r["p25"], 2.5),
+            "over25_hit": hit(r["p25"], 2.5),  # kept for backtest.html
             "lambda_err": round(abs(r["lam"] - r["total"]), 2),
         })
 

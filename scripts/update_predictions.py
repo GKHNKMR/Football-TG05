@@ -204,7 +204,7 @@ def kickoff_utc(day, clock, tz_name):
     return naive.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-FORECAST_DAYS = 35  # how far ahead to publish predictions (calendar can reach these)
+FORECAST_DAYS = 10  # publish the next 10 days of fixtures (today + 10)
 
 
 def sunday_to_sunday(today):
@@ -293,8 +293,19 @@ def _f(v):
         return None
 
 
+def _implied(o, u):
+    if not o or not u:
+        return None
+    io, iu = 1 / o, 1 / u
+    return round(io / (io + iu), 4)
+
+
 def load_market_odds():
-    """(league, fd_home, fd_away) -> pre-match odds from fixtures.csv, if present."""
+    """(league, fd_home, fd_away) -> pre-match Over/Under 2.5 odds from
+    football-data.co.uk's fixtures.csv: the market average AND Bet365's own
+    price (columns B365>2.5 / B365<2.5, or the closing B365C>2.5 fallback).
+    That file is refreshed a day or two before each round, so this is Bet365's
+    real total-goals line without scraping bet365.nl."""
     if not FIXTURES_CSV.exists():
         return {}
     league_by_div = {d: lg for lg, d in DIV_BY_LEAGUE.items()}
@@ -305,12 +316,11 @@ def load_market_odds():
             if not league:
                 continue
             o, u = _f(r.get("Avg>2.5")), _f(r.get("Avg<2.5"))
-            implied = None
-            if o and u:
-                io, iu = 1 / o, 1 / u
-                implied = round(io / (io + iu), 4)
+            b_o = _f(r.get("B365>2.5")) or _f(r.get("B365C>2.5"))
+            b_u = _f(r.get("B365<2.5")) or _f(r.get("B365C<2.5"))
             out[(league, (r.get("HomeTeam") or "").strip(), (r.get("AwayTeam") or "").strip())] = {
-                "o25_odds": o, "u25_odds": u, "o25_implied": implied,
+                "o25_odds": o, "u25_odds": u, "o25_implied": _implied(o, u),
+                "b365_o25": b_o, "b365_u25": b_u, "b365_o25_implied": _implied(b_o, b_u),
                 "h": _f(r.get("AvgH")), "d": _f(r.get("AvgD")), "a": _f(r.get("AvgA")),
             }
     return out
@@ -360,7 +370,10 @@ def main():
                 edge = None
                 if mk["o25_implied"] is not None:
                     edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
-                row["market"] = {**mk, "edge25": edge}
+                b_edge = None
+                if mk["b365_o25_implied"] is not None:
+                    b_edge = round(pred["p_over_2_5"] - mk["b365_o25_implied"], 4)
+                row["market"] = {**mk, "edge25": edge, "b365_edge25": b_edge}
             predictions.append(row)
         print(f"  {count} upcoming fixtures")
 

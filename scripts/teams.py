@@ -68,10 +68,9 @@ CROSSWALK = {
     "Turkish Süper Lig": {
         "Adana Demirspor": "Ad. Demirspor", "Başakşehir": "Buyuksehyr",
         "Beşiktaş": "Besiktas", "Fenerbahçe": "Fenerbahce", "Gaziantep FK": "Gaziantep",
-        "Gençlerbirliği": "Genclerbirligi", "Giresunspor": "Giresunspor",
-        "Göztepe": "Goztep", "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
+        "Gençlerbirliği": "Genclerbirligi", "Göztepe": "Goztep",
+        "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
         "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
-        "Erzurumspor": "Erzurum BB",
     },
 }
 

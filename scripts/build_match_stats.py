@@ -94,7 +94,6 @@ CROSSWALK = {
         "Gençlerbirliği": "Genclerbirligi", "Göztepe": "Goztep",
         "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
         "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
-        "Erzurumspor": "Erzurum BB",
     },
 }
 

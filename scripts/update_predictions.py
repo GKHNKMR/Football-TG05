@@ -16,6 +16,7 @@ Standard library only, so it runs on a bare `python` in GitHub Actions.
 import csv
 import json
 import math
+import re
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -70,6 +71,21 @@ FD_LEAGUES = {203: ("T1", "Turkish Süper Lig", "TR", "Europe/Istanbul")}
 FD_HIST_SEASONS = ["2223", "2324", "2425", "2526", "2627"]   # oldest -> newest
 FD_MODEL_CODES = ["2627", "2526", "2425", "2324"]            # nearest -> ...
 FD_MODEL_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
+
+# Turkish fixtures: openfootball has none and football-data's fixtures.csv only
+# lists the imminent round, so read the schedule straight from the TFF site.
+TFF_FIXTURE_URL = "https://www.tff.org/default.aspx?pageID=198"
+TFF_MAP = {  # TFF display name -> football-data.co.uk name
+    "BEŞİKTAŞ A.Ş.": "Besiktas", "GALATASARAY A.Ş.": "Galatasaray",
+    "FENERBAHÇE A.Ş.": "Fenerbahce", "TRABZONSPOR A.Ş.": "Trabzonspor",
+    "ÇAYKUR RİZESPOR A.Ş.": "Rizespor", "GÖZTEPE A.Ş.": "Goztep",
+    "SAMSUNSPOR A.Ş.": "Samsunspor", "KASIMPAŞA A.Ş.": "Kasimpasa",
+    "GAZİANTEP FUTBOL KULÜBÜ A.Ş.": "Gaziantep", "EYÜPSPOR": "Eyupspor",
+    "ARCA ÇORUM FK": "Corum", "CORENDON ALANYASPOR": "Alanyaspor",
+    "TÜMOSAN KONYASPOR": "Konyaspor", "GENÇLERBİRLİĞİ": "Genclerbirligi",
+    "AMED SPORTİF FAALİYETLER": "Amedspor", "İSTANBUL BAŞAKŞEHİR FK": "Buyuksehyr",
+    "KOCAELİSPOR": "Kocaelispor", "ERZURUMSPOR FK": "Erzurumspor",
+}
 
 RAW_URL = "https://raw.githubusercontent.com/{repo}/{branch}/{path}"
 API_URL = "https://api.github.com/repos/{repo}/contents/{path}?ref={branch}"
@@ -351,6 +367,62 @@ def _fd_history(div):
     return rows
 
 
+_FOLD = {0x130: "I", 0x131: "i", 0x15e: "S", 0x15f: "s", 0x218: "S", 0x219: "s",
+         0x11e: "G", 0x11f: "g", 0xdc: "U", 0xfc: "u", 0xd6: "O", 0xf6: "o",
+         0xc7: "C", 0xe7: "c", 0xa0: " "}
+
+
+def _fold(s):
+    return s.translate(_FOLD).upper().strip()
+
+
+_TFF_FOLDED = {_fold(k): v for k, v in TFF_MAP.items()}
+
+
+def _tff_name(raw, fd_teams):
+    key = _fold(raw)
+    if key in _TFF_FOLDED:
+        return _TFF_FOLDED[key]
+    base = re.sub(r"\b(A\.?S\.?|FK|SK|FUTBOL KULUBU)\b", "", key).strip()
+    for t in fd_teams:
+        tf = _fold(t)
+        if tf and (tf in base or base in tf):
+            return t
+    return raw
+
+
+def tff_upcoming(fd_teams, start, end):
+    """Upcoming Süper Lig fixtures from tff.org (home/away as football-data names)."""
+    try:
+        req = Request(TFF_FIXTURE_URL, headers={"User-Agent": "Mozilla/5.0 (compatible; betavus-bot)"})
+        with urlopen(req, timeout=30) as resp:
+            raw = resp.read()
+            ctype = resp.headers.get("Content-Type", "")
+        m = re.search(r"charset=([\w-]+)", ctype, re.I)
+        enc = (m.group(1) if m else "cp1254")           # TFF serves windows-1254
+        try:
+            html = raw.decode(enc, errors="replace")
+        except LookupError:
+            html = raw.decode("cp1254", errors="replace")
+    except Exception as exc:
+        print(f"  TFF fetch failed: {exc}")
+        return []
+    rx = re.compile(
+        r'lblTarih">([\d.]+)</span>\s*<span[^>]*lblSaat">([\d:]*)</span>'
+        r'.*?haftaninMaclariEv">.*?<span[^>]*>([^<]+)</span>'
+        r'.*?haftaninMaclariDeplasman">.*?<span[^>]*>([^<]+)</span>', re.S)
+    out = []
+    for d, tm, h, a in rx.findall(html):
+        try:
+            dd = datetime.strptime(d.strip(), "%d.%m.%Y").date()
+        except ValueError:
+            continue
+        if start <= dd <= end:
+            out.append({"date": dd, "time": tm.strip() or DEFAULT_TIME,
+                        "home": _tff_name(h, fd_teams), "away": _tff_name(a, fd_teams)})
+    return out
+
+
 def _fd_upcoming(div, start, end):
     """Upcoming DIV matches from fixtures.csv inside [start, end]."""
     if not FIXTURES_CSV.exists():
@@ -402,7 +474,11 @@ def fd_predictions(now, start, end, odds):
             by_code.setdefault(m["season"], []).append(m)
         model = FDModel([(by_code.get(c, []), w)
                          for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
-        up = _fd_upcoming(div, start, end)
+        fd_teams = {m["home"] for m in hist} | {m["away"] for m in hist}
+        up = tff_upcoming(fd_teams, start, end) if div == "T1" else []
+        src = "tff.org"
+        if not up:
+            up, src = _fd_upcoming(div, start, end), "football-data.co.uk"
         n = 0
         for fx in up:
             if not fx["home"] or not fx["away"]:
@@ -415,7 +491,7 @@ def fd_predictions(now, start, end, odds):
                 "league_id": lid, "league": name,
                 "kickoff_utc": kickoff_utc(fx["date"].isoformat(), fx["time"], tz_name),
                 "home": home, "away": away,
-                "source": "football-data.co.uk",
+                "source": src,
                 **pred, "updated_at": now.isoformat(),
             }
             mk = odds.get((name, fx["home"], fx["away"]))
@@ -425,7 +501,7 @@ def fd_predictions(now, start, end, odds):
                     edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
                 row["market"] = {**mk, "edge25": edge}
             preds.append(row)
-        print(f"[{name}] {div} · {len(hist)} history rows · {n} upcoming (fixtures.csv)")
+        print(f"[{name}] {div} · {len(hist)} history rows · {n} upcoming ({src})")
     return preds
 
 

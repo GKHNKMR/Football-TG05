@@ -75,10 +75,17 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .tile .v{font-size:23px;font-weight:900;letter-spacing:-.5px}
 .tile .k{color:var(--muted);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
 .tile .n{color:var(--muted);font-size:10.5px;margin-top:5px}
-.datectl{margin:-2px 0 12px}
+.datectl{margin:-2px 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .datebtn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:11px;cursor:pointer;font-weight:800;font-size:12.5px}
 .datebtn:hover{background:var(--panel2)}
 .datebtn svg{flex:none}
+.srch{position:relative;display:inline-flex;align-items:center}
+.srch svg{position:absolute;left:10px;pointer-events:none;color:var(--muted)}
+.srch input{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 26px 8px 30px;border-radius:11px;font-size:12.5px;font-weight:600;width:190px;max-width:46vw}
+.srch input:focus{outline:none;border-color:var(--muted)}
+.srch input::placeholder{color:var(--muted);font-weight:600}
+.srch .sx{position:absolute;right:6px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:4px}
+.srch .sx:hover{color:var(--text)}
 .datebtn.set{border-color:var(--accent);color:var(--accent)}
 .cal{position:absolute;z-index:60;width:280px;max-height:min(440px,82vh);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.4)}
 .cal[hidden]{display:none}
@@ -107,13 +114,13 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .sortcol:not([data-sort="date"]).act::after{content:" ▼";font-size:8px}
 .sarr{display:none;font-size:9px}
 .sortcol[data-sort="date"].act .sarr{display:inline}
-.rhead,.rrow{display:grid;grid-template-columns:46px minmax(120px,1fr) 44px 40px 62px 54px;gap:8px;align-items:center}
+.rhead,.rrow{display:grid;grid-template-columns:46px minmax(96px,1fr) 44px 40px 86px 54px;gap:8px;align-items:center}
 .rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 .rrow .rsc{font-weight:900}
-.hitset{display:flex;gap:6px;font-weight:900}
-.hitset span{width:12px;text-align:center}
+.hitset{display:flex;gap:5px;font-weight:900}
+.hitset span{min-width:19px;text-align:center;font-size:11px;letter-spacing:-.5px}
 .hit{color:var(--good);font-weight:900}.miss{color:var(--bad);font-weight:900}
 .edge{font-size:10px;color:var(--muted);font-weight:600}
 .hint{color:var(--muted);font-size:11px;margin:-4px 0 12px;line-height:1.6}
@@ -129,7 +136,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   .head,.row{grid-template-columns:minmax(0,1fr) 58px 58px 58px;gap:5px}
   .head{padding:10px 8px;font-size:9px}.row{padding:11px 8px}.teams{font-size:13px}.pill{min-width:52px;padding:7px 2px;font-size:12px}
   .tiles{grid-template-columns:1fr 1fr}
-  .rhead,.rrow{grid-template-columns:38px minmax(0,1fr) 38px 34px 56px 44px;gap:5px;font-size:10.5px}
+  .rhead,.rrow{grid-template-columns:38px minmax(0,1fr) 34px 30px 74px 40px;gap:5px;font-size:10.5px}
+  .hitset span{min-width:17px;font-size:10px}
   .rhead{padding:9px 6px}.rrow{padding:10px 6px}.hitset{gap:3px}
 }
 /* drawer + info modal */
@@ -220,7 +228,14 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <span class="badge b0">○</span> sadece lig ortalaması
       — ayrıntı için sağ üstteki <b>?</b>
     </div>
-    <div class="datectl"><button class="datebtn" id="dayBtnPred" type="button"></button></div>
+    <div class="datectl">
+      <button class="datebtn" id="dayBtnPred" type="button"></button>
+      <span class="srch">
+        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="qPred" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
+        <button class="sx" id="qPredX" type="button" hidden aria-label="Temizle">×</button>
+      </span>
+    </div>
     <div class="table">
       <div class="head">
         <div class="sortcol" data-sort="date">Maç <span class="sarr">↑</span></div>
@@ -235,9 +250,16 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   <section id="pane-res" hidden>
     <nav class="filters" id="res-seasons"></nav>
     <div id="resSummary"></div>
-    <div class="datectl"><button class="datebtn" id="dayBtnRes" type="button"></button></div>
+    <div class="datectl">
+      <button class="datebtn" id="dayBtnRes" type="button"></button>
+      <span class="srch">
+        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="qRes" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
+        <button class="sx" id="qResX" type="button" hidden aria-label="Temizle">×</button>
+      </span>
+    </div>
     <div class="table">
-      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div>0.5·1.5·2.5 Üst</div><div>Başarı</div></div>
+      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div>Başarı</div></div>
       <div id="resRows"><div class="loading">Yükleniyor…</div></div>
     </div>
     <div class="foot" id="resFoot"></div>
@@ -275,7 +297,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <h2 id="bt-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
       <p>Test kümesinden düzenli aralıklarla seçilen maçlar. <b>Tah. λ</b> = modelin tahmin
         ettiği toplam gol · <b>2.5Ü</b> = modelin verdiği "2.5 üst" olasılığı · <b>Skor / Gol</b>
-        = gerçekte olan · <b>✓ / ✗</b> = 2.5 çizgisinde yönü tutturdu mu.</p>
+        = gerçekte olan.
+        <b>Modelin yönü</b>: 2.5Ü olasılığı %50 ve üstündeyse model <b>Üst</b>, altındaysa
+        <b>Alt</b> demiş sayılır — yani <b>✓</b> her zaman "2.5 üst geldi" demek değil,
+        modelin eğildiği tarafın tutması demek. Örn. 1-0 biten maçta model "2.5 Alt" dediyse
+        ve öyle olduysa yeşil ✓ gösterilir.</p>
       <div class="tbl-scroll"><table id="bt-samples"></table></div>
     </div>
     <p class="btfoot" id="bt-foot"></p>
@@ -309,6 +335,7 @@ let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büy�
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
 let resSeason=store('resseason','')||'';  // Sonuçlar: '' = tüm sezonlar, yoksa "2025/26"
+let qPred='',qRes='';                   // takım arama kutuları (Tahminler / Sonuçlar)
 
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
@@ -370,6 +397,11 @@ function dayKey(iso){return String(iso).slice(0,10);}
 function dmy(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(String(iso).slice(0,10)+'T12:00:00'));}
 function dateCell(iso){const s=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(iso));const i=s.lastIndexOf('.');return `${s.slice(0,i)}<span class="yr">${s.slice(i+1)}</span>`;}
 function seasonOf(iso){const d=new Date(iso);let y=d.getUTCFullYear();if(d.getUTCMonth()+1<7)y-=1;return `${y}/${String(y+1).slice(2)}`;}  // Ağustos–Haziran futbol sezonu
+function teamHit(x,q){                       // takım arama: home/away içinde tüm kelimeler geçiyor mu
+  if(!q)return true;
+  const hay=`${x.home} ${x.away}`.toLocaleLowerCase('tr');
+  return q.toLocaleLowerCase('tr').split(/\s+/).filter(Boolean).every(t=>hay.includes(t));
+}
 function dayLabel(k){return new Intl.DateTimeFormat('tr-TR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}).format(new Date(k+'T12:00:00'));}
 function localKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 const CALICON='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
@@ -458,7 +490,9 @@ function inLeague(x){return selected==='Tümü'||x.league===selected;}
 function visibleAll(list){const[start,end]=weekWindow();return list.filter(inLeague).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
 function visible(list){
   let r;
-  if(dayPred){                       // belirli bir gün seçili → tüm fikstür içinden o gün (hafta penceresi devre dışı)
+  if(qPred){                         // takım araması → hafta penceresi ve gün filtresi devre dışı, tüm fikstür
+    r=list.filter(x=>inLeague(x)&&teamHit(x,qPred));
+  }else if(dayPred){                  // belirli bir gün seçili → tüm fikstür içinden o gün (hafta penceresi devre dışı)
     r=list.filter(x=>inLeague(x)&&dayKey(x.kickoff_utc)===dayPred);
   }else{
     r=visibleAll(list);
@@ -479,14 +513,15 @@ function renderPred(){
   if(calFor==='pred'&&!cal.hidden)renderCal();
   document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine||(c.dataset.sort==='date'&&!sortLine)));
   const list=visible(src);const[ws,we]=weekWindow();
-  $('window').textContent=dayPred?dayLabel(dayPred):`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
+  $('window').textContent=qPred?`«${qPred}» araması`:dayPred?dayLabel(dayPred):`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · yaklaşan maçlar`;
   const total=winMs.length;
   const h=HL[hlKey];
-  $('hotToggle').classList.toggle('on',hotOnly&&!!h&&!dayPred);
-  $('hotToggle').disabled=!h||!!dayPred;
-  $('hotToggle').style.opacity=(h&&!dayPred)?1:.4;
-  $('count').textContent=(hotOnly&&h&&!dayPred)?`${list.length} / ${total} maç`:`${list.length} maç`;
-  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
+  const lock=!!dayPred||!!qPred;
+  $('hotToggle').classList.toggle('on',hotOnly&&!!h&&!lock);
+  $('hotToggle').disabled=!h||lock;
+  $('hotToggle').style.opacity=(h&&!lock)?1:.4;
+  $('count').textContent=(hotOnly&&h&&!lock)?`${list.length} / ${total} maç`:`${list.length} maç`;
+  if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&h?h.label+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&h?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
@@ -523,6 +558,11 @@ function lineTile(label,acc,n){
     <div class="n">${n||0} maç</div></div>`;
 }
 function mark(h){return `<span class="${h?'hit':'miss'}">${h?'✓':'✗'}</span>`;}
+// modelin o çizgideki yönü (Üst/Alt) + tuttu mu — "✓" tek başına "üst geldi" demek değil
+function dirMark(p,h,line){
+  const up=p!=null&&Math.round(p*100)>=50;
+  return `<span class="${h?'hit':'miss'}" title="${line} çizgisi — model: ${up?'Üst':'Alt'} · ${h?'tuttu':'tutmadı'}">${up?'Ü':'A'}${h?'✓':'✗'}</span>`;
+}
 function hiStrip(o){
   const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_n_'+t]} maç)</span>`:`${lbl} → <span class="sm">bu grupta maç yok</span>`;
   return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler:<br>
@@ -548,13 +588,15 @@ function renderResults(){
   let ms=RESULTS.matches||[];
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
   if(resSeason)ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
+  if(qRes)ms=ms.filter(m=>teamHit(m,qRes));      // takım araması aktifken gün filtresi devre dışı
   const dk=new Set(ms.map(m=>dayKey(m.kickoff_utc)));
   if(dayRes&&!dk.has(dayRes))dayRes=null;
+  const dayActive=!!dayRes&&!qRes;
   const br=$('dayBtnRes');br.innerHTML=dateBtnLabel(dayRes);br.classList.toggle('set',!!dayRes);
   if(calFor==='res'&&!cal.hidden)renderCal();
-  if(dayRes)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
+  if(dayActive)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
   const o=aggr(ms);
-  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(dayRes?' · '+dayLabel(dayRes):'');
+  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(qRes?` · «${qRes}»`:'')+(dayActive?' · '+dayLabel(dayRes):'');
   wrap.innerHTML=`<div class="tiles">
     ${lineTile('0.5+',o.acc_05,o.n)}
     ${lineTile('1.5+',o.acc_15,o.n)}
@@ -562,7 +604,7 @@ function renderResults(){
   </div>
   <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · ortalama başarı <b>%${o.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
   ${o.n?hiStrip(o):''}`;
-  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(dayRes?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
+  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(qRes?`«${qRes}» için sonuç yok`:dayActive?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   const CAP=400, shown=ms.slice(0,CAP);   // özetler tüm maçlar; liste en yeni CAP satır
   body.innerHTML=(ms.length>CAP?`<div class="rmore">En yeni ${CAP} maç listeleniyor · yüzdeler yukarıda ${ms.length} maçın tamamından</div>`:'')+shown.map(m=>{
     const H=m.hits||{};
@@ -574,12 +616,12 @@ function renderResults(){
       <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
-      <div class="hitset">${mark(H.hit_05)}${mark(H.hit_15)}${mark(H.hit_25)}</div>
+      <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
       <div>%${m.success_pct}${edge}</div>
     </div>`;
   }).join('');
   const rc=RESULTS.reconstructed_count||0;
-  foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 Üst" = modelin o çizgide Üst/Alt yönünü doğru bilip bilmediği. "Başarı" üç çizginin ortalaması.`+
+  foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "Başarı" üç çizgideki doğru-yön olasılıklarının ortalaması.`+
     (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'');
 }
 
@@ -643,8 +685,11 @@ function renderBacktest(){
   samp=fellBack?samp:scoped;
   $('bt-samples-h').textContent=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`;
   $('bt-samples').innerHTML=
-    `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>2.5Ü</th><th>Skor</th><th>Gol</th><th>2.5Ü?</th></tr></thead><tbody>`+
-    samp.map(x=>`<tr><td>${dmy(x.date)}</td><td>${esc(x.league)}</td><td style="text-align:left">${esc(x.home)} — ${esc(x.away)}</td><td>${x.pred_lambda}</td><td>${(x.p25*100).toFixed(0)}%</td><td>${x.actual_score}</td><td>${x.actual_total}</td><td class="${x.over25_hit?'hit':'miss'}">${x.over25_hit?'✓':'✗'}</td></tr>`).join('')+`</tbody>`;
+    `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>2.5Ü</th><th>Skor</th><th>Gol</th><th>Modelin yönü</th><th></th></tr></thead><tbody>`+
+    samp.map(x=>{
+      const lean=Math.round(x.p25*100)>=50?'Üst':'Alt';   // modelin 2.5 çizgisinde eğildiği taraf
+      return `<tr><td>${dmy(x.date)}</td><td>${esc(x.league)}</td><td style="text-align:left">${esc(x.home)} — ${esc(x.away)}</td><td>${x.pred_lambda}</td><td>${(x.p25*100).toFixed(0)}%</td><td>${x.actual_score}</td><td>${x.actual_total}</td><td class="${x.over25_hit?'hit':'miss'}">2.5 ${lean}</td><td class="${x.over25_hit?'hit':'miss'}">${x.over25_hit?'✓ tuttu':'✗ tutmadı'}</td></tr>`;
+    }).join('')+`</tbody>`;
   $('bt-foot').innerHTML=
     `"Yön isabeti" = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne seçseydin tutma oranın. `+
     `Üretim: <code>scripts/backtest.py</code> · ${new Date(d.generated_at).toLocaleString('tr-TR')}.`;
@@ -783,6 +828,14 @@ $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!HL[hlKey])return;hotOnly=!hotOnly;renderPred();};
+function wireSearch(inpId,xId,apply){
+  const el=$(inpId),xb=$(xId);
+  const sync=()=>{xb.hidden=!el.value;};
+  el.addEventListener('input',()=>{apply(el.value.trim());sync();});
+  xb.addEventListener('click',()=>{el.value='';apply('');sync();el.focus();});
+}
+wireSearch('qPred','qPredX',v=>{qPred=v;renderPred();});
+wireSearch('qRes','qResX',v=>{qRes=v;renderResults();});
 document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
   sortLine=c.dataset.sort==='date'?null:(sortLine===c.dataset.sort?null:c.dataset.sort);renderPred();
 });

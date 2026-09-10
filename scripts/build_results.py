@@ -31,8 +31,8 @@ CSV_DIR = Path("data/football-data")
 OUT_FILE = Path("data/results.json")
 
 CURRENT_SEASON = "2627"
-ARCHIVE_DAYS = 80
-RESULT_DAYS = 21
+ARCHIVE_DAYS = 90
+RESULT_DAYS = 35
 DATE_SLACK = 2
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
 # "high confidence" thresholds = the Vurgu levels highlighted on the site; the
@@ -191,9 +191,11 @@ def reconstruct(actuals, already, cutoff, today):
             home, away = clean_name(m["team1"]), clean_name(m["team2"])
             if (name, home, away, d) in already:
                 continue
-            actual = find_actual(actuals, name, to_fd(name, home), to_fd(name, away), d)
-            if not actual:
-                continue
+            # score comes from openfootball itself (it updates faster than the
+            # football-data CSV); football-data only supplies the closing odds
+            hg, ag = g
+            score, total = f"{hg}-{ag}", hg + ag
+            fd = find_actual(actuals, name, to_fd(name, home), to_fd(name, away), d) or {}
             model = LeagueModel(
                 [([x for x in ms if x.get("date", "") < m["date"]], w)
                  for ms, w in seasons_raw])
@@ -210,8 +212,8 @@ def reconstruct(actuals, already, cutoff, today):
                 "p_over_2_5": pred["p_over_2_5"],
                 "market": None,
             }
-            rows.append(grade(row, actual["total"], actual["score"],
-                              actual["o25_odds"], actual["u25_odds"]))
+            rows.append(grade(row, total, score,
+                              fd.get("o25_odds"), fd.get("u25_odds")))
     return rows
 
 

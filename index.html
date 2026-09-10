@@ -70,7 +70,15 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .tile .v{font-size:23px;font-weight:900;letter-spacing:-.5px}
 .tile .k{color:var(--muted);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
 .tile .n{color:var(--muted);font-size:10.5px;margin-top:5px}
-.rhead,.rrow{display:grid;grid-template-columns:48px minmax(150px,1fr) 46px 74px 58px;gap:8px;align-items:center}
+.days{display:flex;gap:6px;overflow:auto;padding-bottom:6px;margin:-2px 0 12px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.daychip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:6px 11px;border-radius:999px;cursor:pointer;font-weight:800;font-size:11px}
+.daychip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sortcol{cursor:pointer;user-select:none}
+.sortcol:hover{color:var(--text)}
+.sortcol.act{color:var(--good)}
+.sortcol.act::after{content:" ▼";font-size:8px}
+.rhead,.rrow{display:grid;grid-template-columns:46px minmax(120px,1fr) 44px 40px 62px 54px;gap:8px;align-items:center}
 .rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
@@ -90,8 +98,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   .head,.row{grid-template-columns:minmax(0,1fr) 58px 58px 58px;gap:5px}
   .head{padding:10px 8px;font-size:9px}.row{padding:11px 8px}.teams{font-size:13px}.pill{min-width:52px;padding:7px 2px;font-size:12px}
   .tiles{grid-template-columns:1fr 1fr}
-  .rhead,.rrow{grid-template-columns:40px minmax(0,1fr) 40px 66px 46px;gap:5px;font-size:11px}
-  .rhead{padding:9px 7px}.rrow{padding:10px 7px}.hitset{gap:4px}
+  .rhead,.rrow{grid-template-columns:38px minmax(0,1fr) 38px 34px 56px 44px;gap:5px;font-size:10.5px}
+  .rhead{padding:9px 6px}.rrow{padding:10px 6px}.hitset{gap:3px}
 }
 /* drawer + info modal */
 .sheet-bg{position:fixed;inset:0;background:rgba(3,5,8,.72);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:38px 16px;overflow:auto;z-index:50}
@@ -157,16 +165,23 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <span class="badge b0">○</span> sadece lig ortalaması
       — ayrıntı için sağ üstteki <b>?</b>
     </div>
+    <nav class="days" id="dayStrip"></nav>
     <div class="table">
-      <div class="head"><div>Maç</div><div>0.5+</div><div>1.5+</div><div>2.5+</div></div>
+      <div class="head">
+        <div>Maç</div>
+        <div class="sortcol" data-sort="p_over_0_5">0.5+</div>
+        <div class="sortcol" data-sort="p_over_1_5">1.5+</div>
+        <div class="sortcol" data-sort="p_over_2_5">2.5+</div>
+      </div>
       <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
     </div>
   </section>
 
   <section id="pane-res" hidden>
     <div id="resSummary"></div>
+    <nav class="days" id="dayStripRes"></nav>
     <div class="table">
-      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div>0.5·1.5·2.5 Üst</div><div>Başarı</div></div>
+      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div>0.5·1.5·2.5 Üst</div><div>Başarı</div></div>
       <div id="resRows"><div class="loading">Yükleniyor…</div></div>
     </div>
     <div class="foot" id="resFoot"></div>
@@ -195,6 +210,8 @@ let tab=store('tab','pred');
 let selected=store('league','Tümü');
 let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off')hlKey='o05';
 let hotOnly=false;
+let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
+let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
@@ -246,16 +263,35 @@ function renderHlSel(){
 
 function weekWindow(){const s=new Date();s.setHours(0,0,0,0);s.setDate(s.getDate()+((7-s.getDay())%7));const e=new Date(s);e.setDate(e.getDate()+8);return[s,e];}
 function fmtDay(d){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit'}).format(d);}
+function dayKey(iso){return String(iso).slice(0,10);}
+function dayLabel(k){return new Intl.DateTimeFormat('tr-TR',{weekday:'short',day:'2-digit',month:'2-digit'}).format(new Date(k+'T12:00:00'));}
+function renderDayStrip(el,keys,active,pick){
+  if(!el)return;
+  if(keys.length<2){el.innerHTML='';return;}
+  el.innerHTML=`<button class="daychip${active?'':' active'}" data-d="">Hepsi</button>`+
+    keys.map(k=>`<button class="daychip${active===k?' active':''}" data-d="${k}">${dayLabel(k)}</button>`).join('');
+  el.querySelectorAll('.daychip').forEach(b=>b.onclick=()=>pick(b.dataset.d||null));
+}
 function visibleAll(list){const[start,end]=weekWindow();return list.filter(x=>selected==='Tümü'||x.league===selected).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
 function visible(list){let r=visibleAll(list);
   const h=HL[hlKey];
   if(hotOnly&&h)r=r.filter(x=>x[h.key]!=null&&Number(x[h.key])>=h.min);
-  return r.slice().sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
+  if(dayPred)r=r.filter(x=>dayKey(x.kickoff_utc)===dayPred);
+  r=r.slice();
+  if(sortLine)r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
+  else r.sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
+  return r;
 }
 function renderPred(){
-  const list=visible(window.__data||[]);const[ws,we]=weekWindow();
+  const src=window.__data||[];
+  const winMs=visibleAll(src);
+  const dayKeys=[...new Set(winMs.map(x=>dayKey(x.kickoff_utc)))].sort();
+  if(dayPred&&!dayKeys.includes(dayPred))dayPred=null;
+  renderDayStrip($('dayStrip'),dayKeys,dayPred,d=>{dayPred=d;renderPred();});
+  document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine));
+  const list=visible(src);const[ws,we]=weekWindow();
   $('window').textContent=`${fmtDay(ws)} – ${fmtDay(new Date(we-86400000))} · Pazar–Pazar`;
-  const total=visibleAll(window.__data||[]).length;
+  const total=winMs.length;
   const h=HL[hlKey];
   $('hotToggle').classList.toggle('on',hotOnly&&!!h);
   $('hotToggle').disabled=!h;
@@ -288,9 +324,13 @@ function hiStrip(o){
 }
 function renderResults(){
   const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
-  if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';return;}
+  if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';renderDayStrip($('dayStripRes'),[],null,()=>{});return;}
   let ms=RESULTS.matches||[];
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
+  const dayKeys=[...new Set(ms.map(m=>dayKey(m.kickoff_utc)))].sort().reverse();
+  if(dayRes&&!dayKeys.includes(dayRes))dayRes=null;
+  renderDayStrip($('dayStripRes'),dayKeys,dayRes,d=>{dayRes=d;renderResults();});
+  if(dayRes)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
   const w=RESULTS.last_week||{},o=RESULTS.overall||{};
   wrap.innerHTML=`<div class="tiles">
     ${lineTile('0.5+',w.acc_05,o.acc_05)}
@@ -299,20 +339,23 @@ function renderResults(){
   </div>
   <div class="rsum">Son 7 gün: <b>${w.n||0} maç</b> · ortalama başarı <b>%${w.success_pct??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b> · tüm dönem ${o.n||0} maç / ${RESULTS.result_days} gün${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}</div>
   ${hiStrip(o)}`;
-  if(!ms.length){body.innerHTML='<div class="empty"><strong>Bu lig için sonuç yok</strong></div>';foot.textContent='';return;}
+  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(dayRes?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   body.innerHTML=ms.map(m=>{
     const H=m.hits||{};
     const edge=('edge25'in m)?`<div class="edge">edge ${m.edge25>=0?'+':''}${Math.round(m.edge25*100)}%</div>`:'';
+    const lam=m.pred_lambda, tot=m.total;
+    const close=(lam!=null&&Math.abs(lam-tot)<=0.75);
     return `<div class="rrow">
       <div>${shortDate(m.kickoff_utc)}</div>
-      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">λ ${m.pred_lambda??'—'} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
+      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
+      <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
       <div class="hitset">${mark(H.hit_05)}${mark(H.hit_15)}${mark(H.hit_25)}</div>
       <div>%${m.success_pct}${edge}</div>
     </div>`;
   }).join('');
   const rc=RESULTS.reconstructed_count||0;
-  foot.innerHTML=`"0.5·1.5·2.5 Üst" sütunu: modelin o çizgide Üst/Alt yönünü doğru bilip bilmediği. "Başarı" üç çizginin ortalaması (modelin gerçekleşen sonuca koyduğu olasılık).`+
+  foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 Üst" = modelin o çizgide Üst/Alt yönünü doğru bilip bilmediği. "Başarı" üç çizginin ortalaması.`+
     (rc?`<br>* ${rc} maç geriye dönük, sızıntısız hesaplandı (arşiv dolana kadar). İlerisi gerçek tahmin arşividir.`:'');
 }
 
@@ -324,6 +367,7 @@ function setTab(t){
   $('tab-res').classList.toggle('active',t==='res');
   $('pane-pred').hidden=t!=='pred';
   $('pane-res').hidden=t!=='res';
+  renderAll();
 }
 
 async function load(){
@@ -444,6 +488,9 @@ $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!HL[hlKey])hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!HL[hlKey])return;hotOnly=!hotOnly;renderPred();};
+document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
+  sortLine=sortLine===c.dataset.sort?null:c.dataset.sort;renderPred();
+});
 
 const themeBtn=$('themeBtn');
 function applyTheme(t){

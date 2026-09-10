@@ -1068,7 +1068,7 @@ themeBtn.onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'
 // Kodu değiştirmek için: tarayıcı konsoluna yapıştır ->
 //   crypto.subtle.digest('SHA-256',new TextEncoder().encode('YENIKOD')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
 // çıkan hex'i ACCESS_HASH'e yaz. (Not: bu bir perde, tam güvenlik değil.)
-const ACCESS_HASH='0b0f5bdb108e77bfbfda35e56eaa54066bf47c46cc5fa5fbc92ff95a1ed28ddf';   // "BETAVUS2026"
+const ACCESS_HASH='1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d';   // "07211907"
 async function sha256hex(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');

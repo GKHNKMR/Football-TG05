@@ -1,1124 +1,6 @@
 [
   {
-    "match_id": "CH-2026-09-12-01",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T11:30:00Z",
-    "home": "Derby County",
-    "away": "Birmingham City",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.124,
-    "p_over_0_5": 0.8804,
-    "p_over_1_5": 0.6264,
-    "p_over_2_5": 0.3568,
-    "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.05,
-      "u25_odds": 1.72,
-      "o25_implied": 0.4562,
-      "h": 3.33,
-      "d": 3.28,
-      "a": 2.17,
-      "edge25": -0.0994
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-02",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T11:30:00Z",
-    "home": "Bolton Wanderers",
-    "away": "Cardiff City",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 2.474,
-    "p_over_0_5": 0.9158,
-    "p_over_1_5": 0.7073,
-    "p_over_2_5": 0.4495,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.58,
-      "u25_odds": 2.28,
-      "o25_implied": 0.5907,
-      "h": 2.53,
-      "d": 3.63,
-      "a": 2.53,
-      "edge25": -0.1412
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-03",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T11:30:00Z",
-    "home": "West Bromwich Albion",
-    "away": "Queens Park Rangers",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.66,
-    "p_over_0_5": 0.9301,
-    "p_over_1_5": 0.744,
-    "p_over_2_5": 0.4965,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.79,
-      "u25_odds": 1.96,
-      "o25_implied": 0.5227,
-      "h": 2.06,
-      "d": 3.46,
-      "a": 3.44,
-      "edge25": -0.0262
-    }
-  },
-  {
-    "match_id": "LL-2026-09-12-01",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-12T12:00:00Z",
-    "home": "Racing Santander",
-    "away": "Alavés",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 3.542,
-    "p_over_0_5": 0.971,
-    "p_over_1_5": 0.8684,
-    "p_over_2_5": 0.6868,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.7,
-      "u25_odds": 2.07,
-      "o25_implied": 0.5491,
-      "h": 2.42,
-      "d": 3.5,
-      "a": 2.76,
-      "edge25": 0.1377
-    }
-  },
-  {
-    "match_id": "SA-2026-09-12-01",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-12T13:00:00Z",
-    "home": "Genoa",
-    "away": "Frosinone",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.687,
-    "p_over_0_5": 0.9319,
-    "p_over_1_5": 0.7491,
-    "p_over_2_5": 0.5033,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.89,
-      "u25_odds": 1.86,
-      "o25_implied": 0.496,
-      "h": 2.1,
-      "d": 3.37,
-      "a": 3.46,
-      "edge25": 0.0073
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-01",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T13:30:00Z",
-    "home": "Hoffenheim",
-    "away": "Stuttgart",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 5,
-    "exp_goals": 3.652,
-    "p_over_0_5": 0.9741,
-    "p_over_1_5": 0.8794,
-    "p_over_2_5": 0.7064,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.33,
-      "u25_odds": 3.17,
-      "o25_implied": 0.7044,
-      "h": 2.3,
-      "d": 3.94,
-      "a": 2.63,
-      "edge25": 0.002
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-02",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T13:30:00Z",
-    "home": "Borussia Dortmund",
-    "away": "Paderborn",
-    "source": "openfootball/football.json",
-    "basis": "partial-form",
-    "h2h_matches_used": 0,
-    "exp_goals": 3.353,
-    "p_over_0_5": 0.965,
-    "p_over_1_5": 0.8477,
-    "p_over_2_5": 0.6511,
-    "label": "",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.34,
-      "u25_odds": 3.15,
-      "o25_implied": 0.7016,
-      "h": 1.23,
-      "d": 6.42,
-      "a": 10.04,
-      "edge25": -0.0505
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-03",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T13:30:00Z",
-    "home": "Augsburg",
-    "away": "Leverkusen",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.889,
-    "p_over_0_5": 0.9443,
-    "p_over_1_5": 0.7836,
-    "p_over_2_5": 0.5514,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.4,
-      "u25_odds": 2.85,
-      "o25_implied": 0.6706,
-      "h": 3.9,
-      "d": 4.08,
-      "a": 1.76,
-      "edge25": -0.1192
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-04",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T13:30:00Z",
-    "home": "Mainz 05",
-    "away": "Eintracht Frankfurt",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.905,
-    "p_over_0_5": 0.9453,
-    "p_over_1_5": 0.7862,
-    "p_over_2_5": 0.5552,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.48,
-      "u25_odds": 2.58,
-      "o25_implied": 0.6355,
-      "h": 1.97,
-      "d": 3.85,
-      "a": 3.32,
-      "edge25": -0.0803
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-05",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T13:30:00Z",
-    "home": "Freiburg",
-    "away": "Mönchengladbach",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 5,
-    "exp_goals": 3.511,
-    "p_over_0_5": 0.9701,
-    "p_over_1_5": 0.8652,
-    "p_over_2_5": 0.6811,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.53,
-      "u25_odds": 2.42,
-      "o25_implied": 0.6127,
-      "h": 1.68,
-      "d": 4.02,
-      "a": 4.41,
-      "edge25": 0.0684
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-01",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Crystal Palace",
-    "away": "Ipswich Town",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.651,
-    "p_over_0_5": 0.9294,
-    "p_over_1_5": 0.7423,
-    "p_over_2_5": 0.4943,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.76,
-      "u25_odds": 1.99,
-      "o25_implied": 0.5307,
-      "h": 1.84,
-      "d": 3.74,
-      "a": 3.98,
-      "edge25": -0.0364
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-02",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Liverpool",
-    "away": "Fulham",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 3.353,
-    "p_over_0_5": 0.965,
-    "p_over_1_5": 0.8477,
-    "p_over_2_5": 0.6511,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.5,
-      "u25_odds": 2.59,
-      "o25_implied": 0.6333,
-      "h": 1.44,
-      "d": 4.85,
-      "a": 6.37,
-      "edge25": 0.0178
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-03",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Aston Villa",
-    "away": "Nottingham Forest",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 3.163,
-    "p_over_0_5": 0.9577,
-    "p_over_1_5": 0.824,
-    "p_over_2_5": 0.6124,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.89,
-      "u25_odds": 1.83,
-      "o25_implied": 0.4919,
-      "h": 2.22,
-      "d": 3.39,
-      "a": 3.17,
-      "edge25": 0.1205
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-04",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Bournemouth",
-    "away": "Brentford",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 5,
-    "exp_goals": 3.113,
-    "p_over_0_5": 0.9555,
-    "p_over_1_5": 0.8171,
-    "p_over_2_5": 0.6017,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.67,
-      "u25_odds": 2.2,
-      "o25_implied": 0.5685,
-      "h": 2.45,
-      "d": 3.58,
-      "a": 2.68,
-      "edge25": 0.0332
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-05",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Chelsea",
-    "away": "Hull City",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 2.072,
-    "p_over_0_5": 0.874,
-    "p_over_1_5": 0.6131,
-    "p_over_2_5": 0.3428,
-    "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.39,
-      "u25_odds": 2.83,
-      "o25_implied": 0.6706,
-      "h": 1.21,
-      "d": 6.5,
-      "a": 11.92,
-      "edge25": -0.3278
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-04",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Southampton",
-    "away": "Bristol City",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 3.008,
-    "p_over_0_5": 0.9506,
-    "p_over_1_5": 0.802,
-    "p_over_2_5": 0.5785,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.56,
-      "u25_odds": 2.33,
-      "o25_implied": 0.599,
-      "h": 1.66,
-      "d": 4.02,
-      "a": 4.64,
-      "edge25": -0.0205
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-05",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Preston North End",
-    "away": "Lincoln City",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 2.325,
-    "p_over_0_5": 0.9023,
-    "p_over_1_5": 0.675,
-    "p_over_2_5": 0.4107,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.81,
-      "u25_odds": 1.93,
-      "o25_implied": 0.516,
-      "h": 2.3,
-      "d": 3.47,
-      "a": 2.93,
-      "edge25": -0.1053
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-06",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Blackburn Rovers",
-    "away": "Millwall",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.505,
-    "p_over_0_5": 0.9183,
-    "p_over_1_5": 0.7138,
-    "p_over_2_5": 0.4575,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.84,
-      "u25_odds": 1.9,
-      "o25_implied": 0.508,
-      "h": 2.71,
-      "d": 3.37,
-      "a": 2.51,
-      "edge25": -0.0505
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-07",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Charlton Athletic",
-    "away": "Portsmouth",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.891,
-    "p_over_0_5": 0.9445,
-    "p_over_1_5": 0.784,
-    "p_over_2_5": 0.552,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.13,
-      "u25_odds": 1.66,
-      "o25_implied": 0.438,
-      "h": 2.72,
-      "d": 3.19,
-      "a": 2.6,
-      "edge25": 0.114
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-08",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Watford",
-    "away": "Stoke City",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.263,
-    "p_over_0_5": 0.8959,
-    "p_over_1_5": 0.6605,
-    "p_over_2_5": 0.3941,
-    "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.86,
-      "u25_odds": 1.86,
-      "o25_implied": 0.5,
-      "h": 2.34,
-      "d": 3.38,
-      "a": 2.94,
-      "edge25": -0.1059
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-09",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Swansea City",
-    "away": "Burnley",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.14,
-    "p_over_0_5": 0.8824,
-    "p_over_1_5": 0.6307,
-    "p_over_2_5": 0.3613,
-    "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.82,
-      "u25_odds": 1.91,
-      "o25_implied": 0.5121,
-      "h": 2.14,
-      "d": 3.47,
-      "a": 3.23,
-      "edge25": -0.1508
-    }
-  },
-  {
-    "match_id": "CH-2026-09-12-10",
-    "league_id": 40,
-    "league": "Championship",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Middlesbrough",
-    "away": "Norwich City",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.703,
-    "p_over_0_5": 0.933,
-    "p_over_1_5": 0.7518,
-    "p_over_2_5": 0.5071,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.53,
-      "u25_odds": 2.38,
-      "o25_implied": 0.6087,
-      "h": 1.85,
-      "d": 3.91,
-      "a": 3.72,
-      "edge25": -0.1016
-    }
-  },
-  {
-    "match_id": "TR-2026-09-12-01",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Eyupspor",
-    "away": "Rizespor",
-    "source": "tff.org",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.772,
-    "p_over_0_5": 0.9374,
-    "p_over_1_5": 0.7641,
-    "p_over_2_5": 0.5238,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.92,
-      "u25_odds": 1.8,
-      "o25_implied": 0.4839,
-      "h": 3.81,
-      "d": 3.47,
-      "a": 1.86,
-      "edge25": 0.0399
-    }
-  },
-  {
-    "match_id": "TR-2026-09-12-02",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-12T14:00:00Z",
-    "home": "Samsunspor",
-    "away": "Corum",
-    "source": "tff.org",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 4.311,
-    "p_over_0_5": 0.9866,
-    "p_over_1_5": 0.9287,
-    "p_over_2_5": 0.8041,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.86,
-      "u25_odds": 1.86,
-      "o25_implied": 0.5,
-      "h": 2.14,
-      "d": 3.26,
-      "a": 3.21,
-      "edge25": 0.3041
-    }
-  },
-  {
-    "match_id": "LL-2026-09-12-02",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-12T14:15:00Z",
-    "home": "Osasuna",
-    "away": "Espanyol",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.442,
-    "p_over_0_5": 0.913,
-    "p_over_1_5": 0.7005,
-    "p_over_2_5": 0.4411,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.16,
-      "u25_odds": 1.65,
-      "o25_implied": 0.4331,
-      "h": 2.11,
-      "d": 3.25,
-      "a": 3.58,
-      "edge25": 0.008
-    }
-  },
-  {
-    "match_id": "ED-2026-09-12-01",
-    "league_id": 88,
-    "league": "Eredivisie",
-    "kickoff_utc": "2026-09-12T14:30:00Z",
-    "home": "Twente",
-    "away": "ADO Den Haag",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 3.28,
-    "p_over_0_5": 0.9624,
-    "p_over_1_5": 0.839,
-    "p_over_2_5": 0.6366,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.3,
-      "u25_odds": 3.33,
-      "o25_implied": 0.7192,
-      "h": 1.22,
-      "d": 6.4,
-      "a": 9.97,
-      "edge25": -0.0826
-    }
-  },
-  {
-    "match_id": "L1-2026-09-12-01",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-12T15:15:00Z",
-    "home": "Strasbourg",
-    "away": "Monaco",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 3.374,
-    "p_over_0_5": 0.9657,
-    "p_over_1_5": 0.8502,
-    "p_over_2_5": 0.6552,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.54,
-      "u25_odds": 2.37,
-      "o25_implied": 0.6061,
-      "h": 3.01,
-      "d": 3.71,
-      "a": 2.15,
-      "edge25": 0.0491
-    }
-  },
-  {
-    "match_id": "SA-2026-09-12-02",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-12T16:00:00Z",
-    "home": "Lazio",
-    "away": "Milan",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.557,
-    "p_over_0_5": 0.9225,
-    "p_over_1_5": 0.7242,
-    "p_over_2_5": 0.4708,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.22,
-      "u25_odds": 1.63,
-      "o25_implied": 0.4234,
-      "h": 3.28,
-      "d": 3.21,
-      "a": 2.26,
-      "edge25": 0.0474
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-06",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T16:30:00Z",
-    "home": "Tottenham Hotspur",
-    "away": "Everton",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.906,
-    "p_over_0_5": 0.9453,
-    "p_over_1_5": 0.7864,
-    "p_over_2_5": 0.5555,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.9,
-      "u25_odds": 1.84,
-      "o25_implied": 0.492,
-      "h": 2.02,
-      "d": 3.53,
-      "a": 3.55,
-      "edge25": 0.0635
-    }
-  },
-  {
-    "match_id": "LL-2026-09-12-03",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-12T16:30:00Z",
-    "home": "Athletic Bilbao",
-    "away": "Elche",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 1,
-    "exp_goals": 2.804,
-    "p_over_0_5": 0.9394,
-    "p_over_1_5": 0.7696,
-    "p_over_2_5": 0.5315,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.67,
-      "u25_odds": 2.13,
-      "o25_implied": 0.5605,
-      "h": 1.41,
-      "d": 4.73,
-      "a": 7.35,
-      "edge25": -0.029
-    }
-  },
-  {
-    "match_id": "BL-2026-09-12-06",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-12T16:30:00Z",
-    "home": "Köln",
-    "away": "Werder Bremen",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 3.064,
-    "p_over_0_5": 0.9533,
-    "p_over_1_5": 0.8102,
-    "p_over_2_5": 0.591,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.53,
-      "u25_odds": 2.4,
-      "o25_implied": 0.6107,
-      "h": 2.07,
-      "d": 3.73,
-      "a": 3.18,
-      "edge25": -0.0197
-    }
-  },
-  {
-    "match_id": "ED-2026-09-12-02",
-    "league_id": 88,
-    "league": "Eredivisie",
-    "kickoff_utc": "2026-09-12T16:45:00Z",
-    "home": "Go Ahead Eagles",
-    "away": "Groningen",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 3,
-    "exp_goals": 2.958,
-    "p_over_0_5": 0.9481,
-    "p_over_1_5": 0.7944,
-    "p_over_2_5": 0.5672,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.43,
-      "u25_odds": 2.67,
-      "o25_implied": 0.6512,
-      "h": 2.25,
-      "d": 3.83,
-      "a": 2.69,
-      "edge25": -0.084
-    }
-  },
-  {
-    "match_id": "TR-2026-09-12-03",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-12T17:00:00Z",
-    "home": "Alanyaspor",
-    "away": "Göztepe",
-    "source": "tff.org",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.483,
-    "p_over_0_5": 0.9165,
-    "p_over_1_5": 0.7092,
-    "p_over_2_5": 0.4518,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.92,
-      "u25_odds": 1.81,
-      "o25_implied": 0.4853,
-      "h": 2.14,
-      "d": 3.34,
-      "a": 3.1,
-      "edge25": -0.0335
-    }
-  },
-  {
-    "match_id": "TR-2026-09-12-04",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-12T17:00:00Z",
-    "home": "Konyaspor",
-    "away": "Trabzonspor",
-    "source": "tff.org",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.797,
-    "p_over_0_5": 0.939,
-    "p_over_1_5": 0.7684,
-    "p_over_2_5": 0.5298,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.65,
-      "u25_odds": 2.13,
-      "o25_implied": 0.5635,
-      "h": 3.37,
-      "d": 3.61,
-      "a": 1.95,
-      "edge25": -0.0337
-    }
-  },
-  {
-    "match_id": "ED-2026-09-12-03",
-    "league_id": 88,
-    "league": "Eredivisie",
-    "kickoff_utc": "2026-09-12T18:00:00Z",
-    "home": "Fortuna Sittard",
-    "away": "Ajax",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 3.24,
-    "p_over_0_5": 0.9608,
-    "p_over_1_5": 0.8339,
-    "p_over_2_5": 0.6284,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.35,
-      "u25_odds": 2.99,
-      "o25_implied": 0.6889,
-      "h": 5.97,
-      "d": 4.88,
-      "a": 1.41,
-      "edge25": -0.0605
-    }
-  },
-  {
-    "match_id": "SA-2026-09-12-03",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-12T18:45:00Z",
-    "home": "Atalanta",
-    "away": "Cagliari",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "exp_goals": 2.541,
-    "p_over_0_5": 0.9212,
-    "p_over_1_5": 0.7209,
-    "p_over_2_5": 0.4666,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.9,
-      "u25_odds": 1.85,
-      "o25_implied": 0.4933,
-      "h": 1.57,
-      "d": 3.97,
-      "a": 5.79,
-      "edge25": -0.0267
-    }
-  },
-  {
-    "match_id": "L1-2026-09-12-02",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-12T18:45:00Z",
-    "home": "Lorient",
-    "away": "Toulouse",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.716,
-    "p_over_0_5": 0.9339,
-    "p_over_1_5": 0.7542,
-    "p_over_2_5": 0.5103,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.9,
-      "u25_odds": 1.84,
-      "o25_implied": 0.492,
-      "h": 2.56,
-      "d": 3.3,
-      "a": 2.68,
-      "edge25": 0.0183
-    }
-  },
-  {
-    "match_id": "L1-2026-09-12-03",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-12T18:45:00Z",
-    "home": "Auxerre",
-    "away": "Nice",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.861,
-    "p_over_0_5": 0.9428,
-    "p_over_1_5": 0.7792,
-    "p_over_2_5": 0.5451,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.9,
-      "u25_odds": 1.83,
-      "o25_implied": 0.4906,
-      "h": 2.54,
-      "d": 3.32,
-      "a": 2.71,
-      "edge25": 0.0545
-    }
-  },
-  {
-    "match_id": "L1-2026-09-12-04",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-12T18:45:00Z",
-    "home": "Le Havre",
-    "away": "Angers",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "exp_goals": 2.386,
-    "p_over_0_5": 0.908,
-    "p_over_1_5": 0.6885,
-    "p_over_2_5": 0.4267,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.03,
-      "u25_odds": 1.73,
-      "o25_implied": 0.4601,
-      "h": 2.46,
-      "d": 3.21,
-      "a": 2.86,
-      "edge25": -0.0334
-    }
-  },
-  {
-    "match_id": "L1-2026-09-12-05",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-12T18:45:00Z",
-    "home": "Paris FC",
-    "away": "Lyon",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 3.484,
-    "p_over_0_5": 0.9693,
-    "p_over_1_5": 0.8625,
-    "p_over_2_5": 0.6763,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.64,
-      "u25_odds": 2.18,
-      "o25_implied": 0.5707,
-      "h": 2.62,
-      "d": 3.58,
-      "a": 2.47,
-      "edge25": 0.1056
-    }
-  },
-  {
-    "match_id": "PL-2026-09-12-07",
-    "league_id": 39,
-    "league": "Premier League",
-    "kickoff_utc": "2026-09-12T19:00:00Z",
-    "home": "Sunderland",
-    "away": "Arsenal",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "exp_goals": 2.83,
-    "p_over_0_5": 0.941,
-    "p_over_1_5": 0.774,
-    "p_over_2_5": 0.5377,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 2.02,
-      "u25_odds": 1.74,
-      "o25_implied": 0.4628,
-      "h": 7.36,
-      "d": 4.12,
-      "a": 1.46,
-      "edge25": 0.0749
-    }
-  },
-  {
-    "match_id": "LL-2026-09-12-04",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-12T19:00:00Z",
-    "home": "Real Madrid",
-    "away": "Rayo Vallecano",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 5,
-    "exp_goals": 2.833,
-    "p_over_0_5": 0.9411,
-    "p_over_1_5": 0.7744,
-    "p_over_2_5": 0.5383,
-    "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.26,
-      "u25_odds": 3.67,
-      "o25_implied": 0.7444,
-      "h": 1.11,
-      "d": 9.06,
-      "a": 18.38,
-      "edge25": -0.2061
-    }
-  },
-  {
-    "match_id": "ED-2026-09-12-04",
-    "league_id": 88,
-    "league": "Eredivisie",
-    "kickoff_utc": "2026-09-12T19:00:00Z",
-    "home": "Cambuur",
-    "away": "NEC",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "exp_goals": 4.321,
-    "p_over_0_5": 0.9867,
-    "p_over_1_5": 0.9293,
-    "p_over_2_5": 0.8052,
-    "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
-    "market": {
-      "o25_odds": 1.33,
-      "u25_odds": 3.15,
-      "o25_implied": 0.7031,
-      "h": 4.96,
-      "d": 4.68,
-      "a": 1.51,
-      "edge25": 0.1021
-    }
-  },
-  {
-    "match_id": "ED-2026-09-13-05",
+    "match_id": "ED-2026-09-13-01",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-13T10:15:00Z",
@@ -1132,7 +14,7 @@
     "p_over_1_5": 0.8362,
     "p_over_2_5": 0.6321,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.59,
       "u25_odds": 2.25,
@@ -1144,7 +26,7 @@
     }
   },
   {
-    "match_id": "CH-2026-09-13-11",
+    "match_id": "CH-2026-09-13-01",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-13T11:00:00Z",
@@ -1158,7 +40,7 @@
     "p_over_1_5": 0.8924,
     "p_over_2_5": 0.7307,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.7,
       "u25_odds": 2.07,
@@ -1170,7 +52,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-13-05",
+    "match_id": "LL-2026-09-13-01",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-13T12:00:00Z",
@@ -1184,7 +66,7 @@
     "p_over_1_5": 0.7833,
     "p_over_2_5": 0.5509,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 2.03,
       "u25_odds": 1.72,
@@ -1196,7 +78,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-13-06",
+    "match_id": "ED-2026-09-13-02",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-13T12:30:00Z",
@@ -1210,7 +92,7 @@
     "p_over_1_5": 0.843,
     "p_over_2_5": 0.6432,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.39,
       "u25_odds": 2.79,
@@ -1222,7 +104,7 @@
     }
   },
   {
-    "match_id": "PL-2026-09-13-08",
+    "match_id": "PL-2026-09-13-01",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-13T13:00:00Z",
@@ -1236,7 +118,7 @@
     "p_over_1_5": 0.6228,
     "p_over_2_5": 0.3529,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.72,
       "u25_odds": 2.03,
@@ -1248,7 +130,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-13-04",
+    "match_id": "SA-2026-09-13-01",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-13T13:00:00Z",
@@ -1262,7 +144,7 @@
     "p_over_1_5": 0.6712,
     "p_over_2_5": 0.4063,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 2.21,
       "u25_odds": 1.63,
@@ -1274,7 +156,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-13-06",
+    "match_id": "L1-2026-09-13-01",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-13T13:00:00Z",
@@ -1288,7 +170,7 @@
     "p_over_1_5": 0.7831,
     "p_over_2_5": 0.5507,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.66,
       "u25_odds": 2.13,
@@ -1300,7 +182,7 @@
     }
   },
   {
-    "match_id": "BL-2026-09-13-07",
+    "match_id": "BL-2026-09-13-01",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-13T13:30:00Z",
@@ -1314,7 +196,7 @@
     "p_over_1_5": 0.8298,
     "p_over_2_5": 0.6217,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.39,
       "u25_odds": 2.85,
@@ -1326,7 +208,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-13-05",
+    "match_id": "TR-2026-09-13-01",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-13T14:00:00Z",
@@ -1340,7 +222,7 @@
     "p_over_1_5": 0.7631,
     "p_over_2_5": 0.5224,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 2.08,
       "u25_odds": 1.68,
@@ -1352,7 +234,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-13-06",
+    "match_id": "LL-2026-09-13-02",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-13T14:15:00Z",
@@ -1366,7 +248,7 @@
     "p_over_1_5": 0.8713,
     "p_over_2_5": 0.6919,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.25,
       "u25_odds": 3.71,
@@ -1378,7 +260,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-13-07",
+    "match_id": "ED-2026-09-13-03",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-13T14:45:00Z",
@@ -1392,7 +274,7 @@
     "p_over_1_5": 0.8544,
     "p_over_2_5": 0.6623,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.33,
       "u25_odds": 3.11,
@@ -1404,7 +286,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-13-07",
+    "match_id": "L1-2026-09-13-02",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-13T15:15:00Z",
@@ -1418,7 +300,7 @@
     "p_over_1_5": 0.8516,
     "p_over_2_5": 0.6577,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.18,
@@ -1430,7 +312,7 @@
     }
   },
   {
-    "match_id": "PL-2026-09-13-09",
+    "match_id": "PL-2026-09-13-02",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-13T15:30:00Z",
@@ -1444,7 +326,7 @@
     "p_over_1_5": 0.7911,
     "p_over_2_5": 0.5624,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.5,
       "u25_odds": 2.49,
@@ -1456,7 +338,7 @@
     }
   },
   {
-    "match_id": "BL-2026-09-13-08",
+    "match_id": "BL-2026-09-13-02",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-13T15:30:00Z",
@@ -1470,7 +352,7 @@
     "p_over_1_5": 0.9401,
     "p_over_2_5": 0.8291,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.16,
       "u25_odds": 4.89,
@@ -1482,7 +364,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-13-05",
+    "match_id": "SA-2026-09-13-02",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-13T16:00:00Z",
@@ -1496,7 +378,7 @@
     "p_over_1_5": 0.7285,
     "p_over_2_5": 0.4762,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 2.05,
       "u25_odds": 1.72,
@@ -1508,7 +390,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-13-07",
+    "match_id": "LL-2026-09-13-03",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-13T16:30:00Z",
@@ -1522,7 +404,7 @@
     "p_over_1_5": 0.7494,
     "p_over_2_5": 0.5037,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 3.02,
       "u25_odds": 1.36,
@@ -1534,7 +416,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-13-06",
+    "match_id": "TR-2026-09-13-02",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-13T17:00:00Z",
@@ -1548,7 +430,7 @@
     "p_over_1_5": 0.786,
     "p_over_2_5": 0.5549,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.78,
       "u25_odds": 1.95,
@@ -1560,7 +442,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-13-07",
+    "match_id": "TR-2026-09-13-03",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-13T17:00:00Z",
@@ -1574,7 +456,7 @@
     "p_over_1_5": 0.7084,
     "p_over_2_5": 0.4508,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.5,
       "u25_odds": 2.46,
@@ -1586,7 +468,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-13-08",
+    "match_id": "ED-2026-09-13-04",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-13T18:00:00Z",
@@ -1600,7 +482,7 @@
     "p_over_1_5": 0.9004,
     "p_over_2_5": 0.746,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.17,
       "u25_odds": 4.49,
@@ -1612,7 +494,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-13-06",
+    "match_id": "SA-2026-09-13-03",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-13T18:45:00Z",
@@ -1626,7 +508,7 @@
     "p_over_1_5": 0.7756,
     "p_over_2_5": 0.54,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.78,
       "u25_odds": 1.97,
@@ -1638,7 +520,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-13-08",
+    "match_id": "L1-2026-09-13-03",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-13T18:45:00Z",
@@ -1652,7 +534,7 @@
     "p_over_1_5": 0.8549,
     "p_over_2_5": 0.6632,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.39,
       "u25_odds": 2.84,
@@ -1664,7 +546,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-13-08",
+    "match_id": "LL-2026-09-13-04",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-13T19:00:00Z",
@@ -1678,7 +560,7 @@
     "p_over_1_5": 0.7704,
     "p_over_2_5": 0.5326,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.64,
       "u25_odds": 2.17,
@@ -1690,7 +572,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-14-07",
+    "match_id": "SA-2026-09-14-04",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-14T16:30:00Z",
@@ -1704,7 +586,7 @@
     "p_over_1_5": 0.6662,
     "p_over_2_5": 0.4006,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.68,
       "u25_odds": 2.12,
@@ -1716,7 +598,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-14-08",
+    "match_id": "SA-2026-09-14-05",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-14T16:30:00Z",
@@ -1730,7 +612,7 @@
     "p_over_1_5": 0.684,
     "p_over_2_5": 0.4213,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.77,
       "u25_odds": 1.97,
@@ -1742,7 +624,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-14-08",
+    "match_id": "TR-2026-09-14-04",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-14T17:00:00Z",
@@ -1756,7 +638,7 @@
     "p_over_1_5": 0.8102,
     "p_over_2_5": 0.591,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.7,
       "u25_odds": 2.04,
@@ -1768,7 +650,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-14-09",
+    "match_id": "SA-2026-09-14-06",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-14T18:45:00Z",
@@ -1782,7 +664,7 @@
     "p_over_1_5": 0.8111,
     "p_over_2_5": 0.5923,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.53,
       "u25_odds": 2.42,
@@ -1794,7 +676,7 @@
     }
   },
   {
-    "match_id": "PL-2026-09-14-10",
+    "match_id": "PL-2026-09-14-03",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-14T19:00:00Z",
@@ -1808,7 +690,7 @@
     "p_over_1_5": 0.7959,
     "p_over_2_5": 0.5694,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.75,
       "u25_odds": 2.0,
@@ -1820,7 +702,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-14-09",
+    "match_id": "LL-2026-09-14-05",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-14T19:00:00Z",
@@ -1834,7 +716,7 @@
     "p_over_1_5": 0.8389,
     "p_over_2_5": 0.6364,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00",
+    "updated_at": "2026-09-13T11:57:37.457793+00:00",
     "market": {
       "o25_odds": 1.54,
       "u25_odds": 2.36,
@@ -1846,7 +728,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-15-10",
+    "match_id": "LL-2026-09-15-06",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-15T17:00:00Z",
@@ -1860,10 +742,10 @@
     "p_over_1_5": 0.7278,
     "p_over_2_5": 0.4753,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-15-11",
+    "match_id": "LL-2026-09-15-07",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-15T18:00:00Z",
@@ -1877,10 +759,10 @@
     "p_over_1_5": 0.7263,
     "p_over_2_5": 0.4734,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-15-09",
+    "match_id": "ED-2026-09-15-05",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-15T18:00:00Z",
@@ -1894,10 +776,10 @@
     "p_over_1_5": 0.7521,
     "p_over_2_5": 0.5074,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-15-12",
+    "match_id": "CH-2026-09-15-02",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-15T18:45:00Z",
@@ -1911,10 +793,10 @@
     "p_over_1_5": 0.6935,
     "p_over_2_5": 0.4327,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-15-13",
+    "match_id": "CH-2026-09-15-03",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-15T18:45:00Z",
@@ -1928,10 +810,10 @@
     "p_over_1_5": 0.6714,
     "p_over_2_5": 0.4066,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-15-12",
+    "match_id": "LL-2026-09-15-08",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-15T19:30:00Z",
@@ -1945,10 +827,10 @@
     "p_over_1_5": 0.8537,
     "p_over_2_5": 0.6611,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-16-13",
+    "match_id": "LL-2026-09-16-09",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-16T17:00:00Z",
@@ -1962,10 +844,10 @@
     "p_over_1_5": 0.7902,
     "p_over_2_5": 0.561,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-16-14",
+    "match_id": "LL-2026-09-16-10",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-16T17:00:00Z",
@@ -1979,10 +861,10 @@
     "p_over_1_5": 0.7512,
     "p_over_2_5": 0.5062,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-16-15",
+    "match_id": "LL-2026-09-16-11",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-16T19:30:00Z",
@@ -1996,10 +878,10 @@
     "p_over_1_5": 0.8311,
     "p_over_2_5": 0.6239,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-16-16",
+    "match_id": "LL-2026-09-16-12",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-16T19:30:00Z",
@@ -2013,10 +895,10 @@
     "p_over_1_5": 0.8437,
     "p_over_2_5": 0.6444,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-17-17",
+    "match_id": "LL-2026-09-17-13",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-17T17:00:00Z",
@@ -2030,10 +912,10 @@
     "p_over_1_5": 0.7114,
     "p_over_2_5": 0.4546,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-17-18",
+    "match_id": "LL-2026-09-17-14",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-17T19:30:00Z",
@@ -2047,10 +929,10 @@
     "p_over_1_5": 0.6957,
     "p_over_2_5": 0.4352,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-18-10",
+    "match_id": "ED-2026-09-18-06",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-18T18:00:00Z",
@@ -2064,10 +946,10 @@
     "p_over_1_5": 0.7925,
     "p_over_2_5": 0.5644,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-18-09",
+    "match_id": "BL-2026-09-18-03",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-18T18:30:00Z",
@@ -2081,10 +963,10 @@
     "p_over_1_5": 0.8721,
     "p_over_2_5": 0.6933,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-18-10",
+    "match_id": "SA-2026-09-18-07",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-18T18:45:00Z",
@@ -2098,10 +980,10 @@
     "p_over_1_5": 0.6588,
     "p_over_2_5": 0.3922,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-18-09",
+    "match_id": "L1-2026-09-18-04",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-18T18:45:00Z",
@@ -2115,10 +997,10 @@
     "p_over_1_5": 0.8318,
     "p_over_2_5": 0.6249,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-18-11",
+    "match_id": "PL-2026-09-18-04",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-18T19:00:00Z",
@@ -2132,10 +1014,10 @@
     "p_over_1_5": 0.8155,
     "p_over_2_5": 0.5991,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-18-14",
+    "match_id": "CH-2026-09-18-04",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-18T19:00:00Z",
@@ -2149,10 +1031,10 @@
     "p_over_1_5": 0.743,
     "p_over_2_5": 0.4952,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-18-19",
+    "match_id": "LL-2026-09-18-15",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-18T19:00:00Z",
@@ -2166,10 +1048,10 @@
     "p_over_1_5": 0.7484,
     "p_over_2_5": 0.5024,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-19-12",
+    "match_id": "PL-2026-09-19-05",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-19T11:30:00Z",
@@ -2183,10 +1065,10 @@
     "p_over_1_5": 0.8244,
     "p_over_2_5": 0.6131,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-15",
+    "match_id": "CH-2026-09-19-05",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T11:30:00Z",
@@ -2200,10 +1082,10 @@
     "p_over_1_5": 0.7349,
     "p_over_2_5": 0.4845,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-16",
+    "match_id": "CH-2026-09-19-06",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T11:30:00Z",
@@ -2217,10 +1099,10 @@
     "p_over_1_5": 0.7532,
     "p_over_2_5": 0.5089,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-17",
+    "match_id": "CH-2026-09-19-07",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T11:30:00Z",
@@ -2234,10 +1116,10 @@
     "p_over_1_5": 0.7053,
     "p_over_2_5": 0.447,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-19-20",
+    "match_id": "LL-2026-09-19-16",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-19T12:00:00Z",
@@ -2251,10 +1133,10 @@
     "p_over_1_5": 0.7297,
     "p_over_2_5": 0.4778,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-19-11",
+    "match_id": "SA-2026-09-19-08",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-19T13:00:00Z",
@@ -2268,10 +1150,10 @@
     "p_over_1_5": 0.7292,
     "p_over_2_5": 0.4772,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-19-12",
+    "match_id": "SA-2026-09-19-09",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-19T13:00:00Z",
@@ -2285,10 +1167,10 @@
     "p_over_1_5": 0.6663,
     "p_over_2_5": 0.4006,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-19-10",
+    "match_id": "BL-2026-09-19-04",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-19T13:30:00Z",
@@ -2302,10 +1184,10 @@
     "p_over_1_5": 0.8283,
     "p_over_2_5": 0.6193,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-19-11",
+    "match_id": "BL-2026-09-19-05",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-19T13:30:00Z",
@@ -2319,10 +1201,10 @@
     "p_over_1_5": 0.8115,
     "p_over_2_5": 0.593,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-19-12",
+    "match_id": "BL-2026-09-19-06",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-19T13:30:00Z",
@@ -2336,10 +1218,10 @@
     "p_over_1_5": 0.8088,
     "p_over_2_5": 0.5888,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-19-13",
+    "match_id": "BL-2026-09-19-07",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-19T13:30:00Z",
@@ -2353,10 +1235,10 @@
     "p_over_1_5": 0.8376,
     "p_over_2_5": 0.6343,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-19-13",
+    "match_id": "PL-2026-09-19-06",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2370,10 +1252,10 @@
     "p_over_1_5": 0.8131,
     "p_over_2_5": 0.5954,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-19-14",
+    "match_id": "PL-2026-09-19-07",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2387,10 +1269,10 @@
     "p_over_1_5": 0.7305,
     "p_over_2_5": 0.4788,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-19-15",
+    "match_id": "PL-2026-09-19-08",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2404,10 +1286,10 @@
     "p_over_1_5": 0.6537,
     "p_over_2_5": 0.3865,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-18",
+    "match_id": "CH-2026-09-19-08",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2421,10 +1303,10 @@
     "p_over_1_5": 0.8727,
     "p_over_2_5": 0.6943,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-19",
+    "match_id": "CH-2026-09-19-09",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2438,10 +1320,10 @@
     "p_over_1_5": 0.5311,
     "p_over_2_5": 0.264,
     "label": "",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-20",
+    "match_id": "CH-2026-09-19-10",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2455,10 +1337,10 @@
     "p_over_1_5": 0.7384,
     "p_over_2_5": 0.4891,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-21",
+    "match_id": "CH-2026-09-19-11",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2472,10 +1354,10 @@
     "p_over_1_5": 0.6822,
     "p_over_2_5": 0.4192,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-22",
+    "match_id": "CH-2026-09-19-12",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2489,10 +1371,10 @@
     "p_over_1_5": 0.7426,
     "p_over_2_5": 0.4947,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-19-23",
+    "match_id": "CH-2026-09-19-13",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-19T14:00:00Z",
@@ -2506,10 +1388,10 @@
     "p_over_1_5": 0.7637,
     "p_over_2_5": 0.5233,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-19-21",
+    "match_id": "LL-2026-09-19-17",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-19T14:15:00Z",
@@ -2523,10 +1405,10 @@
     "p_over_1_5": 0.7124,
     "p_over_2_5": 0.4559,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-19-11",
+    "match_id": "ED-2026-09-19-07",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-19T14:30:00Z",
@@ -2540,10 +1422,10 @@
     "p_over_1_5": 0.9389,
     "p_over_2_5": 0.8264,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-19-10",
+    "match_id": "L1-2026-09-19-05",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-19T15:15:00Z",
@@ -2557,10 +1439,10 @@
     "p_over_1_5": 0.8466,
     "p_over_2_5": 0.6492,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-19-13",
+    "match_id": "SA-2026-09-19-10",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-19T16:00:00Z",
@@ -2574,10 +1456,10 @@
     "p_over_1_5": 0.7657,
     "p_over_2_5": 0.526,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-19-16",
+    "match_id": "PL-2026-09-19-09",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-19T16:30:00Z",
@@ -2591,10 +1473,10 @@
     "p_over_1_5": 0.6618,
     "p_over_2_5": 0.3956,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-19-22",
+    "match_id": "LL-2026-09-19-18",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-19T16:30:00Z",
@@ -2608,10 +1490,10 @@
     "p_over_1_5": 0.7833,
     "p_over_2_5": 0.5509,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-19-14",
+    "match_id": "BL-2026-09-19-08",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-19T16:30:00Z",
@@ -2625,10 +1507,10 @@
     "p_over_1_5": 0.8455,
     "p_over_2_5": 0.6474,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-19-12",
+    "match_id": "ED-2026-09-19-08",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-19T16:45:00Z",
@@ -2642,10 +1524,10 @@
     "p_over_1_5": 0.8154,
     "p_over_2_5": 0.5991,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-19-13",
+    "match_id": "ED-2026-09-19-09",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-19T18:00:00Z",
@@ -2659,10 +1541,10 @@
     "p_over_1_5": 0.8658,
     "p_over_2_5": 0.6822,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-19-14",
+    "match_id": "SA-2026-09-19-11",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-19T18:45:00Z",
@@ -2676,10 +1558,10 @@
     "p_over_1_5": 0.6168,
     "p_over_2_5": 0.3466,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-19-11",
+    "match_id": "L1-2026-09-19-06",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-19T18:45:00Z",
@@ -2693,10 +1575,10 @@
     "p_over_1_5": 0.8484,
     "p_over_2_5": 0.6522,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-19-12",
+    "match_id": "L1-2026-09-19-07",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-19T18:45:00Z",
@@ -2710,10 +1592,10 @@
     "p_over_1_5": 0.7622,
     "p_over_2_5": 0.5212,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-19-13",
+    "match_id": "L1-2026-09-19-08",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-19T18:45:00Z",
@@ -2727,10 +1609,10 @@
     "p_over_1_5": 0.7703,
     "p_over_2_5": 0.5325,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-19-14",
+    "match_id": "L1-2026-09-19-09",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-19T18:45:00Z",
@@ -2744,10 +1626,10 @@
     "p_over_1_5": 0.8548,
     "p_over_2_5": 0.663,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-19-23",
+    "match_id": "LL-2026-09-19-19",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-19T19:00:00Z",
@@ -2761,10 +1643,10 @@
     "p_over_1_5": 0.8581,
     "p_over_2_5": 0.6687,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-19-14",
+    "match_id": "ED-2026-09-19-10",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-19T19:00:00Z",
@@ -2778,10 +1660,10 @@
     "p_over_1_5": 0.6952,
     "p_over_2_5": 0.4347,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-20-15",
+    "match_id": "ED-2026-09-20-11",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T10:15:00Z",
@@ -2795,10 +1677,10 @@
     "p_over_1_5": 0.8663,
     "p_over_2_5": 0.6831,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-20-15",
+    "match_id": "SA-2026-09-20-12",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T10:30:00Z",
@@ -2812,10 +1694,10 @@
     "p_over_1_5": 0.7788,
     "p_over_2_5": 0.5446,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-20-24",
+    "match_id": "CH-2026-09-20-14",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-20T11:00:00Z",
@@ -2829,10 +1711,10 @@
     "p_over_1_5": 0.866,
     "p_over_2_5": 0.6824,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-20-24",
+    "match_id": "LL-2026-09-20-20",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T12:00:00Z",
@@ -2846,10 +1728,10 @@
     "p_over_1_5": 0.7,
     "p_over_2_5": 0.4405,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "CH-2026-09-20-25",
+    "match_id": "CH-2026-09-20-15",
     "league_id": 40,
     "league": "Championship",
     "kickoff_utc": "2026-09-20T12:30:00Z",
@@ -2863,10 +1745,10 @@
     "p_over_1_5": 0.8855,
     "p_over_2_5": 0.7177,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-20-16",
+    "match_id": "ED-2026-09-20-12",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T12:30:00Z",
@@ -2880,10 +1762,10 @@
     "p_over_1_5": 0.8806,
     "p_over_2_5": 0.7087,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-20-17",
+    "match_id": "ED-2026-09-20-13",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T12:30:00Z",
@@ -2897,10 +1779,10 @@
     "p_over_1_5": 0.7755,
     "p_over_2_5": 0.5398,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-20-17",
+    "match_id": "PL-2026-09-20-10",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2914,10 +1796,10 @@
     "p_over_1_5": 0.8426,
     "p_over_2_5": 0.6425,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-20-18",
+    "match_id": "PL-2026-09-20-11",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2931,10 +1813,10 @@
     "p_over_1_5": 0.7753,
     "p_over_2_5": 0.5395,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-20-19",
+    "match_id": "PL-2026-09-20-12",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2948,10 +1830,10 @@
     "p_over_1_5": 0.7889,
     "p_over_2_5": 0.5591,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-20-16",
+    "match_id": "SA-2026-09-20-13",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2965,10 +1847,10 @@
     "p_over_1_5": 0.7886,
     "p_over_2_5": 0.5586,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-20-17",
+    "match_id": "SA-2026-09-20-14",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2982,10 +1864,10 @@
     "p_over_1_5": 0.6017,
     "p_over_2_5": 0.3311,
     "label": "MEDIUM",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-20-15",
+    "match_id": "L1-2026-09-20-10",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -2999,10 +1881,10 @@
     "p_over_1_5": 0.7829,
     "p_over_2_5": 0.5504,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-20-15",
+    "match_id": "BL-2026-09-20-09",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-20T13:30:00Z",
@@ -3016,10 +1898,10 @@
     "p_over_1_5": 0.8834,
     "p_over_2_5": 0.7138,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-20-25",
+    "match_id": "LL-2026-09-20-21",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T14:15:00Z",
@@ -3033,10 +1915,10 @@
     "p_over_1_5": 0.8182,
     "p_over_2_5": 0.6033,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "ED-2026-09-20-18",
+    "match_id": "ED-2026-09-20-14",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T14:45:00Z",
@@ -3050,10 +1932,10 @@
     "p_over_1_5": 0.8593,
     "p_over_2_5": 0.6708,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-20-16",
+    "match_id": "L1-2026-09-20-11",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T15:15:00Z",
@@ -3067,10 +1949,10 @@
     "p_over_1_5": 0.7609,
     "p_over_2_5": 0.5194,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "PL-2026-09-20-20",
+    "match_id": "PL-2026-09-20-13",
     "league_id": 39,
     "league": "Premier League",
     "kickoff_utc": "2026-09-20T15:30:00Z",
@@ -3084,10 +1966,10 @@
     "p_over_1_5": 0.7524,
     "p_over_2_5": 0.5078,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-20-16",
+    "match_id": "BL-2026-09-20-10",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-20T15:30:00Z",
@@ -3101,10 +1983,10 @@
     "p_over_1_5": 0.9644,
     "p_over_2_5": 0.8876,
     "label": "",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-20-18",
+    "match_id": "SA-2026-09-20-15",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T16:00:00Z",
@@ -3118,10 +2000,10 @@
     "p_over_1_5": 0.7172,
     "p_over_2_5": 0.4619,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-20-26",
+    "match_id": "LL-2026-09-20-22",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T16:30:00Z",
@@ -3135,10 +2017,10 @@
     "p_over_1_5": 0.7947,
     "p_over_2_5": 0.5676,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-20-27",
+    "match_id": "LL-2026-09-20-23",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T16:30:00Z",
@@ -3152,10 +2034,10 @@
     "p_over_1_5": 0.848,
     "p_over_2_5": 0.6515,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "BL-2026-09-20-17",
+    "match_id": "BL-2026-09-20-11",
     "league_id": 78,
     "league": "Bundesliga",
     "kickoff_utc": "2026-09-20T17:30:00Z",
@@ -3169,10 +2051,10 @@
     "p_over_1_5": 0.6816,
     "p_over_2_5": 0.4184,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "SA-2026-09-20-19",
+    "match_id": "SA-2026-09-20-16",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -3186,10 +2068,10 @@
     "p_over_1_5": 0.7279,
     "p_over_2_5": 0.4755,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "L1-2026-09-20-17",
+    "match_id": "L1-2026-09-20-12",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -3203,10 +2085,10 @@
     "p_over_1_5": 0.8459,
     "p_over_2_5": 0.648,
     "label": "ULTRA",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   },
   {
-    "match_id": "LL-2026-09-20-28",
+    "match_id": "LL-2026-09-20-24",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T19:00:00Z",
@@ -3220,6 +2102,6 @@
     "p_over_1_5": 0.7149,
     "p_over_2_5": 0.4589,
     "label": "HIGH",
-    "updated_at": "2026-09-12T10:52:32.981797+00:00"
+    "updated_at": "2026-09-13T11:57:37.457793+00:00"
   }
 ]

@@ -120,6 +120,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 .rrow .rteam .edge{white-space:normal;line-height:1.35;margin-top:1px}
+.tnclick{cursor:pointer}
+.tnclick:hover{color:var(--accent);text-decoration:underline}
 .rrow .rsc{font-weight:900}
 .hitset{display:flex;gap:5px;font-weight:900}
 .hitset span{min-width:19px;text-align:center;font-size:11px;letter-spacing:-.5px}
@@ -301,6 +303,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div id="resSummary"></div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnRes" type="button"></button>
+      <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
       <span class="srch">
         <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <input id="qRes" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
@@ -404,6 +407,7 @@ let tab=store('tab','pred');
 let selected=store('league','Tümü');
 let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
+let hiMissOnly=false;    // Sonuçlar: sadece yüksek güvenle tahmin edilip tutmayan maçlar
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
@@ -643,6 +647,14 @@ function hiStrip(o){
   return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler:<br>
     ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
+// yüksek güvenle (Tahminler'de yeşil yanan eşik) tahmin edilip tutmayan maçlar —
+// "%95 dedi, 0-0 bitti" gibi sürpriz ıskaları tek başına incelemek için
+function hiMissRows(ms){
+  return ms.filter(m=>m.hits&&['05','15','25'].some(t=>{
+    const v=m['p_over_'+t[0]+'_'+t[1]];
+    return v!=null&&Number(v)>=HIMIN[t]&&m.hits['hit_'+t]===0;
+  }));
+}
 function resSeasonList(){
   return RESULTS?[...new Set((RESULTS.matches||[]).map(m=>seasonOf(m.kickoff_utc)))].sort():[];
 }
@@ -670,16 +682,22 @@ function renderResults(){
   const br=$('dayBtnRes');br.innerHTML=dateBtnLabel(dayRes);br.classList.toggle('set',!!dayRes);
   if(calFor==='res'&&!cal.hidden)renderCal();
   if(dayActive)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
+  const hiMiss=hiMissRows(ms);
+  const hib=$('hiMissToggle');
+  hib.textContent=hiMiss.length?`yüksek güven ıskaları (${hiMiss.length})`:'yüksek güven ıskaları';
+  hib.classList.toggle('on',hiMissOnly);
+  hib.style.opacity=(hiMiss.length||hiMissOnly)?1:.4;
+  if(hiMissOnly)ms=hiMiss;
   const o=aggr(ms);
-  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(qRes?` · «${qRes}»`:'')+(dayActive?' · '+dayLabel(dayRes):'');
+  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(qRes?` · «${qRes}»`:'')+(dayActive?' · '+dayLabel(dayRes):'')+(hiMissOnly?' · yüksek güven ıskaları':'');
   wrap.innerHTML=`<div class="tiles">
     ${lineTile('0.5+',o.acc_05,o.n)}
     ${lineTile('1.5+',o.acc_15,o.n)}
     ${lineTile('2.5+',o.acc_25,o.n)}
   </div>
   <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · gol tahmin isabeti ort. <b>%${o.gol_acc??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
-  ${o.n?hiStrip(o):''}`;
-  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(qRes?`«${qRes}» için sonuç yok`:dayActive?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
+  ${o.n&&!hiMissOnly?hiStrip(o):''}`;
+  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(hiMissOnly?'Bu aralıkta yüksek güven ıskası yok':qRes?`«${qRes}» için sonuç yok`:dayActive?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
   const CAP=400, shown=ms.slice(0,CAP);   // özetler tüm maçlar; liste en yeni CAP satır
   body.innerHTML=(ms.length>CAP?`<div class="rmore">En yeni ${CAP} maç listeleniyor · yüzdeler yukarıda ${ms.length} maçın tamamından</div>`:'')+shown.map(m=>{
     const H=m.hits||{};
@@ -689,7 +707,7 @@ function renderResults(){
     const gaCls=ga==null?'':ga>=80?'hit':ga<50?'miss':'';
     return `<div class="rrow">
       <div class="rdate">${dateCell(m.kickoff_utc)}</div>
-      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}">${esc(m.home)} — ${esc(m.away)}<div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
+      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}"><span class="tnclick" data-team="${esc(m.home)}">${esc(m.home)}</span> — <span class="tnclick" data-team="${esc(m.away)}">${esc(m.away)}</span><div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
       <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
@@ -1073,6 +1091,12 @@ function wireSearch(inpId,xId,apply){
 }
 wireSearch('qPred','qPredX',v=>{qPred=v;renderPred();});
 wireSearch('qRes','qResX',v=>{qRes=v;renderResults();});
+$('hiMissToggle').onclick=()=>{hiMissOnly=!hiMissOnly;renderResults();};
+$('resRows').addEventListener('click',e=>{
+  const t=e.target.closest('.tnclick');
+  if(!t)return;
+  qRes=t.dataset.team;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();
+});
 document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
   sortLine=c.dataset.sort==='date'?null:(sortLine===c.dataset.sort?null:c.dataset.sort);renderPred();
 });

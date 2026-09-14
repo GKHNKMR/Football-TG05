@@ -850,6 +850,7 @@ function autoLegs(){
       const over=m.total!=null?m.total>parseFloat(line):null;
       legs.push({league:m.league,home:m.home,away:m.away,kickoff_utc:m.kickoff_utc,
         line,pOver:p,lam:m.pred_lambda??null,
+        p05:m.p_over_0_5,p15:m.p_over_1_5,p25:m.p_over_2_5,
         status:over==null?'pending':(over?'won':'lost'),
         total:m.total,score:m.score,liveSource:!!m.live_source});
     });
@@ -873,7 +874,7 @@ function groupLegsByMatch(legs){
   legs.forEach(l=>{
     const k=l.league+'|'+l.home+'|'+l.away+'|'+l.kickoff_utc;
     const m=byMatch[k]||(byMatch[k]={league:l.league,home:l.home,away:l.away,kickoff_utc:l.kickoff_utc,
-      total:l.total,score:l.score,liveSource:l.liveSource,lines:{}});
+      total:l.total,score:l.score,liveSource:l.liveSource,p05:l.p05,p15:l.p15,p25:l.p25,lines:{}});
     m.lines[l.line]={pOver:l.pOver,status:l.status};
   });
   return Object.values(byMatch);
@@ -918,7 +919,7 @@ function renderCoupons(){
     const rows=matches.map(m=>`<tr>
         <td>${dmy(m.kickoff_utc)}</td>
         <td>${flag(m.league,10)} ${esc(m.league)}</td>
-        <td class="mL">${esc(m.home)} — ${esc(m.away)}</td>
+        <td class="mL">${esc(m.home)} — ${esc(m.away)}<div class="sub">tahmin: 0.5Ü ${pctI(m.p05)} · 1.5Ü ${pctI(m.p15)} · 2.5Ü ${pctI(m.p25)}</div></td>
         <td class="lr">${lineCell(m,'0.5')}</td>
         <td class="lr">${lineCell(m,'1.5')}</td>
         <td class="lr">${lineCell(m,'2.5')}</td>

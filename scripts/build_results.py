@@ -69,10 +69,38 @@ def implied_o25(o, u):
 
 # ---------------------------------------------------------------- archive ------
 
+def natural_key(p):
+    """(league, home, away, kickoff) - unlike match_id (which bakes in a
+    positional index that shifts as the day's fixture list changes run to
+    run), this is stable for the same real fixture across every run."""
+    return f"{p['league']}|{p['home']}|{p['away']}|{p['kickoff_utc']}"
+
+
+def migrate_archive(archive):
+    """Archives built before natural_key was the dict key were keyed by
+    match_id, so the same real fixture could pick up several entries
+    (different match_id, different first_seen) once its position in the
+    day's fixture list shifted between runs - re-key by identity, keeping
+    the earliest first_seen and merging in any market odds a later
+    duplicate had captured. Safe to run on an already-migrated archive."""
+    out = {}
+    for v in archive.values():
+        key = natural_key(v)
+        if key not in out:
+            out[key] = v
+            continue
+        existing = out[key]
+        keep, drop = (v, existing) if v["first_seen"] < existing["first_seen"] else (existing, v)
+        if drop.get("market") and not keep.get("market"):
+            keep["market"] = drop["market"]
+        out[key] = keep
+    return out
+
+
 def load_archive():
     if ARCHIVE_FILE.exists():
         try:
-            return json.loads(ARCHIVE_FILE.read_text(encoding="utf-8"))
+            return migrate_archive(json.loads(ARCHIVE_FILE.read_text(encoding="utf-8")))
         except json.JSONDecodeError:
             pass
     return {}
@@ -82,18 +110,18 @@ def merge_predictions(archive):
     preds = json.loads(PRED_FILE.read_text(encoding="utf-8"))
     now = datetime.now(timezone.utc).isoformat()
     for p in preds:
-        mid = p["match_id"]
-        if mid not in archive:
-            archive[mid] = {
-                "match_id": mid, "league": p["league"], "kickoff_utc": p["kickoff_utc"],
+        key = natural_key(p)
+        if key not in archive:
+            archive[key] = {
+                "match_id": p["match_id"], "league": p["league"], "kickoff_utc": p["kickoff_utc"],
                 "home": p["home"], "away": p["away"],
                 "pred_lambda": p.get("exp_goals"), "basis": p.get("basis"),
                 "p_over_0_5": p["p_over_0_5"], "p_over_1_5": p["p_over_1_5"],
                 "p_over_2_5": p["p_over_2_5"], "market": p.get("market"),
                 "first_seen": now,
             }
-        elif p.get("market") and not archive[mid].get("market"):
-            archive[mid]["market"] = p["market"]
+        elif p.get("market") and not archive[key].get("market"):
+            archive[key]["market"] = p["market"]
     cutoff = (datetime.now(timezone.utc) - timedelta(days=ARCHIVE_DAYS)).isoformat()
     return {k: v for k, v in archive.items() if v["kickoff_utc"] >= cutoff}
 

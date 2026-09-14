@@ -1,10 +1,10 @@
-name: daily BETAVUS predictions
+name: hourly BETAVUS predictions
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: "15 6 * * *"
+    - cron: "5 * * * *"   # hourly — data only actually changes when the sources do
   workflow_dispatch:
 
 permissions:

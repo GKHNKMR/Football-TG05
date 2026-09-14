@@ -35,12 +35,25 @@ def load_live_scores():
         return []
 
 
+# API-Football uses its own short/nickname forms that don't line up with
+# either openfootball's long names or football-data's short names (e.g. it
+# calls Sheffield United "Sheffield Utd" and Wolverhampton Wanderers
+# "Wolves") - fold the common ones to a shared word so substring matching
+# below actually lines them up.
+_WORD_ALIASES = {
+    "UTD": "UNITED", "WOLVES": "WOLVERHAMPTON", "SPURS": "TOTTENHAM",
+    "BORO": "MIDDLESBROUGH", "NIJMEGEN": "NEC",
+}
+
+
 def norm(s):
     """Accent/case/punctuation-insensitive form for fuzzy team-name matching."""
     s = unicodedata.normalize("NFKD", s or "")
     s = "".join(c for c in s if not unicodedata.combining(c))
     s = re.sub(r"[^A-Za-z0-9]+", " ", s.upper())
-    return re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s).strip()
+    words = [_WORD_ALIASES.get(w, w) for w in s.split(" ")]
+    return " ".join(words)
 
 
 def find_live_match(live, league, home, away, d, slack=2):

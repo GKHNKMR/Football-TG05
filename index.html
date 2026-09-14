@@ -205,6 +205,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-cpn .cpn-tbl .lr{font-size:14px;text-align:center}
 #pane-cpn .lede{color:var(--muted);font-size:12px;line-height:1.65;margin:0 2px 10px}
 #pane-cpn .lede b{color:var(--text)}
+#pane-cpn .tile{cursor:pointer}
+#pane-cpn .tile:hover{background:var(--panel2)}
+#pane-cpn .tile.active{border-color:var(--accent)}
 #pane-cpn .tiles{grid-template-columns:repeat(4,1fr)}
 @media(max-width:650px){#pane-cpn .tiles{grid-template-columns:1fr 1fr}}
 #pane-cpn .rsum{color:var(--muted);font-size:11.5px;margin:4px 2px 0;line-height:1.6}
@@ -935,11 +938,12 @@ function renderCoupons(){
   const legWon=done.filter(l=>l.status==='won').length;
   const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
+  const tileActive=f=>cpnFilter===f?' active':'';
   sum.innerHTML=lede+`<div class="tiles">
-    <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][0]}/${byLine['0.5'][1]} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][0]}/${byLine['1.5'][1]} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][0]}/${byLine['2.5'][1]} maç</div></div>
+    <div class="tile${tileActive('all')}" data-f="all" title="Tüm günlere dön"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
+    <div class="tile${tileActive('line05')}" data-f="line05" title="0.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][0]}/${byLine['0.5'][1]} maç</div></div>
+    <div class="tile${tileActive('line15')}" data-f="line15" title="1.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][0]}/${byLine['1.5'][1]} maç</div></div>
+    <div class="tile${tileActive('line25')}" data-f="line25" title="2.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][0]}/${byLine['2.5'][1]} maç</div></div>
   </div>`;
   const groups=groupByDay(legsAll);
   const nWon=groups.filter(g=>g.status==='won').length, nLost=groups.filter(g=>g.status==='lost').length;
@@ -952,13 +956,16 @@ function renderCoupons(){
     <button class="chip ${cpnFilter==='miss15'?'active':''}" data-f="miss15">1.5 ıska (${nMiss15})</button>
     <button class="chip ${cpnFilter==='miss25'?'active':''}" data-f="miss25">2.5 ıska (${nMiss25})</button>
   </nav>`;
-  // 0.5/1.5/2.5 ıska filtreleri: kupon (gün) kartlarına ayırmadan, tek düz liste
-  if(cpnFilter==='miss05'||cpnFilter==='miss15'||cpnFilter==='miss25'){
-    const line=cpnFilter==='miss05'?'0.5':cpnFilter==='miss15'?'1.5':'2.5';
-    const missKeys=new Set(legsAll.filter(l=>l.line===line&&l.status==='lost').map(matchKey));
-    const matches=groupLegsByMatch(legsAll.filter(l=>missKeys.has(matchKey(l))))
+  // 0.5/1.5/2.5 ıska filtreleri (yalnızca tutmayanlar) ve tile tıklamaları
+  // (o çizgide vurgulanan TÜM maçlar, tutan+tutmayan) - ikisi de kupon (gün)
+  // kartlarına ayırmadan, tek düz liste.
+  if(['miss05','miss15','miss25','line05','line15','line25'].includes(cpnFilter)){
+    const line=cpnFilter.endsWith('05')?'0.5':cpnFilter.endsWith('15')?'1.5':'2.5';
+    const onlyMiss=cpnFilter.startsWith('miss');
+    const keys=new Set(legsAll.filter(l=>l.line===line&&(!onlyMiss||l.status==='lost')).map(matchKey));
+    const matches=groupLegsByMatch(legsAll.filter(l=>keys.has(matchKey(l))))
       .sort((a,b)=>new Date(b.kickoff_utc)-new Date(a.kickoff_utc));
-    list.innerHTML=filterNav+(matches.length?matchTableHtml(matches):'<div class="empty"><strong>Bu çizgide ıska yok</strong></div>');
+    list.innerHTML=filterNav+(matches.length?matchTableHtml(matches):`<div class="empty"><strong>${onlyMiss?'Bu çizgide ıska yok':'Bu çizgide vurgulanan maç yok'}</strong></div>`);
     return;
   }
   if(cpnFilter!=='all'&&!groups.some(g=>g.status===cpnFilter))cpnFilter='all';
@@ -1006,6 +1013,10 @@ $('cpnList').addEventListener('click',e=>{
   if(chip){cpnFilter=chip.dataset.f;renderCoupons();return;}
   const row=e.target.closest('.cpn-row');
   if(row)openH2HSheet(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
+});
+$('cpnSummary').addEventListener('click',e=>{
+  const tile=e.target.closest('.tile[data-f]');
+  if(tile){cpnFilter=tile.dataset.f;renderCoupons();}
 });
 
 // ---- Günün Kuponu — tamamen geçmiş verilere dayalı, gün boyu sabit ----

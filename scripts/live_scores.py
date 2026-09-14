@@ -1,4 +1,4 @@
-"""Shared helpers for the API-Football live-score layer.
+"""Shared helpers for the ESPN-scoreboard-based live-score layer.
 
 data/live-scores.json is produced once per run by fetch_live_scores.py (a
 flat list of matches in our leagues from the last LOOKBACK_DAYS, whichever
@@ -12,9 +12,7 @@ have kicked off) and consumed by:
     football-data.co.uk's CSV has caught up with that result.
 
 Both only need read access to the file - fetching happens once, up front,
-in its own workflow step. If the API_FOOTBALL_KEY secret isn't set,
-fetch_live_scores.py writes an empty list and every consumer just falls
-back to its slower, always-available source.
+in its own workflow step.
 """
 
 import json

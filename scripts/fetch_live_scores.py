@@ -1,92 +1,91 @@
-"""Fetch recent/live matches for our leagues from API-Football -> data/live-scores.json.
+"""Fetch recent/live matches for our leagues from ESPN's public scoreboard
+API -> data/live-scores.json.
 
-Needs the API_FOOTBALL_KEY GitHub secret. Without it, writes an empty list so
-every consumer (update_predictions.py, build_results.py) degrades safely to
-its slower always-available source (openfootball / football-data.co.uk).
+Free, no API key, no plan/date restriction (unlike API-Football's paid
+tiers, whose free plan turned out to only allow a yesterday/today/tomorrow
+window - see git history for that dead end). Pulls one (league, day) pair
+at a time for LOOKBACK_DAYS back from today, so:
 
-Pulls one day at a time (date=YYYY-MM-DD, all leagues) for LOOKBACK_DAYS back
-from today and keeps only fixtures in our 8 leagues that have a score - live
-in-progress ones included, not just finished (FT) ones - so:
-  - update_predictions.py can drop a fixture once it's actually finished, and
-    show a live score while one is still being played;
-  - build_results.py can grade a finished match before football-data.co.uk's
-    CSV (which lags real matches by days) has it.
+  - update_predictions.py can drop a fixture from Tahminler once it's
+    actually finished (openfootball/football-data can take days to record
+    a score, so without this a played match keeps showing as "upcoming"),
+    and attach a live in-progress score onto ones still being played.
+  - build_results.py can grade an archived (real pre-kickoff) prediction
+    before football-data.co.uk's CSV (which lags real matches by days,
+    sometimes over a week) has caught up with that result.
 
-Some API-Football plans only allow querying a few days back, so a single run
-may only really cover "yesterday" - each run therefore MERGES its findings
-into the existing file instead of overwriting it, and every entry from the
-previous file is kept unless this run explicitly re-confirms that date+league
-(so a transient failure never erases what an earlier run already found; a
-day that DOES come back this run replaces yesterday's version of it, so a
-match that went from in-progress to finished still updates).
+Each run MERGES its findings into the existing file rather than
+overwriting it, so a transient per-request failure never erases what an
+earlier run already found; a (league, date) that DOES come back this run
+replaces its old entries, so a match that went from in-progress to
+finished still updates.
 """
 
 import json
-import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from live_scores import LIVE_FILE  # noqa: E402
-from teams import DIVISIONS  # noqa: E402
 
-API_URL = "https://v3.football.api-sports.io/fixtures"
-LOOKBACK_DAYS = 8
+SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard"
+LOOKBACK_DAYS = 14
 KEEP_DAYS = 21  # prune anything older than this out of the merged file
-LEAGUE_API_ID = {name: lid for _div, (name, lid) in DIVISIONS.items()}
 # Committed to the repo each run so a per-day fetch failure is visible via a
 # normal `git show`, without needing to pull GitHub Actions job logs.
 DEBUG_FILE = Path("data/live-scores-debug.json")
 
+ESPN_SLUG = {
+    "Premier League": "eng.1",
+    "Championship": "eng.2",
+    "LaLiga": "esp.1",
+    "Bundesliga": "ger.1",
+    "Serie A": "ita.1",
+    "Ligue 1": "fra.1",
+    "Eredivisie": "ned.1",
+    "Turkish Süper Lig": "tur.1",
+}
 
-def fetch_day(key, d):
-    """One day's fixtures in our leagues with a score. Raises on a hard failure."""
-    req = Request(f"{API_URL}?date={d}", headers={"x-apisports-key": key})
-    try:
-        with urlopen(req, timeout=30) as resp:
-            body = resp.read().decode("utf-8")
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:300]
-        raise RuntimeError(f"HTTP {exc.code}: {detail}") from exc
-    data = json.loads(body)
-    if data.get("errors"):
-        raise RuntimeError(f"API errors: {data['errors']}")
-    id_to_league = {lid: name for name, lid in LEAGUE_API_ID.items()}
+
+def fetch_league_day(league, slug, d):
+    """One league's matches on day d (ISO date str) with a score. Raises on failure."""
+    url = f"{SCOREBOARD_URL.format(slug=slug)}?dates={d.replace('-', '')}"
+    # ESPN's WAF blocks a generic "Mozilla/5.0" UA (403) but is fine with no
+    # override at all - leave the default urllib UA alone.
+    req = Request(url)
+    with urlopen(req, timeout=20) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
     out = []
-    for item in data.get("response", []):
-        league = id_to_league.get((item.get("league") or {}).get("id"))
-        if not league:
+    for event in data.get("events", []):
+        comp = (event.get("competitions") or [{}])[0]
+        status = comp.get("status", {}).get("type", {})
+        if status.get("state") == "pre":
+            continue  # not started yet - nothing useful to show
+        competitors = comp.get("competitors", [])
+        by_side = {c.get("homeAway"): c for c in competitors}
+        home, away = by_side.get("home"), by_side.get("away")
+        if not home or not away:
             continue
-        goals = item.get("goals") or {}
-        hg, ag = goals.get("home"), goals.get("away")
-        if hg is None or ag is None:
-            continue  # not started yet, or no data - nothing useful to show
-        status = ((item.get("fixture") or {}).get("status") or {}).get("short")
-        teams = item.get("teams") or {}
+        try:
+            hg, ag = int(home["score"]), int(away["score"])
+        except (KeyError, TypeError, ValueError):
+            continue
         out.append({
-            "league": league, "date": d, "status": status,
-            "finished": status == "FT",
-            "home": (teams.get("home") or {}).get("name", ""),
-            "away": (teams.get("away") or {}).get("name", ""),
+            "league": league, "date": d,
+            "status": status.get("shortDetail") or status.get("name"),
+            "finished": bool(status.get("completed")),
+            "home": home["team"]["displayName"], "away": away["team"]["displayName"],
             "score": f"{hg}-{ag}", "total": hg + ag,
         })
     return out
 
 
 def main():
-    key = os.environ.get("API_FOOTBALL_KEY")
     LIVE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    if not key:
-        print("API_FOOTBALL_KEY not set - writing an empty live-scores.json")
-        LIVE_FILE.write_text("[]", encoding="utf-8")
-        DEBUG_FILE.write_text(json.dumps(
-            {"run_at": datetime.now(timezone.utc).isoformat(), "days": [],
-             "error": "API_FOOTBALL_KEY not set"}, indent=1), encoding="utf-8")
-        return
 
     try:
         previous = json.loads(LIVE_FILE.read_text(encoding="utf-8"))
@@ -100,21 +99,25 @@ def main():
     debug = {"run_at": datetime.now(timezone.utc).isoformat(), "days": []}
     for delta in range(LOOKBACK_DAYS):
         d = (today - timedelta(days=delta)).isoformat()
-        try:
-            rows = fetch_day(key, d)
-        except Exception as exc:
-            print(f"  {d}: fetch failed - {exc}")
-            debug["days"].append({"date": d, "ok": False, "error": str(exc)})
-            continue
-        fetched_dates.add(d)
-        new_rows.extend(rows)
-        print(f"  {d}: {len(rows)} matches with a score")
-        debug["days"].append({"date": d, "ok": True, "n_matches": len(rows)})
-        if delta < LOOKBACK_DAYS - 1:
-            time.sleep(1)  # be gentle with per-second rate limits
+        day_ok, day_matches, day_error = True, 0, None
+        for league, slug in ESPN_SLUG.items():
+            try:
+                rows = fetch_league_day(league, slug, d)
+            except (HTTPError, URLError, json.JSONDecodeError) as exc:
+                day_ok = False
+                day_error = f"{league}: {exc}"
+                print(f"  {d} {league}: fetch failed - {exc}")
+                continue
+            new_rows.extend(rows)
+            day_matches += len(rows)
+            time.sleep(0.2)  # be gentle with this public, unauthenticated endpoint
+        fetched_dates.add(d)  # per-league failures still count the day as attempted
+        print(f"  {d}: {day_matches} matches with a score")
+        debug["days"].append({"date": d, "ok": day_ok, "n_matches": day_matches,
+                               **({"error": day_error} if day_error else {})})
     DEBUG_FILE.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    # keep prior entries for dates we couldn't re-fetch this run; drop the
+    # keep prior entries for dates we couldn't (re)fetch this run; drop the
     # rest of that date's old rows wherever we DID get a fresh answer, so a
     # finished match properly replaces its earlier in-progress version
     kept = [r for r in previous if r["date"] >= cutoff and r["date"] not in fetched_dates]
@@ -123,9 +126,9 @@ def main():
     LIVE_FILE.write_text(json.dumps(merged, ensure_ascii=False, separators=(",", ":")),
                          encoding="utf-8")
     n_fin = sum(1 for x in merged if x["finished"])
-    print(f"API-Football: {len(merged)} matches with a score ({n_fin} finished) "
+    print(f"ESPN scoreboard: {len(merged)} matches with a score ({n_fin} finished) "
           f"across {len(set(x['date'] for x in merged))} days "
-          f"({len(fetched_dates)}/{LOOKBACK_DAYS} fetched fresh this run)")
+          f"({len(fetched_dates)}/{LOOKBACK_DAYS} days fetched this run)")
 
 
 if __name__ == "__main__":

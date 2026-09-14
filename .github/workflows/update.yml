@@ -30,10 +30,8 @@ jobs:
       - name: Refresh football-data.co.uk CSVs + fixtures/odds
         run: python scripts/fetch_football_data.py
         continue-on-error: true
-      - name: Fetch live scores (API-Football)
+      - name: Fetch live scores (ESPN)
         run: python scripts/fetch_live_scores.py
-        env:
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         continue-on-error: true
       - name: Build predictions
         run: python scripts/update_predictions.py

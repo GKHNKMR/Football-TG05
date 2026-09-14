@@ -718,7 +718,7 @@ function renderResults(){
   const rc=RESULTS.reconstructed_count||0, lc=RESULTS.live_scored_count||0;
   foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "Gol tahmin isabeti" = gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) yakınlığı: <b>%100</b> = birebir, <b>%0</b> = tamamen ıska (1 − |λ − gerçek| / büyük olan). Alt satır: "λ → gerçekleşen gol".`+
     (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'')+
-    (lc?`<br>* ${lc} maçın sonucu football-data.co.uk henüz güncellemeden, API-Football'un canlı verisinden alındı — pipeline saatlik çalıştığı için maç bitince ~1 saat içinde burada.`:'');
+    (lc?`<br>* ${lc} maçın sonucu football-data.co.uk henüz güncellemeden, canlı skor akışından alındı — pipeline saatlik çalıştığı için maç bitince ~1 saat içinde burada.`:'');
 }
 
 function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();renderSlipFab();}

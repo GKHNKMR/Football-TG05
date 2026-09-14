@@ -130,8 +130,8 @@ def find_actual(actuals, league, fd_home, fd_away, d):
     return None
 
 
-# football-data.co.uk's CSVs lag real matches by days; the API-Football live
-# feed (data/live-scores.json, see fetch_live_scores.py) closes that gap.
+# football-data.co.uk's CSVs lag real matches by days; the ESPN-scoreboard
+# live feed (data/live-scores.json, see fetch_live_scores.py) closes that gap.
 # Used only as a fallback for archived (real pre-kickoff) predictions that
 # football-data hasn't posted yet - the historical CSVs stay the sole source
 # for model training and for the reconstructed backlog.
@@ -299,7 +299,7 @@ def main():
             graded.append(grade(row, actual["total"], actual["score"],
                                 actual["o25_odds"], actual["u25_odds"]))
     if live_used:
-        print(f"  {live_used} of those graded from API-Football (football-data hadn't caught up yet)")
+        print(f"  {live_used} of those graded from the ESPN live feed (football-data hadn't caught up yet)")
 
     already = {(r["league"], r["home"], r["away"],
                datetime.fromisoformat(r["kickoff_utc"].replace("Z", "+00:00")).date())

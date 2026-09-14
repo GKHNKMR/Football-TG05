@@ -197,6 +197,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-cpn .cpn-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 #pane-cpn .cpn-tbl th{text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 #pane-cpn .cpn-tbl td{padding:8px;border-bottom:1px solid var(--hair);vertical-align:top}
+#pane-cpn .cpn-row{cursor:pointer}
+#pane-cpn .cpn-row:hover{background:var(--panel2)}
 #pane-cpn .cpn-tbl td.mL{font-weight:700;min-width:150px}
 #pane-cpn .cpn-tbl .sub{color:var(--muted);font-size:10px;font-weight:600;margin-top:1px}
 #pane-cpn .cpn-tbl .lr{font-size:14px;text-align:center}
@@ -887,6 +889,7 @@ function lineCell(m,line){
   const mk=L.status==='won'?'✓':L.status==='lost'?'✗':'⏳';
   return `<span class="${cls}" title="${line}+ vurgulandı · güven ${pc}">Ü${mk}</span>`;
 }
+let cpnFilter='all';   // 'all' | 'won' (tam isabet) | 'lost' (ıska var)
 function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
   if(!RESULTS){sum.innerHTML='';list.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';return;}
@@ -899,24 +902,35 @@ function renderCoupons(){
     list.innerHTML='<div class="empty"><strong>Henüz vurgulanan maç yok</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>';
     return;
   }
+  const totalMatches=(RESULTS.matches||[]).length;
   const done=legsAll.filter(l=>l.status!=='pending');
   const legWon=done.filter(l=>l.status==='won').length;
   const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   sum.innerHTML=lede+`<div class="tiles">
     <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]}/${totalMatches} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]}/${totalMatches} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]}/${totalMatches} maç</div></div>
   </div>`;
   const groups=groupByDay(legsAll);
-  const shown=groups.slice(0,CPN_CAP_DAYS);
-  list.innerHTML=(groups.length>CPN_CAP_DAYS?`<div class="rmore">En yeni ${CPN_CAP_DAYS} gün listeleniyor · özet istatistikler ${groups.length} günün tamamından</div>`:'')+
+  const nWon=groups.filter(g=>g.status==='won').length, nLost=groups.filter(g=>g.status==='lost').length;
+  if(cpnFilter!=='all'&&!groups.some(g=>g.status===cpnFilter))cpnFilter='all';
+  const filterNav=`<nav class="filters" style="margin:0 0 12px">
+    <button class="chip ${cpnFilter==='all'?'active':''}" data-f="all">Tümü (${groups.length})</button>
+    <button class="chip ${cpnFilter==='won'?'active':''}" data-f="won">Tam isabet (${nWon})</button>
+    <button class="chip ${cpnFilter==='lost'?'active':''}" data-f="lost">Iska var (${nLost})</button>
+  </nav>`;
+  const filtered=cpnFilter==='all'?groups:groups.filter(g=>g.status===cpnFilter);
+  const shown=filtered.slice(0,CPN_CAP_DAYS);
+  list.innerHTML=filterNav+
+    (!filtered.length?'<div class="empty"><strong>Bu filtrede gün yok</strong></div>':'')+
+    (filtered.length>CPN_CAP_DAYS?`<div class="rmore">En yeni ${CPN_CAP_DAYS} gün listeleniyor · özet istatistikler ${filtered.length} günün tamamından</div>`:'')+
     shown.map(g=>{
     const badge=g.status==='won'?'won':g.status==='lost'?'lost':'pending';
     const btxt=g.status==='won'?'TAM İSABET':g.status==='lost'?'ISKA VAR':'BEKLİYOR';
     const matches=groupLegsByMatch(g.legs);
-    const rows=matches.map(m=>`<tr>
+    const rows=matches.map(m=>`<tr class="cpn-row" data-league="${esc(m.league)}" data-home="${esc(m.home)}" data-away="${esc(m.away)}" data-ko="${esc(m.kickoff_utc)}">
         <td>${dmy(m.kickoff_utc)}</td>
         <td>${flag(m.league,10)} ${esc(m.league)}</td>
         <td class="mL">${esc(m.home)} — ${esc(m.away)}<div class="sub">tahmin: 0.5Ü ${pctI(m.p05)} · 1.5Ü ${pctI(m.p15)} · 2.5Ü ${pctI(m.p25)}</div></td>
@@ -935,6 +949,35 @@ function renderCoupons(){
     </div>`;
   }).join('');
 }
+// Kuponlarım'da bir maça tıklayınca: aynı iki takımın bu pencerede (2025
+// Temmuz'dan bugüne) daha önce oynadığı maçları göster - match-stats.json
+// (openSheet'in kullandığı) yalnızca YAKLAŞAN fikstürler için var, oynanmış
+// bir maç için hep boş döner; bu yüzden RESULTS.matches'tan kendi H2H'ımızı
+// çıkarıyoruz.
+function openCpnMatch(league,home,away,kickoff_utc){
+  sheet.hidden=false;
+  const ms=(RESULTS&&RESULTS.matches)||[];
+  const ko=new Date(kickoff_utc);
+  const cur=ms.find(r=>r.league===league&&r.home===home&&r.away===away&&r.kickoff_utc===kickoff_utc);
+  const prior=ms.filter(r=>r.league===league&&r.kickoff_utc!==kickoff_utc&&
+      ((r.home===home&&r.away===away)||(r.home===away&&r.away===home))&&
+      new Date(r.kickoff_utc)<ko)
+    .sort((a,b)=>new Date(b.kickoff_utc)-new Date(a.kickoff_utc));
+  const h2hRows=prior.map(r=>`<div class="h2h-row"><span>${dmy(r.kickoff_utc)}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
+  const h2hHead=prior.length?`<div class="s-sub" style="margin-bottom:6px">Bu pencerede ${prior.length} karşılaşma · ort. ${(prior.reduce((s,r)=>s+r.total,0)/prior.length).toFixed(1)} gol</div>`:'<div class="s-note">Bu pencerede (2025 Temmuz\'dan bugüne) kayıtlı başka karşılaşma yok.</div>';
+  sheet.innerHTML=`<div class="sheet">
+    <button class="s-close">×</button>
+    <h2>${esc(home)} — ${esc(away)}</h2>
+    <div class="s-sub">${esc(league)} · ${localDate(kickoff_utc)}${cur?` · sonuç <b>${esc(cur.score)}</b> (tahmin: 0.5Ü ${pctI(cur.p_over_0_5)} · 1.5Ü ${pctI(cur.p_over_1_5)} · 2.5Ü ${pctI(cur.p_over_2_5)})`:''}</div>
+    <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
+  </div>`;
+}
+$('cpnList').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip[data-f]');
+  if(chip){cpnFilter=chip.dataset.f;renderCoupons();return;}
+  const row=e.target.closest('.cpn-row');
+  if(row)openCpnMatch(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
+});
 
 // ---- Günün Kuponu — tamamen geçmiş verilere dayalı, gün boyu sabit ----
 function histAcc(league,line){

@@ -33,14 +33,22 @@ def load_live_scores():
         return []
 
 
-# API-Football uses its own short/nickname forms that don't line up with
+# ESPN uses its own short/nickname/official forms that don't line up with
 # either openfootball's long names or football-data's short names (e.g. it
-# calls Sheffield United "Sheffield Utd" and Wolverhampton Wanderers
-# "Wolves") - fold the common ones to a shared word so substring matching
-# below actually lines them up.
+# calls Sheffield United "Sheffield Utd", Wolverhampton Wanderers "Wolves",
+# 1. FC Köln "FC Cologne", Hamburger SV "Hamburg SV") - fold the common ones
+# to a shared word so substring matching below actually lines them up.
 _WORD_ALIASES = {
     "UTD": "UNITED", "WOLVES": "WOLVERHAMPTON", "SPURS": "TOTTENHAM",
-    "BORO": "MIDDLESBROUGH", "NIJMEGEN": "NEC",
+    "BORO": "MIDDLESBROUGH", "NIJMEGEN": "NEC", "COLOGNE": "KOLN",
+    "HAMBURGER": "HAMBURG", "MUNICH": "MUNCHEN",
+}
+# A few club names ESPN spells so differently from ours that no amount of
+# per-word aliasing lines them up (a rebrand, a different short form, or a
+# translation) - map the whole cleaned name instead.
+_NAME_ALIASES = {
+    "STADE RENNAIS": "RENNES", "ATHLETIC CLUB": "ATHLETIC BILBAO",
+    "ERZURUM BB": "ERZURUMSPOR", "AMED SFK": "AMEDSPOR",
 }
 
 
@@ -50,6 +58,8 @@ def norm(s):
     s = "".join(c for c in s if not unicodedata.combining(c))
     s = re.sub(r"[^A-Za-z0-9]+", " ", s.upper())
     s = re.sub(r"\s+", " ", s).strip()
+    if s in _NAME_ALIASES:
+        s = _NAME_ALIASES[s]
     words = [_WORD_ALIASES.get(w, w) for w in s.split(" ")]
     return " ".join(words)
 

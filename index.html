@@ -362,6 +362,13 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 
   <section id="pane-cpn" hidden>
     <div id="cpnSummary"></div>
+    <div class="datectl">
+      <span class="srch">
+        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="qCpn" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
+        <button class="sx" id="qCpnX" type="button" hidden aria-label="Temizle">×</button>
+      </span>
+    </div>
     <div id="cpnList"></div>
   </section>
 
@@ -414,7 +421,7 @@ let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büy�
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
 let resSeason=store('resseason','')||'';  // Sonuçlar: '' = tüm sezonlar, yoksa "2025/26"
-let qPred='',qRes='';                   // takım arama kutuları (Tahminler / Sonuçlar)
+let qPred='',qRes='',qCpn='';           // takım arama kutuları (Tahminler / Sonuçlar / Kuponlarım)
 
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
@@ -846,6 +853,7 @@ const CPN_CAP_DAYS=30;
 function autoLegs(){
   let ms=(RESULTS&&RESULTS.matches)||[];
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
+  if(qCpn)ms=ms.filter(m=>teamHit(m,qCpn));
   const LN=[['0.5','p_over_0_5',HL.o05.min],['1.5','p_over_1_5',HL.o15.min],['2.5','p_over_2_5',HL.o25.min]];
   const legs=[];
   ms.forEach(m=>{
@@ -920,7 +928,7 @@ function renderCoupons(){
   const legsAll=autoLegs();
   if(!legsAll.length){
     sum.innerHTML=lede;
-    list.innerHTML=`<div class="empty"><strong>${selected!=='Tümü'?`${esc(selected)} için henüz vurgulanan maç yok`:'Henüz vurgulanan maç yok'}</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>`;
+    list.innerHTML=`<div class="empty"><strong>${qCpn?`«${esc(qCpn)}» için vurgulanan maç yok`:selected!=='Tümü'?`${esc(selected)} için henüz vurgulanan maç yok`:'Henüz vurgulanan maç yok'}</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>`;
     return;
   }
   const done=legsAll.filter(l=>l.status!=='pending');
@@ -1165,6 +1173,7 @@ function wireSearch(inpId,xId,apply){
 }
 wireSearch('qPred','qPredX',v=>{qPred=v;renderPred();});
 wireSearch('qRes','qResX',v=>{qRes=v;renderResults();});
+wireSearch('qCpn','qCpnX',v=>{qCpn=v;renderCoupons();});
 $('hiMissToggle').onclick=()=>{hiMissOnly=!hiMissOnly;renderResults();};
 $('resRows').addEventListener('click',e=>{
   const t=e.target.closest('.tnclick');

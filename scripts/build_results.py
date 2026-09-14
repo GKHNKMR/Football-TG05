@@ -38,13 +38,13 @@ OUT_FILE = Path("data/results.json")
 ARCHIVE_DAYS = 90
 DATE_SLACK = 2
 
-# graded window: the previous full season plus the current one
-WINDOW_START = date(2025, 7, 1)
-WINDOW_LABEL = "2025/26 sezonu + bu sezon"
-# football-data.co.uk season codes, oldest -> newest. The last two are the ones
-# we reconstruct graded results for; the earlier ones only feed the model.
-FD_SEASONS = ["2223", "2324", "2425", "2526", "2627"]
-RECON_TARGETS = ["2526", "2627"]
+# graded window: the last ~2 years (three full seasons plus the current one)
+WINDOW_START = date(2024, 8, 1)
+WINDOW_LABEL = "2024/25 sezonundan bugüne (~2 yıl)"
+# football-data.co.uk season codes, oldest -> newest. The last three are the
+# ones we reconstruct graded results for; the earlier ones only feed the model.
+FD_SEASONS = ["2122", "2223", "2324", "2425", "2526", "2627"]
+RECON_TARGETS = ["2425", "2526", "2627"]
 # season being reconstructed gets weight 1.0; the three before it 0.7/0.45/0.30
 RECON_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]

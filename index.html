@@ -199,12 +199,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-cpn .cpn-tbl td{padding:8px;border-bottom:1px solid var(--hair);vertical-align:top}
 #pane-cpn .cpn-tbl td.mL{font-weight:700;min-width:150px}
 #pane-cpn .cpn-tbl .sub{color:var(--muted);font-size:10px;font-weight:600;margin-top:1px}
-#pane-cpn .cpn-tbl .lr{font-weight:900;font-size:14px;text-align:center}
-#pane-cpn .cpn-tbl .lr.won{color:var(--good)}#pane-cpn .cpn-tbl .lr.lost{color:var(--bad)}#pane-cpn .cpn-tbl .lr.pending{color:var(--muted)}
+#pane-cpn .cpn-tbl .lr{font-size:14px;text-align:center}
 #pane-cpn .lede{color:var(--muted);font-size:12px;line-height:1.65;margin:0 2px 10px}
 #pane-cpn .lede b{color:var(--text)}
-#pane-cpn .tiles{grid-template-columns:repeat(3,1fr)}
-@media(max-width:650px){#pane-cpn .tiles{grid-template-columns:1fr}}
+#pane-cpn .tiles{grid-template-columns:repeat(4,1fr)}
+@media(max-width:650px){#pane-cpn .tiles{grid-template-columns:1fr 1fr}}
 #pane-cpn .rsum{color:var(--muted);font-size:11.5px;margin:4px 2px 0;line-height:1.6}
 #pane-cpn .cpn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
 #pane-cpn .cpn-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
@@ -867,6 +866,26 @@ function groupByDay(legs){
     return {day,legs,status};
   });
 }
+// aynı maçın 0.5/1.5/2.5 bacaklarını tek satıra topla — bir maç üç eşiği
+// birden geçtiyse üç kez değil, bir kez yazılır
+function groupLegsByMatch(legs){
+  const byMatch={};
+  legs.forEach(l=>{
+    const k=l.league+'|'+l.home+'|'+l.away+'|'+l.kickoff_utc;
+    const m=byMatch[k]||(byMatch[k]={league:l.league,home:l.home,away:l.away,kickoff_utc:l.kickoff_utc,
+      total:l.total,score:l.score,liveSource:l.liveSource,lines:{}});
+    m.lines[l.line]={pOver:l.pOver,status:l.status};
+  });
+  return Object.values(byMatch);
+}
+function lineCell(m,line){
+  const L=m.lines[line];
+  if(!L)return '<span class="sub">–</span>';
+  const pc=L.pOver==null?'':'%'+Math.round(L.pOver*100);
+  const cls=L.status==='won'?'hit':L.status==='lost'?'miss':'';
+  const mk=L.status==='won'?'✓':L.status==='lost'?'✗':'⏳';
+  return `<span class="${cls}" title="${line}+ vurgulandı · güven ${pc}">Ü${mk}</span>`;
+}
 function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
   if(!RESULTS){sum.innerHTML='';list.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';return;}
@@ -881,45 +900,35 @@ function renderCoupons(){
   }
   const done=legsAll.filter(l=>l.status!=='pending');
   const legWon=done.filter(l=>l.status==='won').length;
-  const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);if(g.length)byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
-  const groups=groupByDay(legsAll);
-  const doneGroups=groups.filter(g=>g.status!=='pending');
-  const wonGroups=doneGroups.filter(g=>g.status==='won').length;
-  const pendGroups=groups.length-doneGroups.length;
-  let best=0,worst=0,cur=0;
-  doneGroups.slice().reverse().forEach(g=>{
-    if(g.status==='won'){cur=cur>0?cur+1:1;best=Math.max(best,cur);}
-    else{cur=cur<0?cur-1:-1;worst=Math.min(worst,cur);}
-  });
+  const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   sum.innerHTML=lede+`<div class="tiles">
-    <div class="tile"><div class="v">${doneGroups.length?pct1(wonGroups,doneGroups.length):'—'}</div><div class="k">gün başarı</div><div class="n">${wonGroups}/${doneGroups.length} gün tam isabet${pendGroups?` · ${pendGroups} bekliyor`:''}</div></div>
-    <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">bacak isabeti</div><div class="n">${legWon}/${done.length} bacak</div></div>
-    <div class="tile"><div class="v">${best} / ${Math.abs(worst)}</div><div class="k">en uzun seri</div><div class="n">gün kazanma / kaybetme</div></div>
-  </div>
-  <div class="rsum">Çizgi bazında bacak: ${['0.5','1.5','2.5'].map(k=>byLine[k]?`${k} ${pct1(byLine[k][0],byLine[k][1])} (${byLine[k][1]})`:`${k} —`).join(' · ')} — sabit vurgu eşiklerini geçen <b>tüm maçlar</b>.</div>`;
-  const mk=st=>st==='won'?'✓':st==='lost'?'✗':'⏳';
+    <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]} maç</div></div>
+  </div>`;
+  const groups=groupByDay(legsAll);
   const shown=groups.slice(0,CPN_CAP_DAYS);
   list.innerHTML=(groups.length>CPN_CAP_DAYS?`<div class="rmore">En yeni ${CPN_CAP_DAYS} gün listeleniyor · özet istatistikler ${groups.length} günün tamamından</div>`:'')+
     shown.map(g=>{
     const badge=g.status==='won'?'won':g.status==='lost'?'lost':'pending';
     const btxt=g.status==='won'?'TAM İSABET':g.status==='lost'?'ISKA VAR':'BEKLİYOR';
-    const rows=g.legs.map(l=>{
-      const pc=l.pOver==null?'—':'%'+Math.round(l.pOver*100);
-      return `<tr>
-        <td>${dmy(l.kickoff_utc)}</td>
-        <td>${flag(l.league,10)} ${esc(l.league)}</td>
-        <td class="mL">${esc(l.home)} — ${esc(l.away)}</td>
-        <td><b>${l.line} Üst</b><div class="sub">λ ${l.lam!=null?(+l.lam).toFixed(1):'—'} · güven ${pc}</div></td>
-        <td>${l.status==='pending'?'<span class="sub">bekliyor</span>':`${l.score}<div class="sub">${l.total} gol${l.liveSource?' · canlı':''}</div>`}</td>
-        <td class="lr ${l.status}">${mk(l.status)}</td>
-      </tr>`;
-    }).join('');
+    const matches=groupLegsByMatch(g.legs);
+    const rows=matches.map(m=>`<tr>
+        <td>${dmy(m.kickoff_utc)}</td>
+        <td>${flag(m.league,10)} ${esc(m.league)}</td>
+        <td class="mL">${esc(m.home)} — ${esc(m.away)}</td>
+        <td class="lr">${lineCell(m,'0.5')}</td>
+        <td class="lr">${lineCell(m,'1.5')}</td>
+        <td class="lr">${lineCell(m,'2.5')}</td>
+        <td>${m.total==null?'<span class="sub">bekliyor</span>':`${m.score}<div class="sub">${m.total} gol${m.liveSource?' · canlı':''}</div>`}</td>
+      </tr>`).join('');
     return `<div class="cpn">
-      <div class="cpn-head"><span>${dayLabel(g.day)} · ${g.legs.length} maç</span>
+      <div class="cpn-head"><span>${dayLabel(g.day)} · ${matches.length} maç</span>
         <span class="cbadge ${badge}">${btxt}</span></div>
       <div class="tbl-scroll"><table class="cpn-tbl">
-        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Vurgu</th><th>Gerçek sonuç</th><th>Başarı</th></tr></thead>
+        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>0.5</th><th>1.5</th><th>2.5</th><th>Gerçek sonuç</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
     </div>`;

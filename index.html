@@ -922,16 +922,15 @@ function renderCoupons(){
     list.innerHTML='<div class="empty"><strong>Henüz vurgulanan maç yok</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>';
     return;
   }
-  const totalHighlighted=groupLegsByMatch(legsAll).length;   // vurgu yapılan TOPLAM maç sayısı (3 çizginin birleşimi)
   const done=legsAll.filter(l=>l.status!=='pending');
   const legWon=done.filter(l=>l.status==='won').length;
   const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   sum.innerHTML=lede+`<div class="tiles">
     <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]}/${totalHighlighted} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]}/${totalHighlighted} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]}/${totalHighlighted} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][0]}/${byLine['0.5'][1]} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][0]}/${byLine['1.5'][1]} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][0]}/${byLine['2.5'][1]} maç</div></div>
   </div>`;
   const groups=groupByDay(legsAll);
   const nWon=groups.filter(g=>g.status==='won').length, nLost=groups.filter(g=>g.status==='lost').length;

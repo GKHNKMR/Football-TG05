@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIVISIONS, DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
 from backtest import LeagueModel, poisson_over  # noqa: E402
+from live_scores import find_live_match, load_live_scores  # noqa: E402
 
 PRED_FILE = Path("predictions.json")
 ARCHIVE_FILE = Path("data/predictions-archive.json")
@@ -46,10 +47,6 @@ FD_SEASONS = ["2223", "2324", "2425", "2526", "2627"]
 RECON_TARGETS = ["2526", "2627"]
 # season being reconstructed gets weight 1.0; the three before it 0.7/0.45/0.30
 RECON_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
-LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
-# "high confidence" thresholds = the Vurgu levels highlighted on the site; the
-# Sonuçlar tab reports how the picks above these did (the risk-reduced view).
-HI_MIN = {"05": 0.95, "15": 0.85, "25": 0.75}
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
 # "high confidence" thresholds = the Vurgu levels highlighted on the site; the
 # Sonuçlar tab reports how the picks above these did (the risk-reduced view).
@@ -131,6 +128,13 @@ def find_actual(actuals, league, fd_home, fd_away, d):
         if hit:
             return hit
     return None
+
+
+# football-data.co.uk's CSVs lag real matches by days; the API-Football live
+# feed (data/live-scores.json, see fetch_live_scores.py) closes that gap.
+# Used only as a fallback for archived (real pre-kickoff) predictions that
+# football-data hasn't posted yet - the historical CSVs stay the sole source
+# for model training and for the reconstructed backlog.
 
 
 # ---------------------------------------------------------------- grading -----
@@ -270,9 +274,11 @@ def main():
 
     actuals = load_actuals()
     print(f"actuals ({'+'.join(RECON_TARGETS)}): {len(actuals)}")
+    live = load_live_scores()
 
     now = datetime.now(timezone.utc)
     graded = []
+    live_used = 0
     for a in archive.values():
         ko = datetime.fromisoformat(a["kickoff_utc"].replace("Z", "+00:00"))
         if ko >= now or ko.date() < WINDOW_START:
@@ -280,9 +286,20 @@ def main():
         actual = find_actual(actuals, a["league"],
                              to_fd(a["league"], a["home"]),
                              to_fd(a["league"], a["away"]), ko.date())
+        from_live = False
+        if not actual:
+            live_hit = find_live_match(live, a["league"], a["home"], a["away"], ko.date())
+            if live_hit and live_hit.get("finished"):
+                actual = {"score": live_hit["score"], "total": live_hit["total"],
+                          "o25_odds": None, "u25_odds": None}
+                from_live = True
+                live_used += 1
         if actual:
-            graded.append(grade(a, actual["total"], actual["score"],
+            row = dict(a, live_source=True) if from_live else a
+            graded.append(grade(row, actual["total"], actual["score"],
                                 actual["o25_odds"], actual["u25_odds"]))
+    if live_used:
+        print(f"  {live_used} of those graded from API-Football (football-data hadn't caught up yet)")
 
     already = {(r["league"], r["home"], r["away"],
                datetime.fromisoformat(r["kickoff_utc"].replace("Z", "+00:00")).date())
@@ -296,6 +313,7 @@ def main():
         "span": WINDOW_LABEL,
         "window_start": WINDOW_START.isoformat(),
         "reconstructed_count": len(recon),
+        "live_scored_count": live_used,
         "overall": aggregate(graded),
         "matches": graded,
     }

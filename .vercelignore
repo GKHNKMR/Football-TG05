@@ -9,9 +9,11 @@ scripts/
 data/football-data/
 data/cache/
 
-# Build-only intermediates. Pages fetch data/results.json (the graded output),
-# not these.
+# Build-only intermediates. Pages fetch data/results.json (the graded output)
+# and predictions.json (which already carries any live score inline), not
+# these raw feeds.
 data/predictions-archive.json
+data/live-scores.json
 
 # Backtest CSV is not fetched by any page.
 data/backtest-pl-2526.csv

@@ -49,6 +49,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .row{padding:13px 14px;border-top:1px solid var(--line)}
 .match{min-width:0}
 .league{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.live-badge{color:#ff4d4f;font-weight:900;letter-spacing:.02em}
+@media(prefers-reduced-motion:no-preference){.live-badge{animation:livepulse 1.6s ease-in-out infinite}}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.55}}
 .teams{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kick{font-size:11px;color:var(--muted);margin-top:5px}
 .prob{display:flex;justify-content:center}
@@ -460,6 +463,8 @@ function basisBadge(b){
   if(b==='partial-form')return `<span class="badge b1" title="Sınırlı veri">●</span>`;
   return `<span class="badge b0" title="Sadece lig ortalaması (zayıf)">○</span>`;
 }
+const LIVE_STATUS_LABEL={'1H':'İlk yarı','HT':'Devre arası','2H':'İkinci yarı','ET':'Uzatma','BT':'Mola','P':'Penaltılar','SUSP':'Askıda','INT':'Yarıda kaldı'};
+function liveStatusLabel(s){return LIVE_STATUS_LABEL[s]||s||'';}
 function renderFilters(){
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;save('league',selected);renderFilters();renderAll();});
@@ -607,7 +612,7 @@ function renderPred(){
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&anyHl?hlLabel+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&anyHl?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>`<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">
-      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}</div>
+      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
     </div>
@@ -710,9 +715,10 @@ function renderResults(){
       <div><span class="${gaCls}" style="font-weight:800">${ga==null?'—':'%'+ga}</span><div class="edge">λ ${lam!=null?lam.toFixed(2):'—'} → ${tot} gol</div></div>
     </div>`;
   }).join('');
-  const rc=RESULTS.reconstructed_count||0;
+  const rc=RESULTS.reconstructed_count||0, lc=RESULTS.live_scored_count||0;
   foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "Gol tahmin isabeti" = gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) yakınlığı: <b>%100</b> = birebir, <b>%0</b> = tamamen ıska (1 − |λ − gerçek| / büyük olan). Alt satır: "λ → gerçekleşen gol".`+
-    (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'');
+    (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'')+
+    (lc?`<br>* ${lc} maçın sonucu football-data.co.uk henüz güncellemeden, API-Football'un canlı verisinden alındı — pipeline saatlik çalıştığı için maç bitince ~1 saat içinde burada.`:'');
 }
 
 function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();renderSlipFab();}
@@ -902,7 +908,7 @@ function settleLeg(l){
   if(!m)return {status:'pending'};
   const over=m.total>parseFloat(l.line);
   const won=(l.side==='Üst')?over:!over;
-  return {status:won?'won':'lost',total:m.total,score:m.score};
+  return {status:won?'won':'lost',total:m.total,score:m.score,liveSource:!!m.live_source};
 }
 function settleCoupon(c){
   const legs=c.legs.map(l=>({...l,...settleLeg(l)}));
@@ -951,7 +957,7 @@ function renderCoupons(){
         <td>${flag(l.league,10)} ${esc(l.league)}</td>
         <td class="mL">${esc(l.home)} — ${esc(l.away)}</td>
         <td><b>${l.line} ${l.side}</b><div class="sub">λ ${l.lam!=null?(+l.lam).toFixed(1):'—'} · güven ${pc}</div></td>
-        <td>${l.status==='pending'?'<span class="sub">bekliyor</span>':`${l.score}<div class="sub">${l.total} gol</div>`}</td>
+        <td>${l.status==='pending'?'<span class="sub">bekliyor</span>':`${l.score}<div class="sub">${l.total} gol${l.liveSource?' · canlı':''}</div>`}</td>
         <td class="lr ${l.status}">${mk(l.status)}</td>
         <td><button class="leg-del" data-cid="${c.id}" data-li="${li}" title="Bu maçı kupondan çıkar">×</button></td>
       </tr>`;

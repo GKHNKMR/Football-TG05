@@ -15,20 +15,43 @@ BETAVUS is a mobile-friendly football dashboard for the following eight leagues:
 
 ## Architecture
 
-There is **no serverless backend** and **no API key** in the live app.
+There is **no serverless backend** and **no API key ships to the browser** -
+the static site only ever fetches JSON files out of this repo.
 
-`openfootball/football.json → GitHub Actions → predictions.json → static site`
+`openfootball/football.json + football-data.co.uk (+ tff.org, + API-Football) → GitHub Actions (hourly) → predictions.json / data/*.json → static site`
 
 Fixtures and historical results come from the open-data project
 [`openfootball/football.json`](https://github.com/openfootball/football.json)
 (`{season}/{code}.json`, e.g. `2026-27/en.1.json`). Season files are mirrored
 under `data/cache/openfootball/` so the build is reproducible offline.
 
-The daily job ([`scripts/update_predictions.py`](scripts/update_predictions.py))
-downloads the current season plus the last three completed ones for each league,
-builds a weighted home/away goals model and a head-to-head record, and commits the
-resulting `predictions.json`. The static site only reads that JSON file
-(`index.html` fetches the repo-relative `predictions.json`).
+The job ([`scripts/update_predictions.py`](scripts/update_predictions.py), run
+hourly) downloads the current season plus the last three completed ones for
+each league, builds a weighted home/away goals model and a head-to-head record,
+and commits the resulting `predictions.json`. The static site only reads that
+JSON file (`index.html` fetches the repo-relative `predictions.json`).
+
+### Live scores (optional, API-Football)
+
+openfootball and football-data.co.uk are community-maintained archives, not
+live feeds - in practice they can lag real matches by up to a week. If the
+`API_FOOTBALL_KEY` GitHub Actions secret is set,
+[`scripts/fetch_live_scores.py`](scripts/fetch_live_scores.py) pulls the last
+8 days of fixtures across our leagues into `data/live-scores.json` before the
+other scripts run:
+
+- `update_predictions.py` drops a fixture from Tahminler the moment it's
+  actually finished (instead of waiting on openfootball's score) and attaches
+  a `live: {status, score}` field while a match is still being played.
+- `build_results.py` grades an archived (real pre-kickoff) prediction from
+  this feed when football-data.co.uk hasn't posted the result yet, tagging the
+  row `live_source: true`; the pre-captured market odds are still used for
+  `edge25`/`value_hit`, only the score itself comes from the live feed.
+
+The key never appears in this repo or in the client - it's read from
+`os.environ["API_FOOTBALL_KEY"]` inside the Actions job only. Without the
+secret, `fetch_live_scores.py` writes an empty list and everything falls back
+to the sources above exactly as before.
 
 ### Leagues and sources
 

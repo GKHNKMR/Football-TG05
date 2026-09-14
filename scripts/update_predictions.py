@@ -25,6 +25,7 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
 from backtest import LeagueModel as FDModel, poisson_over as fd_poisson_over  # noqa: E402
+from live_scores import find_live_match, load_live_scores  # noqa: E402
 
 try:
     from zoneinfo import ZoneInfo
@@ -462,11 +463,12 @@ def _fd_pred_dict(model, home, away):
     }
 
 
-def fd_predictions(now, start, end, odds):
+def fd_predictions(now, start, end, odds, live):
     """Predictions for leagues sourced entirely from football-data.co.uk
     (openfootball has no current fixtures for them). History trains the model;
     fixtures.csv supplies the upcoming round, so the horizon is short."""
     preds = []
+    dropped_total = 0
     for lid, (div, name, code, tz_name) in FD_LEAGUES.items():
         hist = _fd_history(div)
         by_code = {}
@@ -479,9 +481,13 @@ def fd_predictions(now, start, end, odds):
         src = "tff.org"
         if not up:
             up, src = _fd_upcoming(div, start, end), "football-data.co.uk"
-        n = 0
+        n = dropped = 0
         for fx in up:
             if not fx["home"] or not fx["away"]:
+                continue
+            live_hit = find_live_match(live, name, fx["home"], fx["away"], fx["date"])
+            if live_hit and live_hit.get("finished"):
+                dropped += 1
                 continue
             n += 1
             pred = _fd_pred_dict(model, fx["home"], fx["away"])
@@ -494,6 +500,8 @@ def fd_predictions(now, start, end, odds):
                 "source": src,
                 **pred, "updated_at": now.isoformat(),
             }
+            if live_hit:
+                row["live"] = {"status": live_hit.get("status"), "score": live_hit.get("score")}
             mk = odds.get((name, fx["home"], fx["away"]))
             if mk:
                 edge = None
@@ -501,7 +509,9 @@ def fd_predictions(now, start, end, odds):
                     edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
                 row["market"] = {**mk, "edge25": edge}
             preds.append(row)
-        print(f"[{name}] {div} · {len(hist)} history rows · {n} upcoming ({src})")
+        dropped_total += dropped
+        print(f"[{name}] {div} · {len(hist)} history rows · {n} upcoming ({src})"
+              f"{f' · {dropped} dropped (already finished)' if dropped else ''}")
     return preds
 
 
@@ -511,6 +521,8 @@ def main():
     print(f"Window: {start} .. {end}")
     odds = load_market_odds()
     print(f"Market odds rows (our leagues): {len(odds)}")
+    live = load_live_scores()
+    print(f"Live-score entries (API-Football): {len(live)}")
 
     predictions = []
     for lid, (stem, name, code, tz_name) in LEAGUES.items():
@@ -519,7 +531,7 @@ def main():
         current = seasons[0][0]
         model = LeagueModel(seasons)
 
-        count = 0
+        count = dropped = 0
         for m in current:
             day = m.get("date")
             if not day:
@@ -530,9 +542,13 @@ def main():
                 continue
             if not (start <= match_day <= end) or ft_goals(m):
                 continue
+            home, away = clean_name(m["team1"]), clean_name(m["team2"])
+            live_hit = find_live_match(live, name, home, away, match_day)
+            if live_hit and live_hit.get("finished"):
+                dropped += 1
+                continue
             count += 1
             pred = model.predict(m["team1"], m["team2"])
-            home, away = clean_name(m["team1"]), clean_name(m["team2"])
             row = {
                 "match_id": f"{code}-{match_day.isoformat()}-{count:02d}",
                 "league_id": lid,
@@ -544,6 +560,8 @@ def main():
                 **pred,
                 "updated_at": now.isoformat(),
             }
+            if live_hit:
+                row["live"] = {"status": live_hit.get("status"), "score": live_hit.get("score")}
             mk = odds.get((name, to_fd(name, home), to_fd(name, away)))
             if mk:
                 edge = None
@@ -551,9 +569,10 @@ def main():
                     edge = round(pred["p_over_2_5"] - mk["o25_implied"], 4)
                 row["market"] = {**mk, "edge25": edge}
             predictions.append(row)
-        print(f"  {count} upcoming fixtures")
+        print(f"  {count} upcoming fixtures"
+              f"{f' · {dropped} dropped (already finished)' if dropped else ''}")
 
-    predictions += fd_predictions(now, start, end, odds)
+    predictions += fd_predictions(now, start, end, odds, live)
 
     predictions.sort(key=lambda x: x["kickoff_utc"])
     OUTPUT_FILE.write_text(

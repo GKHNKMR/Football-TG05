@@ -14,12 +14,14 @@ scripts/fetch_football_data.py) and stay the local stats database.
 
 import csv
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CSV_DIR = Path("data/football-data")
 PRED_FILE = Path("predictions.json")
+ARCHIVE_FILE = Path("data/predictions-archive.json")
 OUT_FILE = Path("data/match-stats.json")
+H2H_FILE = Path("data/h2h.json")
 
 # newest last so a plain sort by (date) keeps seasons in order
 SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526", "2627"]
@@ -28,6 +30,7 @@ CURRENT_SEASON = "2627"
 CHART_SEASONS = ["2122", "2223", "2324", "2425", "2526"]
 FORM_N = 8
 H2H_N = 10
+H2H_YEARS = 5   # Sonuçlar/Kuponlarım's own team-pair H2H lookup (data/h2h.json)
 
 
 def season_label(code):
@@ -273,6 +276,87 @@ def head_to_head(matches, home_fd, away_fd):
     }
 
 
+def head_to_head_years(matches, team_a, team_b, years):
+    """Every meeting between two teams in the last `years` years - not
+    capped to a fixed count like head_to_head() (used for the upcoming-
+    fixture drawer), since this backs a "genuine N-year history" view for
+    Sonuçlar/Kuponlarım rather than a quick pre-match snapshot."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=365 * years)).date().isoformat()
+    pair = [m for m in matches if {m["home"], m["away"]} == {team_a, team_b} and m["date"] >= cutoff]
+    pair.sort(key=lambda m: m["date"], reverse=True)
+    n = len(pair)
+    if not n:
+        return None
+    a_wins = sum(
+        (m["fthg"] > m["ftag"] and m["home"] == team_a)
+        or (m["ftag"] > m["fthg"] and m["away"] == team_a)
+        for m in pair
+    )
+    b_wins = sum(
+        (m["fthg"] > m["ftag"] and m["home"] == team_b)
+        or (m["ftag"] > m["fthg"] and m["away"] == team_b)
+        for m in pair
+    )
+    return {
+        "count": n, "teamA_wins": a_wins, "teamB_wins": b_wins, "draws": n - a_wins - b_wins,
+        "avg_total": round(sum(m["total"] for m in pair) / n, 2),
+        "over05_pct": pct(sum(m["total"] > 0.5 for m in pair), n),
+        "over15_pct": pct(sum(m["total"] > 1.5 for m in pair), n),
+        "over25_pct": pct(sum(m["total"] > 2.5 for m in pair), n),
+        "matches": [
+            {"date": m["date"], "home": m["home"], "away": m["away"],
+             "score": f"{m['fthg']}-{m['ftag']}", "total": m["total"]}
+            for m in pair
+        ],
+    }
+
+
+def build_h2h_file(by_league, predictions):
+    """data/h2h.json: every team pair BETAVUS has ever shown a prediction for
+    (from predictions.json + the full predictions-archive.json, so it covers
+    upcoming AND already-played fixtures alike), keyed by league+pair so
+    Sonuçlar/Kuponlarım can look one up by (league, home, away) regardless
+    of which specific meeting is being viewed - a pair's H2H record doesn't
+    depend on which of their matches you happen to be looking at."""
+    archive = {}
+    if ARCHIVE_FILE.exists():
+        try:
+            archive = json.loads(ARCHIVE_FILE.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            archive = {}
+    all_preds = list(predictions) + list(archive.values())
+
+    pairs = set()
+    for p in all_preds:
+        a, b = sorted([p["home"], p["away"]])
+        pairs.add((p["league"], a, b))
+
+    out = {}
+    for league, a, b in pairs:
+        matches = by_league.get(league, [])
+        cw = CROSSWALK.get(league, {})
+        pretty = {v: k for k, v in cw.items()}
+        team_names = {m["home"] for m in matches} | {m["away"] for m in matches}
+        a_fd, b_fd = cw.get(a, a), cw.get(b, b)
+        if a_fd not in team_names or b_fd not in team_names:
+            continue
+        h2h = head_to_head_years(matches, a_fd, b_fd, H2H_YEARS)
+        if not h2h:
+            continue
+        for m in h2h["matches"]:
+            m["home"] = pretty.get(m["home"], m["home"])
+            m["away"] = pretty.get(m["away"], m["away"])
+        out[f"{league}|{a}|{b}"] = {"teamA": a, "teamB": b, **h2h}
+
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": "football-data.co.uk", "years": H2H_YEARS,
+        "pairs": out,
+    }
+    H2H_FILE.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"Wrote {H2H_FILE} for {len(out)} team pairs ({H2H_YEARS}-year window)")
+
+
 def main():
     predictions = json.loads(PRED_FILE.read_text(encoding="utf-8"))
     by_league = {}
@@ -337,6 +421,7 @@ def main():
         json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
     print(f"Wrote {OUT_FILE} for {len(out_matches)} fixtures")
+    build_h2h_file(by_league, predictions)
     if unmatched:
         print("UNMATCHED team names (no CSV history):")
         for u in sorted(unmatched):

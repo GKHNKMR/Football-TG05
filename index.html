@@ -117,7 +117,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .sortcol[data-sort="date"].act .sarr{display:inline}
 .rhead,.rrow{display:grid;grid-template-columns:46px minmax(96px,1fr) 44px 40px 86px 54px;gap:8px;align-items:center}
 .rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
-.rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px}
+.rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px;cursor:pointer}
+.rrow:hover{background:var(--panel2)}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 .rrow .rteam .edge{white-space:normal;line-height:1.35;margin-top:1px}
 .tnclick{cursor:pointer}
@@ -385,8 +386,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 </div>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig'];
-const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json';
-let STATS={matches:{}},RESULTS=null,BACKTEST=null;
+const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
+let STATS={matches:{}},RESULTS=null,BACKTEST=null,H2H={pairs:{}};
 const FALLBACK_DATA=[
  {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
 ];
@@ -706,7 +707,7 @@ function renderResults(){
     const close=(lam!=null&&Math.abs(lam-tot)<=0.75);
     const ga=golAcc(m);
     const gaCls=ga==null?'':ga>=80?'hit':ga<50?'miss':'';
-    return `<div class="rrow">
+    return `<div class="rrow" data-league="${esc(m.league)}" data-home="${esc(m.home)}" data-away="${esc(m.away)}" data-ko="${esc(m.kickoff_utc)}" title="Aralarındaki maçlar (H2H) için tıkla">
       <div class="rdate">${dateCell(m.kickoff_utc)}</div>
       <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}"><span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.home)}</span> — <span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.away)}</span><div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
@@ -801,6 +802,7 @@ function setTab(t){
 async function load(){
   rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches)STATS=s;}).catch(()=>{});
+  fetch(H2H_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.pairs)H2H=s;}).catch(()=>{});
   fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
     .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='bt')renderBacktest();if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
@@ -968,34 +970,34 @@ function renderCoupons(){
     </div>`;
   }).join('');
 }
-// Kuponlarım'da bir maça tıklayınca: aynı iki takımın bu pencerede (2025
-// Temmuz'dan bugüne) daha önce oynadığı maçları göster - match-stats.json
-// (openSheet'in kullandığı) yalnızca YAKLAŞAN fikstürler için var, oynanmış
-// bir maç için hep boş döner; bu yüzden RESULTS.matches'tan kendi H2H'ımızı
-// çıkarıyoruz.
-function openCpnMatch(league,home,away,kickoff_utc){
+// Kuponlarım/Sonuçlar'da bir maça tıklayınca: iki takımın GERÇEK 5 yıllık
+// H2H'ını göster (data/h2h.json - football-data.co.uk'nin tüm sezon
+// arşivinden, build_match_stats.py tarafından üretilir). match-stats.json
+// (Tahminler'in openSheet'i) yalnızca YAKLAŞAN fikstürler için var, oynanmış
+// bir maç için hep boş döner; RESULTS.matches ise yalnızca 2025 Temmuz'dan
+// bugüne (BETAVUS'un kendi tahmin penceresi) gider - ikisi de "5 yıl" için
+// yetersiz, o yüzden ayrı bir h2h.json üretildi.
+function pairKey(league,home,away){const[a,b]=[home,away].sort();return `${league}|${a}|${b}`;}
+function openH2HSheet(league,home,away,kickoff_utc){
   sheet.hidden=false;
   const ms=(RESULTS&&RESULTS.matches)||[];
-  const ko=new Date(kickoff_utc);
   const cur=ms.find(r=>r.league===league&&r.home===home&&r.away===away&&r.kickoff_utc===kickoff_utc);
-  const prior=ms.filter(r=>r.league===league&&r.kickoff_utc!==kickoff_utc&&
-      ((r.home===home&&r.away===away)||(r.home===away&&r.away===home))&&
-      new Date(r.kickoff_utc)<ko)
-    .sort((a,b)=>new Date(b.kickoff_utc)-new Date(a.kickoff_utc));
-  const h2hRows=prior.map(r=>`<div class="h2h-row"><span>${dmy(r.kickoff_utc)}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
-  const h2hHead=prior.length?`<div class="s-sub" style="margin-bottom:6px">Bu pencerede ${prior.length} karşılaşma · ort. ${(prior.reduce((s,r)=>s+r.total,0)/prior.length).toFixed(1)} gol</div>`:'<div class="s-note">Bu pencerede (2025 Temmuz\'dan bugüne) kayıtlı başka karşılaşma yok.</div>';
+  const h2h=(H2H.pairs||{})[pairKey(league,home,away)];
+  const yrs=H2H.years||5;
+  const h2hRows=(h2h?h2h.matches:[]).map(r=>`<div class="h2h-row"><span>${dmy(r.date)}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
+  const h2hHead=h2h?`<div class="s-sub" style="margin-bottom:6px">Son ${yrs} yılda ${h2h.count} karşılaşma · ${esc(h2h.teamA)} ${h2h.teamA_wins} – ${h2h.draws} B – ${h2h.teamB_wins} ${esc(h2h.teamB)} · ort. ${h2h.avg_total} gol · 0.5Ü %${h2h.over05_pct} · 1.5Ü %${h2h.over15_pct} · 2.5Ü %${h2h.over25_pct}</div>`:`<div class="s-note">Son ${yrs} yılda kayıtlı karşılaşma yok.</div>`;
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
     <h2>${esc(home)} — ${esc(away)}</h2>
     <div class="s-sub">${esc(league)} · ${localDate(kickoff_utc)}${cur?` · sonuç <b>${esc(cur.score)}</b> (tahmin: 0.5Ü ${pctI(cur.p_over_0_5)} · 1.5Ü ${pctI(cur.p_over_1_5)} · 2.5Ü ${pctI(cur.p_over_2_5)})`:''}</div>
-    <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
+    <div class="s-card"><h3>Aralarındaki maçlar (H2H, son ${yrs} yıl)</h3>${h2hHead}${h2hRows}</div>
   </div>`;
 }
 $('cpnList').addEventListener('click',e=>{
   const chip=e.target.closest('.chip[data-f]');
   if(chip){cpnFilter=chip.dataset.f;renderCoupons();return;}
   const row=e.target.closest('.cpn-row');
-  if(row)openCpnMatch(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
+  if(row)openH2HSheet(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
 });
 
 // ---- Günün Kuponu — tamamen geçmiş verilere dayalı, gün boyu sabit ----
@@ -1166,8 +1168,9 @@ wireSearch('qRes','qResX',v=>{qRes=v;renderResults();});
 $('hiMissToggle').onclick=()=>{hiMissOnly=!hiMissOnly;renderResults();};
 $('resRows').addEventListener('click',e=>{
   const t=e.target.closest('.tnclick');
-  if(!t)return;
-  qRes=`${t.dataset.home} ${t.dataset.away}`;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();
+  if(t){qRes=`${t.dataset.home} ${t.dataset.away}`;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();return;}
+  const row=e.target.closest('.rrow[data-home]');
+  if(row)openH2HSheet(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
 });
 document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
   sortLine=c.dataset.sort==='date'?null:(sortLine===c.dataset.sort?null:c.dataset.sort);renderPred();

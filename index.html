@@ -795,7 +795,7 @@ function setTab(t){
     $('tab-'+k).classList.toggle('active',t===k);
     $('pane-'+k).hidden=t!==k;
   });
-  $('filters').hidden=t==='cpn'||t==='gun';   // bu sekmeler tüm ligler — lig filtresi geçersiz
+  $('filters').hidden=t==='gun';   // Günün Kuponu tüm ligler — lig filtresi geçersiz
   renderAll();
 }
 
@@ -844,7 +844,8 @@ rows.addEventListener('click',e=>{
 // sonuca karşı analiz edilir. Hiçbir şey elle eklenmez/silinmez.
 const CPN_CAP_DAYS=30;
 function autoLegs(){
-  const ms=(RESULTS&&RESULTS.matches)||[];
+  let ms=(RESULTS&&RESULTS.matches)||[];
+  if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
   const LN=[['0.5','p_over_0_5',HL.o05.min],['1.5','p_over_1_5',HL.o15.min],['2.5','p_over_2_5',HL.o25.min]];
   const legs=[];
   ms.forEach(m=>{
@@ -919,7 +920,7 @@ function renderCoupons(){
   const legsAll=autoLegs();
   if(!legsAll.length){
     sum.innerHTML=lede;
-    list.innerHTML='<div class="empty"><strong>Henüz vurgulanan maç yok</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>';
+    list.innerHTML=`<div class="empty"><strong>${selected!=='Tümü'?`${esc(selected)} için henüz vurgulanan maç yok`:'Henüz vurgulanan maç yok'}</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>`;
     return;
   }
   const done=legsAll.filter(l=>l.status!=='pending');

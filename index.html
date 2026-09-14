@@ -708,7 +708,7 @@ function renderResults(){
     const gaCls=ga==null?'':ga>=80?'hit':ga<50?'miss':'';
     return `<div class="rrow">
       <div class="rdate">${dateCell(m.kickoff_utc)}</div>
-      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}"><span class="tnclick" data-team="${esc(m.home)}">${esc(m.home)}</span> — <span class="tnclick" data-team="${esc(m.away)}">${esc(m.away)}</span><div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
+      <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}"><span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.home)}</span> — <span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.away)}</span><div class="edge">tahmin: 0.5Ü ${pctI(m.p_over_0_5)} · 1.5Ü ${pctI(m.p_over_1_5)} · 2.5Ü ${pctI(m.p_over_2_5)}</div></div>
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
       <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
@@ -889,7 +889,25 @@ function lineCell(m,line){
   const mk=L.status==='won'?'✓':L.status==='lost'?'✗':'⏳';
   return `<span class="${cls}" title="${line}+ vurgulandı · güven ${pc}">Ü${mk}</span>`;
 }
-let cpnFilter='all';   // 'all' | 'won' (tam isabet) | 'lost' (ıska var)
+let cpnFilter='all';   // 'all' | 'won' | 'lost' (gün bazlı) | 'miss05'|'miss15'|'miss25' (çizgi bazlı, düz liste)
+function matchKey(l){return l.league+'|'+l.home+'|'+l.away+'|'+l.kickoff_utc;}
+function matchRowHtml(m){
+  return `<tr class="cpn-row" data-league="${esc(m.league)}" data-home="${esc(m.home)}" data-away="${esc(m.away)}" data-ko="${esc(m.kickoff_utc)}">
+      <td>${dmy(m.kickoff_utc)}</td>
+      <td>${flag(m.league,10)} ${esc(m.league)}</td>
+      <td class="mL">${esc(m.home)} — ${esc(m.away)}<div class="sub">tahmin: 0.5Ü ${pctI(m.p05)} · 1.5Ü ${pctI(m.p15)} · 2.5Ü ${pctI(m.p25)}</div></td>
+      <td class="lr">${lineCell(m,'0.5')}</td>
+      <td class="lr">${lineCell(m,'1.5')}</td>
+      <td class="lr">${lineCell(m,'2.5')}</td>
+      <td>${m.total==null?'<span class="sub">bekliyor</span>':`${m.score}<div class="sub">${m.total} gol${m.liveSource?' · canlı':''}</div>`}</td>
+    </tr>`;
+}
+function matchTableHtml(matches){
+  return `<div class="tbl-scroll"><table class="cpn-tbl">
+    <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>0.5</th><th>1.5</th><th>2.5</th><th>Gerçek sonuç</th></tr></thead>
+    <tbody>${matches.map(matchRowHtml).join('')}</tbody>
+  </table></div>`;
+}
 function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
   if(!RESULTS){sum.innerHTML='';list.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';return;}
@@ -902,25 +920,38 @@ function renderCoupons(){
     list.innerHTML='<div class="empty"><strong>Henüz vurgulanan maç yok</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>';
     return;
   }
-  const totalMatches=(RESULTS.matches||[]).length;
+  const totalHighlighted=groupLegsByMatch(legsAll).length;   // vurgu yapılan TOPLAM maç sayısı (3 çizginin birleşimi)
   const done=legsAll.filter(l=>l.status!=='pending');
   const legWon=done.filter(l=>l.status==='won').length;
   const byLine={};['0.5','1.5','2.5'].forEach(k=>{const g=done.filter(l=>l.line===k);byLine[k]=[g.filter(l=>l.status==='won').length,g.length];});
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   sum.innerHTML=lede+`<div class="tiles">
     <div class="tile"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]}/${totalMatches} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]}/${totalMatches} maç</div></div>
-    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]}/${totalMatches} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][1]}/${totalHighlighted} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][1]}/${totalHighlighted} maç</div></div>
+    <div class="tile"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][1]}/${totalHighlighted} maç</div></div>
   </div>`;
   const groups=groupByDay(legsAll);
   const nWon=groups.filter(g=>g.status==='won').length, nLost=groups.filter(g=>g.status==='lost').length;
-  if(cpnFilter!=='all'&&!groups.some(g=>g.status===cpnFilter))cpnFilter='all';
+  const nMiss05=byLine['0.5'][1]-byLine['0.5'][0], nMiss15=byLine['1.5'][1]-byLine['1.5'][0], nMiss25=byLine['2.5'][1]-byLine['2.5'][0];
   const filterNav=`<nav class="filters" style="margin:0 0 12px">
-    <button class="chip ${cpnFilter==='all'?'active':''}" data-f="all">Tümü (${groups.length})</button>
-    <button class="chip ${cpnFilter==='won'?'active':''}" data-f="won">Tam isabet (${nWon})</button>
-    <button class="chip ${cpnFilter==='lost'?'active':''}" data-f="lost">Iska var (${nLost})</button>
+    <button class="chip ${cpnFilter==='all'?'active':''}" data-f="all">Tümü (${groups.length} gün)</button>
+    <button class="chip ${cpnFilter==='won'?'active':''}" data-f="won">Tam isabet (${nWon} gün)</button>
+    <button class="chip ${cpnFilter==='lost'?'active':''}" data-f="lost">Iska var (${nLost} gün)</button>
+    <button class="chip ${cpnFilter==='miss05'?'active':''}" data-f="miss05">0.5 ıska (${nMiss05})</button>
+    <button class="chip ${cpnFilter==='miss15'?'active':''}" data-f="miss15">1.5 ıska (${nMiss15})</button>
+    <button class="chip ${cpnFilter==='miss25'?'active':''}" data-f="miss25">2.5 ıska (${nMiss25})</button>
   </nav>`;
+  // 0.5/1.5/2.5 ıska filtreleri: kupon (gün) kartlarına ayırmadan, tek düz liste
+  if(cpnFilter==='miss05'||cpnFilter==='miss15'||cpnFilter==='miss25'){
+    const line=cpnFilter==='miss05'?'0.5':cpnFilter==='miss15'?'1.5':'2.5';
+    const missKeys=new Set(legsAll.filter(l=>l.line===line&&l.status==='lost').map(matchKey));
+    const matches=groupLegsByMatch(legsAll.filter(l=>missKeys.has(matchKey(l))))
+      .sort((a,b)=>new Date(b.kickoff_utc)-new Date(a.kickoff_utc));
+    list.innerHTML=filterNav+(matches.length?matchTableHtml(matches):'<div class="empty"><strong>Bu çizgide ıska yok</strong></div>');
+    return;
+  }
+  if(cpnFilter!=='all'&&!groups.some(g=>g.status===cpnFilter))cpnFilter='all';
   const filtered=cpnFilter==='all'?groups:groups.filter(g=>g.status===cpnFilter);
   const shown=filtered.slice(0,CPN_CAP_DAYS);
   list.innerHTML=filterNav+
@@ -930,22 +961,10 @@ function renderCoupons(){
     const badge=g.status==='won'?'won':g.status==='lost'?'lost':'pending';
     const btxt=g.status==='won'?'TAM İSABET':g.status==='lost'?'ISKA VAR':'BEKLİYOR';
     const matches=groupLegsByMatch(g.legs);
-    const rows=matches.map(m=>`<tr class="cpn-row" data-league="${esc(m.league)}" data-home="${esc(m.home)}" data-away="${esc(m.away)}" data-ko="${esc(m.kickoff_utc)}">
-        <td>${dmy(m.kickoff_utc)}</td>
-        <td>${flag(m.league,10)} ${esc(m.league)}</td>
-        <td class="mL">${esc(m.home)} — ${esc(m.away)}<div class="sub">tahmin: 0.5Ü ${pctI(m.p05)} · 1.5Ü ${pctI(m.p15)} · 2.5Ü ${pctI(m.p25)}</div></td>
-        <td class="lr">${lineCell(m,'0.5')}</td>
-        <td class="lr">${lineCell(m,'1.5')}</td>
-        <td class="lr">${lineCell(m,'2.5')}</td>
-        <td>${m.total==null?'<span class="sub">bekliyor</span>':`${m.score}<div class="sub">${m.total} gol${m.liveSource?' · canlı':''}</div>`}</td>
-      </tr>`).join('');
     return `<div class="cpn">
       <div class="cpn-head"><span>${dayLabel(g.day)} · ${matches.length} maç</span>
         <span class="cbadge ${badge}">${btxt}</span></div>
-      <div class="tbl-scroll"><table class="cpn-tbl">
-        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>0.5</th><th>1.5</th><th>2.5</th><th>Gerçek sonuç</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
+      ${matchTableHtml(matches)}
     </div>`;
   }).join('');
 }
@@ -1148,7 +1167,7 @@ $('hiMissToggle').onclick=()=>{hiMissOnly=!hiMissOnly;renderResults();};
 $('resRows').addEventListener('click',e=>{
   const t=e.target.closest('.tnclick');
   if(!t)return;
-  qRes=t.dataset.team;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();
+  qRes=`${t.dataset.home} ${t.dataset.away}`;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();
 });
 document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.onclick=()=>{
   sortLine=c.dataset.sort==='date'?null:(sortLine===c.dataset.sort?null:c.dataset.sort);renderPred();

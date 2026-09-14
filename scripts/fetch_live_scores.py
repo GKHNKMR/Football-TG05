@@ -38,6 +38,9 @@ API_URL = "https://v3.football.api-sports.io/fixtures"
 LOOKBACK_DAYS = 8
 KEEP_DAYS = 21  # prune anything older than this out of the merged file
 LEAGUE_API_ID = {name: lid for _div, (name, lid) in DIVISIONS.items()}
+# Committed to the repo each run so a per-day fetch failure is visible via a
+# normal `git show`, without needing to pull GitHub Actions job logs.
+DEBUG_FILE = Path("data/live-scores-debug.json")
 
 
 def fetch_day(key, d):
@@ -80,6 +83,9 @@ def main():
     if not key:
         print("API_FOOTBALL_KEY not set - writing an empty live-scores.json")
         LIVE_FILE.write_text("[]", encoding="utf-8")
+        DEBUG_FILE.write_text(json.dumps(
+            {"run_at": datetime.now(timezone.utc).isoformat(), "days": [],
+             "error": "API_FOOTBALL_KEY not set"}, indent=1), encoding="utf-8")
         return
 
     try:
@@ -91,18 +97,22 @@ def main():
     cutoff = (today - timedelta(days=KEEP_DAYS)).isoformat()
     fetched_dates = set()
     new_rows = []
+    debug = {"run_at": datetime.now(timezone.utc).isoformat(), "days": []}
     for delta in range(LOOKBACK_DAYS):
         d = (today - timedelta(days=delta)).isoformat()
         try:
             rows = fetch_day(key, d)
         except Exception as exc:
             print(f"  {d}: fetch failed - {exc}")
+            debug["days"].append({"date": d, "ok": False, "error": str(exc)})
             continue
         fetched_dates.add(d)
         new_rows.extend(rows)
         print(f"  {d}: {len(rows)} matches with a score")
+        debug["days"].append({"date": d, "ok": True, "n_matches": len(rows)})
         if delta < LOOKBACK_DAYS - 1:
             time.sleep(1)  # be gentle with per-second rate limits
+    DEBUG_FILE.write_text(json.dumps(debug, ensure_ascii=False, indent=1), encoding="utf-8")
 
     # keep prior entries for dates we couldn't re-fetch this run; drop the
     # rest of that date's old rows wherever we DID get a fresh answer, so a

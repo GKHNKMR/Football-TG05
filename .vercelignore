@@ -14,6 +14,7 @@ data/cache/
 # these raw feeds.
 data/predictions-archive.json
 data/live-scores.json
+data/live-scores-debug.json
 
 # Backtest CSV is not fetched by any page.
 data/backtest-pl-2526.csv

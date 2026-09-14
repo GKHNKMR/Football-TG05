@@ -1,0 +1,45 @@
+{
+ "run_at": "2026-09-14T08:34:10.198071+00:00",
+ "days": [
+  {
+   "date": "2026-09-14",
+   "ok": true,
+   "n_matches": 0
+  },
+  {
+   "date": "2026-09-13",
+   "ok": true,
+   "n_matches": 22
+  },
+  {
+   "date": "2026-09-12",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  },
+  {
+   "date": "2026-09-11",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  },
+  {
+   "date": "2026-09-10",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  },
+  {
+   "date": "2026-09-09",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  },
+  {
+   "date": "2026-09-08",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  },
+  {
+   "date": "2026-09-07",
+   "ok": false,
+   "error": "API errors: {'plan': 'Free plans do not have access to this date, try from 2026-09-13 to 2026-09-15.'}"
+  }
+ ]
+}

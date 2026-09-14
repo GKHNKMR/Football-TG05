@@ -35,11 +35,11 @@ jobs:
         continue-on-error: true
       - name: Build predictions
         run: python scripts/update_predictions.py
-      - name: Build match stats
-        run: python scripts/build_match_stats.py
       - name: Grade past predictions
         run: python scripts/build_results.py
         continue-on-error: true
+      - name: Build match stats
+        run: python scripts/build_match_stats.py
       - name: Run model backtest
         run: python scripts/backtest.py
         continue-on-error: true

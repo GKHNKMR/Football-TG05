@@ -20,6 +20,7 @@ from pathlib import Path
 CSV_DIR = Path("data/football-data")
 PRED_FILE = Path("predictions.json")
 ARCHIVE_FILE = Path("data/predictions-archive.json")
+RESULTS_FILE = Path("data/results.json")
 OUT_FILE = Path("data/match-stats.json")
 H2H_FILE = Path("data/h2h.json")
 
@@ -312,19 +313,30 @@ def head_to_head_years(matches, team_a, team_b, years):
 
 
 def build_h2h_file(by_league, predictions):
-    """data/h2h.json: every team pair BETAVUS has ever shown a prediction for
-    (from predictions.json + the full predictions-archive.json, so it covers
-    upcoming AND already-played fixtures alike), keyed by league+pair so
+    """data/h2h.json: every team pair that appears anywhere BETAVUS shows a
+    match - predictions.json (upcoming), predictions-archive.json (captured
+    pre-kickoff, pruned to a 90-day rolling window) and, the main source now
+    that Sonuçlar/Kuponlarım cover ~2 years, data/results.json (every graded
+    match, reconstructed ones included - which is most of them, and which
+    archive's short window never retains). Keyed by league+pair so
     Sonuçlar/Kuponlarım can look one up by (league, home, away) regardless
     of which specific meeting is being viewed - a pair's H2H record doesn't
-    depend on which of their matches you happen to be looking at."""
+    depend on which of their matches you happen to be looking at. This runs
+    after build_results.py in the pipeline precisely so results.json is
+    there to read."""
     archive = {}
     if ARCHIVE_FILE.exists():
         try:
             archive = json.loads(ARCHIVE_FILE.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             archive = {}
-    all_preds = list(predictions) + list(archive.values())
+    results_matches = []
+    if RESULTS_FILE.exists():
+        try:
+            results_matches = json.loads(RESULTS_FILE.read_text(encoding="utf-8")).get("matches", [])
+        except json.JSONDecodeError:
+            results_matches = []
+    all_preds = list(predictions) + list(archive.values()) + results_matches
 
     pairs = set()
     for p in all_preds:

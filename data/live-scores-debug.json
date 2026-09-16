@@ -1,5 +1,5 @@
 {
- "run_at": "2026-09-16T09:10:08.198910+00:00",
+ "run_at": "2026-09-16T12:22:35.602031+00:00",
  "days": [
   {
    "date": "2026-09-16",
@@ -14,17 +14,17 @@
   {
    "date": "2026-09-14",
    "ok": true,
-   "n_matches": 6
+   "n_matches": 9
   },
   {
    "date": "2026-09-13",
    "ok": true,
-   "n_matches": 22
+   "n_matches": 25
   },
   {
    "date": "2026-09-12",
    "ok": true,
-   "n_matches": 43
+   "n_matches": 46
   },
   {
    "date": "2026-09-11",
@@ -34,12 +34,12 @@
   {
    "date": "2026-09-10",
    "ok": true,
-   "n_matches": 0
+   "n_matches": 1
   },
   {
    "date": "2026-09-09",
    "ok": true,
-   "n_matches": 4
+   "n_matches": 5
   },
   {
    "date": "2026-09-08",
@@ -49,22 +49,22 @@
   {
    "date": "2026-09-07",
    "ok": true,
-   "n_matches": 6
+   "n_matches": 7
   },
   {
    "date": "2026-09-06",
    "ok": true,
-   "n_matches": 24
+   "n_matches": 27
   },
   {
    "date": "2026-09-05",
    "ok": true,
-   "n_matches": 38
+   "n_matches": 42
   },
   {
    "date": "2026-09-04",
    "ok": true,
-   "n_matches": 8
+   "n_matches": 9
   },
   {
    "date": "2026-09-03",

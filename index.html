@@ -416,7 +416,11 @@ const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?J
 const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}catch(e){}};
 
 let tab=store('tab','pred');
-let selected=store('league','Tümü');
+// her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
+// Kuponlarım'ı da o lige kilitlemesin - Kuponlarım hep "Tümü" ile başlar)
+let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res','Tümü'),
+                   bt:store('league_bt','Tümü'),cpn:store('league_cpn','Tümü')};
+let selected=selectedByTab[tab]||'Tümü';
 let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
 let hiMissOnly=false;    // Sonuçlar: sadece yüksek güvenle tahmin edilip tutmayan maçlar
@@ -465,7 +469,7 @@ const LIVE_STATUS_LABEL={'1H':'İlk yarı','HT':'Devre arası','2H':'İkinci yar
 function liveStatusLabel(s){return LIVE_STATUS_LABEL[s]||s||'';}
 function renderFilters(){
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
-  filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;save('league',selected);renderFilters();renderAll();});
+  filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;selectedByTab[tab]=selected;save('league_'+tab,selected);renderFilters();renderAll();});
 }
 function renderHlSel(){
   const s=$('hlSel');
@@ -802,11 +806,13 @@ function renderBacktest(){
 
 function setTab(t){
   tab=t;save('tab',t);
+  selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
   ['pred','res','bt','cpn','gun'].forEach(k=>{
     $('tab-'+k).classList.toggle('active',t===k);
     $('pane-'+k).hidden=t!==k;
   });
   $('filters').hidden=t==='gun';   // Günün Kuponu tüm ligler — lig filtresi geçersiz
+  renderFilters();
   renderAll();
 }
 

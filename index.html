@@ -837,6 +837,7 @@ async function load(){
     $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('bt');return false">Model doğruluğu →</a>`;
   }
   renderAll();
+  pollLiveScores();   // sayfa yüklenir yüklenmez canlı skoru tazele - saatlik pipeline'ın bıraktığı eski live durumunu beklemeden
 }
 function timeAgo(iso){
   const s=(Date.now()-new Date(iso))/1000;
@@ -1291,7 +1292,7 @@ async function sha256hex(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-function startApp(){renderHlSel();renderFilters();setTab(tab);load();setTimeout(pollLiveScores,4000);setInterval(pollLiveScores,60000);}
+function startApp(){renderHlSel();renderFilters();setTab(tab);load();setInterval(pollLiveScores,60000);}
 async function bootGate(){
   let pass=false;
   try{pass=localStorage.getItem('betavus.access')===ACCESS_HASH;}catch(e){}

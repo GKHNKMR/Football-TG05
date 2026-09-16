@@ -1,6 +1,6 @@
 """Download historical match CSVs from football-data.co.uk (Main Leagues).
 
-Only the six leagues used by BETAVUS are pulled, top division only:
+Only the leagues used by BETAVUS are pulled, top division only:
 
     E0  England  - Premier League
     E1  England  - Championship
@@ -10,6 +10,7 @@ Only the six leagues used by BETAVUS are pulled, top division only:
     I1  Italy    - Serie A
     F1  France   - Ligue 1
     N1  Netherlands - Eredivisie
+    P1  Portugal - Primeira Liga
 
 Files land in data/football-data/<DIV>/<SEASON>.csv (SEASON = e.g. 2425).
 These raw CSVs are the local stats database; scripts/build_match_stats.py
@@ -41,6 +42,7 @@ DIVISIONS = {
     "I1": "Serie A",
     "F1": "Ligue 1",
     "N1": "Eredivisie",
+    "P1": "Primeira Liga",
 }
 
 # newest first; "2627" == season 2026/27

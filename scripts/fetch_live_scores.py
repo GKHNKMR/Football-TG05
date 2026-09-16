@@ -48,6 +48,7 @@ ESPN_SLUG = {
     "Ligue 1": "fra.1",
     "Eredivisie": "ned.1",
     "Turkish Süper Lig": "tur.1",
+    "Primeira Liga": "por.1",
 }
 
 

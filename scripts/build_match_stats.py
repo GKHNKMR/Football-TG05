@@ -46,6 +46,7 @@ DIVISIONS = {
     "F1": ("Ligue 1", 61),
     "N1": ("Eredivisie", 88),
     "T1": ("Turkish Süper Lig", 203),
+    "P1": ("Primeira Liga", 94),
 }
 
 # BETAVUS display name (from predictions.json) -> football-data.co.uk name.
@@ -98,6 +99,12 @@ CROSSWALK = {
         "Gençlerbirliği": "Genclerbirligi", "Göztepe": "Goztep",
         "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
         "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
+    },
+    "Primeira Liga": {
+        "Académico de Viseu": "Academico Viseu", "Estrela da Amadora": "Estrela",
+        "Marítimo": "Maritimo", "Famalicão": "Famalicao",
+        "Sporting Braga": "Sp Braga", "Sporting CP": "Sp Lisbon",
+        "Vitória Guimarães": "Guimaraes",
     },
 }
 

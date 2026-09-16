@@ -7,13 +7,14 @@ released, then score those predictions against what actually happened.
 
 Nothing from the target season feeds the model - no result leakage.
 
-Model math is identical to scripts/update_predictions.py (LeagueModel):
-    lam = (home_gf + away_ga)/2 + (away_gf + home_ga)/2
-    if >=2 H2H meetings:  lam = 0.72*lam + 0.28*(avg H2H total goals)
-    P(over n) from Poisson(lam)
+Model: scripts/goals_model.LeagueModel - weighted, match-recency-decayed
+home/away scoring rates blended with head-to-head, then a per-league
+Dixon-Coles low-score correction for the Over probabilities. Identical model
+to scripts/update_predictions.py and scripts/build_results.py - see
+goals_model.py's docstring for the full method.
 
 Historical data: the football-data.co.uk CSVs already mirrored under
-data/football-data/ (exact scores, eight seasons, all six leagues).
+data/football-data/ (exact scores, eight seasons, all leagues).
 
 Output: data/backtest.json  ->  rendered by backtest.html (standalone screen).
 """
@@ -27,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import to_pretty  # noqa: E402
+from goals_model import LeagueModel  # noqa: E402
 
 CSV_DIR = Path("data/football-data")
 OUT_FILE = Path("data/backtest.json")
@@ -34,12 +36,12 @@ OUT_FILE = Path("data/backtest.json")
 DIVISIONS = {
     "E0": "Premier League", "E1": "Championship", "SP1": "LaLiga", "D1": "Bundesliga",
     "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie", "T1": "Turkish Süper Lig",
+    "P1": "Primeira Liga",
 }
 ALL_SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526"]
 # five walk-forward seasons; 2122 trains on just 1920+2021, the rest on four
 TARGET_SEASONS = ["2122", "2223", "2324", "2425", "2526"]
 PRIOR_WEIGHTS = [1.0, 0.7, 0.45, 0.30]  # nearest prior season first
-H2H_MAX = 8
 LINES = [0.5, 1.5, 2.5]
 EPS = 1e-9
 
@@ -71,61 +73,6 @@ def load_division(div):
                 })
     rows.sort(key=lambda m: m["date"])
     return rows
-
-
-class LeagueModel:
-    """Weighted home/away goal rates + H2H record - mirrors update_predictions.py."""
-
-    def __init__(self, seasons):  # seasons: list of (matches, weight)
-        self.hgf, self.hga, self.agf, self.aga = {}, {}, {}, {}
-        self.h2h = {}
-        hs = [0.0, 0.0]
-        as_ = [0.0, 0.0]
-        for matches, w in seasons:
-            for m in matches:
-                h, a, hg, ag = m["home"], m["away"], m["hg"], m["ag"]
-                self._add(self.hgf, h, hg, w)
-                self._add(self.hga, h, ag, w)
-                self._add(self.agf, a, ag, w)
-                self._add(self.aga, a, hg, w)
-                hs[0] += hg * w
-                hs[1] += w
-                as_[0] += ag * w
-                as_[1] += w
-                self.h2h.setdefault(frozenset((h, a)), []).append((m["date"], hg + ag))
-        self.base_home = hs[0] / hs[1] if hs[1] else 1.5
-        self.base_away = as_[0] / as_[1] if as_[1] else 1.1
-
-    @staticmethod
-    def _add(store, key, value, weight):
-        e = store.setdefault(key, [0.0, 0.0])
-        e[0] += value * weight
-        e[1] += weight
-
-    @staticmethod
-    def _avg(store, key, fallback):
-        e = store.get(key)
-        return e[0] / e[1] if e and e[1] else fallback
-
-    def predict(self, home, away):
-        hgf = self._avg(self.hgf, home, self.base_home)
-        hga = self._avg(self.hga, home, self.base_away)
-        agf = self._avg(self.agf, away, self.base_away)
-        aga = self._avg(self.aga, away, self.base_home)
-        lam = (hgf + aga) / 2 + (agf + hga) / 2
-        pair = sorted(self.h2h.get(frozenset((home, away)), []), reverse=True)[:H2H_MAX]
-        if len(pair) >= 2:
-            lam = 0.72 * lam + 0.28 * (sum(tg for _, tg in pair) / len(pair))
-        return max(0.30, min(6.0, lam))
-
-
-def poisson_over(lam, n):
-    term = math.exp(-lam)
-    cdf = term
-    for k in range(1, n + 1):
-        term *= lam / k
-        cdf += term
-    return max(0.0, min(1.0, 1.0 - cdf))
 
 
 def calibration(pairs, bins=10):
@@ -234,15 +181,15 @@ def main():
             model = LeagueModel([(by_code.get(p, []), w)
                                  for p, w in zip(priors, PRIOR_WEIGHTS)])
             for m in by_code.get(target, []):
-                lam = model.predict(m["home"], m["away"])
+                pred = model.predict(m["home"], m["away"])
                 rec = {
                     "league": league, "season": target, "date": m["date"],
                     "home": m["home"], "away": m["away"],
-                    "lam": lam, "total": m["total"],
+                    "lam": pred["exp_goals"], "total": m["total"],
                     "score": f"{m['hg']}-{m['ag']}",
-                    "p05": poisson_over(lam, 0),
-                    "p15": poisson_over(lam, 1),
-                    "p25": poisson_over(lam, 2),
+                    "p05": pred["p_over_0_5"],
+                    "p15": pred["p_over_1_5"],
+                    "p25": pred["p_over_2_5"],
                 }
                 all_records.append(rec)
                 by_league[league].append(rec)

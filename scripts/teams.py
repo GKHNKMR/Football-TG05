@@ -14,6 +14,7 @@ DIVISIONS = {
     "F1": ("Ligue 1", 61),
     "N1": ("Eredivisie", 88),
     "T1": ("Turkish Süper Lig", 203),
+    "P1": ("Primeira Liga", 94),
 }
 
 LEAGUE_BY_DIV = {d: name for d, (name, _lid) in DIVISIONS.items()}
@@ -71,6 +72,14 @@ CROSSWALK = {
         "Gençlerbirliği": "Genclerbirligi", "Göztepe": "Goztep",
         "Fatih Karagümrük": "Karagumruk", "Kasımpaşa": "Kasimpasa",
         "Ümraniyespor": "Umraniyespor", "İstanbulspor": "Istanbulspor",
+    },
+    # football-data.co.uk uses ASCII short forms for Portuguese clubs; restore
+    # the accented names Portuguese/Turkish readers expect.
+    "Primeira Liga": {
+        "Académico de Viseu": "Academico Viseu", "Estrela da Amadora": "Estrela",
+        "Marítimo": "Maritimo", "Famalicão": "Famalicao",
+        "Sporting Braga": "Sp Braga", "Sporting CP": "Sp Lisbon",
+        "Vitória Guimarães": "Guimaraes",
     },
 }
 

@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIVISIONS, DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
-from backtest import LeagueModel, poisson_over  # noqa: E402
+from goals_model import LeagueModel  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
 
 PRED_FILE = Path("predictions.json")
@@ -248,7 +248,15 @@ def reconstruct(actuals, already, start, today):
     """Walk-forward, leak-free model call for every completed match in the window
     that the archive does not already hold. Same LeagueModel + recency weights as
     the live predictor; every training match is strictly older than the one being
-    predicted, so nothing leaks in."""
+    predicted, so nothing leaks in.
+
+    The Dixon-Coles rho is the one exception: fitting it is a per-league grid
+    search, and doing that fresh for every one of the ~thousands of
+    reconstructed matches would be wasteful. rho is a slow-moving structural
+    property of a league (how much its low scores correlate), not a
+    per-match quantity, so it is fit once per (league, target season) from
+    that season's own prior seasons only (still leak-free - no data from the
+    target season itself) and then reused for every match's per-match model."""
     rows = []
     for div, (league, _lid) in DIVISIONS.items():
         by_code = {}
@@ -259,6 +267,9 @@ def reconstruct(actuals, already, start, today):
             ti = FD_SEASONS.index(target)
             plan_codes = FD_SEASONS[max(0, ti - 3):ti + 1][::-1]  # target first
             plan = list(zip(plan_codes, RECON_WEIGHTS))
+            prior_plan = [(c, w) for c, w in plan if c != target]
+            league_rho = (LeagueModel([(by_code.get(c, []), w) for c, w in prior_plan]).rho
+                         if prior_plan else -0.10)
             for m in by_code.get(target, []):
                 try:
                     d = date.fromisoformat(m["date"])
@@ -273,19 +284,19 @@ def reconstruct(actuals, already, start, today):
                 model = LeagueModel([
                     ([x for x in by_code.get(code, []) if x["date"] < m["date"]], w)
                     for code, w in plan
-                ])
-                lam = model.predict(m["home"], m["away"])
+                ], fit_rho_=False, default_rho=league_rho)
+                pred = model.predict(m["home"], m["away"])
                 fd = find_actual(actuals, league, m["home"], m["away"], d) or {}
                 n += 1
                 row = {
                     "match_id": f"{div}-{d.isoformat()}-R{n:03d}",
                     "league": league, "kickoff_utc": f"{d.isoformat()}T12:00:00Z",
                     "home": home, "away": away,
-                    "pred_lambda": round(lam, 3), "basis": None,
+                    "pred_lambda": pred["exp_goals"], "basis": None,
                     "reconstructed": True,
-                    "p_over_0_5": round(poisson_over(lam, 0), 4),
-                    "p_over_1_5": round(poisson_over(lam, 1), 4),
-                    "p_over_2_5": round(poisson_over(lam, 2), 4),
+                    "p_over_0_5": pred["p_over_0_5"],
+                    "p_over_1_5": pred["p_over_1_5"],
+                    "p_over_2_5": pred["p_over_2_5"],
                     "market": None,
                 }
                 rows.append(grade(row, m["total"], f"{m['hg']}-{m['ag']}",

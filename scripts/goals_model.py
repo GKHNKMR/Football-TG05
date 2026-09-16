@@ -1,0 +1,229 @@
+"""Shared BETAVUS goal model: weighted team scoring rates with match-recency
+decay, a per-league Dixon-Coles low-score correction, and head-to-head
+blending.
+
+update_predictions.py (live predictions), backtest.py (walk-forward
+backtest) and build_results.py (leak-free reconstruction) all import
+LeagueModel from here instead of keeping their own copies, so there is
+exactly one implementation of the scoring math.
+
+Model, in order:
+  1. Each team's home/away scoring and conceding rates are weighted by
+     season recency (caller-supplied season weight) AND by how many
+     matches ago that specific appearance was (exponential decay, half-life
+     RECENCY_HALF_LIFE_MATCHES) - a team's last 5-10 matches dominate its
+     rate estimate instead of being diluted evenly across a whole season.
+  2. lam_home/lam_away come from averaging a team's own scoring rate with
+     its opponent's conceding rate, same as before.
+  3. If >=2 head-to-head meetings exist, the combined total is blended
+     towards the H2H average (0.72/0.28), then rescaled back onto
+     lam_home/lam_away keeping their ratio, and clamped to [0.30, 6.0]
+     combined - same bounds the live model always used.
+  4. Dixon-Coles: independent Poisson(lam_home) x Poisson(lam_away)
+     under-counts the low scores (0-0, 1-0, 0-1, 1-1) relative to what
+     leagues actually produce. A tau(x,y,rho) correction is applied to
+     those four cells and the joint grid is renormalized. rho is fit per
+     league by a 1D grid-search MLE against that league's own historical
+     low-score frequencies (Dixon & Coles 1997) - since tau=1 everywhere
+     else, only matches that actually finished 0-0/1-0/0-1/1-1 affect the
+     fit.
+"""
+
+import math
+
+H2H_MAX = 8
+RECENCY_HALF_LIFE_MATCHES = 6  # a team's Nth-most-recent match counts for 2**-(N/6)
+MAX_GOALS = 15                 # scoreline grid bound for the Dixon-Coles sum
+RHO_GRID = [round(-0.35 + 0.01 * i, 2) for i in range(41)]  # -0.35 .. 0.05
+DEFAULT_RHO = -0.10            # literature default when a league has no/too little data
+
+
+def poisson_pmf(k, lam):
+    if lam <= 0:
+        return 1.0 if k == 0 else 0.0
+    return math.exp(-lam + k * math.log(lam) - math.lgamma(k + 1))
+
+
+def poisson_over(lam, n):
+    """P(X > n) for X ~ Poisson(lam) - plain total-goals tail, no Dixon-Coles.
+    Kept for anything that only wants a quick single-lambda estimate."""
+    term = math.exp(-lam)
+    cdf = term
+    for k in range(1, n + 1):
+        term *= lam / k
+        cdf += term
+    return max(0.0, min(1.0, 1.0 - cdf))
+
+
+def _tau(x, y, lam_h, lam_a, rho):
+    if x == 0 and y == 0:
+        return 1 - lam_h * lam_a * rho
+    if x == 0 and y == 1:
+        return 1 + lam_h * rho
+    if x == 1 and y == 0:
+        return 1 + lam_a * rho
+    if x == 1 and y == 1:
+        return 1 - rho
+    return 1.0
+
+
+def _safe_rho(lam_h, lam_a, rho):
+    """Clamp rho so all four tau cells stay non-negative for this (lam_h, lam_a)."""
+    lam_h = max(lam_h, 1e-6)
+    lam_a = max(lam_a, 1e-6)
+    hi = min(1.0 / (lam_h * lam_a), 1.0) - 1e-6
+    lo = max(-1.0 / lam_h, -1.0 / lam_a) + 1e-6
+    return min(max(rho, lo), hi)
+
+
+def dc_score_grid(lam_h, lam_a, rho, max_goals=MAX_GOALS):
+    """Dixon-Coles-adjusted, renormalized P(home=x, away=y) for x,y in [0,max_goals]."""
+    rho = _safe_rho(lam_h, lam_a, rho)
+    px = [poisson_pmf(x, lam_h) for x in range(max_goals + 1)]
+    py = [poisson_pmf(y, lam_a) for y in range(max_goals + 1)]
+    grid, total = {}, 0.0
+    for x in range(max_goals + 1):
+        for y in range(max_goals + 1):
+            p = px[x] * py[y] * _tau(x, y, lam_h, lam_a, rho)
+            grid[(x, y)] = p
+            total += p
+    if total > 0:
+        for k in grid:
+            grid[k] /= total
+    return grid
+
+
+def fit_rho(low_score_matches):
+    """low_score_matches: iterable of (hg, ag, lam_h, lam_a) for historical
+    matches whose actual score has hg<=1 and ag<=1 (the only cells tau
+    touches). Returns the RHO_GRID value maximizing the log-likelihood of
+    those observed low scores - every other historical scoreline has
+    tau==1 (log-contribution 0) for every candidate rho, so it can't
+    affect the argmax and is skipped for speed."""
+    rows = list(low_score_matches)
+    if not rows:
+        return DEFAULT_RHO
+    best_rho, best_ll = DEFAULT_RHO, None
+    for rho in RHO_GRID:
+        ll = 0.0
+        for hg, ag, lh, la in rows:
+            t = _tau(hg, ag, lh, la, _safe_rho(lh, la, rho))
+            ll += math.log(max(t, 1e-9))
+        if best_ll is None or ll > best_ll:
+            best_ll, best_rho = ll, rho
+    return best_rho
+
+
+class LeagueModel:
+    """Weighted home/away scoring rates (with match-recency decay), a
+    Dixon-Coles rho fit to the league's own low-score frequencies, and a
+    head-to-head record.
+
+    seasons: list of (matches, season_weight); each match is a dict with
+    "home", "away", "hg", "ag", "date" (ISO string, used only for sorting).
+    """
+
+    def __init__(self, seasons, half_life_matches=RECENCY_HALF_LIFE_MATCHES,
+                 fit_rho_=True, default_rho=DEFAULT_RHO):
+        home_apps, away_apps = {}, {}  # team -> [(date, hg, ag, season_weight), ...]
+        self.h2h = {}
+        all_matches = []
+        hs, as_ = [0.0, 0.0], [0.0, 0.0]
+        for matches, w in seasons:
+            for m in matches:
+                home, away, hg, ag = m["home"], m["away"], m["hg"], m["ag"]
+                home_apps.setdefault(home, []).append((m.get("date", ""), hg, ag, w))
+                away_apps.setdefault(away, []).append((m.get("date", ""), hg, ag, w))
+                self.h2h.setdefault(frozenset((home, away)), []).append((m.get("date", ""), hg + ag))
+                hs[0] += hg * w
+                hs[1] += w
+                as_[0] += ag * w
+                as_[1] += w
+                all_matches.append(m)
+        self.base_home = hs[0] / hs[1] if hs[1] else 1.5
+        self.base_away = as_[0] / as_[1] if as_[1] else 1.1
+
+        decay = math.log(2) / half_life_matches
+        self.home_gf, self.home_ga = {}, {}
+        self.away_gf, self.away_ga = {}, {}
+        for team, apps in home_apps.items():
+            apps.sort(key=lambda r: r[0], reverse=True)
+            for rank, (_, hg, ag, w) in enumerate(apps):
+                rw = w * math.exp(-decay * rank)
+                self._add(self.home_gf, team, hg, rw)
+                self._add(self.home_ga, team, ag, rw)
+        for team, apps in away_apps.items():
+            apps.sort(key=lambda r: r[0], reverse=True)
+            for rank, (_, hg, ag, w) in enumerate(apps):
+                rw = w * math.exp(-decay * rank)
+                self._add(self.away_gf, team, ag, rw)
+                self._add(self.away_ga, team, hg, rw)
+
+        self.rho = self._fit_rho(all_matches) if fit_rho_ else default_rho
+
+    @staticmethod
+    def _add(store, key, value, weight):
+        e = store.setdefault(key, [0.0, 0.0])
+        e[0] += value * weight
+        e[1] += weight
+
+    @staticmethod
+    def _avg(store, key, fallback):
+        e = store.get(key)
+        return e[0] / e[1] if e and e[1] else fallback
+
+    def _base_lambdas(self, home, away):
+        hgf = self._avg(self.home_gf, home, self.base_home)
+        hga = self._avg(self.home_ga, home, self.base_away)
+        agf = self._avg(self.away_gf, away, self.base_away)
+        aga = self._avg(self.away_ga, away, self.base_home)
+        return (hgf + aga) / 2, (agf + hga) / 2
+
+    def _fit_rho(self, all_matches):
+        rows = []
+        for m in all_matches:
+            hg, ag = m["hg"], m["ag"]
+            if hg > 1 or ag > 1:
+                continue
+            lh, la = self._base_lambdas(m["home"], m["away"])
+            rows.append((hg, ag, lh, la))
+        return fit_rho(rows)
+
+    def predict(self, home, away):
+        lam_home, lam_away = self._base_lambdas(home, away)
+        known = (home in self.home_gf) + (away in self.away_gf)
+        basis = "form" if known == 2 else "partial-form" if known == 1 else "league-avg"
+
+        pair = sorted(self.h2h.get(frozenset((home, away)), []), reverse=True)[:H2H_MAX]
+        h2h_used = len(pair)
+        base_total = lam_home + lam_away
+        if h2h_used >= 2:
+            h2h_avg = sum(tg for _, tg in pair) / h2h_used
+            blended_total = 0.72 * base_total + 0.28 * h2h_avg
+            basis += "+h2h"
+        else:
+            blended_total = base_total
+        blended_total = max(0.30, min(6.0, blended_total))
+        if base_total > 1e-6:
+            scale = blended_total / base_total
+            lam_home *= scale
+            lam_away *= scale
+        else:
+            lam_home = lam_away = blended_total / 2
+
+        grid = dc_score_grid(lam_home, lam_away, self.rho)
+
+        def over(n):
+            return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
+
+        return {
+            "basis": basis,
+            "h2h_matches_used": h2h_used,
+            "lam_home": round(lam_home, 3),
+            "lam_away": round(lam_away, 3),
+            "exp_goals": round(lam_home + lam_away, 3),
+            "rho": round(self.rho, 3),
+            "p_over_0_5": round(over(0), 4),
+            "p_over_1_5": round(over(1), 4),
+            "p_over_2_5": round(over(2), 4),
+        }

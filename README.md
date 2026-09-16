@@ -2,7 +2,7 @@
 
 Football Goal Probability Engine.
 
-BETAVUS is a mobile-friendly football dashboard for the following eight leagues:
+BETAVUS is a mobile-friendly football dashboard for the following nine leagues:
 
 - Premier League
 - Championship
@@ -12,6 +12,7 @@ BETAVUS is a mobile-friendly football dashboard for the following eight leagues:
 - Serie A
 - Ligue 1
 - Eredivisie
+- Primeira Liga
 
 ## Architecture
 
@@ -68,20 +69,33 @@ gives away, so it was dropped.
 | Serie A | `2026-27/it.1.json` |
 | Ligue 1 | `2026-27/fr.1.json` |
 | Eredivisie | `2026-27/nl.1.json` |
+| Primeira Liga | `2026-27/pt.1.json` |
 
 ## Model
 
-The first BETAVUS model combines:
+[`scripts/goals_model.py`](scripts/goals_model.py) is the single shared
+implementation the live predictor, the backtest and the leak-free
+reconstruction all import (no duplicated model math). It combines:
 
 1. Each team's home / away goals-for and goals-against rates
 2. Four seasons of results, weighted toward the most recent (1.0 / 0.7 / 0.45 / 0.30)
+   - **and**, within that, an exponential match-recency decay (half-life 6
+     matches) so a team's last 5-10 games dominate its rate estimate instead
+     of being diluted evenly across a whole season
 3. League-average fallback for newly promoted teams with no top-flight history
 4. Head-to-head record, last 8 meetings, blended in at 28% when 2+ meetings exist
-5. Poisson goal distribution on the combined expected goals
+5. A **Dixon-Coles** low-score correction on top of the independent-Poisson
+   grid: plain Poisson(lam_home) x Poisson(lam_away) under-counts 0-0/1-0/0-1/1-1
+   relative to what leagues actually produce, so those four cells get a
+   `tau(x,y,rho)` adjustment before the grid is renormalized. rho is fit per
+   league by a 1D grid-search MLE against that league's own historical
+   low-score frequencies (Dixon & Coles 1997), not a fixed constant.
 
-The dashboard displays Over 0.5, Over 1.5 and Over 2.5 goal probabilities. Each
-row in `predictions.json` carries a `basis` field (`form`, `form+h2h`,
-`partial-form`, `league-avg`) showing how much real data backs it.
+The dashboard displays Over 0.5, Over 1.5 and Over 2.5 goal probabilities,
+read off the Dixon-Coles-adjusted scoreline grid. Each row in
+`predictions.json` carries a `basis` field (`form`, `form+h2h`,
+`partial-form`, `league-avg`) showing how much real data backs it, plus
+`lam_home`/`lam_away`/`rho` for anyone who wants the underlying model state.
 
 ## Match stats (click a fixture)
 
@@ -110,6 +124,7 @@ five completed seasons, drawn as inline SVG).
 | Serie A | `I1` | `mmz4281/<season>/I1.csv` |
 | Ligue 1 | `F1` | `mmz4281/<season>/F1.csv` |
 | Eredivisie | `N1` | `mmz4281/<season>/N1.csv` |
+| Primeira Liga | `P1` | `mmz4281/<season>/P1.csv` |
 
 Use the apex domain `football-data.co.uk` (the `www` host currently 503s).
 
@@ -118,7 +133,7 @@ Use the apex domain `football-data.co.uk` (the `www` host currently 503s).
 [`scripts/backtest.py`](scripts/backtest.py) walk-forward tests the goal model:
 each target season (2021/22 → 2025/26) is predicted using **only the seasons
 before it** (up to four, no result leakage), then scored against what actually
-happened, over ~13k matches in all eight leagues. Output `data/backtest.json` is rendered both by the **Model doğruluğu** tab in the app and by the standalone
+happened, across all nine leagues. Output `data/backtest.json` is rendered both by the **Model doğruluğu** tab in the app and by the standalone
 [`backtest.html`](backtest.html) (`/backtest.html`): matches tested plus
 0.5/1.5/2.5 Üst direction accuracy, sliceable by league and season.
 

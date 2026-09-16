@@ -3,11 +3,13 @@
 Fixture source: openfootball/football.json (open data, no API key required).
   https://github.com/openfootball/football.json  -- {season}/{code}.json
 
-For each of the six leagues the script:
+For each openfootball-sourced league the script:
   1. downloads the current 2026-27 fixture list plus the last three completed
      seasons (cached under data/cache/openfootball/),
-  2. builds a light home/away goals model per team + a head-to-head record,
-  3. writes Over 0.5 / 1.5 / 2.5 Poisson probabilities for every not-yet-played
+  2. builds a goals_model.LeagueModel (weighted, recency-decayed home/away
+     scoring rates, Dixon-Coles-adjusted Over probabilities) + a head-to-head
+     record,
+  3. writes Over 0.5 / 1.5 / 2.5 probabilities for every not-yet-played
      fixture inside the upcoming Sunday-to-Sunday week into predictions.json.
 
 Standard library only, so it runs on a bare `python` in GitHub Actions.
@@ -15,7 +17,6 @@ Standard library only, so it runs on a bare `python` in GitHub Actions.
 
 import csv
 import json
-import math
 import re
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -24,7 +25,7 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
-from backtest import LeagueModel as FDModel, poisson_over as fd_poisson_over  # noqa: E402
+from goals_model import LeagueModel, DEFAULT_RHO  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
 
 try:
@@ -46,12 +47,12 @@ LEAGUES = {
     135: ("it.1", "Serie A", "SA", "Europe/Rome"),
     61: ("fr.1", "Ligue 1", "L1", "Europe/Paris"),
     88: ("nl.1", "Eredivisie", "ED", "Europe/Amsterdam"),
+    94: ("pt.1", "Primeira Liga", "PR", "Europe/Lisbon"),
 }
 
 # current season first; older seasons contribute with a lower weight
 SEASONS = [("2026-27", 1.0), ("2025-26", 0.7), ("2024-25", 0.45), ("2023-24", 0.30)]
 
-H2H_MAX = 8
 DEFAULT_TIME = "15:00"
 # All six competitions sit on summer time through the mid-September window, so a
 # fixed offset is exact and keeps the script working where tzdata is missing.
@@ -62,6 +63,7 @@ SUMMER_OFFSET_HOURS = {
     "Europe/Rome": 2,
     "Europe/Paris": 2,
     "Europe/Amsterdam": 2,
+    "Europe/Lisbon": 1,  # Portugal runs on Western European Time, same clock as the UK
     "Europe/Istanbul": 3,
 }
 
@@ -140,16 +142,6 @@ def ft_goals(match):
     return None
 
 
-def poisson_over(lam, n):
-    """P(X > n) for X ~ Poisson(lam)."""
-    term = math.exp(-lam)
-    cdf = term
-    for k in range(1, n + 1):
-        term *= lam / k
-        cdf += term
-    return max(0.0, min(1.0, 1.0 - cdf))
-
-
 def label(p):
     if p >= 0.95:
         return "ULTRA"
@@ -201,6 +193,14 @@ TEAM_NAMES = {
     "SBV Excelsior": "Excelsior", "SC Cambuur-Leeuwarden": "Cambuur",
     "SC Heerenveen": "Heerenveen", "Telstar 1963": "Telstar",
     "Willem II Tilburg": "Willem II",
+    # Primeira Liga
+    "CD Nacional": "Nacional", "CD Santa Clara": "Santa Clara", "CD Tondela": "Tondela",
+    "CF Estrela da Amadora": "Estrela da Amadora", "CS Marítimo": "Marítimo",
+    "FC Alverca": "Alverca", "FC Arouca": "Arouca", "FC Famalicão": "Famalicão",
+    "FC Porto": "Porto", "FC Vizela": "Vizela",
+    "GD Chaves": "Chaves", "GD Estoril Praia": "Estoril",
+    "SC Farense": "Farense", "Sport Lisboa e Benfica": "Benfica",
+    "Sporting Clube de Braga": "Sporting Braga", "Sporting Clube de Portugal": "Sporting CP",
 }
 
 
@@ -239,75 +239,28 @@ def sunday_to_sunday(today):
     return today, today + timedelta(days=FORECAST_DAYS)
 
 
-class LeagueModel:
-    """Weighted home/away scoring rates and a head-to-head record for one league."""
+def _of_matches(raw_matches):
+    """openfootball's own match shape (team1/team2/score.ft) -> the
+    {home,away,hg,ag,date} shape goals_model.LeagueModel expects. Keeps
+    team keys as the raw long openfootball names (not clean_name()'d) -
+    the model has always been keyed that way; display cleanup happens only
+    on the output row."""
+    out = []
+    for m in raw_matches:
+        goals = ft_goals(m)
+        if not goals:
+            continue
+        hg, ag = goals
+        out.append({"home": m["team1"], "away": m["team2"], "hg": hg, "ag": ag,
+                    "date": m.get("date", "")})
+    return out
 
-    def __init__(self, seasons):
-        self.home_gf, self.home_ga = {}, {}
-        self.away_gf, self.away_ga = {}, {}
-        self.h2h = {}
-        hsum = [0.0, 0.0]
-        asum = [0.0, 0.0]
-        for matches, weight in seasons:
-            for m in matches:
-                goals = ft_goals(m)
-                if not goals:
-                    continue
-                home, away = m["team1"], m["team2"]
-                hg, ag = goals
-                self._add(self.home_gf, home, hg, weight)
-                self._add(self.home_ga, home, ag, weight)
-                self._add(self.away_gf, away, ag, weight)
-                self._add(self.away_ga, away, hg, weight)
-                hsum[0] += hg * weight
-                hsum[1] += weight
-                asum[0] += ag * weight
-                asum[1] += weight
-                self.h2h.setdefault(frozenset((home, away)), []).append(
-                    (m.get("date", ""), hg + ag)
-                )
-        self.base_home = hsum[0] / hsum[1] if hsum[1] else 1.5
-        self.base_away = asum[0] / asum[1] if asum[1] else 1.1
 
-    @staticmethod
-    def _add(store, key, value, weight):
-        entry = store.setdefault(key, [0.0, 0.0])
-        entry[0] += value * weight
-        entry[1] += weight
-
-    @staticmethod
-    def _avg(store, key, fallback):
-        entry = store.get(key)
-        return entry[0] / entry[1] if entry and entry[1] else fallback
-
-    def predict(self, home, away):
-        hgf = self._avg(self.home_gf, home, self.base_home)
-        hga = self._avg(self.home_ga, home, self.base_away)
-        agf = self._avg(self.away_gf, away, self.base_away)
-        aga = self._avg(self.away_ga, away, self.base_home)
-        known = (home in self.home_gf) + (away in self.away_gf)
-
-        lam = (hgf + aga) / 2 + (agf + hga) / 2
-        basis = "form" if known == 2 else "partial-form" if known == 1 else "league-avg"
-
-        pair = sorted(self.h2h.get(frozenset((home, away)), []), reverse=True)[:H2H_MAX]
-        h2h_used = len(pair)
-        if h2h_used >= 2:
-            h2h_avg = sum(tg for _, tg in pair) / h2h_used
-            lam = 0.72 * lam + 0.28 * h2h_avg
-            basis += "+h2h"
-
-        lam = max(0.30, min(6.0, lam))
-        p05 = poisson_over(lam, 0)
-        return {
-            "basis": basis,
-            "h2h_matches_used": h2h_used,
-            "exp_goals": round(lam, 3),
-            "p_over_0_5": round(p05, 4),
-            "p_over_1_5": round(poisson_over(lam, 1), 4),
-            "p_over_2_5": round(poisson_over(lam, 2), 4),
-            "label": label(p05) if basis.startswith("form") else "",
-        }
+def of_predict(model, home, away):
+    """model.predict() + the Vurgu label, for openfootball-sourced leagues."""
+    pred = model.predict(home, away)
+    pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
+    return pred
 
 
 FD_DIR = Path("data/football-data")
@@ -445,22 +398,10 @@ def _fd_upcoming(div, start, end):
 
 
 def _fd_pred_dict(model, home, away):
-    """Same shape as LeagueModel.predict(), but off the backtest FDModel."""
-    lam = model.predict(home, away)
-    known = (home in model.hgf) + (away in model.agf)
-    basis = "form" if known == 2 else "partial-form" if known == 1 else "league-avg"
-    pair = sorted(model.h2h.get(frozenset((home, away)), []), reverse=True)[:H2H_MAX]
-    if len(pair) >= 2:
-        basis += "+h2h"
-    p05 = fd_poisson_over(lam, 0)
-    return {
-        "basis": basis, "h2h_matches_used": len(pair),
-        "exp_goals": round(lam, 3),
-        "p_over_0_5": round(p05, 4),
-        "p_over_1_5": round(fd_poisson_over(lam, 1), 4),
-        "p_over_2_5": round(fd_poisson_over(lam, 2), 4),
-        "label": label(p05) if basis.startswith("form") else "",
-    }
+    """model.predict() + the Vurgu label, for football-data-sourced leagues."""
+    pred = model.predict(home, away)
+    pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
+    return pred
 
 
 def fd_predictions(now, start, end, odds, live):
@@ -474,8 +415,8 @@ def fd_predictions(now, start, end, odds, live):
         by_code = {}
         for m in hist:
             by_code.setdefault(m["season"], []).append(m)
-        model = FDModel([(by_code.get(c, []), w)
-                         for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
+        model = LeagueModel([(by_code.get(c, []), w)
+                            for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
         fd_teams = {m["home"] for m in hist} | {m["away"] for m in hist}
         up = tff_upcoming(fd_teams, start, end) if div == "T1" else []
         src = "tff.org"
@@ -515,6 +456,27 @@ def fd_predictions(now, start, end, odds, live):
     return preds
 
 
+def _league_rho(name):
+    """Fit Dixon-Coles rho from the reliable football-data.co.uk CSVs, even for
+    openfootball-sourced leagues - openfootball's own mirrored scores are known
+    to under-report low-scoring results in some seasons (e.g. its 2025-26 PL
+    cache is missing all 27 of that season's real 0-0 draws, along with ~7% of
+    matches outright). That barely moves the mean-based lambda estimate the
+    live rates use, but would badly bias a fit specifically about how often
+    low scores happen, so rho always comes from the CSVs regardless of which
+    source trains the rates themselves."""
+    div = DIV_BY_LEAGUE.get(name)
+    if not div:
+        return DEFAULT_RHO
+    hist = _fd_history(div)
+    by_code = {}
+    for m in hist:
+        by_code.setdefault(m["season"], []).append(m)
+    rho_model = LeagueModel([(by_code.get(c, []), w)
+                             for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
+    return rho_model.rho
+
+
 def main():
     now = datetime.now(timezone.utc)
     start, end = sunday_to_sunday(now.date())
@@ -527,9 +489,10 @@ def main():
     predictions = []
     for lid, (stem, name, code, tz_name) in LEAGUES.items():
         print(f"[{name}] {stem}")
-        seasons = [(load_season(stem, s), w) for s, w in SEASONS]
-        current = seasons[0][0]
-        model = LeagueModel(seasons)
+        raw_seasons = [(load_season(stem, s), w) for s, w in SEASONS]
+        current = raw_seasons[0][0]
+        model = LeagueModel([(_of_matches(matches), w) for matches, w in raw_seasons],
+                            fit_rho_=False, default_rho=_league_rho(name))
 
         count = dropped = 0
         for m in current:
@@ -548,7 +511,7 @@ def main():
                 dropped += 1
                 continue
             count += 1
-            pred = model.predict(m["team1"], m["team2"])
+            pred = of_predict(model, m["team1"], m["team2"])
             row = {
                 "match_id": f"{code}-{match_day.isoformat()}-{count:02d}",
                 "league_id": lid,

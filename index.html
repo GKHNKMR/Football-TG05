@@ -433,7 +433,7 @@ let qPred='',qRes='',qCpn='';           // takım arama kutuları (Tahminler / S
 const $=id=>document.getElementById(id);
 const filters=$('filters'),rows=$('rows');
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function localDate(iso){const p=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Europe/Amsterdam'}).formatToParts(new Date(iso));const g=t=>(p.find(x=>x.type===t)||{}).value||'';return `${g('day')}.${g('month')}.${g('year')} · ${g('hour')}:${g('minute')}`;}
+function localDate(iso){const d=new Date(iso);const fmt=tz=>{const p=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:tz}).formatToParts(d);return t=>(p.find(x=>x.type===t)||{}).value||'';};const tr=fmt('Europe/Istanbul'),nl=fmt('Europe/Amsterdam');return `${tr('day')}.${tr('month')}.${tr('year')} · ${tr('hour')}:${tr('minute')} TR (${nl('hour')}:${nl('minute')} NL)`;}
 function shortDate(iso){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(iso));}
 function pct(v){return v==null?'—':`${(Number(v)*100).toFixed(1)}%`;}
 function pctI(v){return v==null?'—':`${Math.round(Number(v)*100)}%`;}
@@ -845,6 +845,76 @@ function timeAgo(iso){
   return Math.round(s/86400)+' gün önce';
 }
 
+// ---- canlı skor (client-side, /api/live proxy üzerinden ESPN) ----
+// Pipeline saatlik çalışıyor; burada aynı ESPN kaynağını dakikada bir
+// /api/live proxy'si (bkz. api/live.js) üzerinden çekip window.__data'daki
+// ilgili maça live alanı olarak işliyoruz, böylece "● CANLI" rozeti gerçek
+// zamana yakın güncellenir.
+const ESPN_SLUG={'Premier League':'eng.1','Championship':'eng.2','LaLiga':'esp.1','Bundesliga':'ger.1','Serie A':'ita.1','Ligue 1':'fra.1','Eredivisie':'ned.1','Turkish Süper Lig':'tur.1','Primeira Liga':'por.1'};
+const _WORD_ALIASES={UTD:'UNITED',WOLVES:'WOLVERHAMPTON',SPURS:'TOTTENHAM',BORO:'MIDDLESBROUGH',NIJMEGEN:'NEC',COLOGNE:'KOLN',HAMBURGER:'HAMBURG',MUNICH:'MUNCHEN'};
+const _NAME_ALIASES={'STADE RENNAIS':'RENNES','ATHLETIC CLUB':'ATHLETIC BILBAO','ERZURUM BB':'ERZURUMSPOR','AMED SFK':'AMEDSPOR'};
+function normTeam(s){
+  let n=(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+  if(_NAME_ALIASES[n])n=_NAME_ALIASES[n];
+  return n.split(' ').map(w=>_WORD_ALIASES[w]||w).join(' ');
+}
+function ymdUTC(offsetDays){const d=new Date();d.setUTCDate(d.getUTCDate()+offsetDays);return d.toISOString().slice(0,10).replace(/-/g,'');}
+async function fetchEspnDay(slug,ymd){
+  try{
+    // Doğrudan ESPN'e değil /api/live proxy'sine gidiyoruz - ESPN'in WAF'ı
+    // gerçek bir tarayıcı isteğini (normal User-Agent) 403'lüyor, bkz. api/live.js
+    const r=await fetch(`/api/live?slug=${slug}&dates=${ymd}`,{cache:'no-store'});
+    if(!r.ok)return[];
+    const d=await r.json();
+    const out=[];
+    for(const e of(d.events||[])){
+      const comp=(e.competitions||[])[0]||{};
+      const st=(comp.status||{}).type||{};
+      if(st.state==='pre')continue;
+      const cs=comp.competitors||[];
+      const home=cs.find(c=>c.homeAway==='home'),away=cs.find(c=>c.homeAway==='away');
+      if(!home||!away)continue;
+      const hg=Number(home.score),ag=Number(away.score);
+      if(!Number.isFinite(hg)||!Number.isFinite(ag))continue;
+      out.push({home:home.team.displayName,away:away.team.displayName,status:st.shortDetail||st.name,score:`${hg}-${ag}`});
+    }
+    return out;
+  }catch(e){return[];}
+}
+let livePolling=false;
+async function pollLiveScores(){
+  if(livePolling||document.hidden)return;
+  const src=window.__data||[];
+  if(!src.length)return;
+  const now=Date.now();
+  // sadece "canlı olabilir" penceredeki (son 4 saat içinde başlamış / 15dk içinde başlayacak) maçların ligleri
+  const leaguesLive=new Set(src.filter(x=>{const t=new Date(x.kickoff_utc).getTime();return t<now+15*60000&&t>now-4*3600000;}).map(x=>x.league));
+  if(!leaguesLive.size)return;
+  livePolling=true;
+  try{
+    const perLeague=await Promise.all([...leaguesLive].map(async lg=>{
+      const slug=ESPN_SLUG[lg];if(!slug)return[];
+      const days=[-1,0,1].map(o=>fetchEspnDay(slug,ymdUTC(o)));
+      const rows=(await Promise.all(days)).flat();
+      return rows.map(r=>({...r,league:lg}));
+    }));
+    const events=perLeague.flat();
+    if(!events.length)return;
+    let changed=false;
+    window.__data=src.map(x=>{
+      if(!leaguesLive.has(x.league))return x;
+      const hn=normTeam(x.home),an=normTeam(x.away);
+      const hit=events.find(e=>{const eh=normTeam(e.home),ea=normTeam(e.away);return(eh.includes(hn)||hn.includes(eh))&&(ea.includes(an)||an.includes(ea));});
+      if(!hit)return x;
+      if(x.live&&x.live.status===hit.status&&x.live.score===hit.score)return x;
+      changed=true;
+      return{...x,live:{status:hit.status,score:hit.score}};
+    });
+    if(changed&&tab==='pred')renderPred();
+  }finally{livePolling=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollLiveScores();});
+
 // ---- match stats drawer ----
 const sheet=$('sheet');
 function closeSheet(){sheet.hidden=true;sheet.innerHTML='';}
@@ -1221,7 +1291,7 @@ async function sha256hex(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-function startApp(){renderHlSel();renderFilters();setTab(tab);load();}
+function startApp(){renderHlSel();renderFilters();setTab(tab);load();setTimeout(pollLiveScores,4000);setInterval(pollLiveScores,60000);}
 async function bootGate(){
   let pass=false;
   try{pass=localStorage.getItem('betavus.access')===ACCESS_HASH;}catch(e){}

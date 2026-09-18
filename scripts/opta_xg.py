@@ -19,10 +19,14 @@ unmatched, 0 name collisions across all 9 leagues for every season our own
 football-data.co.uk cache covers (see git history for the audit script).
 """
 
+import csv
 import re
 import unicodedata
+from pathlib import Path
 
 import duckdb
+
+CSV_DIR = Path("data/football-data")
 
 XMETRICS_URL = "https://github.com/peteowen1/pannadata/releases/download/opta-latest/opta_xmetrics_bymatch.parquet"
 FIXTURES_URL = "https://github.com/peteowen1/pannadata/releases/download/opta-latest/opta_fixtures.parquet"
@@ -154,6 +158,56 @@ def fetch_raw_matches(divisions=None):
             "date": r["match_date"].rstrip("Z"),
             "home_opta": r["home_team"], "away_opta": r["away_team"],
             "home_xg": r["home_xg"], "away_xg": r["away_xg"],
+        })
+    return out
+
+
+def fd_team_names(div):
+    """A division's football-data.co.uk team names, from the local CSV cache
+    - the name-resolution target for both fetch_raw_matches() and
+    fetch_raw_player_matches() (see build_matcher)."""
+    names = set()
+    for csvf in (CSV_DIR / div).glob("*.csv"):
+        with csvf.open(encoding="utf-8-sig") as fh:
+            for row in csv.DictReader(fh):
+                if row.get("HomeTeam"):
+                    names.add(row["HomeTeam"].strip())
+                if row.get("AwayTeam"):
+                    names.add(row["AwayTeam"].strip())
+    return names
+
+
+def fetch_raw_player_matches(divisions=None):
+    """Same source as fetch_raw_matches(), but one row per player per match -
+    for identifying each team's key attacking contributors (scripts/
+    fetch_key_players.py) instead of collapsing straight to team totals.
+
+    Returns a list of dicts: div, season, date, team_opta (Opta's own team
+    name - NOT yet resolved), player_name, minutes, xg, xa.
+    """
+    comps = [DIV_TO_OPTA[d] for d in (divisions or DIV_TO_OPTA)]
+    con = duckdb.connect()
+    con.execute("INSTALL httpfs; LOAD httpfs;")
+    placeholders = ", ".join(f"'{c}'" for c in comps)
+    q = f"""
+      SELECT m.match_id, m.match_date, x.competition, x.season,
+             x.team_name, x.player_name, x.minutes, x.xg, x.xa
+      FROM read_parquet('{XMETRICS_URL}') x
+      JOIN read_parquet('{FIXTURES_URL}') m ON m.match_id = x.match_id
+      WHERE x.competition IN ({placeholders}) AND x.minutes > 0
+    """
+    rows = con.execute(q).fetchall()
+    cols = [d[0] for d in con.description]
+    out = []
+    for row in rows:
+        r = dict(zip(cols, row))
+        div = OPTA_TO_DIV.get(r["competition"])
+        if not div:
+            continue
+        out.append({
+            "div": div, "season": r["season"], "date": r["match_date"].rstrip("Z"),
+            "team_opta": r["team_name"], "player_name": r["player_name"],
+            "minutes": r["minutes"], "xg": r["xg"] or 0.0, "xa": r["xa"] or 0.0,
         })
     return out
 

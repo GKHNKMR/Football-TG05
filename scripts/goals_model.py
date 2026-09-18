@@ -293,6 +293,28 @@ class LeagueModel:
             rows.append((hg, ag, lh, la))
         return fit_rho(rows)
 
+    def predict_from_lambdas(self, lam_home, lam_away, basis, h2h_used=0):
+        """Build the same output shape as predict(), for a caller that has
+        already computed (or adjusted) lam_home/lam_away itself - e.g.
+        scripts/fetch_lineups.py damping a team's lambda for a missing key
+        player, after predict() has already applied the H2H blend."""
+        grid = dc_score_grid(lam_home, lam_away, self.rho)
+
+        def over(n):
+            return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
+
+        return {
+            "basis": basis,
+            "h2h_matches_used": h2h_used,
+            "lam_home": round(lam_home, 3),
+            "lam_away": round(lam_away, 3),
+            "exp_goals": round(lam_home + lam_away, 3),
+            "rho": round(self.rho, 3),
+            "p_over_0_5": round(over(0), 4),
+            "p_over_1_5": round(over(1), 4),
+            "p_over_2_5": round(over(2), 4),
+        }
+
     def predict(self, home, away):
         lam_home, lam_away = self._base_lambdas(home, away)
         known = (home in self.home_gf) + (away in self.away_gf)
@@ -315,19 +337,4 @@ class LeagueModel:
         else:
             lam_home = lam_away = blended_total / 2
 
-        grid = dc_score_grid(lam_home, lam_away, self.rho)
-
-        def over(n):
-            return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
-
-        return {
-            "basis": basis,
-            "h2h_matches_used": h2h_used,
-            "lam_home": round(lam_home, 3),
-            "lam_away": round(lam_away, 3),
-            "exp_goals": round(lam_home + lam_away, 3),
-            "rho": round(self.rho, 3),
-            "p_over_0_5": round(over(0), 4),
-            "p_over_1_5": round(over(1), 4),
-            "p_over_2_5": round(over(2), 4),
-        }
+        return self.predict_from_lambdas(lam_home, lam_away, basis, h2h_used)

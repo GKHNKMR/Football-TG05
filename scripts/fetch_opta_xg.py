@@ -12,28 +12,14 @@ side with too little top-flight history of its own to trust its goals
 average yet).
 """
 
-import csv
 import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opta_xg import DIV_TO_OPTA, fetch_raw_matches, resolve_team_names  # noqa: E402
+from opta_xg import DIV_TO_OPTA, fd_team_names, fetch_raw_matches, resolve_team_names  # noqa: E402
 
-CSV_DIR = Path("data/football-data")
 OUT_FILE = Path("data/opta-xg.json")
-
-
-def fd_team_names(div):
-    names = set()
-    for csvf in (CSV_DIR / div).glob("*.csv"):
-        with csvf.open(encoding="utf-8-sig") as fh:
-            for row in csv.DictReader(fh):
-                if row.get("HomeTeam"):
-                    names.add(row["HomeTeam"].strip())
-                if row.get("AwayTeam"):
-                    names.add(row["AwayTeam"].strip())
-    return names
 
 
 def main():

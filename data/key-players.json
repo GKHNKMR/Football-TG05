@@ -1,0 +1,969 @@
+{
+ "AVS": [
+  {
+   "minutes": 1896,
+   "player": "Pedro Lima",
+   "share": 0.154
+  }
+ ],
+ "Alaves": [
+  {
+   "minutes": 3049,
+   "player": "Toni Martínez",
+   "share": 0.138
+  },
+  {
+   "minutes": 2364,
+   "player": "L. Boyé",
+   "share": 0.12
+  }
+ ],
+ "Alverca": [
+  {
+   "minutes": 1811,
+   "player": "Chiquinho",
+   "share": 0.164
+  }
+ ],
+ "Angers": [
+  {
+   "minutes": 1832,
+   "player": "A. Sbaï",
+   "share": 0.13
+  }
+ ],
+ "Antalyaspor": [
+  {
+   "minutes": 2347,
+   "player": "S. van de Streek",
+   "share": 0.195
+  }
+ ],
+ "Arouca": [
+  {
+   "minutes": 2325,
+   "player": "Barbero",
+   "share": 0.177
+  },
+  {
+   "minutes": 3258,
+   "player": "N. Djouahra",
+   "share": 0.139
+  }
+ ],
+ "Arsenal": [
+  {
+   "minutes": 2562,
+   "player": "B. Saka",
+   "share": 0.157
+  }
+ ],
+ "Aston Villa": [
+  {
+   "minutes": 2852,
+   "player": "O. Watkins",
+   "share": 0.179
+  }
+ ],
+ "Atalanta": [
+  {
+   "minutes": 1905,
+   "player": "N. Krstović",
+   "share": 0.146
+  }
+ ],
+ "Ath Bilbao": [
+  {
+   "minutes": 2498,
+   "player": "I. Williams",
+   "share": 0.162
+  },
+  {
+   "minutes": 2228,
+   "player": "Oihan Sancet",
+   "share": 0.129
+  }
+ ],
+ "Augsburg": [
+  {
+   "minutes": 1836,
+   "player": "A. Kade",
+   "share": 0.149
+  },
+  {
+   "minutes": 1158,
+   "player": "M. Gregoritsch",
+   "share": 0.136
+  }
+ ],
+ "Auxerre": [
+  {
+   "minutes": 2780,
+   "player": "L. Sinayoko",
+   "share": 0.156
+  },
+  {
+   "minutes": 2844,
+   "player": "D. Namaso",
+   "share": 0.127
+  }
+ ],
+ "Barcelona": [
+  {
+   "minutes": 1866,
+   "player": "Raphinha",
+   "share": 0.203
+  },
+  {
+   "minutes": 2759,
+   "player": "Lamine Yamal",
+   "share": 0.187
+  }
+ ],
+ "Bayern Munich": [
+  {
+   "minutes": 2601,
+   "player": "H. Kane",
+   "share": 0.143
+  },
+  {
+   "minutes": 2655,
+   "player": "L. Díaz",
+   "share": 0.124
+  }
+ ],
+ "Benfica": [
+  {
+   "minutes": 3134,
+   "player": "V. Pavlidis",
+   "share": 0.212
+  }
+ ],
+ "Betis": [
+  {
+   "minutes": 2919,
+   "player": "Antony",
+   "share": 0.152
+  },
+  {
+   "minutes": 2946,
+   "player": "C. Hernández",
+   "share": 0.123
+  }
+ ],
+ "Bournemouth": [
+  {
+   "minutes": 2738,
+   "player": "M. Tavernier",
+   "share": 0.14
+  }
+ ],
+ "Brentford": [
+  {
+   "minutes": 3637,
+   "player": "Igor Thiago",
+   "share": 0.174
+  }
+ ],
+ "Brest": [
+  {
+   "minutes": 2082,
+   "player": "K. Doumbia",
+   "share": 0.19
+  },
+  {
+   "minutes": 3183,
+   "player": "L. Ajorque",
+   "share": 0.164
+  }
+ ],
+ "Burnley": [
+  {
+   "minutes": 1774,
+   "player": "Z. Flemming",
+   "share": 0.164
+  }
+ ],
+ "Buyuksehyr": [
+  {
+   "minutes": 3356,
+   "player": "E. Shomurodov",
+   "share": 0.22
+  }
+ ],
+ "Cardiff": [
+  {
+   "minutes": 610,
+   "player": "Y. Salech",
+   "share": 0.177
+  }
+ ],
+ "Chelsea": [
+  {
+   "minutes": 3034,
+   "player": "João Pedro",
+   "share": 0.164
+  },
+  {
+   "minutes": 2318,
+   "player": "C. Palmer",
+   "share": 0.161
+  }
+ ],
+ "Como": [
+  {
+   "minutes": 2550,
+   "player": "T. Douvikas",
+   "share": 0.136
+  }
+ ],
+ "Cremonese": [
+  {
+   "minutes": 2523,
+   "player": "F. Bonazzoli",
+   "share": 0.182
+  }
+ ],
+ "Derby": [
+  {
+   "minutes": 1570,
+   "player": "S. Szmodics",
+   "share": 0.122
+  }
+ ],
+ "Dortmund": [
+  {
+   "minutes": 2615,
+   "player": "S. Guirassy",
+   "share": 0.213
+  }
+ ],
+ "Ein Frankfurt": [
+  {
+   "minutes": 1568,
+   "player": "J. Burkardt",
+   "share": 0.18
+  }
+ ],
+ "Estoril": [
+  {
+   "minutes": 3266,
+   "player": "Y. Begraoui",
+   "share": 0.175
+  }
+ ],
+ "Estrela": [
+  {
+   "minutes": 3106,
+   "player": "A. Marcus",
+   "share": 0.141
+  }
+ ],
+ "Everton": [
+  {
+   "minutes": 2244,
+   "player": "T. Barry",
+   "share": 0.177
+  },
+  {
+   "minutes": 2994,
+   "player": "K. Dewsbury-Hall",
+   "share": 0.134
+  }
+ ],
+ "FC Koln": [
+  {
+   "minutes": 2038,
+   "player": "S. El Mala",
+   "share": 0.137
+  }
+ ],
+ "Famalicao": [
+  {
+   "minutes": 3295,
+   "player": "Sorriso",
+   "share": 0.131
+  }
+ ],
+ "Feyenoord": [
+  {
+   "minutes": 2841,
+   "player": "A. Ueda",
+   "share": 0.123
+  }
+ ],
+ "Fiorentina": [
+  {
+   "minutes": 2048,
+   "player": "M. Kean",
+   "share": 0.122
+  }
+ ],
+ "For Sittard": [
+  {
+   "minutes": 1997,
+   "player": "K. Sierhuis",
+   "share": 0.124
+  }
+ ],
+ "Freiburg": [
+  {
+   "minutes": 1802,
+   "player": "I. Matanović",
+   "share": 0.194
+  },
+  {
+   "minutes": 1876,
+   "player": "Y. Suzuki",
+   "share": 0.146
+  }
+ ],
+ "Galatasaray": [
+  {
+   "minutes": 2009,
+   "player": "V. Osimhen",
+   "share": 0.258
+  }
+ ],
+ "Gaziantep": [
+  {
+   "minutes": 2349,
+   "player": "M. Bayo",
+   "share": 0.207
+  },
+  {
+   "minutes": 2693,
+   "player": "A. Maxim",
+   "share": 0.133
+  }
+ ],
+ "Genclerbirligi": [
+  {
+   "minutes": 1969,
+   "player": "M. Mimaroğlu",
+   "share": 0.125
+  }
+ ],
+ "Genoa": [
+  {
+   "minutes": 2643,
+   "player": "L. Colombo",
+   "share": 0.171
+  }
+ ],
+ "Getafe": [
+  {
+   "minutes": 2059,
+   "player": "M. Satriano",
+   "share": 0.15
+  }
+ ],
+ "Gil Vicente": [
+  {
+   "minutes": 673,
+   "player": "Héctor Hernández",
+   "share": 0.175
+  }
+ ],
+ "Go Ahead Eagles": [
+  {
+   "minutes": 942,
+   "player": "S. Sigurðarson",
+   "share": 0.136
+  },
+  {
+   "minutes": 2493,
+   "player": "V. Edvardsen",
+   "share": 0.132
+  },
+  {
+   "minutes": 3124,
+   "player": "M. Suray",
+   "share": 0.122
+  }
+ ],
+ "Goztep": [
+  {
+   "minutes": 2857,
+   "player": "Juan",
+   "share": 0.216
+  }
+ ],
+ "Groningen": [
+  {
+   "minutes": 3549,
+   "player": "T. van Bergen",
+   "share": 0.161
+  },
+  {
+   "minutes": 2698,
+   "player": "Y. Taha",
+   "share": 0.135
+  },
+  {
+   "minutes": 2610,
+   "player": "D. van der Werff",
+   "share": 0.132
+  }
+ ],
+ "Guimaraes": [
+  {
+   "minutes": 2567,
+   "player": "Samu",
+   "share": 0.167
+  },
+  {
+   "minutes": 1979,
+   "player": "Gustavo Silva",
+   "share": 0.157
+  }
+ ],
+ "Heerenveen": [
+  {
+   "minutes": 3293,
+   "player": "J. Trenskow",
+   "share": 0.134
+  }
+ ],
+ "Heidenheim": [
+  {
+   "minutes": 2181,
+   "player": "A. Ibrahimović",
+   "share": 0.121
+  }
+ ],
+ "Heracles": [
+  {
+   "minutes": 1115,
+   "player": "J. Hornkamp",
+   "share": 0.232
+  }
+ ],
+ "Hull": [
+  {
+   "minutes": 3175,
+   "player": "O. McBurnie",
+   "share": 0.163
+  }
+ ],
+ "Inter": [
+  {
+   "minutes": 2053,
+   "player": "M. Thuram",
+   "share": 0.143
+  }
+ ],
+ "Karagumruk": [
+  {
+   "minutes": 1567,
+   "player": "S. Larsson",
+   "share": 0.147
+  },
+  {
+   "minutes": 983,
+   "player": "D. Fofana",
+   "share": 0.136
+  },
+  {
+   "minutes": 2195,
+   "player": "Serginho",
+   "share": 0.122
+  }
+ ],
+ "Kasimpasa": [
+  {
+   "minutes": 1601,
+   "player": "A. Benedyczak",
+   "share": 0.24
+  }
+ ],
+ "Kayserispor": [
+  {
+   "minutes": 2854,
+   "player": "Miguel Cardoso",
+   "share": 0.159
+  }
+ ],
+ "Lazio": [
+  {
+   "minutes": 2473,
+   "player": "M. Zaccagni",
+   "share": 0.156
+  }
+ ],
+ "Le Havre": [
+  {
+   "minutes": 2949,
+   "player": "I. Soumaré",
+   "share": 0.144
+  }
+ ],
+ "Leeds": [
+  {
+   "minutes": 3057,
+   "player": "D. Calvert-Lewin",
+   "share": 0.247
+  }
+ ],
+ "Lens": [
+  {
+   "minutes": 2820,
+   "player": "F. Thauvin",
+   "share": 0.167
+  }
+ ],
+ "Levante": [
+  {
+   "minutes": 2594,
+   "player": "Iván Romero",
+   "share": 0.138
+  }
+ ],
+ "Leverkusen": [
+  {
+   "minutes": 1995,
+   "player": "P. Schick",
+   "share": 0.187
+  }
+ ],
+ "Lille": [
+  {
+   "minutes": 2289,
+   "player": "Matías Fernández",
+   "share": 0.144
+  },
+  {
+   "minutes": 767,
+   "player": "E. Mbappé",
+   "share": 0.127
+  }
+ ],
+ "Liverpool": [
+  {
+   "minutes": 3593,
+   "player": "D. Szoboszlai",
+   "share": 0.128
+  }
+ ],
+ "Lorient": [
+  {
+   "minutes": 1770,
+   "player": "P. Pagis",
+   "share": 0.132
+  },
+  {
+   "minutes": 1220,
+   "player": "B. Dieng",
+   "share": 0.122
+  }
+ ],
+ "M'gladbach": [
+  {
+   "minutes": 2394,
+   "player": "H. Tabaković",
+   "share": 0.131
+  }
+ ],
+ "Mainz": [
+  {
+   "minutes": 2355,
+   "player": "N. Amiri",
+   "share": 0.166
+  },
+  {
+   "minutes": 1888,
+   "player": "P. Tietz",
+   "share": 0.148
+  },
+  {
+   "minutes": 1163,
+   "player": "S. Becker",
+   "share": 0.139
+  }
+ ],
+ "Mallorca": [
+  {
+   "minutes": 3090,
+   "player": "V. Muriqi",
+   "share": 0.246
+  }
+ ],
+ "Man City": [
+  {
+   "minutes": 3318,
+   "player": "E. Haaland",
+   "share": 0.215
+  }
+ ],
+ "Man United": [
+  {
+   "minutes": 3426,
+   "player": "Bruno Fernandes",
+   "share": 0.179
+  },
+  {
+   "minutes": 2981,
+   "player": "B. Mbeumo",
+   "share": 0.174
+  }
+ ],
+ "Marseille": [
+  {
+   "minutes": 2046,
+   "player": "P. Aubameyang",
+   "share": 0.129
+  },
+  {
+   "minutes": 1686,
+   "player": "A. Gouiri",
+   "share": 0.128
+  }
+ ],
+ "Metz": [
+  {
+   "minutes": 2354,
+   "player": "G. Hein",
+   "share": 0.155
+  }
+ ],
+ "Nacional": [
+  {
+   "minutes": 2892,
+   "player": "J. Ramírez",
+   "share": 0.15
+  }
+ ],
+ "Nantes": [
+  {
+   "minutes": 2497,
+   "player": "M. Abline",
+   "share": 0.16
+  }
+ ],
+ "Newcastle": [
+  {
+   "minutes": 1814,
+   "player": "A. Gordon",
+   "share": 0.126
+  }
+ ],
+ "Nice": [
+  {
+   "minutes": 2869,
+   "player": "J. Clauss",
+   "share": 0.123
+  }
+ ],
+ "Nijmegen": [
+  {
+   "minutes": 3179,
+   "player": "T. Chery",
+   "share": 0.161
+  }
+ ],
+ "Nott'm Forest": [
+  {
+   "minutes": 3470,
+   "player": "M. Gibbs-White",
+   "share": 0.188
+  }
+ ],
+ "Osasuna": [
+  {
+   "minutes": 3365,
+   "player": "A. Budimir",
+   "share": 0.267
+  }
+ ],
+ "Oviedo": [
+  {
+   "minutes": 2429,
+   "player": "F. Viñas",
+   "share": 0.145
+  }
+ ],
+ "Pisa": [
+  {
+   "minutes": 1053,
+   "player": "M'Bala Nzola",
+   "share": 0.168
+  }
+ ],
+ "Portsmouth": [
+  {
+   "minutes": 2809,
+   "player": "A. Segečić",
+   "share": 0.137
+  }
+ ],
+ "QPR": [
+  {
+   "minutes": 2695,
+   "player": "H. Vale",
+   "share": 0.132
+  }
+ ],
+ "RB Leipzig": [
+  {
+   "minutes": 2789,
+   "player": "C. Baumgartner",
+   "share": 0.129
+  }
+ ],
+ "Real Madrid": [
+  {
+   "minutes": 3144,
+   "player": "K. Mbappé",
+   "share": 0.239
+  },
+  {
+   "minutes": 3336,
+   "player": "Vinícius Júnior",
+   "share": 0.143
+  }
+ ],
+ "Rennes": [
+  {
+   "minutes": 2874,
+   "player": "E. Lepaul",
+   "share": 0.164
+  }
+ ],
+ "Rio Ave": [
+  {
+   "minutes": 1605,
+   "player": "Jalen Blesa",
+   "share": 0.172
+  },
+  {
+   "minutes": 1600,
+   "player": "Clayton",
+   "share": 0.16
+  },
+  {
+   "minutes": 1500,
+   "player": "André Luiz",
+   "share": 0.131
+  }
+ ],
+ "Rizespor": [
+  {
+   "minutes": 3110,
+   "player": "Q. Laçi",
+   "share": 0.128
+  }
+ ],
+ "Roma": [
+  {
+   "minutes": 1733,
+   "player": "D. Malen",
+   "share": 0.227
+  },
+  {
+   "minutes": 1672,
+   "player": "P. Dybala",
+   "share": 0.133
+  }
+ ],
+ "Samsunspor": [
+  {
+   "minutes": 2212,
+   "player": "M. Mouandilmadji",
+   "share": 0.147
+  }
+ ],
+ "Santa Clara": [
+  {
+   "minutes": 946,
+   "player": "Gonçalo Paciência",
+   "share": 0.201
+  },
+  {
+   "minutes": 1977,
+   "player": "Vinícius Lopes",
+   "share": 0.124
+  }
+ ],
+ "Sassuolo": [
+  {
+   "minutes": 2975,
+   "player": "A. Laurienté",
+   "share": 0.154
+  }
+ ],
+ "Sheffield United": [
+  {
+   "minutes": 2293,
+   "player": "P. Bamford",
+   "share": 0.148
+  }
+ ],
+ "Sociedad": [
+  {
+   "minutes": 1108,
+   "player": "O. Óskarsson",
+   "share": 0.15
+  }
+ ],
+ "Southampton": [
+  {
+   "minutes": 1461,
+   "player": "C. Larin",
+   "share": 0.143
+  }
+ ],
+ "Sp Braga": [
+  {
+   "minutes": 2623,
+   "player": "Pau Víctor",
+   "share": 0.163
+  },
+  {
+   "minutes": 1944,
+   "player": "R. Zalazar",
+   "share": 0.134
+  }
+ ],
+ "Stuttgart": [
+  {
+   "minutes": 2416,
+   "player": "D. Undav",
+   "share": 0.132
+  },
+  {
+   "minutes": 1610,
+   "player": "E. Demirović",
+   "share": 0.121
+  }
+ ],
+ "Sunderland": [
+  {
+   "minutes": 3283,
+   "player": "E. Le Fée",
+   "share": 0.234
+  }
+ ],
+ "Swansea": [
+  {
+   "minutes": 3219,
+   "player": "Ž. Vipotnik",
+   "share": 0.155
+  },
+  {
+   "minutes": 1183,
+   "player": "A. Idah",
+   "share": 0.126
+  }
+ ],
+ "Tondela": [
+  {
+   "minutes": 2470,
+   "player": "Pedro Maranhão",
+   "share": 0.123
+  }
+ ],
+ "Torino": [
+  {
+   "minutes": 2498,
+   "player": "G. Simeone",
+   "share": 0.154
+  }
+ ],
+ "Trabzonspor": [
+  {
+   "minutes": 2072,
+   "player": "E. Muçi",
+   "share": 0.135
+  }
+ ],
+ "Udinese": [
+  {
+   "minutes": 2303,
+   "player": "K. Davis",
+   "share": 0.132
+  }
+ ],
+ "Union Berlin": [
+  {
+   "minutes": 2256,
+   "player": "A. Ilić",
+   "share": 0.137
+  }
+ ],
+ "Utrecht": [
+  {
+   "minutes": 1346,
+   "player": "A. Stepanov",
+   "share": 0.139
+  }
+ ],
+ "Vallecano": [
+  {
+   "minutes": 1217,
+   "player": "Sergio Camello",
+   "share": 0.146
+  }
+ ],
+ "Verona": [
+  {
+   "minutes": 2036,
+   "player": "G. Orban",
+   "share": 0.157
+  },
+  {
+   "minutes": 1204,
+   "player": "K. Bowie",
+   "share": 0.133
+  }
+ ],
+ "Villarreal": [
+  {
+   "minutes": 2513,
+   "player": "G. Mikautadze",
+   "share": 0.155
+  },
+  {
+   "minutes": 1623,
+   "player": "Gerard Moreno",
+   "share": 0.121
+  }
+ ],
+ "Werder Bremen": [
+  {
+   "minutes": 2988,
+   "player": "R. Schmid",
+   "share": 0.132
+  }
+ ],
+ "West Ham": [
+  {
+   "minutes": 620,
+   "player": "J. Bowen",
+   "share": 0.27
+  },
+  {
+   "minutes": 1395,
+   "player": "V. Castellanos",
+   "share": 0.139
+  },
+  {
+   "minutes": 3405,
+   "player": "J. Bowen",
+   "share": 0.126
+  }
+ ],
+ "Wolfsburg": [
+  {
+   "minutes": 2419,
+   "player": "C. Eriksen",
+   "share": 0.138
+  }
+ ],
+ "Zwolle": [
+  {
+   "minutes": 3404,
+   "player": "K. Kostons",
+   "share": 0.175
+  }
+ ]
+}

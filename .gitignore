@@ -26,11 +26,19 @@ desktop.ini
 /tmp/
 scratchpad/
 
-# One-off backtest reports (scripts/tune_xg_weight.py, tune_sos_strength.py)
-# - not read by anything live; a finding worth shipping gets hardcoded into
-# xg_blend.py (or similar) by hand instead.
+# One-off backtest reports (scripts/tune_xg_weight.py, tune_sos_strength.py,
+# tune_rest_days.py, tune_motivation.py) - not read by anything live; a
+# finding worth shipping gets hardcoded into goals_model.py/xg_blend.py (or
+# similar) by hand instead.
 data/xg-weights.json
 data/sos-strengths.json
+data/rest-days-strengths.json
+data/motivation-strengths.json
+
+# Local dev cache for scripts/euro_fixtures.py (historical UEFA fixture
+# lookups for tune_rest_days.py) - not part of the live pipeline, safe to
+# re-fetch from ESPN if lost.
+data/cache/espn_euro/
 
 # Legacy Streamlit path (not used by the static app)
 predictions.xlsx

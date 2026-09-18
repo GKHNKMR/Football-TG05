@@ -26,6 +26,11 @@ desktop.ini
 /tmp/
 scratchpad/
 
+# scripts/tune_xg_weight.py + fetch_opta_xg.py output - investigation tools,
+# not part of the live pipeline (see their docstrings)
+data/opta-xg.json
+data/xg-weights.json
+
 # Legacy Streamlit path (not used by the static app)
 predictions.xlsx
 *.xlsx

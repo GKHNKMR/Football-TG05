@@ -121,10 +121,20 @@ class LeagueModel:
 
     seasons: list of (matches, season_weight); each match is a dict with
     "home", "away", "hg", "ag", "date" (ISO string, used only for sorting).
+
+    xg_seasons (optional): same shape, but each match has "home_xg"/"away_xg"
+    (see scripts/opta_xg.py) instead of "hg"/"ag" - a team's own recency-
+    weighted xG average is blended into its scoring-rate estimate with
+    weight xg_weight (0 = pure goals, same as omitting xg_seasons entirely;
+    1 = pure xG). Blended independently per team/side, so a team with no xG
+    history (not yet covered by the upstream source) just falls back to its
+    goals-based rate for that component instead of the whole match. See
+    scripts/tune_xg_weight.py for how a league's weight is actually chosen.
     """
 
     def __init__(self, seasons, half_life_matches=RECENCY_HALF_LIFE_MATCHES,
-                 fit_rho_=True, default_rho=DEFAULT_RHO):
+                 fit_rho_=True, default_rho=DEFAULT_RHO,
+                 xg_seasons=None, xg_weight=0.0):
         home_apps, away_apps = {}, {}  # team -> [(date, hg, ag, season_weight), ...]
         self.h2h = {}
         all_matches = []
@@ -159,6 +169,30 @@ class LeagueModel:
                 self._add(self.away_gf, team, ag, rw)
                 self._add(self.away_ga, team, hg, rw)
 
+        self.xg_weight = xg_weight
+        self.home_xgf, self.home_xga = {}, {}
+        self.away_xgf, self.away_xga = {}, {}
+        if xg_seasons and xg_weight > 0:
+            xg_home_apps, xg_away_apps = {}, {}
+            for matches, w in xg_seasons:
+                for m in matches:
+                    home, away = m["home"], m["away"]
+                    hxg, axg = m["home_xg"], m["away_xg"]
+                    xg_home_apps.setdefault(home, []).append((m.get("date", ""), hxg, axg, w))
+                    xg_away_apps.setdefault(away, []).append((m.get("date", ""), hxg, axg, w))
+            for team, apps in xg_home_apps.items():
+                apps.sort(key=lambda r: r[0], reverse=True)
+                for rank, (_, hxg, axg, w) in enumerate(apps):
+                    rw = w * math.exp(-decay * rank)
+                    self._add(self.home_xgf, team, hxg, rw)
+                    self._add(self.home_xga, team, axg, rw)
+            for team, apps in xg_away_apps.items():
+                apps.sort(key=lambda r: r[0], reverse=True)
+                for rank, (_, hxg, axg, w) in enumerate(apps):
+                    rw = w * math.exp(-decay * rank)
+                    self._add(self.away_xgf, team, axg, rw)
+                    self._add(self.away_xga, team, hxg, rw)
+
         self.rho = self._fit_rho(all_matches) if fit_rho_ else default_rho
 
     @staticmethod
@@ -177,6 +211,20 @@ class LeagueModel:
         hga = self._avg(self.home_ga, home, self.base_away)
         agf = self._avg(self.away_gf, away, self.base_away)
         aga = self._avg(self.away_ga, away, self.base_home)
+        if self.xg_weight > 0:
+            w = self.xg_weight
+            hxgf = self._avg(self.home_xgf, home, None)
+            hxga = self._avg(self.home_xga, home, None)
+            axgf = self._avg(self.away_xgf, away, None)
+            axga = self._avg(self.away_xga, away, None)
+            if hxgf is not None:
+                hgf = (1 - w) * hgf + w * hxgf
+            if hxga is not None:
+                hga = (1 - w) * hga + w * hxga
+            if axgf is not None:
+                agf = (1 - w) * agf + w * axgf
+            if axga is not None:
+                aga = (1 - w) * aga + w * axga
         return (hgf + aga) / 2, (agf + hga) / 2
 
     def _fit_rho(self, all_matches):

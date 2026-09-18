@@ -130,20 +130,36 @@ class LeagueModel:
     history (not yet covered by the upstream source) just falls back to its
     goals-based rate for that component instead of the whole match. See
     scripts/tune_xg_weight.py for how a league's weight is actually chosen.
+
+    sos_strength (optional, 0..1): Strength-of-Schedule correction - a
+    team's own scoring/conceding rate is itself a plain average over
+    whichever opponents it happened to face, so it's biased by how tough
+    that particular schedule was (see Strength of Schedule (SoS).txt for
+    the write-up this implements). Each rate is rescaled by
+    (league_average / average_opponent_rate_faced) ** sos_strength, using
+    that specific opponent's own raw (pre-SoS) rate as the reference -
+    single-pass, not an iterative joint solve.
+
+    Measured with scripts/tune_sos_strength.py's walk-forward backtest
+    across all 9 leagues: essentially no effect (0.0000-0.0002 Brier
+    points, weaker than even the xG blend's already-marginal gain) - the
+    model's existing per-match home-attack/away-defense pairing already
+    captures most of what schedule strength would otherwise correct for.
+    NOT wired into the live pipeline; default 0.0 (off) everywhere.
     """
 
     def __init__(self, seasons, half_life_matches=RECENCY_HALF_LIFE_MATCHES,
                  fit_rho_=True, default_rho=DEFAULT_RHO,
-                 xg_seasons=None, xg_weight=0.0):
-        home_apps, away_apps = {}, {}  # team -> [(date, hg, ag, season_weight), ...]
+                 xg_seasons=None, xg_weight=0.0, sos_strength=0.0):
+        home_apps, away_apps = {}, {}  # team -> [(date, hg, ag, season_weight, opponent), ...]
         self.h2h = {}
         all_matches = []
         hs, as_ = [0.0, 0.0], [0.0, 0.0]
         for matches, w in seasons:
             for m in matches:
                 home, away, hg, ag = m["home"], m["away"], m["hg"], m["ag"]
-                home_apps.setdefault(home, []).append((m.get("date", ""), hg, ag, w))
-                away_apps.setdefault(away, []).append((m.get("date", ""), hg, ag, w))
+                home_apps.setdefault(home, []).append((m.get("date", ""), hg, ag, w, away))
+                away_apps.setdefault(away, []).append((m.get("date", ""), hg, ag, w, home))
                 self.h2h.setdefault(frozenset((home, away)), []).append((m.get("date", ""), hg + ag))
                 hs[0] += hg * w
                 hs[1] += w
@@ -158,16 +174,50 @@ class LeagueModel:
         self.away_gf, self.away_ga = {}, {}
         for team, apps in home_apps.items():
             apps.sort(key=lambda r: r[0], reverse=True)
-            for rank, (_, hg, ag, w) in enumerate(apps):
+            for rank, (_, hg, ag, w, _opp) in enumerate(apps):
                 rw = w * math.exp(-decay * rank)
                 self._add(self.home_gf, team, hg, rw)
                 self._add(self.home_ga, team, ag, rw)
         for team, apps in away_apps.items():
             apps.sort(key=lambda r: r[0], reverse=True)
-            for rank, (_, hg, ag, w) in enumerate(apps):
+            for rank, (_, hg, ag, w, _opp) in enumerate(apps):
                 rw = w * math.exp(-decay * rank)
                 self._add(self.away_gf, team, ag, rw)
                 self._add(self.away_ga, team, hg, rw)
+
+        self.sos_strength = sos_strength
+        self.home_gf_sos, self.home_ga_sos = {}, {}
+        self.away_gf_sos, self.away_ga_sos = {}, {}
+        if sos_strength:
+            def sos_mult(avg_opp, league_avg):
+                if not avg_opp or not league_avg:
+                    return 1.0
+                return max(0.5, min(2.0, league_avg / avg_opp)) ** sos_strength
+
+            for team, apps in home_apps.items():
+                def_sum, def_w, att_sum, att_w = 0.0, 0.0, 0.0, 0.0
+                for rank, (_, _hg, _ag, w, opp) in enumerate(apps):
+                    rw = w * math.exp(-decay * rank)
+                    def_sum += self._avg(self.away_ga, opp, self.base_home) * rw
+                    att_sum += self._avg(self.away_gf, opp, self.base_away) * rw
+                    def_w += rw
+                    att_w += rw
+                raw_gf = self._avg(self.home_gf, team, self.base_home)
+                raw_ga = self._avg(self.home_ga, team, self.base_away)
+                self.home_gf_sos[team] = raw_gf * sos_mult(def_w and def_sum / def_w, self.base_home)
+                self.home_ga_sos[team] = raw_ga * sos_mult(self.base_away, att_w and att_sum / att_w)
+            for team, apps in away_apps.items():
+                def_sum, def_w, att_sum, att_w = 0.0, 0.0, 0.0, 0.0
+                for rank, (_, _hg, _ag, w, opp) in enumerate(apps):
+                    rw = w * math.exp(-decay * rank)
+                    def_sum += self._avg(self.home_ga, opp, self.base_away) * rw
+                    att_sum += self._avg(self.home_gf, opp, self.base_home) * rw
+                    def_w += rw
+                    att_w += rw
+                raw_gf = self._avg(self.away_gf, team, self.base_away)
+                raw_ga = self._avg(self.away_ga, team, self.base_home)
+                self.away_gf_sos[team] = raw_gf * sos_mult(def_w and def_sum / def_w, self.base_away)
+                self.away_ga_sos[team] = raw_ga * sos_mult(self.base_home, att_w and att_sum / att_w)
 
         self.xg_weight = xg_weight
         self.home_xgf, self.home_xga = {}, {}
@@ -207,10 +257,16 @@ class LeagueModel:
         return e[0] / e[1] if e and e[1] else fallback
 
     def _base_lambdas(self, home, away):
-        hgf = self._avg(self.home_gf, home, self.base_home)
-        hga = self._avg(self.home_ga, home, self.base_away)
-        agf = self._avg(self.away_gf, away, self.base_away)
-        aga = self._avg(self.away_ga, away, self.base_home)
+        if self.sos_strength:
+            hgf = self.home_gf_sos.get(home, self.base_home)
+            hga = self.home_ga_sos.get(home, self.base_away)
+            agf = self.away_gf_sos.get(away, self.base_away)
+            aga = self.away_ga_sos.get(away, self.base_home)
+        else:
+            hgf = self._avg(self.home_gf, home, self.base_home)
+            hga = self._avg(self.home_ga, home, self.base_away)
+            agf = self._avg(self.away_gf, away, self.base_away)
+            aga = self._avg(self.away_ga, away, self.base_home)
         if self.xg_weight > 0:
             w = self.xg_weight
             hxgf = self._avg(self.home_xgf, home, None)

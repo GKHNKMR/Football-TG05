@@ -26,9 +26,11 @@ desktop.ini
 /tmp/
 scratchpad/
 
-# scripts/tune_xg_weight.py's own output - a one-off backtest report, not
-# read by anything live (the weight it found is hardcoded in xg_blend.py)
+# One-off backtest reports (scripts/tune_xg_weight.py, tune_sos_strength.py)
+# - not read by anything live; a finding worth shipping gets hardcoded into
+# xg_blend.py (or similar) by hand instead.
 data/xg-weights.json
+data/sos-strengths.json
 
 # Legacy Streamlit path (not used by the static app)
 predictions.xlsx

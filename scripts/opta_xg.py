@@ -43,6 +43,14 @@ STOP = {
     "DEPORTIVO", "ASSOCIATION",
 }
 
+# same idiom as scripts/live_scores.py's ESPN matching - short/colloquial
+# words that don't line up with football-data.co.uk's own short names.
+WORD_ALIASES = {
+    "WOLVES": "WOLVERHAMPTON", "SPURS": "TOTTENHAM", "BORO": "MIDDLESBROUGH",
+    "NIJMEGEN": "NEC", "COLOGNE": "KOLN", "HAMBURGER": "HAMBURG", "MUNICH": "MUNCHEN",
+    "UTD": "UNITED",
+}
+
 # hand-verified stragglers a word-strip can't bridge (wildly different naming
 # style, not just abbreviation/suffix) - keyed by norm(opta_team_name) ->
 # the exact football-data.co.uk short name.
@@ -62,6 +70,7 @@ ALIASES = {
     "ISTANBUL BASAKSEHIR": "Buyuksehyr",
     "ACADEMICO DE VISEU": "Academico Viseu", "PACOS DE FERREIRA": "Pacos Ferreira",
     "DE PORTUGAL": "Sp Lisbon",
+    "STADE RENNAIS": "Rennes", "AMED SFK": "Amedspor", "ERZURUM BB": "Erzurumspor",
     # a longer official name that happens to *contain* a different, shorter
     # club's fd short name - the substring fallback below would misfire.
     "REIAL DEPORTIU ESPANYOL DE BARCELONA": "Espanol",   # not "Barcelona"
@@ -74,6 +83,12 @@ def norm(s):
     s = "".join(c for c in s if not unicodedata.combining(c))
     s = re.sub(r"[^A-Za-z0-9]+", " ", s.upper())
     toks = [t for t in s.split() if t and not t.isdigit() and t not in STOP]
+    # applied to BOTH sides (fd names and Opta names alike, via build_matcher
+    # below) so e.g. fd's short "Wolves" folds up to "WOLVERHAMPTON", which
+    # then lines up as a prefix of Opta's "WOLVERHAMPTON WANDERERS" through
+    # the substring fallback in build_matcher, instead of needing an exact
+    # match neither side alone would produce.
+    toks = [WORD_ALIASES.get(t, t) for t in toks]
     return " ".join(toks) or s.strip()
 
 

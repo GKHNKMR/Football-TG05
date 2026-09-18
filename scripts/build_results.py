@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIVISIONS, DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
 from goals_model import LeagueModel  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
+from xg_blend import XG_WEIGHT_BY_LEAGUE, load_xg_by_div, xg_seasons_for  # noqa: E402
 
 PRED_FILE = Path("predictions.json")
 ARCHIVE_FILE = Path("data/predictions-archive.json")
@@ -258,10 +259,12 @@ def reconstruct(actuals, already, start, today):
     that season's own prior seasons only (still leak-free - no data from the
     target season itself) and then reused for every match's per-match model."""
     rows = []
+    xg_by_div = load_xg_by_div()
     for div, (league, _lid) in DIVISIONS.items():
         by_code = {}
         for m in load_division(div):
             by_code.setdefault(m["season"], []).append(m)
+        xg_weight = XG_WEIGHT_BY_LEAGUE.get(league, 0.0)
         n = 0
         for target in RECON_TARGETS:
             ti = FD_SEASONS.index(target)
@@ -281,10 +284,13 @@ def reconstruct(actuals, already, start, today):
                 away = to_pretty(league, m["away"])
                 if (league, home, away, d) in already:
                     continue
+                xg_seasons = (xg_seasons_for(div, plan, before_date=m["date"], xg_by_div=xg_by_div)
+                             if xg_weight else None)
                 model = LeagueModel([
                     ([x for x in by_code.get(code, []) if x["date"] < m["date"]], w)
                     for code, w in plan
-                ], fit_rho_=False, default_rho=league_rho)
+                ], fit_rho_=False, default_rho=league_rho,
+                   xg_seasons=xg_seasons, xg_weight=xg_weight)
                 pred = model.predict(m["home"], m["away"])
                 fd = find_actual(actuals, league, m["home"], m["away"], d) or {}
                 n += 1

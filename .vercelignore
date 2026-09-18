@@ -15,6 +15,7 @@ data/cache/
 data/predictions-archive.json
 data/live-scores.json
 data/live-scores-debug.json
+data/opta-xg.json
 
 # Backtest CSV is not fetched by any page.
 data/backtest-pl-2526.csv

@@ -26,9 +26,11 @@ CROSSWALK = {
     "Premier League": {
         "Brighton & Hove Albion": "Brighton", "Coventry City": "Coventry",
         "Hull City": "Hull", "Ipswich Town": "Ipswich", "Leeds United": "Leeds",
+        "Leicester City": "Leicester", "Luton Town": "Luton",
         "Manchester City": "Man City", "Manchester United": "Man United",
         "Newcastle United": "Newcastle", "Nottingham Forest": "Nott'm Forest",
-        "Tottenham Hotspur": "Tottenham",
+        "Tottenham Hotspur": "Tottenham", "West Ham United": "West Ham",
+        "Wolverhampton Wanderers": "Wolves",
     },
     "LaLiga": {
         "Athletic Bilbao": "Ath Bilbao", "Atlético Madrid": "Ath Madrid",

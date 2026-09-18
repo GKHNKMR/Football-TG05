@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
 from goals_model import LeagueModel, DEFAULT_RHO  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
+from xg_blend import XG_WEIGHT_BY_LEAGUE, xg_seasons_for  # noqa: E402
 
 try:
     from zoneinfo import ZoneInfo
@@ -491,8 +492,25 @@ def main():
         print(f"[{name}] {stem}")
         raw_seasons = [(load_season(stem, s), w) for s, w in SEASONS]
         current = raw_seasons[0][0]
+        xg_weight = XG_WEIGHT_BY_LEAGUE.get(name, 0.0)
+        div = DIV_BY_LEAGUE.get(name)
+        xg_seasons = None
+        if xg_weight and div:
+            # openfootball's own raw names carry a club suffix clean_name()
+            # strips ("Manchester City FC", "AFC Bournemouth") - LeagueModel
+            # is trained and queried on those raw forms, so translate
+            # football-data.co.uk's short names (via to_pretty, which lands
+            # on the same clean display form clean_name() produces) back to
+            # whichever raw spelling this league's own fixtures actually use.
+            raw_names = {m[side] for matches, _ in raw_seasons for m in matches
+                        for side in ("team1", "team2")}
+            clean_to_raw = {clean_name(r): r for r in raw_names}
+            xg_seasons = xg_seasons_for(
+                div, [(s, w) for s, w in SEASONS],
+                rename=lambda n: clean_to_raw.get(to_pretty(name, n), to_pretty(name, n)))
         model = LeagueModel([(_of_matches(matches), w) for matches, w in raw_seasons],
-                            fit_rho_=False, default_rho=_league_rho(name))
+                            fit_rho_=False, default_rho=_league_rho(name),
+                            xg_seasons=xg_seasons, xg_weight=xg_weight)
 
         count = dropped = 0
         for m in current:

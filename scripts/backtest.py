@@ -29,6 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import to_pretty  # noqa: E402
 from goals_model import LeagueModel  # noqa: E402
+from xg_blend import XG_WEIGHT_BY_LEAGUE, xg_seasons_for  # noqa: E402
 
 CSV_DIR = Path("data/football-data")
 OUT_FILE = Path("data/backtest.json")
@@ -178,8 +179,12 @@ def main():
             priors = ALL_SEASONS[max(0, ti - 4):ti][::-1]  # nearest first
             if len(priors) < 2:
                 continue
+            xg_weight = XG_WEIGHT_BY_LEAGUE.get(league, 0.0)
+            xg_seasons = (xg_seasons_for(div, list(zip(priors, PRIOR_WEIGHTS)))
+                         if xg_weight else None)
             model = LeagueModel([(by_code.get(p, []), w)
-                                 for p, w in zip(priors, PRIOR_WEIGHTS)])
+                                 for p, w in zip(priors, PRIOR_WEIGHTS)],
+                                xg_seasons=xg_seasons, xg_weight=xg_weight)
             for m in by_code.get(target, []):
                 pred = model.predict(m["home"], m["away"])
                 rec = {

@@ -214,6 +214,25 @@ def season_summary(matches, team, season):
     }
 
 
+def standings_table(matches, team_names, season):
+    """Full current-season table for a division, ranked like a normal league
+    table (points, then goal difference, then goals for) - used only to look
+    up the two teams in a given match, not shown in full."""
+    rows = []
+    for t in team_names:
+        s = season_summary(matches, t, season)
+        if not s.get("played"):
+            continue
+        rows.append({
+            "team": t, "played": s["played"], "w": s["w"], "d": s["d"], "l": s["l"],
+            "gf": s["gf"], "ga": s["ga"], "diff": s["gf"] - s["ga"], "pts": s["w"] * 3 + s["d"],
+        })
+    rows.sort(key=lambda r: (-r["pts"], -r["diff"], -r["gf"], r["team"]))
+    for i, r in enumerate(rows, 1):
+        r["rank"] = i
+    return {r["team"]: r for r in rows}, len(rows)
+
+
 def goals_by_season(matches, team):
     """Per-match goal averages for each of the last five completed seasons."""
     out = []
@@ -379,9 +398,13 @@ def build_h2h_file(by_league, predictions):
 def main():
     predictions = json.loads(PRED_FILE.read_text(encoding="utf-8"))
     by_league = {}
+    standings_by_league = {}
+    league_size = {}
     for div, (league, _lid) in DIVISIONS.items():
-        by_league[league] = load_division(div)
-        print(f"{league:15} {len(by_league[league])} completed matches")
+        matches = by_league[league] = load_division(div)
+        team_names = {m["home"] for m in matches} | {m["away"] for m in matches}
+        standings_by_league[league], league_size[league] = standings_table(matches, team_names, CURRENT_SEASON)
+        print(f"{league:15} {len(matches)} completed matches · {league_size[league]} teams in {CURRENT_SEASON} table")
 
     out_matches = {}
     unmatched = set()
@@ -401,17 +424,21 @@ def main():
 
         home_fd, home_ok = resolve(p["home"])
         away_fd, away_ok = resolve(p["away"])
+        standings = standings_by_league.get(league, {})
+        n_teams = league_size.get(league, 0)
 
         def side(name, fd, ok):
             rows = team_matches(matches, fd) if ok else []
             form = [perspective(m, fd) for m in rows][-FORM_N:][::-1]
             for f in form:
                 f["opp"] = pretty.get(f["opp"], f["opp"])
+            standing = standings.get(fd)
             return {
                 "name": name,
                 "fd": fd,
                 "matched": ok,
                 "season": season_summary(matches, fd, CURRENT_SEASON) if ok else {"played": 0},
+                "standing": {**standing, "of": n_teams} if standing else None,
                 "goals5": goals_by_season(matches, fd) if ok else [],
                 "form": form,
             }

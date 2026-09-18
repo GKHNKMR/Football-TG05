@@ -158,6 +158,13 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .s-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:13px}
 .s-card h3{margin:0 0 9px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:900}
 .s-cols{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.std-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.std-tbl th{text-align:center;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;padding:5px 4px;border-bottom:1px solid var(--line)}
+.std-tbl th:nth-child(2){text-align:left}
+.std-tbl td{padding:7px 4px;border-bottom:1px solid var(--hair);text-align:center}
+.std-tbl td:first-child{font-weight:900;color:var(--muted)}
+.std-tbl td:nth-child(2){text-align:left;font-weight:700}
+.std-tbl td:last-child{font-weight:900;color:var(--text)}
 .s-stat{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--hair)}
 .s-stat b{font-weight:800}
 .s-team{font-size:14px;font-weight:900;margin-bottom:6px}
@@ -1213,6 +1220,18 @@ function goalChart(h,a){
     g+xl+legend+draw(hv,HS,S_HOME,h.name)+draw(av,AS,S_AWAY,a.name)+
     `</svg><div class="s-note">Her takımın o sezondaki <b>tüm lig maçlarında</b> maç başına toplam gol (attığı + yediği) — bu iki takımın aralarındaki maçlar <b>değil</b>. Noktaya gelince attığı/yediği ayrımı görünür. Kaynak: football-data.co.uk</div>`;
 }
+function standingsRow(t){
+  const s=t.standing;if(!s)return'';
+  const av=s.diff>0?'+'+s.diff:s.diff;
+  return `<tr><td>${s.rank}</td><td>${esc(t.name)}</td><td>${s.played}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}</td><td>${s.ga}</td><td>${av}</td><td>${s.pts}</td></tr>`;
+}
+function standingsTable(h,a){
+  if(!h.standing&&!a.standing)return'';
+  const of=(h.standing||a.standing).of;
+  return `<div class="s-card"><h3>Puan durumu${of?` · ${of} takımlık lig`:''}</h3>
+    <table class="std-tbl"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>A</th><th>Y</th><th>AV</th><th>P</th></tr></thead>
+    <tbody>${standingsRow(h)}${standingsRow(a)}</tbody></table></div>`;
+}
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];
   sheet.hidden=false;
@@ -1224,6 +1243,7 @@ function openSheet(mid){
     <button class="s-close">×</button>
     <h2>${esc(h.name)} — ${esc(a.name)}</h2>
     <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)} · kaynak: football-data.co.uk</div>
+    ${standingsTable(h,a)}
     <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
     <div class="s-card"><h3>Maç başına gol ortalaması · son 5 sezon</h3>${goalChart(h,a)}</div>
     <div class="s-card"><h3>Form &amp; sezon · bu sezon</h3><div class="s-cols">${teamBlock(h)}${teamBlock(a)}</div></div>

@@ -167,6 +167,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .fchip.D{background:var(--hair);color:var(--muted)}
 .fchip.L{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
 .fchip small{display:block;font-size:9px;font-weight:700;opacity:.75;margin-top:1px}
+.fchip.recent{outline:2px solid #ffd54a;outline-offset:1px}
 .h2h-row{display:grid;grid-template-columns:78px 1fr auto;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid var(--hair)}
 .h2h-row .sc{font-weight:900}
 .h2h-tot{color:var(--muted);font-size:11px;margin-left:6px}
@@ -1169,7 +1170,8 @@ function sline(k,v){return `<div class="s-stat"><span>${k}</span><b>${v}</b></di
 function teamBlock(t){
   const s=t.season||{};
   if(!t.matched||!s.played){return `<div><div class="s-team">${esc(t.name)}</div><div class="s-note">Bu sezon CSV verisi yok.</div></div>`;}
-  const form=(t.form||[]).map(f=>`<span class="fchip ${f.res}" title="${f.date} ${f.venue==='H'?'(E)':'(D)'} ${esc(f.opp)} ${f.gf}-${f.ga}">${f.res}<small>${f.gf}-${f.ga}</small></span>`).join('');
+  // t.form en yeni maç ilk sırada (bkz. build_match_stats.py: [-FORM_N:][::-1]) - yani soldaki 3 en son 3 maç
+  const form=(t.form||[]).map((f,i)=>`<span class="fchip ${f.res}${i<3?' recent':''}" title="${f.date} ${f.venue==='H'?'(E)':'(D)'} ${esc(f.opp)} ${f.gf}-${f.ga}${i<3?' · son 3 maç':''}">${f.res}<small>${f.gf}-${f.ga}</small></span>`).join('');
   const p=v=>v!=null?v+'%':'—';
   return `<div>
     <div class="s-team">${esc(t.name)} <span class="s-note" style="font-weight:600">· ${s.played} maç</span></div>

@@ -41,6 +41,9 @@ jobs:
         continue-on-error: true
       - name: Build predictions
         run: python scripts/update_predictions.py
+      - name: Apply missing-key-player injury/suspension estimate (Transfermarkt)
+        run: python scripts/fetch_injuries.py
+        continue-on-error: true
       - name: Apply missing-key-player lineup adjustment (ESPN starting XI)
         run: python scripts/fetch_lineups.py
         continue-on-error: true

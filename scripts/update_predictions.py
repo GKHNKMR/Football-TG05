@@ -261,6 +261,8 @@ def of_predict(model, home, away):
     """model.predict() + the Vurgu label, for openfootball-sourced leagues."""
     pred = model.predict(home, away)
     pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
+    pred["base_lam_home"], pred["base_lam_away"], pred["base_rho"] = (
+        pred["lam_home"], pred["lam_away"], pred["rho"])
     return pred
 
 
@@ -402,6 +404,8 @@ def _fd_pred_dict(model, home, away):
     """model.predict() + the Vurgu label, for football-data-sourced leagues."""
     pred = model.predict(home, away)
     pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
+    pred["base_lam_home"], pred["base_lam_away"], pred["base_rho"] = (
+        pred["lam_home"], pred["lam_away"], pred["rho"])
     return pred
 
 

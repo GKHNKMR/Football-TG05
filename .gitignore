@@ -38,12 +38,18 @@ data/referee-strengths.json
 data/weather-strengths.json
 
 # Local dev cache for scripts/euro_fixtures.py (historical UEFA fixture
-# lookups for tune_rest_days.py), scripts/stadium_geo.py (stadium
-# coordinates for tune_weather.py) and scripts/weather_data.py (Meteostat
-# station data) - not part of the live pipeline, safe to re-fetch if lost.
+# lookups for tune_rest_days.py) and scripts/weather_data.py (Meteostat
+# station data, tune_weather.py) - backtest-only, not part of the live
+# pipeline, safe to re-fetch if lost.
 data/cache/espn_euro/
-data/cache/wikidata_stadiums/
 data/cache/meteostat/
+
+# NOTE: data/cache/wikidata_stadiums/ is NOT ignored - scripts/stadium_geo.py's
+# club_qid() cache is reused live by scripts/fetch_injuries.py every hourly
+# run (Wikidata club id -> Transfermarkt team id), so it's committed like
+# data/cache/openfootball to avoid re-resolving every club from scratch
+# each run (slow, and Wikidata's public endpoints throttle hard - see that
+# module's docstring).
 
 # Legacy Streamlit path (not used by the static app)
 predictions.xlsx

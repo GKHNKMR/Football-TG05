@@ -114,6 +114,40 @@ def fit_rho(low_score_matches):
     return best_rho
 
 
+KEY_PLAYER_DAMPING_ALPHA = 0.5  # a missing player's output share only partly
+                                 # maps onto team lambda loss - teammates absorb some
+KEY_PLAYER_MAX_DAMPING = 0.6    # cap combined damping so lambda never collapses to ~0
+
+
+def key_player_damping(lam_home, lam_away, rho, home_missing_share, away_missing_share,
+                        alpha=KEY_PLAYER_DAMPING_ALPHA, max_damp=KEY_PLAYER_MAX_DAMPING):
+    """Damp lam_home/lam_away for a missing key attacking player and
+    recompute the Over probabilities from the same rho - shared by
+    scripts/fetch_injuries.py (a Transfermarkt-listed absence, known days
+    ahead) and scripts/fetch_lineups.py (the confirmed real starting XI,
+    known ~60-75 min ahead) so both apply identical math to whichever
+    "missing share" they've each independently worked out. Returns None if
+    neither side has any damping to apply.
+    """
+    damp_home = min(max_damp, alpha * home_missing_share)
+    damp_away = min(max_damp, alpha * away_missing_share)
+    if not damp_home and not damp_away:
+        return None
+    lam_home = lam_home * (1 - damp_home)
+    lam_away = lam_away * (1 - damp_away)
+    grid = dc_score_grid(lam_home, lam_away, rho)
+
+    def over(n):
+        return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
+
+    return {
+        "lam_home": round(lam_home, 3), "lam_away": round(lam_away, 3),
+        "exp_goals": round(lam_home + lam_away, 3),
+        "p_over_0_5": round(over(0), 4), "p_over_1_5": round(over(1), 4),
+        "p_over_2_5": round(over(2), 4),
+    }
+
+
 class LeagueModel:
     """Weighted home/away scoring rates (with match-recency decay), a
     Dixon-Coles rho fit to the league's own low-score frequencies, and a

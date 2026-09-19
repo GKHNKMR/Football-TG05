@@ -1228,9 +1228,10 @@ function standingsRow(t){
 function standingsTable(h,a){
   if(!h.standing&&!a.standing)return'';
   const of=(h.standing||a.standing).of;
+  const rows=[h,a].sort((x,y)=>(x.standing?x.standing.rank:Infinity)-(y.standing?y.standing.rank:Infinity));
   return `<div class="s-card"><h3>Puan durumu${of?` · ${of} takımlık lig`:''}</h3>
     <table class="std-tbl"><thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>A</th><th>Y</th><th>AV</th><th>P</th></tr></thead>
-    <tbody>${standingsRow(h)}${standingsRow(a)}</tbody></table></div>`;
+    <tbody>${standingsRow(rows[0])}${standingsRow(rows[1])}</tbody></table></div>`;
 }
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];

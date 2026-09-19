@@ -47,7 +47,7 @@ import time
 import unicodedata
 import urllib.parse
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -68,10 +68,16 @@ def _safe(msg):
     return msg.encode("ascii", errors="replace").decode("ascii")
 
 
+_TRANSIENT_HTTP = {429, 500, 502, 503, 504}
+
+
 def _get_json(url):
-    """5 attempts total, backing off hard on a 429 - Wikidata's public
+    """5 attempts total, backing off hard on a 429/5xx - Wikidata's public
     endpoints throttle for a sustained window, not just a per-request beat,
-    so a short backoff (or the earlier flat 0.5s pacing) wasn't enough."""
+    so a short backoff (or the earlier flat 0.5s pacing) wasn't enough.
+    Raises on final failure - callers must NOT cache a None caused by this
+    (a transient server hiccup) as if it meant "this club genuinely has no
+    such Wikidata fact"; see club_qid()/club_coord() below."""
     last_exc = None
     for attempt in range(5):
         try:
@@ -80,28 +86,34 @@ def _get_json(url):
                 return json.loads(resp.read().decode("utf-8"))
         except HTTPError as exc:
             last_exc = exc
-            if exc.code == 429:
+            if exc.code in _TRANSIENT_HTTP:
                 time.sleep(10 * (attempt + 1))
                 continue
             raise
+        except URLError as exc:  # timeout, DNS hiccup, connection reset, ...
+            last_exc = exc
+            time.sleep(10 * (attempt + 1))
     raise last_exc
 
 
 def _search_club_qid(term):
+    """Returns (qid_or_None, ok). ok=False means the lookup itself failed
+    (network/server) - the caller must not treat that as "no match"."""
     url = (f"{SEARCH_URL}?action=wbsearchentities&search={urllib.parse.quote(term)}"
            f"&language=en&format=json&type=item&limit=5")
     try:
         data = _get_json(url)
     except Exception as exc:
         print(_safe(f"  wbsearchentities failed [{term}]: {exc}"))
-        return None
+        return None, False
     for cand in data.get("search", []):
         if _FOOTBALL_HINT.search(cand.get("description") or ""):
-            return cand["id"]
-    return None
+            return cand["id"], True
+    return None, True
 
 
 def _venue_coord(qid):
+    """Returns (coord_or_None, ok) - see _search_club_qid()."""
     query = (f'SELECT ?coord WHERE {{ wd:{qid} wdt:P115 ?venue. '
              f'?venue wdt:P625 ?coord. }} LIMIT 1')
     url = f"{SPARQL_URL}?query={urllib.parse.quote(query)}&format=json"
@@ -109,23 +121,61 @@ def _venue_coord(qid):
         data = _get_json(url)
     except Exception as exc:
         print(_safe(f"  venue SPARQL failed [{qid}]: {exc}"))
-        return None
+        return None, False
     rows = data["results"]["bindings"]
     if not rows:
-        return None
+        return None, True
     m = _POINT_RE.match(rows[0]["coord"]["value"])
     if not m:
-        return None
+        return None, True
     lon, lat = float(m.group(1)), float(m.group(2))
-    return (lat, lon)
+    return (lat, lon), True
+
+
+def _safe_filename(league, fd_name):
+    safe = re.sub(r"[^A-Za-z0-9]+", "_", fd_name).strip("_")
+    return f"{re.sub(r'[^A-Za-z0-9]+', '_', league)}_{safe}"
+
+
+def club_qid(league, fd_name):
+    """This club's Wikidata item id (e.g. "Q50602"), or None - cached per
+    (league, fd_name), reused by club_coord() (venue coordinate) and by
+    scripts/injury_data.py (Transfermarkt team id, P7223) so the search
+    step (the expensive/rate-limited part) only ever happens once per club,
+    not once per Wikidata property someone wants off the same entity.
+
+    Only caches a genuine "no such club" result - a transient failure
+    (timeout, 5xx) returns None WITHOUT writing the cache, so the next
+    hourly pipeline run tries again instead of being stuck on a false
+    negative forever (this bit the live injury feature in practice: a burst
+    of Wikidata 502s got permanently cached as "this club has no Wikidata
+    entity" for otherwise very findable clubs)."""
+    cache_path = CACHE_DIR / f"qid_{_safe_filename(league, fd_name)}.json"
+    if cache_path.exists():
+        try:
+            return json.loads(cache_path.read_text(encoding="utf-8")) or None
+        except json.JSONDecodeError:
+            pass
+
+    search_term = to_pretty(league, fd_name)
+    if search_term == fd_name:
+        search_term = fd_name  # no crosswalk entry - search the raw name as-is
+    qid, ok = _search_club_qid(search_term)
+    time.sleep(REQUEST_PAUSE)
+    if not ok:
+        return None
+
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(json.dumps(qid), encoding="utf-8")
+    return qid
 
 
 def club_coord(league, fd_name):
     """(lat, lon) for this football-data.co.uk club name, or None if it
     can't be resolved. Cached per (league, fd_name) - a fixed historical
-    fact once found (or not)."""
-    safe = re.sub(r"[^A-Za-z0-9]+", "_", fd_name).strip("_")
-    cache_path = CACHE_DIR / f"{re.sub(r'[^A-Za-z0-9]+', '_', league)}_{safe}.json"
+    fact once found (or not); a transient lookup failure isn't cached,
+    same reasoning as club_qid()."""
+    cache_path = CACHE_DIR / f"{_safe_filename(league, fd_name)}.json"
     if cache_path.exists():
         try:
             raw = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -133,14 +183,13 @@ def club_coord(league, fd_name):
         except json.JSONDecodeError:
             pass
 
-    search_term = to_pretty(league, fd_name)
-    if search_term == fd_name:
-        search_term = fd_name  # no crosswalk entry - search the raw name as-is
-    qid = _search_club_qid(search_term)
+    qid = club_qid(league, fd_name)
+    if not qid:
+        return None
+    coord, ok = _venue_coord(qid)
     time.sleep(REQUEST_PAUSE)
-    coord = _venue_coord(qid) if qid else None
-    if qid:
-        time.sleep(REQUEST_PAUSE)
+    if not ok:
+        return None
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(list(coord) if coord else None), encoding="utf-8")

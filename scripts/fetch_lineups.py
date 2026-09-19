@@ -1,10 +1,20 @@
-"""Step 2 of the missing-key-player feature (see scripts/fetch_key_players.py
-for step 1): shortly before kickoff, check whether a fixture's actual
-starting XI (from ESPN, the same free source scripts/fetch_live_scores.py
-already uses) is missing one of data/key-players.json's listed attacking
-outlets for that team, and if so damp that team's lambda in predictions.json
-and recompute its Over probabilities from the same (rho, Dixon-Coles) this
-fixture's prediction was already built with.
+"""Final step of the missing-key-player feature (see scripts/
+fetch_key_players.py for the key-player list and scripts/fetch_injuries.py
+for the earlier, days-ahead injury/suspension estimate this supersedes):
+shortly before kickoff, check the fixture's ACTUAL starting XI (ESPN, the
+same free source scripts/fetch_live_scores.py already uses) against
+data/key-players.json, and damp that team's lambda if a listed key player
+isn't in it.
+
+Always recomputed from base_lam_home/base_lam_away/base_rho - the pristine,
+never-adjusted model output update_predictions.py stores on every row - not
+from whatever fetch_injuries.py may have already written into lam_home/
+lam_away. That's what keeps this a REPLACEMENT of the injury-based estimate
+once the real lineup is known, not a second damping stacked on top of it:
+an injured player who's actually back in the XI reverts fully, a healthy
+player rested for rotation gets caught fresh, and a player who really is
+still out just gets re-confirmed - all from the same starting point either
+way.
 
 Why this can't run at prediction-build time: an official starting XI is
 only published roughly 60-75 minutes before kickoff, while
@@ -15,19 +25,11 @@ only ever finds something to do for fixtures kicking off within
 LOOKAHEAD_MINUTES - most hourly runs touch zero fixtures, same as
 fetch_live_scores.py mostly doing nothing outside actual match windows.
 
-Name matching across three independent providers (Opta's own player names in
-key-players.json, ESPN's roster names, nothing standardized between them) is
-inherently approximate - this compares normalized surnames, scoped to one
-team's own starters, not a global player database. Treat a "missing" flag as
-a best-effort signal, not a certainty.
-
 Standard library only.
 """
 
 import json
-import re
 import sys
-import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -36,8 +38,9 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import to_fd  # noqa: E402
 from live_scores import norm as norm_team  # noqa: E402
-from goals_model import dc_score_grid  # noqa: E402
+from goals_model import key_player_damping, dc_score_grid  # noqa: E402
 from fetch_live_scores import ESPN_SLUG  # noqa: E402
+from player_match import key_players_missing_from, name_tokens  # noqa: E402
 
 PREDICTIONS_FILE = Path("predictions.json")
 KEY_PLAYERS_FILE = Path("data/key-players.json")
@@ -49,32 +52,6 @@ LOOKAHEAD_MINUTES = 150   # a lineup can drop ~60-75 min pre-kickoff; give the
                           # hourly cron more than one chance to catch it
 GRACE_MINUTES = 15        # keep checking a few minutes into the match too,
                           # in case a run lands just before lineups post
-DAMPING_ALPHA = 0.5       # a missing player's output share only partly maps
-                          # onto team lambda loss - teammates absorb some of it
-MAX_DAMPING = 0.6         # cap combined damping so lambda never collapses to ~0
-
-_JR_ALIASES = {"JR", "JUNIOR", "JNR"}
-
-
-def _fold(s):
-    s = unicodedata.normalize("NFKD", s or "")
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return re.sub(r"[^A-Za-z]+", " ", s.upper()).split()
-
-
-def _surname_key(name):
-    toks = _fold(name)
-    if not toks:
-        return ""
-    tok = toks[-1]
-    return "JUNIOR" if tok in _JR_ALIASES else tok
-
-
-def _starter_tokens(full_name):
-    """All normalized tokens in an ESPN starter's name (JR-aliased), so a
-    key player's surname just needs to appear somewhere in it."""
-    toks = {("JUNIOR" if t in _JR_ALIASES else t) for t in _fold(full_name)}
-    return toks
 
 
 def fetch_json(url):
@@ -124,43 +101,34 @@ def fetch_starting_xi(slug, event_id):
             if not entry.get("starter"):
                 continue
             full_name = (entry.get("athlete") or {}).get("fullName", "")
-            starters |= _starter_tokens(full_name)
+            starters |= name_tokens(full_name)
         if homeaway in ("home", "away"):
             out[homeaway] = starters
     return out if "home" in out and "away" in out else None
 
 
-def missing_key_players(key_players, starter_tokens):
-    """key_players: data/key-players.json[fd_team] list. Returns (missing, total_share)."""
-    missing = []
-    for kp in key_players:
-        if _surname_key(kp["player"]) not in starter_tokens:
-            missing.append(kp["player"])
-    total_share = sum(kp["share"] for kp in key_players if kp["player"] in missing)
-    return missing, total_share
-
-
 def adjust_row(row, home_missing_share, away_missing_share):
-    lam_home, lam_away, rho = row["lam_home"], row["lam_away"], row["rho"]
-    damp_home = min(MAX_DAMPING, DAMPING_ALPHA * home_missing_share)
-    damp_away = min(MAX_DAMPING, DAMPING_ALPHA * away_missing_share)
-    if not damp_home and not damp_away:
+    """Always sets the row's FINAL lam_home/lam_away/exp_goals/p_over_* from
+    base_lam_home/base_lam_away/base_rho - the confirmed real lineup is the
+    authoritative source once known, so a player fetch_injuries.py flagged
+    as out but who actually started must fully revert to the base numbers,
+    not just leave the earlier (now stale) injury-based estimate in place.
+    Returns whether the real lineup ended up applying any damping at all."""
+    base_lh = row.get("base_lam_home", row["lam_home"])
+    base_la = row.get("base_lam_away", row["lam_away"])
+    base_rho = row.get("base_rho", row["rho"])
+    adj = key_player_damping(base_lh, base_la, base_rho, home_missing_share, away_missing_share)
+    if adj is None:
+        row["lam_home"], row["lam_away"], row["rho"] = base_lh, base_la, base_rho
+        row["exp_goals"] = round(base_lh + base_la, 3)
+        grid = dc_score_grid(base_lh, base_la, base_rho)
+
+        def over(n):
+            return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
+        row["p_over_0_5"], row["p_over_1_5"], row["p_over_2_5"] = (
+            round(over(0), 4), round(over(1), 4), round(over(2), 4))
         return False
-    lam_home *= (1 - damp_home)
-    lam_away *= (1 - damp_away)
-    grid = dc_score_grid(lam_home, lam_away, rho)
-
-    def over(n):
-        return max(0.0, min(1.0, sum(p for (x, y), p in grid.items() if x + y > n)))
-
-    row["pre_lineup"] = {"lam_home": row["lam_home"], "lam_away": row["lam_away"],
-                          "exp_goals": row["exp_goals"], "p_over_0_5": row["p_over_0_5"],
-                          "p_over_1_5": row["p_over_1_5"], "p_over_2_5": row["p_over_2_5"]}
-    row["lam_home"], row["lam_away"] = round(lam_home, 3), round(lam_away, 3)
-    row["exp_goals"] = round(lam_home + lam_away, 3)
-    row["p_over_0_5"] = round(over(0), 4)
-    row["p_over_1_5"] = round(over(1), 4)
-    row["p_over_2_5"] = round(over(2), 4)
+    row.update(adj)
     return True
 
 
@@ -180,7 +148,7 @@ def main():
     # every hourly run (no merge - see that script), so there is no state to
     # persist here across runs; this just re-derives the same adjustment
     # each hour a fixture stays inside the lookahead window, which is cheap
-    # and idempotent (identical base lam_home/lam_away in, identical
+    # and idempotent (identical base_lam_home/base_lam_away in, identical
     # adjustment out) rather than something that needs a "done already" flag.
     checked = adjusted = 0
     for row in predictions:
@@ -210,8 +178,8 @@ def main():
         if not xi:
             continue  # lineup not posted yet - try again next run
 
-        home_missing, home_share = missing_key_players(home_kp, xi["home"])
-        away_missing, away_share = missing_key_players(away_kp, xi["away"])
+        home_missing, home_share = key_players_missing_from(home_kp, xi["home"])
+        away_missing, away_share = key_players_missing_from(away_kp, xi["away"])
         row["lineup"] = {"source": "ESPN starting XI",
                           "home_missing_key": home_missing, "away_missing_key": away_missing}
         if adjust_row(row, home_share, away_share):

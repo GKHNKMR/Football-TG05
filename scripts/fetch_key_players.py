@@ -93,12 +93,24 @@ def main():
             unmatched_teams.add((div, team_opta))
             continue
         league = out.setdefault(fd_name, [])
-        league.append({"player": player, "share": round(share, 3),
-                       "minutes": round(raw_minutes)})
+        league.append({"player": player, "share": share, "minutes": raw_minutes})
 
     for fd_name, players in out.items():
-        players.sort(key=lambda p: p["share"], reverse=True)
-        out[fd_name] = players[:TOP_N]
+        # Opta's own team_name sometimes has more than one string variant
+        # for the same club across seasons/competitions (both resolving to
+        # this fd_name via the matcher above) - a player who appears under
+        # both gets computed as two independent, differently-denominated
+        # fragments; merge same-name entries back into one before ranking
+        # rather than showing a real player twice under two different shares.
+        merged = {}
+        for p in players:
+            e = merged.setdefault(p["player"], {"share": 0.0, "minutes": 0})
+            e["share"] += p["share"]
+            e["minutes"] += p["minutes"]
+        combined = [{"player": name, "share": round(e["share"], 3), "minutes": round(e["minutes"])}
+                    for name, e in merged.items()]
+        combined.sort(key=lambda p: p["share"], reverse=True)
+        out[fd_name] = combined[:TOP_N]
 
     OUT_FILE.write_text(json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True),
                         encoding="utf-8")

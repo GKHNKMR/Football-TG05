@@ -43,6 +43,7 @@ CROSSWALK = {
         "Bayern München": "Bayern Munich", "Mönchengladbach": "M'gladbach",
         "Borussia Dortmund": "Dortmund", "Eintracht Frankfurt": "Ein Frankfurt",
         "Köln": "FC Koln", "Hamburger SV": "Hamburg", "Mainz 05": "Mainz",
+        "VfB Stuttgart": "Stuttgart",
     },
     "Championship": {
         "Birmingham City": "Birmingham", "Blackburn Rovers": "Blackburn",

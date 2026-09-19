@@ -17,7 +17,7 @@
     "p_over_1_5": 0.7769,
     "p_over_2_5": 0.5243,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.59,
       "u25_odds": 2.24,
@@ -29,271 +29,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-19-01",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-19T18:45:00Z",
-    "home": "Venezia",
-    "away": "Lazio",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "lam_home": 0.836,
-    "lam_away": 1.425,
-    "exp_goals": 2.261,
-    "rho": -0.03,
-    "p_over_0_5": 0.892,
-    "p_over_1_5": 0.6638,
-    "p_over_2_5": 0.3936,
-    "label": "MEDIUM",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "72'",
-      "score": "0-2"
-    },
-    "market": {
-      "o25_odds": 1.76,
-      "u25_odds": 2.0,
-      "o25_implied": 0.5319,
-      "h": 3.67,
-      "d": 3.57,
-      "a": 1.97,
-      "edge25": -0.1383
-    }
-  },
-  {
-    "match_id": "L1-2026-09-19-01",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-19T18:45:00Z",
-    "home": "Le Mans",
-    "away": "Lorient",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "lam_home": 1.633,
-    "lam_away": 1.652,
-    "exp_goals": 3.285,
-    "rho": -0.05,
-    "p_over_0_5": 0.9575,
-    "p_over_1_5": 0.8446,
-    "p_over_2_5": 0.6376,
-    "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "70'",
-      "score": "2-0"
-    },
-    "market": {
-      "o25_odds": 1.76,
-      "u25_odds": 1.98,
-      "o25_implied": 0.5294,
-      "h": 2.64,
-      "d": 3.39,
-      "a": 2.56,
-      "edge25": 0.1082
-    }
-  },
-  {
-    "match_id": "L1-2026-09-19-02",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-19T18:45:00Z",
-    "home": "Toulouse",
-    "away": "Le Havre",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 5,
-    "lam_home": 1.265,
-    "lam_away": 1.317,
-    "exp_goals": 2.581,
-    "rho": -0.05,
-    "p_over_0_5": 0.918,
-    "p_over_1_5": 0.7353,
-    "p_over_2_5": 0.4769,
-    "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "74'",
-      "score": "2-1"
-    },
-    "market": {
-      "o25_odds": 1.78,
-      "u25_odds": 1.96,
-      "o25_implied": 0.5241,
-      "h": 1.71,
-      "d": 3.77,
-      "a": 4.62,
-      "edge25": -0.0472
-    }
-  },
-  {
-    "match_id": "L1-2026-09-19-03",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-19T18:45:00Z",
-    "home": "Angers",
-    "away": "Troyes",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "lam_home": 1.187,
-    "lam_away": 1.267,
-    "exp_goals": 2.454,
-    "rho": -0.05,
-    "p_over_0_5": 0.9076,
-    "p_over_1_5": 0.7096,
-    "p_over_2_5": 0.4444,
-    "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "73'",
-      "score": "2-0"
-    },
-    "market": {
-      "o25_odds": 1.97,
-      "u25_odds": 1.77,
-      "o25_implied": 0.4733,
-      "h": 2.19,
-      "d": 3.31,
-      "a": 3.25,
-      "edge25": -0.0289
-    }
-  },
-  {
-    "match_id": "L1-2026-09-19-04",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-19T18:45:00Z",
-    "home": "Lyon",
-    "away": "Rennes",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.952,
-    "lam_away": 1.688,
-    "exp_goals": 3.64,
-    "rho": -0.05,
-    "p_over_0_5": 0.9694,
-    "p_over_1_5": 0.8825,
-    "p_over_2_5": 0.7043,
-    "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "57'",
-      "score": "3-0"
-    },
-    "market": {
-      "o25_odds": 1.52,
-      "u25_odds": 2.44,
-      "o25_implied": 0.6162,
-      "h": 2.09,
-      "d": 3.72,
-      "a": 3.09,
-      "edge25": 0.0881
-    }
-  },
-  {
-    "match_id": "LL-2026-09-19-01",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-19T19:00:00Z",
-    "home": "Sevilla",
-    "away": "Barcelona",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.266,
-    "lam_away": 2.261,
-    "exp_goals": 3.527,
-    "rho": -0.01,
-    "p_over_0_5": 0.9698,
-    "p_over_1_5": 0.8678,
-    "p_over_2_5": 0.6841,
-    "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "51'",
-      "score": "1-1"
-    },
-    "market": {
-      "o25_odds": 1.24,
-      "u25_odds": 3.83,
-      "o25_implied": 0.7554,
-      "h": 11.92,
-      "d": 7.42,
-      "a": 1.19,
-      "edge25": -0.0713
-    }
-  },
-  {
-    "match_id": "ED-2026-09-19-01",
-    "league_id": 88,
-    "league": "Eredivisie",
-    "kickoff_utc": "2026-09-19T19:00:00Z",
-    "home": "Willem II",
-    "away": "Fortuna Sittard",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 2,
-    "lam_home": 1.142,
-    "lam_away": 1.582,
-    "exp_goals": 2.723,
-    "rho": -0.06,
-    "p_over_0_5": 0.9272,
-    "p_over_1_5": 0.7627,
-    "p_over_2_5": 0.5121,
-    "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "52'",
-      "score": "0-0"
-    },
-    "market": {
-      "o25_odds": 1.51,
-      "u25_odds": 2.44,
-      "o25_implied": 0.6177,
-      "h": 2.47,
-      "d": 3.69,
-      "a": 2.49,
-      "edge25": -0.1056
-    }
-  },
-  {
-    "match_id": "PR-2026-09-19-01",
-    "league_id": 94,
-    "league": "Primeira Liga",
-    "kickoff_utc": "2026-09-19T19:30:00Z",
-    "home": "Sporting CP",
-    "away": "Arouca",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 2.272,
-    "lam_away": 0.996,
-    "exp_goals": 3.268,
-    "rho": 0.02,
-    "p_over_0_5": 0.9637,
-    "p_over_1_5": 0.8358,
-    "p_over_2_5": 0.6342,
-    "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
-    "live": {
-      "status": "41'",
-      "score": "2-0"
-    },
-    "market": {
-      "o25_odds": 1.4,
-      "u25_odds": 2.79,
-      "o25_implied": 0.6659,
-      "h": 1.2,
-      "d": 6.44,
-      "a": 11.85,
-      "edge25": -0.0317
-    }
-  },
-  {
-    "match_id": "ED-2026-09-20-02",
+    "match_id": "ED-2026-09-20-01",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T10:15:00Z",
@@ -310,7 +46,7 @@
     "p_over_1_5": 0.8899,
     "p_over_2_5": 0.7165,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.3,
       "u25_odds": 3.33,
@@ -322,7 +58,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-02",
+    "match_id": "SA-2026-09-20-01",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T10:30:00Z",
@@ -339,7 +75,7 @@
     "p_over_1_5": 0.7887,
     "p_over_2_5": 0.5539,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.84,
       "u25_odds": 1.91,
@@ -368,7 +104,7 @@
     "p_over_1_5": 0.8653,
     "p_over_2_5": 0.6783,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.84,
       "u25_odds": 1.9,
@@ -380,7 +116,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-20-02",
+    "match_id": "LL-2026-09-20-01",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T12:00:00Z",
@@ -397,7 +133,7 @@
     "p_over_1_5": 0.6635,
     "p_over_2_5": 0.3963,
     "label": "MEDIUM",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 2.67,
       "u25_odds": 1.44,
@@ -426,7 +162,7 @@
     "p_over_1_5": 0.8824,
     "p_over_2_5": 0.7094,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.51,
       "u25_odds": 2.44,
@@ -438,7 +174,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-20-03",
+    "match_id": "ED-2026-09-20-02",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T12:30:00Z",
@@ -455,7 +191,7 @@
     "p_over_1_5": 0.8705,
     "p_over_2_5": 0.6807,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.26,
       "u25_odds": 3.61,
@@ -467,7 +203,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-20-04",
+    "match_id": "ED-2026-09-20-03",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T12:30:00Z",
@@ -484,7 +220,7 @@
     "p_over_1_5": 0.7848,
     "p_over_2_5": 0.5436,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.27,
       "u25_odds": 3.5,
@@ -513,7 +249,7 @@
     "p_over_1_5": 0.8369,
     "p_over_2_5": 0.6232,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.52,
       "u25_odds": 2.53,
@@ -542,7 +278,7 @@
     "p_over_1_5": 0.7858,
     "p_over_2_5": 0.5446,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.73,
       "u25_odds": 2.03,
@@ -571,7 +307,7 @@
     "p_over_1_5": 0.7841,
     "p_over_2_5": 0.5427,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.56,
       "u25_odds": 2.32,
@@ -583,7 +319,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-03",
+    "match_id": "SA-2026-09-20-02",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -600,7 +336,7 @@
     "p_over_1_5": 0.8087,
     "p_over_2_5": 0.584,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.45,
       "u25_odds": 2.63,
@@ -612,7 +348,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-04",
+    "match_id": "SA-2026-09-20-03",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -629,7 +365,7 @@
     "p_over_1_5": 0.5698,
     "p_over_2_5": 0.2958,
     "label": "",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 2.41,
       "u25_odds": 1.53,
@@ -641,7 +377,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-20-05",
+    "match_id": "L1-2026-09-20-01",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T13:00:00Z",
@@ -658,7 +394,7 @@
     "p_over_1_5": 0.7863,
     "p_over_2_5": 0.5471,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.75,
       "u25_odds": 1.99,
@@ -687,7 +423,7 @@
     "p_over_1_5": 0.9027,
     "p_over_2_5": 0.7394,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.33,
       "u25_odds": 3.15,
@@ -716,7 +452,7 @@
     "p_over_1_5": 0.8538,
     "p_over_2_5": 0.6431,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.42,
       "u25_odds": 2.67,
@@ -745,7 +481,7 @@
     "p_over_1_5": 0.7396,
     "p_over_2_5": 0.4719,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.99,
       "u25_odds": 1.74,
@@ -757,7 +493,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-20-03",
+    "match_id": "LL-2026-09-20-02",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T14:15:00Z",
@@ -774,7 +510,7 @@
     "p_over_1_5": 0.8148,
     "p_over_2_5": 0.5965,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.43,
       "u25_odds": 2.69,
@@ -786,7 +522,7 @@
     }
   },
   {
-    "match_id": "PR-2026-09-20-02",
+    "match_id": "PR-2026-09-20-01",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T14:30:00Z",
@@ -803,7 +539,7 @@
     "p_over_1_5": 0.6525,
     "p_over_2_5": 0.3878,
     "label": "MEDIUM",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -815,7 +551,7 @@
     }
   },
   {
-    "match_id": "PR-2026-09-20-03",
+    "match_id": "PR-2026-09-20-02",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T14:30:00Z",
@@ -832,7 +568,7 @@
     "p_over_1_5": 0.8037,
     "p_over_2_5": 0.5844,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 2.03,
       "u25_odds": 1.72,
@@ -844,7 +580,7 @@
     }
   },
   {
-    "match_id": "ED-2026-09-20-05",
+    "match_id": "ED-2026-09-20-04",
     "league_id": 88,
     "league": "Eredivisie",
     "kickoff_utc": "2026-09-20T14:45:00Z",
@@ -861,7 +597,7 @@
     "p_over_1_5": 0.8898,
     "p_over_2_5": 0.7164,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.33,
       "u25_odds": 3.13,
@@ -873,7 +609,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-20-06",
+    "match_id": "L1-2026-09-20-02",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T15:15:00Z",
@@ -890,7 +626,7 @@
     "p_over_1_5": 0.7577,
     "p_over_2_5": 0.5073,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.85,
       "u25_odds": 1.86,
@@ -919,7 +655,7 @@
     "p_over_1_5": 0.7451,
     "p_over_2_5": 0.4881,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.55,
       "u25_odds": 2.35,
@@ -948,7 +684,7 @@
     "p_over_1_5": 0.9676,
     "p_over_2_5": 0.8878,
     "label": "",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.49,
       "u25_odds": 2.52,
@@ -960,7 +696,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-05",
+    "match_id": "SA-2026-09-20-04",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T16:00:00Z",
@@ -977,7 +713,7 @@
     "p_over_1_5": 0.7238,
     "p_over_2_5": 0.4655,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.82,
       "u25_odds": 1.92,
@@ -989,7 +725,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-20-04",
+    "match_id": "LL-2026-09-20-03",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T16:30:00Z",
@@ -1006,7 +742,7 @@
     "p_over_1_5": 0.7777,
     "p_over_2_5": 0.5414,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.79,
       "u25_odds": 1.94,
@@ -1018,7 +754,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-20-05",
+    "match_id": "LL-2026-09-20-04",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T16:30:00Z",
@@ -1035,7 +771,7 @@
     "p_over_1_5": 0.8731,
     "p_over_2_5": 0.6937,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.46,
       "u25_odds": 2.58,
@@ -1047,7 +783,7 @@
     }
   },
   {
-    "match_id": "PR-2026-09-20-04",
+    "match_id": "PR-2026-09-20-03",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T17:00:00Z",
@@ -1064,7 +800,7 @@
     "p_over_1_5": 0.7167,
     "p_over_2_5": 0.4644,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 2.42,
       "u25_odds": 1.51,
@@ -1076,7 +812,7 @@
     }
   },
   {
-    "match_id": "PR-2026-09-20-05",
+    "match_id": "PR-2026-09-20-04",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T17:00:00Z",
@@ -1093,7 +829,7 @@
     "p_over_1_5": 0.7596,
     "p_over_2_5": 0.5209,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.84,
@@ -1122,7 +858,7 @@
     "p_over_1_5": 0.8349,
     "p_over_2_5": 0.6131,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.18,
@@ -1151,7 +887,7 @@
     "p_over_1_5": 0.8583,
     "p_over_2_5": 0.649,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.73,
       "u25_odds": 2.01,
@@ -1180,7 +916,7 @@
     "p_over_1_5": 0.733,
     "p_over_2_5": 0.4691,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.4,
       "u25_odds": 2.86,
@@ -1192,7 +928,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-06",
+    "match_id": "SA-2026-09-20-05",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -1209,7 +945,7 @@
     "p_over_1_5": 0.7358,
     "p_over_2_5": 0.4809,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -1221,7 +957,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-20-07",
+    "match_id": "L1-2026-09-20-03",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -1238,7 +974,7 @@
     "p_over_1_5": 0.844,
     "p_over_2_5": 0.6365,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -1250,7 +986,7 @@
     }
   },
   {
-    "match_id": "LL-2026-09-20-06",
+    "match_id": "LL-2026-09-20-05",
     "league_id": 140,
     "league": "LaLiga",
     "kickoff_utc": "2026-09-20T19:00:00Z",
@@ -1267,7 +1003,7 @@
     "p_over_1_5": 0.7858,
     "p_over_2_5": 0.553,
     "label": "HIGH",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -1279,7 +1015,7 @@
     }
   },
   {
-    "match_id": "PR-2026-09-20-06",
+    "match_id": "PR-2026-09-20-05",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T19:30:00Z",
@@ -1296,7 +1032,7 @@
     "p_over_1_5": 0.8388,
     "p_over_2_5": 0.6396,
     "label": "ULTRA",
-    "updated_at": "2026-09-19T20:14:43.578639+00:00",
+    "updated_at": "2026-09-19T22:44:53.949685+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

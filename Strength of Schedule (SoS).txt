@@ -1,0 +1,100 @@
+Strength of Schedule (SoS) kısmı aslında modelimize önemli bir düzeltme getiriyor. Mantığı çok basit:
+⚽ Strength of Schedule nedir?
+Bir takımın attığı gol/xG değerini kimlere karşı ürettiğini hesaba katıyoruz.
+Örneğin:
+Takım A
+Son 10 maçta xG: 1.80
+Ama bu maçların çoğu ligin zayıf takımlarına karşı.
+Takım B
+Son 10 maçta xG: 1.55
+Ama Arsenal, Liverpool, Chelsea, City gibi güçlü rakiplere karşı oynadı.
+Sadece xG'ye bakarsak A daha güçlü görünüyor.
+Ama SoS bize şunu söylüyor:
+"A'nın 1.80 xG'si kolay rakiplere karşı geldiği için biraz şişmiş olabilir."
+🔥 Bunu BETAVUS'a nasıl ekleriz?
+Örneğin bir takımın hücum gücünü hesaplıyoruz:
+Base Attack = 1.70 xG
+Fakat karşılaştığı rakiplerin ortalama savunma gücü zayıfsa:
+SoS Adjustment = -8%
+O zaman:
+Adjusted Attack
+= 1.70 × 0.92
+= 1.56
+Tersi de olabilir.
+Güçlü rakiplere karşı 1.50 xG yapan takım için:
+SoS Adjustment = +7%
+Adjusted Attack
+= 1.50 × 1.07
+= 1.61
+Yani aynı xG değerinin kalitesini ölçmüş oluyoruz.
+Ama burada daha güzel bir yöntem var
+Ben bunu doğrudan:
+"Rakiplerin lig sıralamasına bak"
+şeklinde yapmazdım.
+Çünkü 5. sıradaki takım ile 6. sıradaki takım arasında gerçek güç farkı çok farklı olabilir.
+Onun yerine her takım için rakiplerin gerçek hücum/savunma gücünü hesaplayabiliriz.
+Örneğin:
+Rakip	Savunma gücü
+Man City	1.85
+Liverpool	1.75
+Brighton	1.20
+Burnley	0.85
+Wolves	1.05
+Takımın son maçlarında karşılaştığı rakiplerin ortalamasını alıyoruz.
+Örneğin:
+Average Opponent Strength = 1.52
+Lig ortalaması:
+League Average = 1.00
+Dolayısıyla:
+SoS = 1.52 / 1.00 = 1.52
+Bu takım ortalamanın %52 daha güçlü rakipleriyle oynamış demektir.
+🎯 Tahminde neyi düzeltiyor?
+Asıl önemli nokta bu.
+Diyelim:
+Team A
+xG = 1.80
+SoS = 0.85
+Team B
+xG = 1.55
+SoS = 1.25
+Ham xG:
+A > B
+Ama rakip kalitesini hesaba kattığımızda B'nin 1.55 xG'si çok daha değerli olabilir.
+Bu özellikle şu durumlarda işe yarar:
+Sezonun ilk haftaları
+Yeni yükselen takımlar
+Büyük takımların kolay fikstür geçirdiği dönemler
+Bir takımın son haftalarda çok güçlü/zayıf rakiplerle oynadığı dönemler
+Lig içinde güç farkının yüksek olduğu sezonlar
+💡 Hatta iki ayrı SoS yapabiliriz
+Bence model için daha mantıklısı:
+1. Offensive SoS
+Takımın karşılaştığı rakiplerin savunma gücü.
+"Bu takım kaç gol/xG'yi ne kadar güçlü savunmalara karşı üretti?"
+2. Defensive SoS
+Takımın karşılaştığı rakiplerin hücum gücü.
+"Bu takım kaç gol/xGA'yı ne kadar güçlü hücumlara karşı verdi?"
+Böylece:
+Home Attack
+     ↓
+Goals + xG
+     ↓
+Offensive SoS correction
+     ↓
+Adjusted Home Attack
+ve
+Home Defense
+     ↓
+Goals conceded + xGA
+     ↓
+Defensive SoS correction
+     ↓
+Adjusted Home Defense
+Sonra bunları mevcut BETAVUS formülüne sokarız.
+En önemli nokta:
+SoS'yi doğrudan %10 düzeltelim diye kafadan belirlememeliyiz.
+Önce geçmiş 5 sezon maçlarında deneyip:
+Goals + xG
+vs
+Goals + xG + SoS
+hangisi daha iyi sonuç veriyor, backtest ile ölçmeliyiz.

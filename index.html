@@ -311,17 +311,30 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cchip{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
 .cchip:hover{color:var(--text);border-color:var(--text)}
 .cchip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:800}
+.cchip[data-view="aggressive"]{border-color:rgba(239,68,68,0.35);color:#f87171}
+.cchip[data-view="aggressive"]:hover{border-color:#ef4444;color:#fff}
+.cchip[data-view="aggressive"].active{background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 0 10px rgba(239,68,68,0.35)}
+.cchip[data-view="excel"]{border-color:rgba(56,189,248,0.35);color:#38bdf8}
+.cchip[data-view="excel"]:hover{border-color:#38bdf8;color:#fff}
+.cchip[data-view="excel"].active{background:#0284c7;color:#fff;border-color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,0.35)}
 .chart-svg-box{background:#0a0e14;border:1px solid var(--line);border-radius:10px;padding:8px 10px 4px;position:relative;overflow:hidden}
 .chart-tooltip-bar{margin-top:8px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;min-height:34px}
 .chart-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;font-size:11px;align-items:center}
 .cl-item{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:600}
 .cl-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-.chart-models-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.chart-models-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px}
 .cms-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .cms-card.active-profile{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel2))}
+.cms-card.aggressive{border-top:3px solid #ef4444}
+.cms-card.aggressive.active-profile{border-color:#ef4444;background:color-mix(in srgb,#ef4444 8%,var(--panel2))}
+.cms-card.excel{border-top:3px solid #38bdf8}
+.cms-card.excel.active-profile{border-color:#38bdf8;background:color-mix(in srgb,#38bdf8 8%,var(--panel2))}
 .cms-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .cms-head b{font-size:12.5px}
 .cms-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px}
+.cms-badge.b-cautious{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
+.cms-badge.b-balanced{background:color-mix(in srgb,#3987e5 20%,transparent);color:#3987e5}
+.cms-badge.b-aggressive{background:rgba(239,68,68,0.18);color:#f87171}
 .cms-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .cms-row b{color:var(--text)}
 .cms-row .good{color:var(--good)}
@@ -330,6 +343,20 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .setup-chart-preview{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:16px}
 .setup-chart-preview h4{font-size:13px;font-weight:800;margin:0 0 4px}
 .setup-chart-preview p{font-size:11px;color:var(--muted);margin:0 0 10px}
+.excel-model-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.excel-model-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.emh-title h3{font-size:14px;font-weight:900;margin:0 0 3px}
+.emh-title p{font-size:11.5px;color:var(--muted);margin:0}
+.excel-params-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ep-col{display:flex;flex-direction:column;gap:2px}
+.ep-lbl{font-size:10px;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.ep-val{font-size:12px;font-weight:900;color:var(--text)}
+.ep-note{font-size:9.5px;color:var(--muted)}
+.excel-table{width:100%;border-collapse:collapse;font-size:11.5px;text-align:left}
+.excel-table th{background:var(--panel2);color:var(--muted);padding:8px 10px;font-size:9.5px;text-transform:uppercase;font-weight:800;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+.excel-table td{padding:7px 10px;border-bottom:1px solid var(--hair)}
+.excel-table tr.row-settled{background:rgba(232,255,63,0.04)}
+.excel-table tr:hover{background:rgba(255,255,255,0.03)}
 .adaptive-card{background:color-mix(in srgb,var(--bad) 6%,var(--panel));border:1px solid color-mix(in srgb,var(--bad) 35%,var(--line));border-radius:14px;padding:16px;margin-bottom:14px}
 .adapt-head h3{font-size:14px;font-weight:900;color:var(--text);margin:0 0 4px}
 .adapt-head p{font-size:11.5px;color:var(--muted);margin:0 0 12px}
@@ -357,12 +384,13 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .risk-card{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;position:relative}
 .risk-card input[type="radio"]{position:absolute;opacity:0}
 .risk-card.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel2))}
+.risk-card:has(#risk-aggressive).active{border-color:#ef4444;background:color-mix(in srgb,#ef4444 8%,var(--panel2))}
 .r-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .r-head b{font-size:12.5px}
 .r-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px}
 .r-badge.b-cautious{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
 .r-badge.b-balanced{background:color-mix(in srgb,#3987e5 20%,transparent);color:#3987e5}
-.r-badge.b-aggressive{background:color-mix(in srgb,#e8ff3f 20%,transparent);color:#e8ff3f}
+.r-badge.b-aggressive{background:color-mix(in srgb,#ef4444 20%,transparent);color:#f87171}
 .risk-card p{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
 .form-error{color:var(--bad);font-size:12px;font-weight:700;margin:10px 0;padding:8px 12px;background:color-mix(in srgb,var(--bad) 12%,transparent);border-radius:8px;border:1px solid color-mix(in srgb,var(--bad) 30%,transparent)}
 .form-footer{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}

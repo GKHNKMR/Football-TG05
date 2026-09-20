@@ -206,12 +206,12 @@
     let profilesSvg = '';
     const profilesToDraw = viewMode === 'all'
       ? ['cautious', 'balanced', 'aggressive']
-      : [viewMode];
+      : (viewMode === 'excel' ? [] : [viewMode]);
 
     const profColors = {
       cautious: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Temkinli (%75 Rezerv)' },
       balanced: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Dengeli (%50 Rezerv)' },
-      aggressive: { main: '#a855f7', fill: 'rgba(168, 85, 247, 0.12)', name: 'Agresif (%35 Rezerv)' }
+      aggressive: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Agresif (%35 Rezerv)' }
     };
 
     if (trajData && trajData.trajectories) {
@@ -221,7 +221,7 @@
         const c = profColors[pKey];
 
         // Tekil risk modu seçildiyse P10-P90 güven koridorunu çiz
-        if (viewMode !== 'all') {
+        if (viewMode !== 'all' && viewMode !== 'excel') {
           let p90Path = '';
           let p10Path = '';
           pData.dayPoints.forEach((pt, idx) => {
@@ -256,6 +256,24 @@
         const endX = getX(lastPt.day).toFixed(1);
         const endY = getY(lastPt.median).toFixed(1);
         profilesSvg += `<circle cx="${endX}" cy="${endY}" r="4" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
+      }
+    }
+
+    // 2.1 Excel Çok Kollu Teorik Büyüme Eğrisi (Betavus Kasa Modeli 1: 1.2925x)
+    const em = (trajData && trajData.excelModel) || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
+    if (em && em.dayPoints && (viewMode === 'excel' || viewMode === 'all')) {
+      let emD = '';
+      em.dayPoints.forEach((pt, idx) => {
+        const px = getX(pt.day).toFixed(1);
+        const py = getY(pt.theoreticalBank).toFixed(1);
+        if (idx === 0) emD += `M ${px},${py}`;
+        else emD += ` L ${px},${py}`;
+      });
+      const isSolo = viewMode === 'excel';
+      profilesSvg += `<path d="${emD}" fill="none" stroke="#38bdf8" stroke-width="${isSolo ? 3.4 : 2.0}" stroke-dasharray="${isSolo ? 'none' : '4,3'}" opacity="${isSolo ? 1.0 : 0.8}"/>`;
+      const lastEm = em.dayPoints[em.dayPoints.length - 1];
+      if (lastEm) {
+        profilesSvg += `<circle cx="${getX(lastEm.day).toFixed(1)}" cy="${getY(lastEm.theoreticalBank).toFixed(1)}" r="4.5" fill="#38bdf8" stroke="#0d1219" stroke-width="2"/>`;
       }
     }
 
@@ -302,7 +320,8 @@
         <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointCau" cx="-10" cy="-10" r="4.5" fill="#10b981" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointBal" cx="-10" cy="-10" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#a855f7" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#ef4444" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointExcel" cx="-10" cy="-10" r="4.5" fill="#38bdf8" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <rect id="chartInteractiveOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair;"/>
       </svg>
     `;
@@ -316,6 +335,7 @@
     const cau = trajData.trajectories.cautious;
     const bal = trajData.trajectories.balanced;
     const agg = trajData.trajectories.aggressive;
+    const em = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
 
     const activeProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'cautious';
 
@@ -324,13 +344,14 @@
         <div class="chart-head">
           <div>
             <h3>📈 Hedef Kasa Ulaşma Grafiği · Risk Modelleri Projeksiyonu</h3>
-            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve risk modellerinin büyüme patikaları.</p>
+            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu, risk modelleri ve Excel çok kollu büyüme patikası.</p>
           </div>
           <div class="chart-view-chips" id="chartViewChips">
-            <button type="button" class="cchip ${viewMode === 'all' ? 'active' : ''}" data-view="all">📊 Tüm Riskleri Karşılaştır</button>
+            <button type="button" class="cchip ${viewMode === 'all' ? 'active' : ''}" data-view="all">📊 Tümünü Karşılaştır</button>
             <button type="button" class="cchip ${viewMode === 'cautious' ? 'active' : ''}" data-view="cautious">🛡️ Temkinli (%75 Rezerv)</button>
             <button type="button" class="cchip ${viewMode === 'balanced' ? 'active' : ''}" data-view="balanced">⚖️ Dengeli (%50 Rezerv)</button>
             <button type="button" class="cchip ${viewMode === 'aggressive' ? 'active' : ''}" data-view="aggressive">⚡ Agresif (%35 Rezerv)</button>
+            <button type="button" class="cchip ${viewMode === 'excel' ? 'active' : ''}" data-view="excel">📐 Excel Çok Kollu Modeli</button>
           </div>
         </div>
 
@@ -339,14 +360,15 @@
         </div>
 
         <div class="chart-tooltip-bar" id="planChartTracker">
-          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin projeksiyonlarını inceleyebilirsiniz.</span>
+          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, risk modelleri ve Excel teorik projeksiyonunu inceleyebilirsiniz.</span>
         </div>
 
         <div class="chart-legend">
           <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Hedef Yolu (Geometrik Referans)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Temkinli (%75 Kasa Rezervi)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Dengeli (%50 Kasa Rezervi)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#a855f7;"></span> 🟣 Agresif (%35 Kasa Rezervi)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Agresif (%35 Kasa Rezervi)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 📐 Excel Çok Kollu Büyüme (${em ? em.dailyGrowthFactor : '1.2925'}×)</span>
           ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
         </div>
 
@@ -373,15 +395,26 @@
             <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${bal.halfBankLossPct > 20 ? 'bad' : 'warn'}">%${bal.halfBankLossPct}</b></div>
           </div>
 
-          <div class="cms-card ${activeProf === 'aggressive' ? 'active-profile' : ''}">
+          <div class="cms-card aggressive ${activeProf === 'aggressive' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b>⚡ Agresif Profil</b>
+              <b style="color:#f87171;">⚡ Agresif Profil</b>
               <span class="cms-badge b-aggressive">%35 Rezerv</span>
             </div>
             <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${agg.targetHitPct >= 50 ? 'good' : 'warn'}">%${agg.targetHitPct}</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(agg.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(agg.finalMedian, curr)}</b></div>
             <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(agg.finalP10, curr)} – ${formatCurrency(agg.finalP90, curr)}</b></div>
             <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${agg.halfBankLossPct > 25 ? 'bad' : 'warn'}">%${agg.halfBankLossPct}</b></div>
+          </div>
+
+          <div class="cms-card excel ${viewMode === 'excel' ? 'active-profile' : ''}">
+            <div class="cms-head">
+              <b style="color:#38bdf8;">📐 Excel Çok Kollu</b>
+              <span class="cms-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">${em ? em.dailyGrowthFactor : '1.2925'}×/gün</span>
+            </div>
+            <div class="cms-row"><span>Günlük Kâr Oranı:</span><b style="color:#38bdf8;">+%${em ? em.dailyGrowthRatePct : '29.25'}</b></div>
+            <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#38bdf8;">${formatCurrency(em ? em.finalTheoreticalBank : 110125.16, curr)}</b></div>
+            <div class="cms-row"><span>Toplam Çarpan:</span><b>${em ? em.totalGrowthMultiplier : '2202.5'}×</b></div>
+            <div class="cms-row"><span>Rezerv / Kontrol:</span><b class="good">%50 / OK</b></div>
           </div>
         </div>
       </div>
@@ -397,6 +430,7 @@
     const ptCau = container.querySelector('#cursorPointCau');
     const ptBal = container.querySelector('#cursorPointBal');
     const ptAgg = container.querySelector('#cursorPointAgg');
+    const ptExcel = container.querySelector('#cursorPointExcel');
     const tracker = container.querySelector('#planChartTracker');
 
     if (!overlay || !svg || !tracker) return;
@@ -437,6 +471,8 @@
       const cPt = trajData.trajectories && trajData.trajectories.cautious && trajData.trajectories.cautious.dayPoints[day];
       const bPt = trajData.trajectories && trajData.trajectories.balanced && trajData.trajectories.balanced.dayPoints[day];
       const aPt = trajData.trajectories && trajData.trajectories.aggressive && trajData.trajectories.aggressive.dayPoints[day];
+      const emData = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
+      const emPt = emData && emData.dayPoints && emData.dayPoints[day];
 
       if (ptTarget && tPt) {
         ptTarget.setAttribute('cx', xPos);
@@ -458,18 +494,25 @@
         ptAgg.setAttribute('cy', getY(aPt.median));
         ptAgg.style.display = 'block';
       }
+      if (ptExcel && emPt) {
+        ptExcel.setAttribute('cx', xPos);
+        ptExcel.setAttribute('cy', getY(emPt.theoreticalBank));
+        ptExcel.style.display = 'block';
+      }
 
       const tVal = tPt ? formatCurrency(tPt.targetBank, curr) : '-';
       const cVal = cPt ? formatCurrency(cPt.median, curr) : '-';
       const bVal = bPt ? formatCurrency(bPt.median, curr) : '-';
       const aVal = aPt ? formatCurrency(aPt.median, curr) : '-';
+      const emVal = emPt ? formatCurrency(emPt.theoreticalBank, curr) : '-';
 
       tracker.innerHTML = `
         <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
         <span>🎯 Hedef: <b>${tVal}</b></span>
         <span>🟢 Temkinli: <b>${cVal}</b></span>
         <span>🔵 Dengeli: <b>${bVal}</b></span>
-        <span>🟣 Agresif: <b>${aVal}</b></span>
+        <span>🔴 Agresif: <b style="color:#ef4444;">${aVal}</b></span>
+        <span>📐 Excel: <b style="color:#38bdf8;">${emVal}</b></span>
       `;
     }
 
@@ -479,7 +522,8 @@
       if (ptCau) ptCau.style.display = 'none';
       if (ptBal) ptBal.style.display = 'none';
       if (ptAgg) ptAgg.style.display = 'none';
-      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin projeksiyonlarını inceleyebilirsiniz.</span>';
+      if (ptExcel) ptExcel.style.display = 'none';
+      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, risk modelleri ve Excel teorik projeksiyonunu inceleyebilirsiniz.</span>';
     }
 
     overlay.onmousemove = handleMove;
@@ -501,6 +545,93 @@
         wireChartInteractiveEvents(newCard, trajData, curr, plan);
       };
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Excel Günlük Kasa Modeli Çizelgesi (Betavus Kasa Modeli 1)
+  // ---------------------------------------------------------------------------
+
+  function renderExcelDailyTableCardHtml(plan, state, curr) {
+    if (!PE.generateExcelDailyTable) return '';
+    const activeProf = (state && state.settings && state.settings.riskProfile) || 'balanced';
+    const data = PE.generateExcelDailyTable(plan, state, activeProf);
+    const m = data.model;
+    const rows = data.rows;
+
+    return `
+      <div class="card excel-model-card" id="excelModelCard">
+        <div class="excel-model-head">
+          <div class="emh-title">
+            <h3>📑 Çok Kollu Bahis Kasası Büyüme Modeli (Betavus Kasa Modeli 1)</h3>
+            <p>Excel çalışma kitabındaki katı kasa rezervi (%${Math.round(m.reservePct * 100)}), 3 bahis kolu ve bileşik teorik/gerçekleşen kasa takip çizelgesi.</p>
+          </div>
+          <span class="badge b-excel" style="background:rgba(56,189,248,0.15);color:#38bdf8;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;border:1px solid rgba(56,189,248,0.3);">
+            Günlük Büyüme: ${m.dailyGrowthFactor}× (+%${m.dailyGrowthRatePct}/gün)
+          </span>
+        </div>
+
+        <div class="excel-params-strip">
+          <div class="ep-col">
+            <span class="ep-lbl">Kenarda Kalan (Rezerv)</span>
+            <span class="ep-val">%${Math.round(m.reservePct * 100)} (${formatCurrency(m.startingBank * m.reservePct, curr)})</span>
+            <span class="ep-note">Kasadan hiç çıkmaz</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Minimum Risk Kolu</span>
+            <span class="ep-val">%${Math.round(m.arms.minimum.pct * 100)} · Oran ${m.arms.minimum.odds}</span>
+            <span class="ep-note">${esc(m.arms.minimum.note)}</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Orta Risk Kolu</span>
+            <span class="ep-val">%${Math.round(m.arms.medium.pct * 100)} · Oran ${m.arms.medium.odds}</span>
+            <span class="ep-note">${esc(m.arms.medium.note)}</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Yüksek Risk Kolu</span>
+            <span class="ep-val" style="color:#ef4444;">%${Math.round(m.arms.high.pct * 100)} · Oran ${m.arms.high.odds}</span>
+            <span class="ep-note">${esc(m.arms.high.note)}</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Toplam Kontrol</span>
+            <span class="ep-val good">%100 · ${m.controlStatus}</span>
+            <span class="ep-note">Rezerv + Kollar = %100</span>
+          </div>
+        </div>
+
+        <div class="tbl-scroll" style="max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px;">
+          <table class="excel-table">
+            <thead>
+              <tr>
+                <th>Gün</th>
+                <th>Tarih</th>
+                <th>Teorik Kasa (${curr})</th>
+                <th>Gerçek Kasa (${curr})</th>
+                <th>Gün Sonu Kasa</th>
+                <th>Günlük Büyüme</th>
+                <th>Total Büyüme</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr class="${r.isSettled ? 'row-settled' : ''}">
+                  <td><b>${r.day}</b></td>
+                  <td>${r.dateStr}</td>
+                  <td><b style="color:#38bdf8;">${formatCurrency(r.theoreticalBank, curr)}</b></td>
+                  <td>${r.actualStartBank != null ? formatCurrency(r.actualStartBank, curr) : '—'}</td>
+                  <td>${r.actualEndBank != null ? `<b>${formatCurrency(r.actualEndBank, curr)}</b>` : '—'}</td>
+                  <td>${r.dailyGrowthPct != null ? `<span class="${r.dailyGrowthPct >= 0 ? 'good' : 'bad'}">${r.dailyGrowthPct >= 0 ? '+' : ''}%${r.dailyGrowthPct}</span>` : '—'}</td>
+                  <td>${r.totalGrowthPct != null ? `<span class="${r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct >= 0 ? '+' : ''}%${r.totalGrowthPct}</span>` : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="excel-warn-note" style="margin-top:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--muted);">
+          ⚠️ <b>Excel Kasa Modeli Uyarısı:</b> ${esc(m.assumptionNote)}
+        </div>
+      </div>
+    `;
   }
 
   // ---------------------------------------------------------------------------
@@ -642,6 +773,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Betavus Çok Kollu Kasa Büyüme Modeli (Excel Çizelgesi) -->
+      ${renderExcelDailyTableCardHtml(paperState.plan, paperState, curr)}
 
       <!-- Adaptif Öneriler (Gerekirse) -->
       ${adaptive && adaptive.showAdaptive ? renderAdaptiveCardHtml(adaptive, curr) : ''}

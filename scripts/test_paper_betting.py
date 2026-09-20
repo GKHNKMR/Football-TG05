@@ -64,12 +64,41 @@ def main():
         assert cfg_res['cautious']['minRiskArmPct'] == 0.20
         assert cfg_res['balanced']['reservePct'] == 0.50
         assert cfg_res['balanced']['minRiskArmPct'] == 0.30
+        assert cfg_res['balanced']['midRiskArmPct'] == 0.15
+        assert cfg_res['balanced']['highRiskArmPct'] == 0.05
         assert cfg_res['aggressive']['reservePct'] == 0.35
         assert cfg_res['aggressive']['minRiskArmPct'] == 0.40
         assert cfg_res['minClass']['minModelProb'] == 0.95
         assert cfg_res['medClass']['minModelProb'] == 0.85
         assert cfg_res['highClass']['minModelProb'] == 0.75
         print("  ✓ Risk profilleri (%75, %50, %35 rezerv) ve kupon sınıfları konfigürasyonu doğrulandı.")
+
+        # Excel Modeli Matematik Doğrulaması (Betavus Kasa Modeli 1)
+        excel_math = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const m = PE.calculateExcelGrowthModel({ startingBank: 50, durationDays: 30 }, 'balanced');
+            return {
+                factor: m.dailyGrowthFactor,
+                ratePct: m.dailyGrowthRatePct,
+                finalBank: m.finalTheoreticalBank,
+                multiplier: m.totalGrowthMultiplier,
+                controlStatus: m.controlStatus,
+                dayPointsLen: m.dayPoints.length,
+                day0: m.dayPoints[0].theoreticalBank,
+                day1: m.dayPoints[1].theoreticalBank,
+                day30: m.dayPoints[30].theoreticalBank
+            };
+        }""")
+        assert excel_math['factor'] == 1.2925
+        assert excel_math['ratePct'] == 29.25
+        assert excel_math['finalBank'] == 110125.16
+        assert excel_math['multiplier'] == 2202.50
+        assert excel_math['controlStatus'] == 'OK'
+        assert excel_math['dayPointsLen'] == 31
+        assert excel_math['day0'] == 50.0
+        assert excel_math['day1'] == 64.63
+        assert excel_math['day30'] == 110125.16
+        print("  ✓ Betavus Kasa Modeli 1 Excel formül ve büyüme katsayıları (1.2925x, %29.25, 110.125€) doğrulandı.")
 
         # ----------------------------------------------------------------------
         # TEST 2: Senaryo A — Plan Oluşturma & Geometrik Hedef Yolu
@@ -476,16 +505,34 @@ def main():
         assert page.query_selector("#planChartCard") is not None, "#planChartCard bulunamadı"
         assert page.query_selector("#planTrajectorySvg") is not None, "#planTrajectorySvg bulunamadı"
         chart_chips = page.query_selector_all("#chartViewChips .cchip")
-        assert len(chart_chips) == 4, f"Beklenen 4 grafik çipi, bulunan {len(chart_chips)}"
+        assert len(chart_chips) == 5, f"Beklenen 5 grafik çipi, bulunan {len(chart_chips)}"
         model_summaries = page.query_selector_all(".chart-models-summary .cms-card")
-        assert len(model_summaries) == 3, f"Beklenen 3 model özeti, bulunan {len(model_summaries)}"
+        assert len(model_summaries) == 4, f"Beklenen 4 model özeti, bulunan {len(model_summaries)}"
 
-        # Çip geçiş testi
-        page.click("#chartViewChips button[data-view='cautious']")
+        # Agresif profil kırmızı renk ve çip geçiş testi
+        page.click("#chartViewChips button[data-view='aggressive']")
         time.sleep(0.3)
-        cautious_chip_class = page.get_attribute("#chartViewChips button[data-view='cautious']", "class")
-        assert "active" in cautious_chip_class
-        print("  ✓ Kasa planı panosunda interaktif hedef grafiği, risk karşılaştırma çipleri ve modeller özeti doğrulandı.")
+        agg_chip_class = page.get_attribute("#chartViewChips button[data-view='aggressive']", "class")
+        assert "active" in agg_chip_class
+        # SVG içinde kırmızı (#ef4444) çizgi kontrolü
+        agg_stroke = page.evaluate("""() => {
+            const svg = document.querySelector('#planTrajectorySvg');
+            return svg ? svg.innerHTML.includes('#ef4444') : false;
+        }""")
+        assert agg_stroke is True, "Agresif profil SVG içinde #ef4444 kırmızı rengi ile çizilmemiş!"
+        print("  ✓ Agresif profil kırmızı (#ef4444) renk ile grafikte doğrulandı.")
+
+        # Excel çok kollu modeli çipi ve SVG kontrolü
+        page.click("#chartViewChips button[data-view='excel']")
+        time.sleep(0.3)
+        excel_chip_class = page.get_attribute("#chartViewChips button[data-view='excel']", "class")
+        assert "active" in excel_chip_class
+
+        # Excel Modeli Günlük Takip Çizelgesi kontrolü (Betavus Kasa Modeli 1)
+        assert page.query_selector("#excelModelCard") is not None, "#excelModelCard bulunamadı"
+        excel_rows = page.query_selector_all("#excelModelCard .excel-table tbody tr")
+        assert len(excel_rows) == 31, f"Beklenen 31 satır (0..30 gün), bulunan {len(excel_rows)}"
+        print("  ✓ Kasa planı panosunda interaktif hedef grafiği (5 çip, 4 kart) ve Excel günlük takip çizelgesi doğrulandı.")
 
         # Kupon Önerileri sekmesine geç
         page.click("#tab-rec")

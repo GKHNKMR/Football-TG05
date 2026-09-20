@@ -172,20 +172,22 @@ BETAVUS, futbol toplam gol pazarları (0.5 Üst, 1.5 Üst, 2.5 Üst) için yapay
    - **📊 12 Eylül Canlı Model Takibi:** 12.09.2026 tarihinden itibaren sistemin yüksek güvenle vurguladığı maçların canlı kümülatif takip istatistikleri.
 5. **🏦 Kasa Planım:**
    - **Plan Tanımı:** Sanal başlangıç kasası ($S$), hedef kasa ($T$), plan süresi ($D$ gün) ve risk toleransı.
-   - **Risk Profilleri ve Kasa Rezervleri:**
-     - **Temkinli / Minimum Risk:** %75 Kasa Rezervi (%20 Minimum Risk kolu, %5 Orta Risk kolu, %0 Yüksek Risk).
-     - **Dengeli / Medium:** %50 Kasa Rezervi (%30 Minimum Risk, %16 Orta Risk, %4 Yüksek Risk).
-     - **Agresif:** %35 Kasa Rezervi (%40 Minimum Risk, %18 Orta Risk, %7 Yüksek Risk).
-   - **Hedef Kasa Ulaşma Grafiği & Çoklu Risk Projeksiyonu (Pure SVG):**
-     - **Geometrik Büyüme Patikası:** $\text{hedef\_yolu}(d) = S \cdot (T/S)^{d/D}$ formülüyle günlük hedeflenen bakiye çizgisi (kesikli sarı çizgi).
-     - **3 Risk Modeli Simülasyon Eğrisi:** Temkinli (%75 rezerv, yeşil), Dengeli (%50 rezerv, mavi) ve Agresif (%35 rezerv, mor) modellerinin gün bazlı medyan büyüme projeksiyonları.
-     - **Güven Aralığı Koridoru:** Tekil risk modeli görünümlerinde P10–P90 simülasyon olasılık bantları.
-     - **Gerçekleşen Kasa Hareketi:** Kuponlar sonuçlandıkça gün gün gerçekleşen bakiye eğrisi (noktalı sarı çizgi).
-     - **İnteraktif İzleyici & Çipler:** Gün bazlı hover/touch crosshair ile anlık hedef ve model bakiye takibi; `[Tümünü Gör]`, `[Temkinli]`, `[Dengeli]`, `[Agresif]` hızlı filtreleme butonları.
-     - **Canlı Kurulum Önizlemesi:** Yeni plan formu doldurulurken girilen bakiye ve süreye göre anlık olarak güncellenen canlı SVG önizleme grafiği.
-   - **Monte Carlo Simülasyonu:** 5.000 iterasyonluk Mulberry32 PRNG motoru ile hedefe ulaşma olasılığı ($P(\text{hedef})$), beklenen medyan bakiye ve %5 VaR (Value at Risk) risk koridoru.
-   - **Adaptif Öneri Motoru:** Planda sapma olduğunda kullanıcı onayıyla seçilebilecek 3 somut opsiyon: Süreyi uzatma, Hedefi revize etme, Risk profilini değiştirme.
-   - **Veri Yedekleme:** `betavus.paper_v1` LocalStorage anahtarı üzerinden JSON dışa aktarma ve içe aktarma desteği.
+    - **Risk Profilleri ve Kasa Rezervleri:**
+      - **Temkinli / Minimum Risk:** %75 Kasa Rezervi (%20 Minimum Risk kolu, %5 Orta Risk kolu, %0 Yüksek Risk). Günlük teorik katsayı: 1.0850 (+%8.50/gün).
+      - **Dengeli / Medium (Betavus Kasa Modeli 1 Excel Standartı):** %50 Kasa Rezervi (%30 Minimum Risk [oran 1.25], %15 Orta Risk [oran 1.70], %5 Yüksek Risk [oran 3.25]). Kontrol: %100 OK. Günlük büyüme katsayısı: **1.2925** (+%29.25/gün). 30. gün teorik kasa: **110.125,16 €** (2.202,50×).
+      - **Agresif (Kırmızı Tema 🔴):** %35 Kasa Rezervi (%40 Minimum Risk, %18 Orta Risk, %7 Yüksek Risk). Günlük teorik katsayı: 1.3835 (+%38.35/gün). Grafikte ve arayüzde kırmızı (`#ef4444`) çizgi ve vurgularla gösterilir.
+    - **Hedef Kasa Ulaşma Grafiği & Çoklu Risk Projeksiyonu (Pure SVG):**
+      - **Geometrik Büyüme Patikası:** $\text{hedef\_yolu}(d) = S \cdot (T/S)^{d/D}$ formülüyle günlük hedeflenen bakiye çizgisi (kesikli sarı çizgi).
+      - **3 Risk Modeli Simülasyon Eğrisi:** Temkinli (%75 rezerv, yeşil), Dengeli (%50 rezerv, mavi) ve Agresif (%35 rezerv, **kırmızı 🔴**) modellerinin gün bazlı medyan büyüme projeksiyonları.
+      - **📐 Excel Çok Kollu Teorik Büyüme Eğrisi:** Excel modelinin günlük 1.2925× bileşik büyüme referans eğrisi (camgöbeği/mavi çizgi).
+      - **Güven Aralığı Koridoru:** Tekil risk modeli görünümlerinde P10–P90 simülasyon olasılık bantları.
+      - **Gerçekleşen Kasa Hareketi:** Kuponlar sonuçlandıkça gün gün gerçekleşen bakiye eğrisi (noktalı sarı çizgi).
+      - **İnteraktif İzleyici & Çipler:** Gün bazlı hover/touch crosshair ile anlık hedef ve model bakiye takibi; `[Tümünü Gör]`, `[Temkinli]`, `[Dengeli]`, `[Agresif]`, `[Excel Modeli]` hızlı filtreleme butonları.
+      - **Canlı Kurulum Önizlemesi:** Yeni plan formu doldurulurken girilen bakiye ve süreye göre anlık olarak güncellenen canlı SVG önizleme grafiği.
+    - **📑 Günlük Kasa Modeli Çizelgesi (Betavus Kasa Modeli 1):** Excel dosyasındaki tablonun birebir karşılığı olan 7 sütunlu (Gün, Tarih, Teorik Kasa, Gerçek Kasa, Gün Sonu Kasa, Günlük Büyüme %, Total Büyüme %) dinamik takip panosu.
+    - **Monte Carlo Simülasyonu:** 5.000 iterasyonluk Mulberry32 PRNG motoru ile hedefe ulaşma olasılığı ($P(\text{hedef})$), beklenen medyan bakiye ve %5 VaR (Value at Risk) risk koridoru.
+    - **Adaptif Öneri Motoru:** Planda sapma olduğunda kullanıcı onayıyla seçilebilecek 3 somut opsiyon: Süreyi uzatma, Hedefi revize etme, Risk profilini değiştirme.
+    - **Veri Yedekleme:** `betavus.paper_v1` LocalStorage anahtarı üzerinden JSON dışa aktarma ve içe aktarma desteği.
 
 ### Otomatik Sonuçlandırma (Idempotent Settlement)
 

@@ -37,8 +37,8 @@
       desc: 'Dengeli büyüme ve kontrollü risk dağılımı.',
       reservePct: 0.50,
       minRiskArmPct: 0.30,
-      midRiskArmPct: 0.16,
-      highRiskArmPct: 0.04
+      midRiskArmPct: 0.15,
+      highRiskArmPct: 0.05
     },
     aggressive: {
       id: 'aggressive',
@@ -1060,7 +1060,145 @@
       durationDays,
       dailyRatePct: round(dailyRate * 100, 2),
       targetPoints,
-      trajectories
+      trajectories,
+      excelModel: calculateExcelGrowthModel(plan, 'balanced')
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 7.2 Betavus Çok Kollu Kasa Büyüme Modeli (Betavus Kasa Modeli 1 Excel)
+  // ---------------------------------------------------------------------------
+
+  function calculateExcelGrowthModel(plan, profileKey = 'balanced', customOdds = null) {
+    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.balanced;
+    const S = Math.max(1, Number(plan && plan.startingBank) || 50);
+    const D = Math.max(1, Number(plan && plan.durationDays) || 30);
+
+    const minOdds = (customOdds && customOdds.minimum) || COUPON_CLASSES.minimum.fallbackOdds || 1.25;
+    const midOdds = (customOdds && customOdds.medium) || COUPON_CLASSES.medium.fallbackOdds || 1.70;
+    const highOdds = (customOdds && customOdds.high) || COUPON_CLASSES.high.fallbackOdds || 3.25;
+
+    const reserve = prof.reservePct;
+    const minPct = prof.minRiskArmPct;
+    const midPct = prof.midRiskArmPct;
+    const highPct = prof.highRiskArmPct;
+
+    // Excel C14: Kontrol: kenarda kalan + kollar toplamı
+    const sumPct = round(reserve + minPct + midPct + highPct, 4);
+    const controlStatus = Math.abs(sumPct - 1.0) < 0.001 ? 'OK' : '%100 değil!';
+
+    // Excel C15: Günlük büyüme katsayısı (her kol kazanılırsa)
+    // =(1-SUM(C11:C13))+SUMPRODUCT(C11:C13,D11:D13)
+    const armPayouts = (minPct * minOdds) + (midPct * midOdds) + (highPct * highOdds);
+    const dailyGrowthFactor = round(reserve + armPayouts, 4); // örn. 0.50 + 0.7925 = 1.2925
+
+    // Excel C16: Günlük büyüme oranı (kâr, %)
+    const dailyGrowthRatePct = round((dailyGrowthFactor - 1.0) * 100, 2);
+
+    // Excel C19: 30. gündeki kasa (€) = S * factor^D
+    const finalTheoreticalBank = round(S * Math.pow(dailyGrowthFactor, D), 2);
+
+    // Excel C20: Toplam büyüme katsayısı = finalTheoreticalBank / S
+    const totalGrowthMultiplier = round(finalTheoreticalBank / S, 2);
+
+    // Gün bazlı teorik eğri (0'dan D'ye)
+    const dayPoints = [];
+    for (let d = 0; d <= D; d++) {
+      const b = round(S * Math.pow(dailyGrowthFactor, d), 2);
+      dayPoints.push({
+        day: d,
+        theoreticalBank: b
+      });
+    }
+
+    return {
+      title: 'Çok Kollu Bahis Kasası Büyüme Modeli',
+      profileKey: prof.id,
+      profileName: prof.name,
+      startingBank: S,
+      durationDays: D,
+      reservePct: reserve,
+      arms: {
+        minimum: { pct: minPct, odds: minOdds, note: '5 adet 0,5 ustu mac' },
+        medium: { pct: midPct, odds: midOdds, note: '3 adet 1,5 ustu mac' },
+        high: { pct: highPct, odds: highOdds, note: '3 adet 2,5 ustu mac' }
+      },
+      controlStatus,
+      dailyGrowthFactor,
+      dailyGrowthRatePct,
+      finalTheoreticalBank,
+      totalGrowthMultiplier,
+      assumptionNote: 'Varsayım: modelin gösterdiği süre boyunca her 3 kolun her gün kazandığı en iyi durum senaryosudur; gerçekçi değildir.',
+      dayPoints
+    };
+  }
+
+  function generateExcelDailyTable(plan, state, profileKey = 'balanced') {
+    const model = calculateExcelGrowthModel(plan, profileKey);
+    const S = model.startingBank;
+    const D = model.durationDays;
+    const factor = model.dailyGrowthFactor;
+
+    const startDateStr = (plan && plan.startDate) || (plan && plan.createdAt ? plan.createdAt.slice(0, 10) : '2026-09-11');
+    const startTs = new Date(startDateStr).getTime() || Date.now();
+
+    const ledger = (state && state.ledger) || [];
+
+    const dayGroups = new Map();
+    for (const tx of ledger) {
+      if (!tx.timestamp) continue;
+      const txDayIdx = Math.max(0, Math.floor((new Date(tx.timestamp).getTime() - startTs) / 86400000));
+      if (!dayGroups.has(txDayIdx)) dayGroups.set(txDayIdx, []);
+      dayGroups.get(txDayIdx).push(tx);
+    }
+
+    const rows = [];
+    let prevEndBank = S;
+
+    for (let d = 0; d <= D; d++) {
+      const dayDate = new Date(startTs + d * 86400000);
+      const dayDateStr = `${String(dayDate.getDate()).padStart(2, '0')}.${String(dayDate.getMonth() + 1).padStart(2, '0')}.${dayDate.getFullYear()}`;
+      const theoreticalBank = round(S * Math.pow(factor, d), 2);
+
+      let actualStartBank = d === 0 ? S : prevEndBank;
+      let actualEndBank = null;
+      let dailyGrowthPct = null;
+      let totalGrowthPct = null;
+      let isSettled = false;
+
+      const txs = dayGroups.get(d);
+      if (txs && txs.length) {
+        const lastTx = txs[txs.length - 1];
+        if (lastTx.balanceAfter != null) {
+          actualEndBank = round(lastTx.balanceAfter, 2);
+          isSettled = true;
+          prevEndBank = actualEndBank;
+        }
+      } else if (d === 0 && state && state.plan && state.plan.availableBalance != null) {
+        actualEndBank = round(state.plan.availableBalance, 2);
+        prevEndBank = actualEndBank;
+      }
+
+      if (actualEndBank != null && actualStartBank != null && actualStartBank > 0) {
+        dailyGrowthPct = round(((actualEndBank / actualStartBank) - 1.0) * 100, 2);
+        totalGrowthPct = round(((actualEndBank / S) - 1.0) * 100, 2);
+      }
+
+      rows.push({
+        day: d,
+        dateStr: dayDateStr,
+        theoreticalBank,
+        actualStartBank: actualStartBank != null ? round(actualStartBank, 2) : null,
+        actualEndBank: actualEndBank != null ? round(actualEndBank, 2) : null,
+        dailyGrowthPct,
+        totalGrowthPct,
+        isSettled
+      });
+    }
+
+    return {
+      model,
+      rows
     };
   }
 
@@ -1339,6 +1477,8 @@
     getPlanMetrics,
     runPlanSimulation,
     calculatePlanTrajectories,
+    calculateExcelGrowthModel,
+    generateExcelDailyTable,
     buildAdaptiveOptions,
     createInitialState,
     addSlipToPlan,

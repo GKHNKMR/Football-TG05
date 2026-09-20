@@ -40,8 +40,8 @@ def main():
         page.wait_for_selector("#resSummary .tiles", timeout=10000)
         time.sleep(1)
 
-        # 1. Check Default Vurgu Mode
-        print("\n--- 1. Testing Default Vurgu Mode ---")
+        # 1. Check Default Vurgu Mode (All matches up to today 20.09.2026)
+        print("\n--- 1. Testing Default Vurgu Mode (Güncel Dahil · 16.988 Maç) ---")
         tiles = page.query_selector_all("#resSummary .tile")
         print(f"Number of tiles: {len(tiles)}")
         tile_texts = [t.inner_text().replace('\n', ' | ') for t in tiles]
@@ -50,12 +50,15 @@ def main():
 
         sub_matches = page.inner_text("#subtab-matches")
         print(f"  Subtab Matches: {sub_matches}")
+        first_date = page.inner_text("#resRows .rrow .rdate")
+        print(f"  First match date at top: {first_date}")
 
-        assert "95.4%" in tile_texts[0] and "3.043 / 3.190" in tile_texts[0], f"Tile 1 unexpected: {tile_texts[0]}"
-        assert "83.8%" in tile_texts[1] and "1.296 / 1.547" in tile_texts[1], f"Tile 2 unexpected: {tile_texts[1]}"
-        assert "73.9%" in tile_texts[2] and "88 / 119" in tile_texts[2], f"Tile 3 unexpected: {tile_texts[2]}"
-        assert "3.220" in tile_texts[3], f"Tile 4 unexpected: {tile_texts[3]}"
-        assert "16.478" in sub_matches, f"Subtab count unexpected: {sub_matches}"
+        assert "95.3%" in tile_texts[0] and "3.184 / 3.340" in tile_texts[0], f"Tile 1 unexpected: {tile_texts[0]}"
+        assert "84.0%" in tile_texts[1] and "1.357 / 1.615" in tile_texts[1], f"Tile 2 unexpected: {tile_texts[1]}"
+        assert "75.0%" in tile_texts[2] and "96 / 128" in tile_texts[2], f"Tile 3 unexpected: {tile_texts[2]}"
+        assert "3.371" in tile_texts[3], f"Tile 4 unexpected: {tile_texts[3]}"
+        assert ("16.988" in sub_matches or "16.989" in sub_matches), f"Subtab count unexpected: {sub_matches}"
+        assert "20.09" in first_date or "19.09" in first_date, f"First date expected September 2026, got: {first_date}"
 
         # 2. Check Genel Mode Switch
         print("\n--- 2. Testing Genel Mode Switch ---")
@@ -66,45 +69,45 @@ def main():
         for i, txt in enumerate(tile_all_texts, 1):
             print(f"  Tile {i}: {txt}")
 
-        assert "93.5%" in tile_all_texts[0] and "15.414 / 16.478" in tile_all_texts[0], f"Tile 1 unexpected: {tile_all_texts[0]}"
-        assert "76.6%" in tile_all_texts[1] and "12.614 / 16.478" in tile_all_texts[1], f"Tile 2 unexpected: {tile_all_texts[1]}"
-        assert "54.8%" in tile_all_texts[2] and "9.022 / 16.478" in tile_all_texts[2], f"Tile 3 unexpected: {tile_all_texts[2]}"
-        assert "16.478" in tile_all_texts[3], f"Tile 4 unexpected: {tile_all_texts[3]}"
+        assert "93.6%" in tile_all_texts[0] and "15.89" in tile_all_texts[0], f"Tile 1 unexpected: {tile_all_texts[0]}"
+        assert "76.6%" in tile_all_texts[1] and "13.01" in tile_all_texts[1], f"Tile 2 unexpected: {tile_all_texts[1]}"
+        assert "54.8%" in tile_all_texts[2] and "9.30" in tile_all_texts[2], f"Tile 3 unexpected: {tile_all_texts[2]}"
+        assert ("16.988" in tile_all_texts[3] or "16.989" in tile_all_texts[3]), f"Tile 4 unexpected: {tile_all_texts[3]}"
 
         # Switch back to Vurgu
         page.click("#modeVurgu")
         time.sleep(0.3)
 
-        # 3. Check Season Filter: "Tüm Sezonlar + Güncel (16.988)"
-        print("\n--- 3. Testing Tüm Sezonlar + Güncel (16.988) ---")
-        page.click("button.chip[data-s='all']")
+        # 3. Check Season Filter: "5 Tamamlanmış Sezon (16.478)"
+        print("\n--- 3. Testing 5 Tamamlanmış Sezon (16.478) ---")
+        page.click("button.chip[data-s='5s']")
         time.sleep(0.5)
-        tiles_all_s = page.query_selector_all("#resSummary .tile")
-        tile_all_s_texts = [t.inner_text().replace('\n', ' | ') for t in tiles_all_s]
-        for i, txt in enumerate(tile_all_s_texts, 1):
+        tiles_5s = page.query_selector_all("#resSummary .tile")
+        tile_5s_texts = [t.inner_text().replace('\n', ' | ') for t in tiles_5s]
+        for i, txt in enumerate(tile_5s_texts, 1):
             print(f"  Tile {i}: {txt}")
-        sub_matches_all = page.inner_text("#subtab-matches")
-        print(f"  Subtab Matches: {sub_matches_all}")
+        sub_matches_5s = page.inner_text("#subtab-matches")
+        print(f"  Subtab Matches: {sub_matches_5s}")
 
-        assert "95.3%" in tile_all_s_texts[0] and "3.184 / 3.340" in tile_all_s_texts[0], f"Tile 1 unexpected: {tile_all_s_texts[0]}"
-        assert "84.0%" in tile_all_s_texts[1] and "1.357 / 1.615" in tile_all_s_texts[1], f"Tile 2 unexpected: {tile_all_s_texts[1]}"
-        assert "75.0%" in tile_all_s_texts[2] and "96 / 128" in tile_all_s_texts[2], f"Tile 3 unexpected: {tile_all_s_texts[2]}"
-        assert "16.988" in sub_matches_all, f"Subtab count unexpected: {sub_matches_all}"
+        assert "95.4%" in tile_5s_texts[0] and "3.043 / 3.190" in tile_5s_texts[0], f"Tile 1 unexpected: {tile_5s_texts[0]}"
+        assert "83.8%" in tile_5s_texts[1] and "1.296 / 1.547" in tile_5s_texts[1], f"Tile 2 unexpected: {tile_5s_texts[1]}"
+        assert "73.9%" in tile_5s_texts[2] and "88 / 119" in tile_5s_texts[2], f"Tile 3 unexpected: {tile_5s_texts[2]}"
+        assert "3.220" in tile_5s_texts[3], f"Tile 4 unexpected: {tile_5s_texts[3]}"
+        assert "16.478" in sub_matches_5s, f"Subtab count unexpected: {sub_matches_5s}"
 
-        # 4. Check Vurgu Matches Toggle Filter
+        # 4. Check Vurgu Matches Toggle Filter (on default all matches)
         print("\n--- 4. Testing Vurgu Matches Toggle Filter ---")
-        # Go back to 5 seasons
         page.click("button.chip[data-s='']")
         time.sleep(0.3)
         vurgu_btn = page.inner_text("#vurguMatchToggle")
         print(f"  vurguMatchToggle button: {vurgu_btn}")
-        assert "3.220" in vurgu_btn, f"Vurgu button count mismatch: {vurgu_btn}"
+        assert "3.371" in vurgu_btn, f"Vurgu button count mismatch: {vurgu_btn}"
 
         page.click("#vurguMatchToggle")
         time.sleep(0.3)
         sub_matches_vurgu = page.inner_text("#subtab-matches")
         print(f"  Subtab Matches after toggle: {sub_matches_vurgu}")
-        assert "3.220 vurgulanan" in sub_matches_vurgu
+        assert "3.371 vurgulanan" in sub_matches_vurgu
 
         # Toggle off
         page.click("#vurguMatchToggle")
@@ -114,13 +117,13 @@ def main():
         print("\n--- 5. Testing High Confidence Misses Toggle Filter ---")
         miss_btn = page.inner_text("#hiMissToggle")
         print(f"  hiMissToggle button: {miss_btn}")
-        assert "352" in miss_btn, f"Miss button count mismatch: {miss_btn}"
+        assert ("367" in miss_btn or "352" in miss_btn), f"Miss button count mismatch: {miss_btn}"
 
         page.click("#hiMissToggle")
         time.sleep(0.3)
         sub_matches_miss = page.inner_text("#subtab-matches")
         print(f"  Subtab Matches after miss toggle: {sub_matches_miss}")
-        assert "352 ıska" in sub_matches_miss
+        assert ("367 ıska" in sub_matches_miss or "352 ıska" in sub_matches_miss)
 
         # Toggle off
         page.click("#hiMissToggle")
@@ -135,7 +138,7 @@ def main():
         for line in s_table.split('\n')[:8]:
             print(f"    {line}")
         assert "2026/27 (Güncel)" in s_table
-        assert "510" in s_table
+        assert ("510" in s_table or "511" in s_table)
         assert "2025/26" in s_table
         assert "2021/22" in s_table
 

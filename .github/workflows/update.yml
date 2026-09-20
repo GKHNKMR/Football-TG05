@@ -48,7 +48,7 @@ jobs:
         run: python scripts/fetch_lineups.py
         continue-on-error: true
       - name: Grade past predictions
-        run: python scripts/build_results.py
+        run: python scripts/build_results.py && python scripts/build_5season_results.py
         continue-on-error: true
       - name: Build match stats
         run: python scripts/build_match_stats.py

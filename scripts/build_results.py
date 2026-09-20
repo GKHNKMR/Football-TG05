@@ -369,6 +369,12 @@ def main():
           f"O2.5 acc {o.get('acc_25')}%  success {o.get('success_pct')}%  "
           f"lambda MAE {o.get('lambda_mae')}")
 
+    try:
+        import build_5season_results
+        build_5season_results.main()
+    except Exception as e:
+        print(f"Warning: could not run build_5season_results: {e}")
+
 
 if __name__ == "__main__":
     main()

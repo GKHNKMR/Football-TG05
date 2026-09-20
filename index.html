@@ -583,7 +583,10 @@ function keysFor(which){
   // takvim, o sekmedeki TÜM verinin tarihlerini gösterir (sadece bu haftayı değil)
   let ms=which==='pred'?(window.__data||[]):((RESULTS&&RESULTS.matches)||[]);
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
-  if(which==='res'&&resSeason)ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
+  if(which==='res'&&resSeason){
+    if(resSeason==='5s') ms=ms.filter(m=>seasonOf(m.kickoff_utc)!=='2026/27');
+    else if(resSeason!=='all') ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
+  }
   return new Set(ms.map(m=>dayKey(m.kickoff_utc)));
 }
 function openCal(which,btn){
@@ -834,12 +837,17 @@ function renderResSeasons(){
   if(!nav) return;
   if(!ss.length){nav.innerHTML='';nav.hidden=true;return;}
   nav.hidden=false;
-  if(resSeason && resSeason!=='all' && !ss.includes(resSeason)) resSeason='';
+  if(resSeason && resSeason!=='all' && resSeason!=='5s' && !ss.includes(resSeason)) resSeason='';
   btSeason = resSeason;
+  const allM = (RESULTS && RESULTS.matches) || [];
+  const totN = allM.length;
+  const curN = allM.filter(m => seasonOf(m.kickoff_utc) === '2026/27').length;
+  const compN = totN - curN;
   const chips=[
-    ['','5 Sezon (16.478 Maç)'],
-    ['all','Tüm Sezonlar + Güncel (16.988)'],
-    ...ss.map(s=>[s,s])
+    ['', `Tüm Maçlar (Güncel + 5 Sezon · ${totN.toLocaleString('tr-TR')})`],
+    ['2026/27', `2026/27 (Güncel · ${curN.toLocaleString('tr-TR')})`],
+    ['5s', `5 Tamamlanmış Sezon (${compN.toLocaleString('tr-TR')})`],
+    ...ss.filter(s=>s!=='2026/27').map(s=>[s,s])
   ];
   nav.innerHTML=chips.map(([v,lbl])=>`<button class="chip ${v===resSeason?'active':''}" data-s="${v}">${lbl}</button>`).join('');
   nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
@@ -874,14 +882,13 @@ function renderResults(){
 
   let ms = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
   if(selected!=='Tümü') ms=ms.filter(m=>m.league===selected);
-  if(resSeason==='all'){
-    // tüm sezonlar dahil (16.988 maç)
-  } else if(resSeason){
-    ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
-  } else {
-    // varsayılan: 5 tamamlanmış sezon (16.478 maç)
+  if(resSeason==='5s'){
+    // 5 tamamlanmış sezon (16.478 maç)
     ms=ms.filter(m=>seasonOf(m.kickoff_utc)!=='2026/27');
+  } else if(resSeason && resSeason!=='all'){
+    ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
   }
+  // varsayılan: tüm sezonlar (16.988 maç, 2026-09 dahil)
   if(qRes) ms=ms.filter(m=>teamHit(m,qRes));      // takım araması aktifken gün filtresi devre dışı
   const dk=new Set(ms.map(m=>dayKey(m.kickoff_utc)));
   if(dayRes && !dk.has(dayRes)) dayRes=null;
@@ -902,7 +909,7 @@ function renderResults(){
       <div class="tile">
         <div class="v">${(o.hi_unique_n||0).toLocaleString('tr-TR')}</div>
         <div class="k">Vurgulanan Maç</div>
-        <div class="n">${resSeason==='all'?'tüm sezonlar yüksek güven':resSeason?resSeason+' yüksek güven':'5 sezon yüksek güven'}</div>
+        <div class="n">${resSeason==='5s'?'5 sezon yüksek güven':resSeason==='2026/27'?'bu sezon yüksek güven':resSeason?resSeason+' yüksek güven':'tüm sezonlar yüksek güven'}</div>
       </div>
     `;
   } else {
@@ -913,7 +920,7 @@ function renderResults(){
       <div class="tile">
         <div class="v">${(o.n||0).toLocaleString('tr-TR')}</div>
         <div class="k">Test Edilen Maç</div>
-        <div class="n">${resSeason==='all'?'tüm sezonlar walk-forward':resSeason?resSeason+' sezonu':'5 sezon walk-forward'}</div>
+        <div class="n">${resSeason==='5s'?'5 sezon walk-forward':resSeason==='2026/27'?'2026/27 güncel sezonu':resSeason?resSeason+' sezonu':'5 sezon + güncel'}</div>
       </div>
     `;
   }
@@ -995,7 +1002,7 @@ function renderResults(){
 
   const modeLbl = resMode==='vurgu' ? '🟢 Vurgulanan Tahminler Analizi' : '⚪ Genel Yön İsabeti Analizi';
   const scope = (selected==='Tümü'?'Tüm ligler':selected) +
-    (resSeason==='all' ? ' · Tüm Sezonlar + Güncel (16.988)' : resSeason ? ' · ' + resSeason : ' · 5 Sezon (16.478)') +
+    (resSeason==='5s' ? ' · 5 Tamamlanmış Sezon (16.478)' : (resSeason && resSeason!=='all') ? ' · ' + resSeason : ' · Tüm Sezonlar (Güncel Dahil · 16.988)') +
     (qRes ? ` · «${qRes}»` : '') +
     (dayActive ? ' · ' + dayLabel(dayRes) : '') +
     (vurguMatchOnly ? ' · sadece vurgulanan maçlar' : hiMissOnly ? ' · yüksek güven ıskaları' : '');

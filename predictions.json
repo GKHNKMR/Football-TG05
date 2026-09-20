@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T20:45:13.785884+00:00",
+    "updated_at": "2026-09-20T23:04:42.743935+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -29,78 +29,6 @@
       "d": 4.02,
       "a": 6.09,
       "edge25": -0.1453
-    }
-  },
-  {
-    "match_id": "LL-2026-09-20-01",
-    "league_id": 140,
-    "league": "LaLiga",
-    "kickoff_utc": "2026-09-20T19:00:00Z",
-    "home": "Valencia",
-    "away": "Real Sociedad",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.37,
-    "lam_away": 1.41,
-    "exp_goals": 2.78,
-    "rho": -0.01,
-    "p_over_0_5": 0.9368,
-    "p_over_1_5": 0.7667,
-    "p_over_2_5": 0.5257,
-    "label": "HIGH",
-    "base_lam_home": 1.37,
-    "base_lam_away": 1.41,
-    "base_rho": -0.01,
-    "updated_at": "2026-09-20T20:45:13.785884+00:00",
-    "live": {
-      "status": "85'",
-      "score": "1-2"
-    },
-    "market": {
-      "o25_odds": 1.88,
-      "u25_odds": 1.85,
-      "o25_implied": 0.496,
-      "h": 2.68,
-      "d": 3.35,
-      "a": 2.52,
-      "edge25": 0.0297
-    }
-  },
-  {
-    "match_id": "PR-2026-09-20-02",
-    "league_id": 94,
-    "league": "Primeira Liga",
-    "kickoff_utc": "2026-09-20T19:30:00Z",
-    "home": "Porto",
-    "away": "Benfica",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.286,
-    "lam_away": 1.755,
-    "exp_goals": 3.041,
-    "rho": 0.02,
-    "p_over_0_5": 0.9544,
-    "p_over_1_5": 0.8047,
-    "p_over_2_5": 0.5859,
-    "label": "ULTRA",
-    "base_lam_home": 1.286,
-    "base_lam_away": 1.755,
-    "base_rho": 0.02,
-    "updated_at": "2026-09-20T20:45:13.785884+00:00",
-    "live": {
-      "status": "49'",
-      "score": "1-0"
-    },
-    "market": {
-      "o25_odds": 1.81,
-      "u25_odds": 1.92,
-      "o25_implied": 0.5147,
-      "h": 2.6,
-      "d": 3.35,
-      "a": 2.5,
-      "edge25": 0.0712
     }
   }
 ]

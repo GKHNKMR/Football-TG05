@@ -146,6 +146,9 @@ def main():
         print("\n--- 7. Testing Kuponlarım Tab Integrity (>= 2026-09-12) ---")
         page.click("#tab-cpn")
         time.sleep(0.5)
+        if page.query_selector("#csub-model12"):
+            page.click("#csub-model12")
+            time.sleep(0.5)
         cpn_summary = page.inner_text("#cpnSummary")
         print(f"  Kuponlarım summary: {cpn_summary[:100]}...")
         assert "12.09.2026" in cpn_summary or "Kupon" in cpn_summary

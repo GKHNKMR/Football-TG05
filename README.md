@@ -149,5 +149,43 @@ workflow.
 
 The repository is connected to the static deployment. Any push to `main` triggers a new static deployment.
 
-<!-- BETAVUS data pipeline verified 2026-09-09 -->
-<!-- Calculation run requested 2026-09-09 -->
+## Paper-Betting & Sanal Kasa Yönetimi (Kasa Planı)
+
+BETAVUS, futbol toplam gol pazarları (0.5 Üst, 1.5 Üst, 2.5 Üst) için yapay zekâ destekli bir **paper-betting, kupon planlama ve sanal kasa yönetimi platformudur**.
+
+> **Yasal Uyarı & İlke:**
+> BETAVUS bir bahis sitesi, bahis operatörü veya ödeme platformu değildir. Site bahis kabul etmez, para yatırma/çekme işlemi yapmaz ve kullanıcı adına harici bir bahis sitesinde kupon oynatmaz. Bütün bakiye, stake ve kazanç hesaplamaları tamamen **sanal (paper-betting)** simülasyondan ibarettir. Hiçbir tahmin garanti kazanç vaat etmez; kayıp kovalama (Martingale vb.) yöntemleri desteklenmez.
+
+**Motto:** *"Önce simüle et. Riskini gör. Stratejini ölç. Sonra karar ver."*
+
+### 5 Sekmeli Mimari
+
+1. **⚽ Tahminler:** 9 lig için Poisson ve Dixon-Coles düzeltmeli maç bazlı 0.5/1.5/2.5 Üst olasılıkları ve detaylı H2H/Form istatistikleri.
+2. **🎯 Tahmin vs Gerçekleşen:** Modelin 5 sezonluk walk-forward geçmişi, lig bazlı başarı oranları ve 12 Eylül 2026 sonrası canlı doğruluk analizi.
+3. **💡 Kupon Önerileri:** Kullanıcının risk profiline (Temkinli, Dengeli, Atak) göre otomatik oluşturulan minimum, orta ve yüksek riskli kuponlar.
+   - **Kupon Düzenleme Modülü:** Maç çıkarma, `+ Maç Ekle` ile uygun fikstürlerden seçim yapma, pazar değiştirme (0.5/1.5/2.5) ve harici oynanan gerçek oranı girebilme.
+   - **Metrikler:** Birleşik olasılık, tahmini adil oran, başabaş olasılık ($1/\text{oran}$), beklenen değer ($EV = (P \times \text{oran}) - 1$).
+4. **📋 Kuponlarım:**
+   - **⏳ Bekleyenler:** Fikstürleri oynanmayı veya sonuçlanmayı bekleyen sanal kuponlar.
+   - **✅ Sonuçlananlar:** Otomatik sonuçlandırılan kuponlar, toplam net kâr/zarar, ROI, kazanma oranı, seri istatistikleri ve max drawdown.
+   - **📝 Taslaklar:** Hazırlanıp henüz plana dahil edilmemiş kuponlar.
+   - **📊 12 Eylül Canlı Model Takibi:** 12.09.2026 tarihinden itibaren sistemin yüksek güvenle vurguladığı maçların canlı kümülatif takip istatistikleri.
+5. **🏦 Kasa Planım:**
+   - **Plan Tanımı:** Sanal başlangıç kasası ($S$), hedef kasa ($T$), plan süresi ($D$ gün) ve risk toleransı.
+   - **Geometrik Büyüme Patikası:** $\text{hedef\_yolu}(d) = S \cdot (T/S)^{d/D}$ formülüyle günlük hedeflenen bakiye çizgisi.
+   - **Monte Carlo Simülasyonu:** 5.000 iterasyonluk Mulberry32 PRNG motoru ile hedefe ulaşma olasılığı ($P(\text{hedef})$), beklenen medyan bakiye ve %5 VaR (Value at Risk) risk koridoru.
+   - **Adaptif Öneri Motoru:** Planda sapma olduğunda kullanıcı onayıyla seçilebilecek 3 somut opsiyon: Süreyi uzatma, Hedefi revize etme, Risk profilini değiştirme.
+   - **Veri Yedekleme:** `betavus.paper_v1` LocalStorage anahtarı üzerinden JSON dışa aktarma ve içe aktarma desteği.
+
+### Otomatik Sonuçlandırma (Idempotent Settlement)
+
+`js/paper_engine.js` içerisinde yer alan settlement motoru, `data/results.json` ve `data/live-scores.json` verilerini dinleyerek kuponları maçlar biter bitmez otomatik değerlendirir. Önceden sonuçlanan kuponlar tekrar hesaplanmaz (idempotent), sanal bakiye mükerrer güncellenmez.
+
+### Otomasyon ve Testler
+
+- `scripts/test_paper_betting.py`: Şartnamede tanımlanan Senaryo A–F, Monte Carlo simülasyonu, adaptif seçenekler, LocalStorage şeması ve DOM entegrasyonunu doğrulayan 10 adımlı test suite.
+- `scripts/verify_e2e.py`: Tüm sekmelerin ve veri akışının geriye dönük uyumluluğunu doğrulayan 8 adımlı E2E regression testi.
+
+<!-- BETAVUS data pipeline verified 2026-09-20 -->
+<!-- Calculation run requested 2026-09-20 -->
+

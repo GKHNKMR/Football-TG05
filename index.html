@@ -272,7 +272,154 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #gateBtn{width:100%;margin-top:10px;border:0;background:var(--accent);color:var(--accent-ink);border-radius:11px;padding:13px;font-size:14px;font-weight:900;cursor:pointer}
 #gateErr{color:var(--bad);font-size:12.5px;font-weight:700;margin:10px 0 0}
 #gateErr[hidden]{display:none}
+
+/* --- BETAVUS Paper-Betting & Kasa Planı Stilleri --- */
+.global-paper-banner{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0 12px;display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);line-height:1.45}
+.gpb-badge{background:var(--line);color:var(--text);font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.04em}
+.gpb-text{flex:1}
+.paper-disclaimer{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:11.5px;color:var(--muted);line-height:1.55}
+.p-badge{font-weight:800;font-size:9.5px;letter-spacing:.05em;color:var(--accent);display:inline-block;margin-bottom:3px}
+.p-quote{font-style:italic;color:var(--text);font-weight:700;margin-top:6px;font-size:12px}
+.plan-header-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.plan-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.plan-title-row h2{font-size:15px;font-weight:900;margin:0 0 3px}
+.plan-sub{font-size:11px;color:var(--muted)}
+.plan-status-badge{font-size:11px;font-weight:800;padding:5px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.plan-status-badge.ahead,.plan-status-badge.on_track{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent)}
+.plan-status-badge.behind{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+.plan-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.plan-progress-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.pbar-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap;gap:6px}
+.pbar-track{height:10px;background:var(--bg);border-radius:999px;position:relative;overflow:visible;margin-bottom:8px}
+.pbar-fill{height:100%;background:linear-gradient(90deg,#3987e5,#2ea043);border-radius:999px;transition:width .3s}
+.pbar-target-marker{position:absolute;top:-3px;bottom:-3px;width:3px;background:#e8ff3f;border-radius:2px;box-shadow:0 0 6px #e8ff3f}
+.pbar-hint{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);flex-wrap:wrap;gap:6px}
+.sim-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.sim-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.sim-head h3{font-size:13.5px;font-weight:900;margin:0 0 4px}
+.sim-head p{font-size:11.5px;color:var(--muted);margin:0}
+.sim-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.stile .sv{font-size:14px;font-weight:900;color:var(--text)}
+.stile .sk{font-size:10px;text-transform:uppercase;font-weight:800;color:var(--muted);margin:3px 0 1px;letter-spacing:.03em}
+.stile .sn{font-size:9.5px;color:var(--muted);line-height:1.3}
+.adaptive-card{background:color-mix(in srgb,var(--bad) 6%,var(--panel));border:1px solid color-mix(in srgb,var(--bad) 35%,var(--line));border-radius:14px;padding:16px;margin-bottom:14px}
+.adapt-head h3{font-size:14px;font-weight:900;color:var(--text);margin:0 0 4px}
+.adapt-head p{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+.adapt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.adapt-col{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column}
+.col-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--line);color:var(--text);align-self:flex-start;margin-bottom:6px}
+.adapt-col h4{font-size:13px;font-weight:900;margin:0 0 4px}
+.adapt-col .desc{font-size:11px;color:var(--muted);line-height:1.45;margin:0 0 10px;flex:1}
+.adapt-metrics{background:var(--panel2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px}
+.am-row{display:flex;justify-content:space-between;padding:2px 0}
+.am-row span{color:var(--muted)}
+.adapt-warn{font-size:10.5px;color:var(--bad);line-height:1.4;margin-bottom:10px;font-weight:600}
+.btn-apply-adapt{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;width:100%}
+.plan-actions-card{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.p-act-left,.p-act-right{display:flex;gap:8px;flex-wrap:wrap}
+.form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.form-input,.form-select{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:9px;padding:10px 12px;font-size:13px;font-weight:600;font-family:inherit}
+.form-hint{font-size:10.5px;color:var(--muted);margin-top:2px}
+.pill-group{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.pill.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.risk-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.risk-card{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;position:relative}
+.risk-card input[type="radio"]{position:absolute;opacity:0}
+.risk-card.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel2))}
+.r-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.r-head b{font-size:12.5px}
+.r-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px}
+.r-badge.b-cautious{background:color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)}
+.r-badge.b-balanced{background:color-mix(in srgb,#3987e5 20%,transparent);color:#3987e5}
+.r-badge.b-aggressive{background:color-mix(in srgb,#e8ff3f 20%,transparent);color:#e8ff3f}
+.risk-card p{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
+.form-error{color:var(--bad);font-size:12px;font-weight:700;margin:10px 0;padding:8px 12px;background:color-mix(in srgb,var(--bad) 12%,transparent);border-radius:8px;border:1px solid color-mix(in srgb,var(--bad) 30%,transparent)}
+.form-footer{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+.form-guarantee-note{font-size:11px;color:var(--muted)}
+.rec-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.rec-header h2{font-size:15px;font-weight:900;margin:0 0 2px}
+.rec-header p{font-size:12px;color:var(--muted);margin:0}
+.rec-cards-grid{display:flex;flex-direction:column;gap:14px}
+.rec-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.rec-card.unavailable{opacity:.65}
+.empty-rec{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+.empty-rec strong{display:block;color:var(--text);margin-bottom:4px;font-size:13px}
+.rc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.rc-title-box{display:flex;align-items:center;gap:8px}
+.rc-badge{font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+.rc-badge.b-min{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent)}
+.rc-badge.b-med{background:color-mix(in srgb,#3987e5 22%,transparent);color:#3987e5;border:1px solid color-mix(in srgb,#3987e5 40%,transparent)}
+.rc-badge.b-high{background:color-mix(in srgb,#d95926 22%,transparent);color:#d95926;border:1px solid color-mix(in srgb,#d95926 40%,transparent)}
+.rc-legs-count{font-size:11px;font-weight:800;color:var(--muted)}
+.rc-arm-note{font-size:11px;font-weight:700;color:var(--muted)}
+.rc-desc{font-size:11.5px;color:var(--muted);margin:0 0 10px}
+.rc-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.rc-table th{text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line)}
+.rc-table td{padding:7px 8px;border-bottom:1px solid var(--hair);vertical-align:top}
+.rc-summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--panel2);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.rc-summary-bar .s-item{display:flex;flex-direction:column}
+.rc-summary-bar .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:800}
+.rc-summary-bar .val{font-size:13.5px;font-weight:900;margin-top:1px}
+.rc-footer-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-primary{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:800;cursor:pointer}
+.btn-sec{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;cursor:pointer}
+.btn-subtle{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer}
+.btn-danger-subtle{border:1px solid color-mix(in srgb,var(--bad) 30%,transparent);background:transparent;color:var(--bad);border-radius:8px;padding:8px 14px;font-size:11.5px;font-weight:700;cursor:pointer}
+.modal-bg{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-bg[hidden]{display:none!important}
+.modal-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:700px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 36px rgba(0,0,0,.5);overflow:hidden}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal-head h3{font-size:14px;font-weight:900;margin:0}
+.modal-close{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+.editor-body{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:16px;overflow-y:auto}
+.editor-selections{display:flex;flex-direction:column;gap:8px}
+.es-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:var(--muted)}
+.es-list{display:flex;flex-direction:column;gap:8px}
+.es-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.es-info{display:flex;flex-direction:column;gap:2px}
+.es-teams{font-size:12.5px}
+.es-sub{font-size:10.5px;color:var(--muted)}
+.es-market-ctrl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+.market-select{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px;padding:4px 8px;font-size:11.5px;font-weight:700;flex:1}
+.btn-remove-leg{border:0;background:transparent;cursor:pointer;font-size:14px;padding:4px;opacity:.7}
+.btn-remove-leg:hover{opacity:1}
+.editor-sidebar{background:var(--panel2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ed-calc-box{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px}
+.ed-calc-row{display:flex;justify-content:space-between;padding:2px 0}
+.ed-calc-row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:6px;font-size:12.5px;font-weight:900}
+.picker-box{max-width:560px}
+.picker-search-bar{padding:12px 16px;border-bottom:1px solid var(--line)}
+.picker-list{padding:10px 16px;overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:8px}
+.picker-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pi-info{display:flex;flex-direction:column;gap:2px;flex:1}
+.pi-teams{font-size:12px}
+.pi-sub{font-size:10.5px;color:var(--muted)}
+.pi-probs{display:flex;gap:8px;font-size:10px;color:var(--muted);font-weight:700}
+.btn-pick-match{padding:6px 12px;font-size:11px}
+.slip-card{margin-top:12px}
+.sc-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sc-date{font-size:11px;color:var(--muted)}
+.sc-source{font-size:11px;color:var(--muted);background:var(--panel2);padding:2px 6px;border-radius:6px}
+.sc-odds-info{display:flex;gap:10px;font-size:11px;color:var(--muted)}
+.sc-foot-bar{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:10px;border-top:1px solid var(--line);flex-wrap:wrap;gap:10px;font-size:11.5px}
+.sf-financials{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.sf-actions{display:flex;gap:6px}
+.cbadge.void{background:var(--hair);color:var(--muted)}
+.cbadge.draft{background:var(--line);color:var(--muted)}
+.net-res{font-weight:900;padding:2px 8px;border-radius:6px}
+.net-res.good{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.net-res.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+@media(max-width:768px){
+  .form-row,.risk-cards,.adapt-grid,.editor-body{grid-template-columns:1fr}
+  .plan-tiles,.rc-summary-bar{grid-template-columns:1fr 1fr}
+  .sim-tiles{grid-template-columns:1fr 1fr}
+}
 </style>
+
 </head>
 <body>
 <div class="wrap">
@@ -289,11 +436,17 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     </div>
   </header>
 
+  <div class="global-paper-banner">
+    <span class="gpb-badge">PAPER-BETTING PLATFORMU</span>
+    <span class="gpb-text">BETAVUS bahis kabul etmez, ödeme almaz ve kupon oynatmaz. Gösterilen kasa, stake ve getiriler sanaldır. Tahminler olasılıksaldır ve sonuç garantisi vermez.</span>
+  </div>
+
   <div class="tabs" role="tablist">
     <button class="tab active" id="tab-pred" type="button">Tahminler</button>
     <button class="tab" id="tab-res" type="button">Tahmin vs Gerçekleşen</button>
+    <button class="tab" id="tab-rec" type="button">Kupon Önerileri</button>
     <button class="tab" id="tab-cpn" type="button">Kuponlarım</button>
-    <button class="tab" id="tab-gun" type="button">Günün Kuponu</button>
+    <button class="tab" id="tab-plan" type="button">Kasa Planım</button>
   </div>
 
   <nav class="filters" id="filters"></nav>
@@ -419,17 +572,21 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     </div>
   </section>
 
+  <section id="pane-rec" hidden></section>
+
   <section id="pane-cpn" hidden>
-    <div id="cpnSummary"></div>
-    <div class="datectl">
+    <div id="cpnSummary" style="display:none"></div>
+    <div class="datectl" style="display:none">
       <span class="srch">
         <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <input id="qCpn" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
         <button class="sx" id="qCpnX" type="button" hidden aria-label="Temizle">×</button>
       </span>
     </div>
-    <div id="cpnList"></div>
+    <div id="cpnList" style="display:none"></div>
   </section>
+
+  <section id="pane-plan" hidden></section>
 
   <section id="pane-gun" hidden>
     <div id="gunBody"></div>
@@ -450,6 +607,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <p id="gateErr" hidden>Kod hatalı.</p>
   </div>
 </div>
+<script src="js/paper_engine.js"></script>
+<script src="js/paper_ui.js"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
@@ -1045,7 +1204,20 @@ function renderResults(){
     (lc?`<br>* ${lc} maçın sonucu football-data.co.uk henüz güncellemeden, canlı skor akışından alındı — pipeline saatlik çalıştığı için maç bitince ~1 saat içinde burada.`:'');
 }
 
-function renderAll(){renderPred();renderResults();renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();}
+function renderAll(){
+  renderPred();
+  renderResults();
+  renderBacktest();
+  if(window.BETAVUS_PAPER_UI){
+    BETAVUS_PAPER_UI.triggerSettlementCheck();
+    if(tab==='rec') BETAVUS_PAPER_UI.renderRecPane();
+    if(tab==='cpn') BETAVUS_PAPER_UI.renderCouponsPane();
+    if(tab==='plan') BETAVUS_PAPER_UI.renderPlanPane();
+  } else {
+    if(tab==='cpn') renderCoupons();
+    if(tab==='gun') renderGun();
+  }
+}
 
 // ---- model doğruluğu (backtest tabloları) ----
 const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
@@ -1112,14 +1284,15 @@ function renderBacktest(){
 
 function setTab(t){
   if(t==='bt') t='res'; // backward compatibility alias
+  if(t==='gun') t='rec'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['pred','res','cpn','gun'].forEach(k=>{
+  ['pred','res','rec','cpn','plan','gun'].forEach(k=>{
     const btn=$('tab-'+k), pane=$('pane-'+k);
     if(btn) btn.classList.toggle('active',t===k);
     if(pane) pane.hidden=t!==k;
   });
-  $('filters').hidden=t==='gun';   // Günün Kuponu tüm ligler — lig filtresi geçersiz
+  $('filters').hidden=['rec','plan','gun'].includes(t);
   renderFilters();
   renderAll();
 }
@@ -1638,8 +1811,10 @@ function openInfo(){
 // ---- wire ----
 $('tab-pred').onclick=()=>setTab('pred');
 $('tab-res').onclick=()=>setTab('res');
+if($('tab-rec')) $('tab-rec').onclick=()=>setTab('rec');
 $('tab-cpn').onclick=()=>setTab('cpn');
-$('tab-gun').onclick=()=>setTab('gun');
+if($('tab-plan')) $('tab-plan').onclick=()=>setTab('plan');
+if($('tab-gun')) $('tab-gun').onclick=()=>setTab('rec');
 document.querySelectorAll('.subtab[data-view]').forEach(b=>{
   b.onclick=()=>setResSubView(b.dataset.view);
 });

@@ -194,26 +194,31 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .kp-tag.out{background:rgba(235,87,87,0.18);color:#ff6b6b;border:1px solid rgba(235,87,87,0.3)}
 .kp-tag.ok{background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid rgba(46,204,113,0.25)}
 @media(max-width:650px){.sheet-bg{padding:0}.sheet{border-radius:0;min-height:100vh;max-width:none}.s-cols{grid-template-columns:1fr}}
-/* model doğruluğu (backtest) sekmesi */
-#pane-bt .lede{color:var(--muted);font-size:12px;margin:0 2px 4px;line-height:1.55}
-#pane-bt .tiles{grid-template-columns:repeat(4,1fr)}
-#pane-bt .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
-#pane-bt .card h2{margin:0 0 8px;font-size:13px;font-weight:900}
-#pane-bt .card p{color:var(--muted);font-size:11.5px;line-height:1.65;margin:6px 0}
-#pane-bt .card p b{color:var(--text)}
-#pane-bt .formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:9px 0;color:var(--text);overflow-x:auto;white-space:nowrap}
-#pane-bt .hit{color:var(--good);font-weight:800}
-#pane-bt .miss{color:var(--bad);font-weight:800}
-#pane-bt .btmarks{display:inline-flex;gap:7px;font-weight:900;font-size:11px;letter-spacing:-.5px}
-#pane-bt table{width:100%;border-collapse:collapse;font-size:12.5px}
-#pane-bt th,#pane-bt td{text-align:right;padding:8px 9px;border-bottom:1px solid var(--line)}
-#pane-bt th:first-child,#pane-bt td:first-child{text-align:left}
-#pane-bt th{color:var(--muted);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
-#pane-bt tbody tr:hover{background:var(--panel2)}
-#pane-bt .tbl-scroll{overflow-x:auto}
-#pane-bt .btfoot{color:var(--muted);font-size:11px;margin-top:16px;line-height:1.6}
-#pane-bt .btfoot code{background:var(--panel2);padding:1px 5px;border-radius:5px}
-@media(max-width:650px){#pane-bt .tiles{grid-template-columns:1fr 1fr}#pane-bt table{font-size:12px}#pane-bt th,#pane-bt td{padding:7px 6px}}
+/* tahmin vs gerçekleşen (sonuçlar + model doğruluğu) */
+#pane-res .lede,#pane-bt .lede{color:var(--muted);font-size:12px;margin:0 2px 8px;line-height:1.55}
+#pane-res .tiles,#pane-bt .tiles{grid-template-columns:repeat(4,1fr)}
+#pane-res .card,#pane-bt .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+#pane-res .card h2,#pane-bt .card h2{margin:0 0 8px;font-size:13px;font-weight:900}
+#pane-res .card p,#pane-bt .card p{color:var(--muted);font-size:11.5px;line-height:1.65;margin:6px 0}
+#pane-res .card p b,#pane-bt .card p b{color:var(--text)}
+#pane-res .formula,#pane-bt .formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:9px 0;color:var(--text);overflow-x:auto;white-space:nowrap}
+#pane-res .hit,#pane-bt .hit{color:var(--good);font-weight:800}
+#pane-res .miss,#pane-bt .miss{color:var(--bad);font-weight:800}
+#pane-res .btmarks,#pane-bt .btmarks{display:inline-flex;gap:7px;font-weight:900;font-size:11px;letter-spacing:-.5px}
+#pane-res table.bt-table,#pane-bt table{width:100%;border-collapse:collapse;font-size:12.5px}
+#pane-res table.bt-table th,#pane-res table.bt-table td,#pane-bt th,#pane-bt td{text-align:right;padding:8px 9px;border-bottom:1px solid var(--line)}
+#pane-res table.bt-table th:first-child,#pane-res table.bt-table td:first-child,#pane-bt th:first-child,#pane-bt td:first-child{text-align:left}
+#pane-res table.bt-table th,#pane-bt th{color:var(--muted);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+#pane-res table.bt-table tbody tr:hover,#pane-bt tbody tr:hover{background:var(--panel2)}
+#pane-res .tbl-scroll,#pane-bt .tbl-scroll{overflow-x:auto}
+#pane-res .btfoot,#pane-bt .btfoot{color:var(--muted);font-size:11px;margin-top:16px;line-height:1.6}
+#pane-res .btfoot code,#pane-bt .btfoot code{background:var(--panel2);padding:1px 5px;border-radius:5px}
+.subtabs{display:flex;gap:6px;margin:12px 0 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.subtabs::-webkit-scrollbar{display:none}
+.subtab{border:0;background:transparent;color:var(--muted);padding:7px 14px;border-radius:9px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;transition:background .15s, color .15s}
+.subtab:hover{color:var(--text)}
+.subtab.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.25);border:1px solid var(--line)}
+@media(max-width:650px){#pane-res .tiles,#pane-bt .tiles{grid-template-columns:1fr 1fr}#pane-res table.bt-table,#pane-bt table{font-size:12px}#pane-res table.bt-table th,#pane-res table.bt-table td,#pane-bt th,#pane-bt td{padding:7px 6px}}
 /* kupon (otomatik analiz) */
 .tabs{max-width:100%;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -283,8 +288,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 
   <div class="tabs" role="tablist">
     <button class="tab active" id="tab-pred" type="button">Tahminler</button>
-    <button class="tab" id="tab-res" type="button">Sonuçlar</button>
-    <button class="tab" id="tab-bt" type="button">Model doğruluğu</button>
+    <button class="tab" id="tab-res" type="button">Tahmin vs Gerçekleşen</button>
     <button class="tab" id="tab-cpn" type="button">Kuponlarım</button>
     <button class="tab" id="tab-gun" type="button">Günün Kuponu</button>
   </div>
@@ -327,63 +331,76 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   </section>
 
   <section id="pane-res" hidden>
+    <p class="lede" id="res-lede"></p>
     <nav class="filters" id="res-seasons"></nav>
     <div id="resSummary"></div>
-    <div class="datectl">
-      <button class="datebtn" id="dayBtnRes" type="button"></button>
-      <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
-      <span class="srch">
-        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input id="qRes" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
-        <button class="sx" id="qResX" type="button" hidden aria-label="Temizle">×</button>
-      </span>
-    </div>
-    <div class="table">
-      <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div title="gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) ne kadar örtüştü">Gol tahmin isabeti</div></div>
-      <div id="resRows"><div class="loading">Yükleniyor…</div></div>
-    </div>
-    <div class="foot" id="resFoot"></div>
-  </section>
 
-  <section id="pane-bt" hidden>
-    <nav class="filters" id="bt-seasons"></nav>
-    <p class="lede" id="bt-lede">Yükleniyor…</p>
-    <div class="tiles" id="bt-tiles"></div>
-    <div class="card">
-      <h2 id="bt-byleague-h">Lig bazında</h2>
-      <div class="tbl-scroll"><table id="bt-byleague"></table></div>
+    <div class="subtabs" id="resSubtabs" role="tablist">
+      <button class="subtab active" id="subtab-matches" type="button" data-view="matches">⚽ Detaylı Maç Listesi</button>
+      <button class="subtab" id="subtab-tables" type="button" data-view="tables">📊 Lig &amp; Sezon Dağılımı (5 Sezon)</button>
+      <button class="subtab" id="subtab-method" type="button" data-view="method">📐 Model Yöntemi &amp; Formül</button>
     </div>
-    <div class="card">
-      <h2 id="bt-byseason-h">Sezon bazında</h2>
-      <div class="tbl-scroll"><table id="bt-byseason"></table></div>
+
+    <!-- VIEW 1: Detaylı Maç Listesi -->
+    <div id="resView-matches" class="res-view">
+      <div class="datectl">
+        <button class="datebtn" id="dayBtnRes" type="button"></button>
+        <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
+        <span class="srch">
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input id="qRes" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
+          <button class="sx" id="qResX" type="button" hidden aria-label="Temizle">×</button>
+        </span>
+      </div>
+      <div class="table">
+        <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div title="gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) ne kadar örtüştü">Gol tahmin isabeti</div></div>
+        <div id="resRows"><div class="loading">Yükleniyor…</div></div>
+      </div>
+      <div class="foot" id="resFoot"></div>
     </div>
-    <div class="card" id="bt-method-card">
-      <h2>Tahmin tabanı — hesap yöntemi</h2>
-      <p>Her takımın <b>ev</b> ve <b>deplasman</b> maçlarında attığı ve yediği gol oranları,
-        son sezonlar yakın olana daha çok ağırlık verilerek çıkarılır
-        (<b>1.0 · 0.7 · 0.45 · 0.30</b>). Ev sahibinin hücumu + deplasmanın savunması ile
-        deplasmanın hücumu + ev sahibinin savunması ortalanıp beklenen toplam gol <b>λ</b> bulunur.</p>
-      <div class="formula">λ = (ev_attığı + dep_yediği) / 2 &nbsp;+&nbsp; (dep_attığı + ev_yediği) / 2</div>
-      <p>İki takım son 5 sezonda <b>2+ kez</b> karşılaşmışsa, o maçların toplam gol ortalaması
-        <b>%28</b> ağırlıkla λ'ya karıştırılır. Ardından λ bir <b>Poisson</b> dağılımına sokulup
-        "en az 1 / 2 / 3 gol" (0.5 / 1.5 / 2.5 Üst) olasılıkları verilir.</p>
-      <div class="formula">P(Üst n) = 1 − Poisson_KDF(n ; λ)</div>
-      <p>Backtest'te bu model, her hedef sezon için <b>yalnızca ondan önceki sezonların</b>
-        verisiyle kuruldu; hedef sezonun sonuçları modele hiç girmedi (sızıntı yok).
-        <b>Yön isabeti</b> = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne
-        seçseydin tutma oranın. Veri: football-data.co.uk · formül canlı tahminlerle birebir aynı.</p>
+
+    <!-- VIEW 2: Lig & Sezon Dağılımı (5 Sezon) -->
+    <div id="resView-tables" class="res-view" hidden>
+      <div class="card">
+        <h2 id="bt-byleague-h">Lig bazında</h2>
+        <div class="tbl-scroll"><table id="bt-byleague" class="bt-table"></table></div>
+      </div>
+      <div class="card">
+        <h2 id="bt-byseason-h">Sezon bazında</h2>
+        <div class="tbl-scroll"><table id="bt-byseason" class="bt-table"></table></div>
+      </div>
+      <div class="card" id="bt-samples-card">
+        <h2 id="bt-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
+        <p>Test kümesinden düzenli aralıklarla seçilen maçlar. <b>Tah. λ</b> = modelin tahmin
+          ettiği toplam gol · <b>Skor / Gol</b> = gerçekte olan.
+          <b>Model 0.5·1.5·2.5</b>: her çizgi için modelin verdiği olasılık %50 ve üstündeyse
+          <b>Ü</b> (Üst dedi), altındaysa <b>A</b> (Alt dedi); <b>✓</b> o yön tuttu demek —
+          tek başına "üst geldi" demek <b>değil</b>. Örn. 1-0 biten maçta "2.5 A✓", modelin
+          doğru bir Alt tahminidir.</p>
+        <div class="tbl-scroll"><table id="bt-samples" class="bt-table"></table></div>
+      </div>
+      <p class="btfoot" id="bt-foot"></p>
     </div>
-    <div class="card" id="bt-samples-card">
-      <h2 id="bt-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
-      <p>Test kümesinden düzenli aralıklarla seçilen maçlar. <b>Tah. λ</b> = modelin tahmin
-        ettiği toplam gol · <b>Skor / Gol</b> = gerçekte olan.
-        <b>Model 0.5·1.5·2.5</b>: her çizgi için modelin verdiği olasılık %50 ve üstündeyse
-        <b>Ü</b> (Üst dedi), altındaysa <b>A</b> (Alt dedi); <b>✓</b> o yön tuttu demek —
-        tek başına "üst geldi" demek <b>değil</b>. Örn. 1-0 biten maçta "2.5 A✓", modelin
-        doğru bir Alt tahminidir.</p>
-      <div class="tbl-scroll"><table id="bt-samples"></table></div>
+
+    <!-- VIEW 3: Model Yöntemi & Formül -->
+    <div id="resView-method" class="res-view" hidden>
+      <div class="card" id="bt-method-card">
+        <h2>Tahmin tabanı — hesap yöntemi</h2>
+        <p>Her takımın <b>ev</b> ve <b>deplasman</b> maçlarında attığı ve yediği gol oranları,
+          son sezonlar yakın olana daha çok ağırlık verilerek çıkarılır
+          (<b>1.0 · 0.7 · 0.45 · 0.30</b>). Ev sahibinin hücumu + deplasmanın savunması ile
+          deplasmanın hücumu + ev sahibinin savunması ortalanıp beklenen toplam gol <b>λ</b> bulunur.</p>
+        <div class="formula">λ = (ev_attığı + dep_yediği) / 2 &nbsp;+&nbsp; (dep_attığı + ev_yediği) / 2</div>
+        <p>İki takım son 5 sezonda <b>2+ kez</b> karşılaşmışsa, o maçların toplam gol ortalaması
+          <b>%28</b> ağırlıkla λ'ya karıştırılır. Ardından λ bir <b>Poisson</b> dağılımına sokulup
+          "en az 1 / 2 / 3 gol" (0.5 / 1.5 / 2.5 Üst) olasılıkları verilir.</p>
+        <div class="formula">P(Üst n) = 1 − Poisson_KDF(n ; λ)</div>
+        <p>Backtest'te bu model, her hedef sezon için <b>yalnızca ondan önceki sezonların</b>
+          verisiyle kuruldu; hedef sezonun sonuçları modele hiç girmedi (sızıntı yok).
+          <b>Yön isabeti</b> = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne
+          seçseydin tutma oranın. Veri: football-data.co.uk · formül canlı tahminlerle birebir aynı.</p>
+      </div>
     </div>
-    <p class="btfoot" id="bt-foot"></p>
   </section>
 
   <section id="pane-cpn" hidden>
@@ -445,18 +462,20 @@ const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?J
 const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}catch(e){}};
 
 let tab=store('tab','pred');
+if(tab==='bt') tab='res';
 // her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
 // Kuponlarım'ı da o lige kilitlemesin - Kuponlarım hep "Tümü" ile başlar)
-let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res','Tümü'),
-                   bt:store('league_bt','Tümü'),cpn:store('league_cpn','Tümü')};
+let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res',store('league_bt','Tümü')),
+                   cpn:store('league_cpn','Tümü')};
 let selected=selectedByTab[tab]||'Tümü';
 let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
 let hiMissOnly=false;    // Sonuçlar: sadece yüksek güvenle tahmin edilip tutmayan maçlar
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
-let btSeason=store('btseason','')||'';  // Model doğruluğu: '' = tüm sezonlar, yoksa "2025/26"
-let resSeason=store('resseason','')||'';  // Sonuçlar: '' = tüm sezonlar, yoksa "2025/26"
+let resSeason=store('resseason',store('btseason',''))||'';  // '' = tüm sezonlar, yoksa "2025/26"
+let btSeason=resSeason;
+let resSubView=store('res_subview','matches');              // 'matches' | 'tables' | 'method'
 let qPred='',qRes='',qCpn='';           // takım arama kutuları (Tahminler / Sonuçlar / Kuponlarım)
 
 const $=id=>document.getElementById(id);
@@ -710,7 +729,8 @@ function aggr(rows){                       // seçili lig + gün için istatisti
   return a;
 }
 function lineTile(label,acc,n){
-  return `<div class="tile"><div class="v">${acc!=null?acc+'%':'—'}</div>
+  const txt=acc!=null?(String(acc).endsWith('%')?acc:acc+'%'):'—';
+  return `<div class="tile"><div class="v">${txt}</div>
     <div class="k">${label} yön isabeti</div>
     <div class="n">${n||0} maç</div></div>`;
 }
@@ -733,50 +753,146 @@ function hiMissRows(ms){
     return v!=null&&Number(v)>=HIMIN[t]&&m.hits['hit_'+t]===0;
   }));
 }
+function setResSubView(v){
+  resSubView = v;
+  save('res_subview', v);
+  ['matches','tables','method'].forEach(k=>{
+    const btn = $('subtab-'+k), el = $('resView-'+k);
+    if(btn) btn.classList.toggle('active', k === v);
+    if(el) el.hidden = (k !== v);
+  });
+  if(v === 'tables' || v === 'method') renderBacktest();
+}
+
 function resSeasonList(){
-  return RESULTS?[...new Set((RESULTS.matches||[]).map(m=>seasonOf(m.kickoff_utc)))].sort():[];
+  const s1 = RESULTS ? [...new Set((RESULTS.matches||[]).map(m=>seasonOf(m.kickoff_utc)))] : [];
+  const s2 = BACKTEST ? Object.keys(BACKTEST.by_season||{}) : [];
+  const all = [...new Set([...s1, ...s2])];
+  return all.sort((a,b)=>b.localeCompare(a));
 }
+
 function renderResSeasons(){
-  const nav=$('res-seasons'),ss=resSeasonList();
-  if(ss.length<2){nav.innerHTML='';nav.hidden=true;return;}
+  const nav=$('res-seasons'), ss=resSeasonList();
+  if(!ss.length){nav.innerHTML='';nav.hidden=true;return;}
   nav.hidden=false;
-  if(resSeason&&!ss.includes(resSeason))resSeason='';
-  nav.innerHTML=[['','Tüm sezonlar'],...ss.map(s=>[s,s])]
+  if(resSeason && !ss.includes(resSeason)) resSeason='';
+  btSeason = resSeason;
+  nav.innerHTML=[['','Tüm sezonlar (5 Sezon)'], ...ss.map(s=>[s,s])]
     .map(([v,lbl])=>`<button class="chip ${v===resSeason?'active':''}" data-s="${v}">${lbl}</button>`).join('');
-  nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{resSeason=b.dataset.s;save('resseason',resSeason);renderResSeasons();renderResults();});
+  nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+    resSeason=b.dataset.s;
+    btSeason=resSeason;
+    save('resseason',resSeason);
+    save('btseason',btSeason);
+    renderResSeasons();
+    renderResults();
+    renderBacktest();
+  });
 }
+
 function renderResults(){
-  const wrap=$('resSummary'),body=$('resRows'),foot=$('resFoot');
+  const wrap=$('resSummary'), body=$('resRows'), foot=$('resFoot'), lede=$('res-lede');
   $('dayBtnRes').innerHTML=dateBtnLabel(dayRes);
-  if(!RESULTS){body.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';wrap.innerHTML='';foot.textContent='';return;}
+  if(lede){
+    lede.innerHTML=`<b>Tahmin vs Gerçekleşen · Doğruluk &amp; Sonuç Analizi</b> — 5 sezonluk walk-forward testi (16.478+ maç, sızıntısız model) ile son sezonların maç bazında gerçekleşen skor ve gol tahmin örtüşmeleri tek ekranda.`;
+  }
+  if(!RESULTS && !BACKTEST){
+    body.innerHTML='<div class="loading">Doğruluk ve sonuç verileri yükleniyor…</div>';
+    wrap.innerHTML='';
+    foot.textContent='';
+    return;
+  }
   renderResSeasons();
-  let ms=RESULTS.matches||[];
-  if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
-  if(resSeason)ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
-  if(qRes)ms=ms.filter(m=>teamHit(m,qRes));      // takım araması aktifken gün filtresi devre dışı
+
+  let ms = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
+  if(selected!=='Tümü') ms=ms.filter(m=>m.league===selected);
+  if(resSeason) ms=ms.filter(m=>seasonOf(m.kickoff_utc)===resSeason);
+  if(qRes) ms=ms.filter(m=>teamHit(m,qRes));      // takım araması aktifken gün filtresi devre dışı
   const dk=new Set(ms.map(m=>dayKey(m.kickoff_utc)));
-  if(dayRes&&!dk.has(dayRes))dayRes=null;
-  const dayActive=!!dayRes&&!qRes;
-  const br=$('dayBtnRes');br.innerHTML=dateBtnLabel(dayRes);br.classList.toggle('set',!!dayRes);
-  if(calFor==='res'&&!cal.hidden)renderCal();
-  if(dayActive)ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
-  const hiMiss=hiMissRows(ms);
-  const hib=$('hiMissToggle');
-  hib.textContent=hiMiss.length?`yüksek güven ıskaları (${hiMiss.length})`:'yüksek güven ıskaları';
-  hib.classList.toggle('on',hiMissOnly);
-  hib.style.opacity=(hiMiss.length||hiMissOnly)?1:.4;
-  if(hiMissOnly)ms=hiMiss;
-  const o=aggr(ms);
-  const scope=(selected==='Tümü'?'Tüm ligler':selected)+(resSeason?' · '+resSeason:'')+(qRes?` · «${qRes}»`:'')+(dayActive?' · '+dayLabel(dayRes):'')+(hiMissOnly?' · yüksek güven ıskaları':'');
-  wrap.innerHTML=`<div class="tiles">
-    ${lineTile('0.5+',o.acc_05,o.n)}
-    ${lineTile('1.5+',o.acc_15,o.n)}
-    ${lineTile('2.5+',o.acc_25,o.n)}
+  if(dayRes && !dk.has(dayRes)) dayRes=null;
+  const dayActive = !!dayRes && !qRes;
+  const br=$('dayBtnRes'); if(br){ br.innerHTML=dateBtnLabel(dayRes); br.classList.toggle('set',!!dayRes); }
+  if(calFor==='res' && !cal.hidden) renderCal();
+  if(dayActive) ms=ms.filter(m=>dayKey(m.kickoff_utc)===dayRes);
+
+  const hiMiss = hiMissRows(ms);
+  const hib = $('hiMissToggle');
+  if(hib){
+    hib.textContent = hiMiss.length ? `yüksek güven ıskaları (${hiMiss.length})` : 'yüksek güven ıskaları';
+    hib.classList.toggle('on', hiMissOnly);
+    hib.style.opacity = (hiMiss.length || hiMissOnly) ? 1 : .4;
+  }
+  if(hiMissOnly) ms = hiMiss;
+
+  // Subtab count
+  const subMatches = $('subtab-matches');
+  if(subMatches){
+    subMatches.textContent = ms.length ? `⚽ Detaylı Maç Listesi (${ms.length})` : '⚽ Detaylı Maç Listesi';
+  }
+
+  // Calculate stats for tiles & summary
+  const o = aggr(ms);
+  const bScore = btScope();
+
+  let t05, t15, t25, nTestVal, nTestSub;
+  if(!resSeason && bScore){
+    // Tüm sezonlar (5 Sezon) — 16.478 maçlık sızıntısız walk-forward sonuçları
+    t05 = btLine(bScore,'0.5');
+    t15 = btLine(bScore,'1.5');
+    t25 = btLine(bScore,'2.5');
+    nTestVal = bScore.n_matches.toLocaleString('tr-TR');
+    nTestSub = '5 sezon walk-forward';
+  } else if(ms.length > 0){
+    // Sezonda maç kayıtları var (2024/25, 2025/26, 2026/27)
+    t05 = o.acc_05 != null ? o.acc_05 + '%' : '—';
+    t15 = o.acc_15 != null ? o.acc_15 + '%' : '—';
+    t25 = o.acc_25 != null ? o.acc_25 + '%' : '—';
+    nTestVal = o.n.toLocaleString('tr-TR');
+    nTestSub = resSeason ? resSeason + ' sezonu' : 'test edilen maç';
+  } else if(bScore){
+    // Sezon yalnızca backtest'te var (2021/22, 2022/23, 2023/24)
+    t05 = btLine(bScore,'0.5');
+    t15 = btLine(bScore,'1.5');
+    t25 = btLine(bScore,'2.5');
+    nTestVal = bScore.n_matches.toLocaleString('tr-TR');
+    nTestSub = resSeason ? resSeason + ' sezonu' : '5 sezon walk-forward';
+  } else {
+    t05 = '—'; t15 = '—'; t25 = '—'; nTestVal = '—'; nTestSub = '';
+  }
+
+  const scope = (selected==='Tümü'?'Tüm ligler':selected) +
+    (resSeason ? ' · ' + resSeason : ' · 5 Sezon Analizi') +
+    (qRes ? ` · «${qRes}»` : '') +
+    (dayActive ? ' · ' + dayLabel(dayRes) : '') +
+    (hiMissOnly ? ' · yüksek güven ıskaları' : '');
+
+  wrap.innerHTML = `<div class="tiles">
+    ${lineTile('0.5+', t05, nTestVal)}
+    ${lineTile('1.5+', t15, nTestVal)}
+    ${lineTile('2.5+', t25, nTestVal)}
+    <div class="tile">
+      <div class="v">${nTestVal}</div>
+      <div class="k">Test Edilen Maç</div>
+      <div class="n">${nTestSub}</div>
+    </div>
   </div>
-  <div class="rsum"><b>${scope}</b> · ${o.n||0} maç · gol tahmin isabeti ort. <b>%${o.gol_acc??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}${resSeason?'':' · '+(RESULTS.span||'tüm kayıtlar')}</div>
+  <div class="rsum"><b>${scope}</b> · ${!resSeason ? '5 sezon sızıntısız model testi (16.478 maç)' + (o.n ? ` · son sezonlar detaylı takip: ${o.n.toLocaleString('tr-TR')} maç` : '') : `${nTestVal} maç`} · gol tahmin isabeti ort. <b>%${o.gol_acc??'—'}</b> · λ hata <b>${o.lambda_mae??'—'} gol</b>${o.value_acc!=null?` · piyasaya karşı yön %${o.value_acc}`:''}</div>
   ${o.n&&!hiMissOnly?hiStrip(o):''}`;
-  if(!ms.length){body.innerHTML='<div class="empty"><strong>'+(hiMissOnly?'Bu aralıkta yüksek güven ıskası yok':qRes?`«${qRes}» için sonuç yok`:dayActive?'Bu gün için sonuç yok':'Bu lig için sonuç yok')+'</strong></div>';foot.textContent='';return;}
-  const CAP=400, shown=ms.slice(0,CAP);   // özetler tüm maçlar; liste en yeni CAP satır
+
+  if(!ms.length){
+    if(resSeason && BACKTEST && BACKTEST.by_season && BACKTEST.by_season[resSeason]){
+      body.innerHTML = `<div class="empty">
+        <strong>${resSeason} sezonu verileri 5 sezonluk walk-forward model doğrulaması kapsamındadır.</strong>
+        Bu sezonun tüm lig bazındaki isabet oranlarını görmek için yukarıdan <button class="chip active" style="display:inline-flex;padding:5px 12px;margin:6px 0 0 4px;vertical-align:middle" onclick="setResSubView('tables')">📊 Lig &amp; Sezon Dağılımı</button> sekmesine geçebilirsiniz.
+      </div>`;
+    } else {
+      body.innerHTML = '<div class="empty"><strong>' + (hiMissOnly ? 'Bu aralıkta yüksek güven ıskası yok' : qRes ? `«${qRes}» için sonuç yok` : dayActive ? 'Bu gün için sonuç yok' : 'Bu lig için sonuç yok') + '</strong></div>';
+    }
+    foot.textContent = '';
+    return;
+  }
+
+  const CAP=400, shown=ms.slice(0,CAP);
   body.innerHTML=(ms.length>CAP?`<div class="rmore">En yeni ${CAP} maç listeleniyor · yüzdeler yukarıda ${ms.length} maçın tamamından</div>`:'')+shown.map(m=>{
     const H=m.hits||{};
     const lam=m.pred_lambda, tot=m.total;
@@ -792,32 +908,28 @@ function renderResults(){
       <div><span class="${gaCls}" style="font-weight:800">${ga==null?'—':'%'+ga}</span><div class="edge">λ ${lam!=null?lam.toFixed(2):'—'} → ${tot} gol</div></div>
     </div>`;
   }).join('');
+
   const rc=RESULTS.reconstructed_count||0, lc=RESULTS.live_scored_count||0;
   foot.innerHTML=`"Tah. gol" = modelin tahmin ettiği toplam gol (λ); skora ±0.75 yakınsa yeşil. "0.5·1.5·2.5 yön": her çizgide <b>Ü</b> = model Üst dedi (olasılık ≥ %50), <b>A</b> = Alt dedi; <b>✓</b> o yön tuttu demek — tek başına "üst geldi" demek <b>değil</b> (ör. 1-0 biten maçta "A✓" doğru bir Alt tahminidir). "Gol tahmin isabeti" = gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) yakınlığı: <b>%100</b> = birebir, <b>%0</b> = tamamen ıska (1 − |λ − gerçek| / büyük olan). Alt satır: "λ → gerçekleşen gol".`+
-    (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi. Model doğruluğu sayfası aynı modeli sıfırdan (yalnızca önceki sezonlar) test eder; burada maç günü bilinen form da işin içinde olduğu için oranlar biraz daha yüksektir. Arşiv doldukça bu maçlar gerçek tahmin kaydıyla değişir.`:'')+
+    `<br>* 5 sezonluk walk-forward model testi: 16.478 maç geriye dönük ve sızıntısız hesaplandı (her tahmin yalnızca o maçtan önceki verilerle üretildi).`+
+    (rc?`<br>* ${rc} maç geriye dönük ve sızıntısız hesaplandı: her tahmin yalnızca o maçtan önceki verilerle, canlı modelin ağırlıklarıyla üretildi.`:'')+
     (lc?`<br>* ${lc} maçın sonucu football-data.co.uk henüz güncellemeden, canlı skor akışından alındı — pipeline saatlik çalıştığı için maç bitince ~1 saat içinde burada.`:'');
 }
 
-function renderAll(){renderPred();renderResults();if(tab==='bt')renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();}
+function renderAll(){renderPred();renderResults();renderBacktest();if(tab==='cpn')renderCoupons();if(tab==='gun')renderGun();}
 
-// ---- model doğruluğu (backtest) ----
+// ---- model doğruluğu (backtest tabloları) ----
 const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const btPc=v=>v==null?'—':(v*100).toFixed(1)+'%';
-function btTiles(rows){$('bt-tiles').innerHTML=rows.map(r=>`<div class="tile"><div class="v">${r[0]}</div><div class="k">${r[1]}</div><div class="n">${r[2]}</div></div>`).join('');}
+function btTiles(rows){/* handled in unified tiles */}
 function btSeasonList(){return BACKTEST?Object.keys(BACKTEST.by_season||{}).sort():[];}
-function renderBtSeasons(){
-  const nav=$('bt-seasons'),ss=btSeasonList();
-  if(!ss.length){nav.innerHTML='';return;}
-  if(btSeason&&!ss.includes(btSeason))btSeason='';
-  nav.innerHTML=[['','Tüm sezonlar'],...ss.map(s=>[s,s])]
-    .map(([v,lbl])=>`<button class="chip ${v===btSeason?'active':''}" data-s="${v}">${lbl}</button>`).join('');
-  nav.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{btSeason=b.dataset.s;save('btseason',btSeason);renderBtSeasons();renderBacktest();});
-}
-function btLoadFailed(){if(!BACKTEST&&tab==='bt')$('bt-lede').textContent='Model doğrulama verisi şu an yüklenemedi — birazdan tekrar denenecek.';}
+function renderBtSeasons(){/* unified with renderResSeasons */}
+function btLoadFailed(){/* silent fallback */}
 // seçili lig + sezon için score nesnesi
 function btScope(){
   const d=BACKTEST;
-  const s=btSeason&&d.by_season[btSeason]?btSeason:'';
+  if(!d)return null;
+  const s=resSeason&&d.by_season[resSeason]?resSeason:'';
   if(selected==='Tümü')return s?d.by_season[s]:d.overall;
   if(s)return (d.by_season_league[s]||{})[selected]||null;
   return d.by_league[selected]||null;
@@ -825,52 +937,50 @@ function btScope(){
 function btLine(x,k){return x&&x.markets&&x.markets[k]?btPc(x.markets[k].pick_acc):'—';}
 function renderBacktest(){
   const d=BACKTEST;
-  if(!d){$('bt-lede').textContent='Yükleniyor…';return;}
-  renderBtSeasons();
+  if(!d)return;
   const ns=(d.method&&d.method.target_seasons||[]).length;
-  const s=btSeason&&d.by_season[btSeason]?btSeason:'';
+  const s=resSeason&&d.by_season[resSeason]?resSeason:'';
   const o=btScope();
-  const lgTxt=selected==='Tümü'?BT_ORDER.length+' lig':selected;
-  const seTxt=s||`${ns} sezon`;
-  $('bt-lede').innerHTML=`<b>${lgTxt} · ${seTxt}</b> · ${o?o.n_matches.toLocaleString('tr-TR')+' maç':'veri yok'} · `+
-    `sızıntısız walk-forward: her sezon yalnızca önceki sezonların verisiyle tahmin edildi (o sezon modele girmedi). Veri: football-data.co.uk.`;
-  btTiles([
-    [o?o.n_matches.toLocaleString('tr-TR'):'—','test edilen maç','oynanmadan önce, sızıntısız tahmin edildi'],
-    [btLine(o,'0.5'),'0.5 Üst yön isabeti',''],
-    [btLine(o,'1.5'),'1.5 Üst yön isabeti',''],
-    [btLine(o,'2.5'),'2.5 Üst yön isabeti','']
-  ]);
   const head=`<thead><tr><th></th><th>Maç</th><th>0.5Ü</th><th>1.5Ü</th><th>2.5Ü</th></tr></thead>`;
   const row=(name,x,hi)=>x?`<tr${hi?' style="font-weight:900"':''}><td>${esc(name)}</td><td>${x.n_matches.toLocaleString('tr-TR')}</td><td>${btLine(x,'0.5')}</td><td>${btLine(x,'1.5')}</td><td>${btLine(x,'2.5')}</td></tr>`:'';
   // lig bazında — seçili sezon (yoksa tüm sezonlar)
   const bl=s?(d.by_season_league[s]||{}):d.by_league;
-  $('bt-byleague-h').textContent=`Lig bazında · ${s||'tüm sezonlar'}`;
-  $('bt-byleague').innerHTML=head+`<tbody>`+
+  const lEl=$('bt-byleague-h');
+  if(lEl) lEl.textContent=`Lig bazında · ${s||'5 sezon toplamı'}`;
+  const tblL=$('bt-byleague');
+  if(tblL) tblL.innerHTML=head+`<tbody>`+
     BT_ORDER.filter(l=>bl[l]).map(l=>row(l,bl[l],l===selected)).join('')+`</tbody>`;
   // sezon bazında — seçili lig (yoksa tüm ligler)
-  $('bt-byseason-h').textContent=`Sezon bazında · ${selected==='Tümü'?'tüm ligler':selected}`;
-  $('bt-byseason').innerHTML=head+`<tbody>`+
+  const sEl=$('bt-byseason-h');
+  if(sEl) sEl.textContent=`Sezon bazında · ${selected==='Tümü'?'tüm ligler':selected}`;
+  const tblS=$('bt-byseason');
+  if(tblS) tblS.innerHTML=head+`<tbody>`+
     btSeasonList().map(ss=>row(ss,selected==='Tümü'?d.by_season[ss]:(d.by_season_league[ss]||{})[selected],ss===s)).join('')+`</tbody>`;
   // örnek maçlar — seçili lig + sezona göre süz; boş kalırsa tüm örnekler
   let samp=(d.samples||[]);
   const scoped=samp.filter(x=>(!s||x.season===s)&&(selected==='Tümü'||x.league===selected));
   const fellBack=scoped.length<3;
   samp=fellBack?samp:scoped;
-  $('bt-samples-h').textContent=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`;
-  $('bt-samples').innerHTML=
+  const smEl=$('bt-samples-h');
+  if(smEl) smEl.textContent=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`;
+  const tblSamp=$('bt-samples');
+  if(tblSamp) tblSamp.innerHTML=
     `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>Skor</th><th>Gol</th><th title="Ü=model Üst dedi, A=Alt · ✓=tuttu">Model 0.5·1.5·2.5</th></tr></thead><tbody>`+
     samp.map(x=>`<tr><td>${dmy(x.date)}</td><td>${esc(x.league)}</td><td style="text-align:left">${esc(x.home)} — ${esc(x.away)}</td><td>${x.pred_lambda}</td><td>${x.actual_score}</td><td>${x.actual_total}</td><td><span class="btmarks">${dirMark(x.p05,x.hit05,'0.5')}${dirMark(x.p15,x.hit15,'1.5')}${dirMark(x.p25,x.hit25,'2.5')}</span></td></tr>`).join('')+`</tbody>`;
-  $('bt-foot').innerHTML=
+  const ftEl=$('bt-foot');
+  if(ftEl) ftEl.innerHTML=
     `"Yön isabeti" = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne seçseydin tutma oranın. `+
-    `Üretim: <code>scripts/backtest.py</code> · ${new Date(d.generated_at).toLocaleString('tr-TR')}.`;
+    `Üretim: <code>scripts/backtest.py</code> · 5 sezonluk walk-forward sızıntısız doğrulama · ${new Date(d.generated_at).toLocaleString('tr-TR')}.`;
 }
 
 function setTab(t){
+  if(t==='bt') t='res'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['pred','res','bt','cpn','gun'].forEach(k=>{
-    $('tab-'+k).classList.toggle('active',t===k);
-    $('pane-'+k).hidden=t!==k;
+  ['pred','res','cpn','gun'].forEach(k=>{
+    const btn=$('tab-'+k), pane=$('pane-'+k);
+    if(btn) btn.classList.toggle('active',t===k);
+    if(pane) pane.hidden=t!==k;
   });
   $('filters').hidden=t==='gun';   // Günün Kuponu tüm ligler — lig filtresi geçersiz
   renderFilters();
@@ -881,9 +991,9 @@ async function load(){
   rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){STATS=s;if(tab==='pred')renderPred();}}).catch(()=>{});
   fetch(H2H_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.pairs)H2H=s;}).catch(()=>{});
-  fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();if(tab==='cpn')renderCoupons();}}).catch(()=>{});
+  fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;if(tab==='res'){renderResults();renderBacktest();}if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='bt')renderBacktest();if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
+    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='res'){renderResults();renderBacktest();}if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
   try{
     const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('data');
@@ -892,10 +1002,10 @@ async function load(){
     const upd=remote[0]&&remote[0].updated_at;
     $('updated').innerHTML=`Kaynak: openfootball + football-data.co.uk · Poisson + Dixon-Coles motoru`+
       (upd?` · güncelleme ${timeAgo(upd)}`:'')+
-      ` · <a href="#" onclick="setTab('bt');return false">Model doğruluğu →</a>`;
+      ` · <a href="#" onclick="setTab('res');return false">Tahmin vs Gerçekleşen →</a>`;
   }catch(e){
     window.__data=FALLBACK_DATA;
-    $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('bt');return false">Model doğruluğu →</a>`;
+    $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('res');return false">Tahmin vs Gerçekleşen →</a>`;
   }
   renderAll();
   pollLiveScores();   // sayfa yüklenir yüklenmez canlı skoru tazele - saatlik pipeline'ın bıraktığı eski live durumunu beklemeden
@@ -1384,16 +1494,19 @@ function openInfo(){
       <p><span class="badge b3">●●●</span> H2H + form'a dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b-lim">⚠️ Kısıtlı Veri</span> tek takım / yetersiz maç geçmişi (yüksek varyans nedeniyle yeşil vurgulanmaz)</p>
       <p><b>Vurgu</b> seçtiğin pazarda backtest'te sürdürülebilir en yüksek isabet bölgesini yeşil yakar — garanti değil, "modelin en emin olduğu" demektir. <b>Sonuçlar</b> sekmesindeki yeşil şerit tam da bu eşiklerin üstündeki tahminlerin gerçekte nasıl tuttuğunu gösterir — riski azaltmanın yolu bu.</p></div>
     <div class="s-card"><h3>Dürüstlük</h3>
-      <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Tüm tahminlere bakınca tek maç ayrıştırma gücü piyasanın çok az üstünde; ama <b>yüksek güven eşiğinin üstündeki</b> daha az sayıda tahmin belirgin biçimde daha iyi tutuyor. <a href="#" onclick="closeSheet();setTab('bt');return false">Model doğruluğu</a> sekmesi ve Sonuçlar sekmesi hepsini açıkça verir. Kayıp garantisi yoktur.</p></div>
+      <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Tüm tahminlere bakınca tek maç ayrıştırma gücü piyasanın çok az üstünde; ama <b>yüksek güven eşiğinin üstündeki</b> daha az sayıda tahmin belirgin biçimde daha iyi tutuyor. <a href="#" onclick="closeSheet();setTab('res');return false">Tahmin vs Gerçekleşen</a> sekmesi hepsini açıkça verir. Kayıp garantisi yoktur.</p></div>
   </div>`;
 }
 
 // ---- wire ----
 $('tab-pred').onclick=()=>setTab('pred');
 $('tab-res').onclick=()=>setTab('res');
-$('tab-bt').onclick=()=>setTab('bt');
 $('tab-cpn').onclick=()=>setTab('cpn');
 $('tab-gun').onclick=()=>setTab('gun');
+document.querySelectorAll('.subtab[data-view]').forEach(b=>{
+  b.onclick=()=>setResSubView(b.dataset.view);
+});
+setResSubView(resSubView);
 $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};

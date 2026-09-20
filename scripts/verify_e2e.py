@@ -147,6 +147,38 @@ def main():
         print(f"  Kuponlarım summary: {cpn_summary[:100]}...")
         assert "12.09.2026" in cpn_summary or "Kupon" in cpn_summary
 
+        # 8. Check Date Sort (Yeniden Eskiye / Eskiden Yeniye)
+        print("\n--- 8. Testing Date Sort (Yeniden Eskiye / Eskiden Yeniye) ---")
+        page.click("#tab-res")
+        page.click("#subtab-matches")
+        time.sleep(0.5)
+
+        # Default is desc (Yeniden Eskiye)
+        sort_btn = page.inner_text("#resSortBtn")
+        print(f"  Initial sort button: {sort_btn}")
+        first_date_desc = page.inner_text("#resRows .rrow .rdate")
+        print(f"  First match date (desc): {first_date_desc}")
+        assert "Yeniden Eskiye" in sort_btn
+        assert "2026" in first_date_desc
+
+        # Click sort button -> toggles to asc (Eskiden Yeniye)
+        page.click("#resSortBtn")
+        time.sleep(0.5)
+        sort_btn_asc = page.inner_text("#resSortBtn")
+        first_date_asc = page.inner_text("#resRows .rrow .rdate")
+        print(f"  After clicking button: {sort_btn_asc} -> First match date: {first_date_asc}")
+        assert "Eskiden Yeniye" in sort_btn_asc
+        assert "2021" in first_date_asc
+
+        # Click column header #resSortDate -> toggles back to desc (Yeniden Eskiye)
+        page.click("#resSortDate")
+        time.sleep(0.5)
+        sort_btn_back = page.inner_text("#resSortBtn")
+        first_date_back = page.inner_text("#resRows .rrow .rdate")
+        print(f"  After clicking header: {sort_btn_back} -> First match date: {first_date_back}")
+        assert "Yeniden Eskiye" in sort_btn_back
+        assert "2026" in first_date_back
+
         browser.close()
         print("\n>>> ALL TESTS PASSED SUCCESSFULLY! <<<")
 

@@ -122,8 +122,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .sortcol:not([data-sort="date"]).act::after{content:" ▼";font-size:8px}
 .sarr{display:none;font-size:9px}
 .sortcol[data-sort="date"].act .sarr{display:inline}
-.rhead,.rrow{display:grid;grid-template-columns:46px minmax(96px,1fr) 44px 40px 86px 54px;gap:8px;align-items:center}
+.rhead,.rrow{display:grid;grid-template-columns:52px minmax(96px,1fr) 44px 42px 86px 56px;gap:8px;align-items:center}
 .rhead{padding:11px 14px;background:var(--head);color:var(--headtext);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.rhead .sortcol{cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.rhead .sortcol:hover{color:var(--text)}
+.rhead .sortcol.act{color:var(--good)}
 .rrow{padding:11px 14px;border-top:1px solid var(--line);font-size:12.5px;cursor:pointer}
 .rrow:hover{background:var(--panel2)}
 .rrow .rteam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
@@ -349,6 +352,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div id="resView-matches" class="res-view">
       <div class="datectl">
         <button class="datebtn" id="dayBtnRes" type="button"></button>
+        <button id="resSortBtn" class="hotbtn" type="button" title="Tarih sıralamasını değiştir">📅 Yeniden Eskiye (↓)</button>
         <button id="vurguMatchToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 en az bir çizgide yeşil yanan maçlar">⚡ sadece vurgulanan maçlar</button>
         <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
         <span class="srch">
@@ -358,7 +362,14 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
         </span>
       </div>
       <div class="table">
-        <div class="rhead"><div>Tarih</div><div>Maç</div><div>Skor</div><div title="tahmin edilen toplam gol">Tah. gol</div><div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div><div title="gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) ne kadar örtüştü">Gol tahmin isabeti</div></div>
+        <div class="rhead">
+          <div class="sortcol act" id="resSortDate" data-sort="date" title="Tarihe göre sırala (tıkla: yeniden eskiye / eskiden yeniye)">Tarih <span class="sarr" style="display:inline">▼</span></div>
+          <div>Maç</div>
+          <div class="sortcol" id="resSortScore" data-sort="score" title="Skora / toplam gole göre sırala">Skor <span class="sarr"></span></div>
+          <div class="sortcol" id="resSortLambda" data-sort="lambda" title="Tahmin edilen toplam gole (λ) göre sırala">Tah. gol <span class="sarr"></span></div>
+          <div title="Ü=model Üst dedi, A=Alt dedi · ✓=tuttu">0.5·1.5·2.5 yön</div>
+          <div class="sortcol" id="resSortAcc" data-sort="gol_acc" title="Gol tahmin isabetine göre sırala">Gol tahmin isabeti <span class="sarr"></span></div>
+        </div>
         <div id="resRows"><div class="loading">Yükleniyor…</div></div>
       </div>
       <div class="foot" id="resFoot"></div>
@@ -478,6 +489,8 @@ let hotOnly=false;
 let resMode=store('res_mode','vurgu');  // 'vurgu' = vurgulanan tahminler, 'all' = tüm maçlar genel yön isabeti
 let vurguMatchOnly=false; // Detaylı Maç Listesi: sadece vurgulanan maçlar
 let hiMissOnly=false;    // Sonuçlar: sadece yüksek güvenle tahmin edilip tutmayan maçlar
+let resSortCol=store('res_sort_col','date');       // 'date' | 'lambda' | 'score' | 'gol_acc'
+let resSortOrder=store('res_sort_order','desc');   // 'desc' = yeniden eskiye, 'asc' = eskiden yeniye
 let sortLine=null;       // Tahminler: sütun başlığına tıklayınca % büyükten küçüğe
 let dayPred=null,dayRes=null;  // günlük tarih filtresi (YYYY-MM-DD | null)
 let resSeason=store('resseason',store('btseason',''))||'';  // '' = 5 sezon (16.478), 'all' = tümü (16.988), yoksa "2025/26"
@@ -926,6 +939,53 @@ function renderResults(){
   if(vurguMatchOnly) tableMs = hiMatches;
   else if(hiMissOnly) tableMs = hiMiss;
 
+  // Sıralama (Tarihe göre veya seçili sütuna göre)
+  tableMs = [...tableMs];
+  tableMs.sort((a, b) => {
+    let diff = 0;
+    if(resSortCol === 'lambda'){
+      diff = (b.pred_lambda || 0) - (a.pred_lambda || 0);
+    } else if(resSortCol === 'score'){
+      diff = (b.total || 0) - (a.total || 0);
+    } else if(resSortCol === 'gol_acc'){
+      const gaA = golAcc(a) ?? -1, gaB = golAcc(b) ?? -1;
+      diff = gaB - gaA;
+    } else {
+      // 'date' (varsayılan)
+      diff = (b.kickoff_utc || '').localeCompare(a.kickoff_utc || '');
+    }
+    if(diff === 0){
+      diff = (b.kickoff_utc || '').localeCompare(a.kickoff_utc || '');
+    }
+    return resSortOrder === 'desc' ? diff : -diff;
+  });
+
+  // Sıralama buton ve sütun başlığı göstergelerini senkronize et
+  const sb = $('resSortBtn');
+  if(sb){
+    sb.innerHTML = resSortOrder === 'desc' ? '📅 Yeniden Eskiye (↓)' : '📅 Eskiden Yeniye (↑)';
+    sb.classList.toggle('on', resSortCol === 'date');
+    sb.title = resSortOrder === 'desc' ? 'Şu an: Yeniden Eskiye (En Yeni İlk) · Eskiden yeniye sıralamak için tıkla' : 'Şu an: Eskiden Yeniye (En Eski İlk) · Yeniden eskiye sıralamak için tıkla';
+  }
+  const sortCols = [
+    {id: 'resSortDate', col: 'date'},
+    {id: 'resSortScore', col: 'score'},
+    {id: 'resSortLambda', col: 'lambda'},
+    {id: 'resSortAcc', col: 'gol_acc'}
+  ];
+  sortCols.forEach(c => {
+    const el = $(c.id);
+    if(el){
+      const isAct = (resSortCol === c.col);
+      el.classList.toggle('act', isAct);
+      const arr = el.querySelector('.sarr');
+      if(arr){
+        arr.textContent = isAct ? (resSortOrder === 'desc' ? '▼' : '▲') : '';
+        arr.style.display = isAct ? 'inline' : 'none';
+      }
+    }
+  });
+
   // Subtab count
   const subMatches = $('subtab-matches');
   if(subMatches){
@@ -950,8 +1010,12 @@ function renderResults(){
     return;
   }
 
+  const sortDescText = resSortCol === 'date'
+    ? (resSortOrder === 'desc' ? 'Yeniden eskiye' : 'Eskiden yeniye')
+    : (resSortCol === 'lambda' ? 'Tahmin edilen gole göre' : resSortCol === 'score' ? 'Skora göre' : 'Gol isabetine göre');
+
   const CAP=400, shown=tableMs.slice(0,CAP);
-  body.innerHTML=(tableMs.length>CAP?`<div class="rmore">En yeni ${CAP} maç listeleniyor · yüzdeler yukarıda ${tableMs.length.toLocaleString('tr-TR')} maçın tamamından hesaplandı</div>`:'')+shown.map(m=>{
+  body.innerHTML=(tableMs.length>CAP?`<div class="rmore">${resSortOrder==='desc'&&resSortCol==='date'?'En yeni':'Sıralı'} ${CAP} maç listeleniyor (${sortDescText}) · yüzdeler yukarıda ${tableMs.length.toLocaleString('tr-TR')} maçın tamamından hesaplandı</div>`:'')+shown.map(m=>{
     const H=m.hits||{};
     const lam=m.pred_lambda, tot=m.total;
     const close=(lam!=null&&Math.abs(lam-tot)<=0.75);
@@ -1592,6 +1656,30 @@ if(ma) ma.onclick=()=>{resMode='all';save('res_mode','all');renderResults();};
 const vtb=$('vurguMatchToggle');
 if(vtb) vtb.onclick=()=>{vurguMatchOnly=!vurguMatchOnly;if(vurguMatchOnly)hiMissOnly=false;renderResults();};
 $('hiMissToggle').onclick=()=>{hiMissOnly=!hiMissOnly;if(hiMissOnly)vurguMatchOnly=false;renderResults();};
+const sb=$('resSortBtn');
+if(sb) sb.onclick=()=>{
+  if(resSortCol==='date'){
+    resSortOrder=(resSortOrder==='desc'?'asc':'desc');
+  } else {
+    resSortCol='date';
+    resSortOrder='desc';
+  }
+  save('res_sort_col',resSortCol);
+  save('res_sort_order',resSortOrder);
+  renderResults();
+};
+document.querySelectorAll('#pane-res .rhead .sortcol').forEach(c=>c.onclick=()=>{
+  const col=c.dataset.sort;
+  if(resSortCol===col){
+    resSortOrder=(resSortOrder==='desc'?'asc':'desc');
+  } else {
+    resSortCol=col;
+    resSortOrder='desc';
+  }
+  save('res_sort_col',resSortCol);
+  save('res_sort_order',resSortOrder);
+  renderResults();
+});
 $('resRows').addEventListener('click',e=>{
   const t=e.target.closest('.tnclick');
   if(t){qRes=`${t.dataset.home} ${t.dataset.away}`;$('qRes').value=qRes;$('qResX').hidden=false;renderResults();return;}

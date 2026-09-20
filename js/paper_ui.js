@@ -21,6 +21,8 @@
   let settledFilter = 'all'; // 'all' | 'won' | 'lost' | 'minimum' | 'medium' | 'high'
   let editingSlip = null; // Aktif düzenlenen kupon nesnesi
   let modalMatchPickerCallback = null;
+  let currentChartMode = 'all'; // 'all' | 'cautious' | 'balanced' | 'aggressive'
+  let cachedTrajData = null;
 
   // ---------------------------------------------------------------------------
   // Yardımcı Biçimlendirme Fonksiyonları
@@ -111,6 +113,397 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Hedef Kasa Ulaşma Grafiği & Risk Modelleri Projeksiyonları
+  // ---------------------------------------------------------------------------
+
+  function generateTrajectoryChartSvg(trajData, plan, curr, viewMode, history) {
+    const W = 820;
+    const H = 360;
+    const L = 70;
+    const R = 35;
+    const T = 35;
+    const B = 45;
+    const pw = W - L - R;
+    const ph = H - T - B;
+
+    const dur = Math.max(1, (trajData && trajData.durationDays) || (plan && plan.durationDays) || 30);
+    const startBank = (trajData && trajData.startBank) || (plan && plan.startingBank) || 50;
+    const targetBank = (trajData && trajData.targetBank) || (plan && plan.targetBank) || 500;
+
+    const getX = (day) => L + (day / dur) * pw;
+
+    let maxVal = targetBank * 1.15;
+    if (trajData && trajData.trajectories) {
+      const agg = trajData.trajectories.aggressive;
+      const bal = trajData.trajectories.balanced;
+      const cau = trajData.trajectories.cautious;
+      if (agg && agg.finalP90) maxVal = Math.max(maxVal, agg.finalP90);
+      if (bal && bal.finalP90) maxVal = Math.max(maxVal, bal.finalP90);
+      if (cau && cau.finalP90) maxVal = Math.max(maxVal, cau.finalP90);
+    }
+    if (history && history.length) {
+      for (const h of history) {
+        if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
+      }
+    }
+    const maxY = Math.ceil(Math.min(targetBank * 2.5, Math.max(targetBank * 1.15, maxVal)) / 25) * 25;
+    const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
+
+    // Y Ekseni Kılavuz Çizgileri
+    let gridLines = '';
+    const numYSteps = 5;
+    const yStepVal = maxY / numYSteps;
+    for (let i = 0; i <= numYSteps; i++) {
+      const v = Math.round(i * yStepVal);
+      const yPos = getY(v);
+      gridLines += `
+        <line x1="${L}" y1="${yPos.toFixed(1)}" x2="${W - R}" y2="${yPos.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <text x="${(L - 8).toFixed(1)}" y="${(yPos + 3.5).toFixed(1)}" fill="var(--muted)" font-size="10" text-anchor="end" font-family="inherit">${formatCurrency(v, curr)}</text>
+      `;
+    }
+
+    // X Ekseni Gün Kılavuzları
+    let xGuides = '';
+    const xSteps = [0, Math.round(dur * 0.25), Math.round(dur * 0.5), Math.round(dur * 0.75), dur];
+    const uniqueXSteps = Array.from(new Set(xSteps)).sort((a, b) => a - b);
+    for (const d of uniqueXSteps) {
+      const xPos = getX(d);
+      xGuides += `
+        <line x1="${xPos.toFixed(1)}" y1="${T}" x2="${xPos.toFixed(1)}" y2="${(T + ph).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <text x="${xPos.toFixed(1)}" y="${(T + ph + 16).toFixed(1)}" fill="var(--muted)" font-size="10.5" text-anchor="middle" font-family="inherit">${d === 0 ? '0. Gün' : d === dur ? `${d}. Gün (Hedef)` : `${d}. Gün`}</text>
+      `;
+    }
+
+    // Hedef Kasa Kılavuzu
+    const targetY = getY(targetBank);
+    const targetGuide = `
+      <line x1="${L}" y1="${targetY.toFixed(1)}" x2="${W - R}" y2="${targetY.toFixed(1)}" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.45"/>
+      <text x="${(W - R).toFixed(1)}" y="${(targetY - 6).toFixed(1)}" fill="#f59e0b" font-size="10.5" font-weight="700" text-anchor="end" font-family="inherit">🎯 HEDEF: ${formatCurrency(targetBank, curr)}</text>
+    `;
+
+    // 1. Geometrik Hedef Yolu Çizgisi (Altın sarısı kesikli)
+    let targetPathD = '';
+    let targetAreaD = `M ${L.toFixed(1)},${(T + ph).toFixed(1)} `;
+    (trajData && trajData.targetPoints || []).forEach((pt, idx) => {
+      const px = getX(pt.day).toFixed(1);
+      const py = getY(pt.targetBank).toFixed(1);
+      if (idx === 0) {
+        targetPathD += `M ${px},${py}`;
+        targetAreaD += `L ${px},${py} `;
+      } else {
+        targetPathD += ` L ${px},${py}`;
+        targetAreaD += `L ${px},${py} `;
+      }
+    });
+    targetAreaD += `L ${(W - R).toFixed(1)},${(T + ph).toFixed(1)} Z`;
+
+    const targetCurveSvg = `
+      <path d="${targetAreaD}" fill="url(#targetGrad)" opacity="0.35"/>
+      <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
+    `;
+
+    // 2. Risk Profilleri Çizgileri
+    let profilesSvg = '';
+    const profilesToDraw = viewMode === 'all'
+      ? ['cautious', 'balanced', 'aggressive']
+      : [viewMode];
+
+    const profColors = {
+      cautious: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Temkinli (%75 Rezerv)' },
+      balanced: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Dengeli (%50 Rezerv)' },
+      aggressive: { main: '#a855f7', fill: 'rgba(168, 85, 247, 0.12)', name: 'Agresif (%35 Rezerv)' }
+    };
+
+    if (trajData && trajData.trajectories) {
+      for (const pKey of profilesToDraw) {
+        const pData = trajData.trajectories[pKey];
+        if (!pData || !pData.dayPoints) continue;
+        const c = profColors[pKey];
+
+        // Tekil risk modu seçildiyse P10-P90 güven koridorunu çiz
+        if (viewMode !== 'all') {
+          let p90Path = '';
+          let p10Path = '';
+          pData.dayPoints.forEach((pt, idx) => {
+            const px = getX(pt.day).toFixed(1);
+            const py90 = getY(pt.p90).toFixed(1);
+            const py10 = getY(pt.p10).toFixed(1);
+            if (idx === 0) {
+              p90Path += `M ${px},${py90}`;
+              p10Path = `L ${px},${py10}`;
+            } else {
+              p90Path += ` L ${px},${py90}`;
+              p10Path = ` L ${px},${py10}` + p10Path;
+            }
+          });
+          const bandD = p90Path + ' ' + p10Path + ' Z';
+          profilesSvg += `<path d="${bandD}" fill="${c.fill}" stroke="none"/>`;
+        }
+
+        // Medyan çizgisi
+        let medD = '';
+        pData.dayPoints.forEach((pt, idx) => {
+          const px = getX(pt.day).toFixed(1);
+          const py = getY(pt.median).toFixed(1);
+          if (idx === 0) medD += `M ${px},${py}`;
+          else medD += ` L ${px},${py}`;
+        });
+
+        const strokeW = viewMode === pKey ? 3.2 : (viewMode === 'all' ? 2.4 : 2.8);
+        profilesSvg += `<path d="${medD}" fill="none" stroke="${c.main}" stroke-width="${strokeW}" stroke-linejoin="round"/>`;
+
+        const lastPt = pData.dayPoints[pData.dayPoints.length - 1];
+        const endX = getX(lastPt.day).toFixed(1);
+        const endY = getY(lastPt.median).toFixed(1);
+        profilesSvg += `<circle cx="${endX}" cy="${endY}" r="4" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
+      }
+    }
+
+    // 3. Gerçekleşen Kasa Çizgisi (varsa)
+    let realizedSvg = '';
+    if (history && history.length > 0) {
+      let rD = '';
+      let rCircles = '';
+      history.forEach((h, idx) => {
+        const d = h.dayIndex != null ? h.dayIndex : idx;
+        const val = h.closingBankroll != null ? h.closingBankroll : startBank;
+        const rx = getX(d).toFixed(1);
+        const ry = getY(val).toFixed(1);
+        if (idx === 0) rD += `M ${rx},${ry}`;
+        else rD += ` L ${rx},${ry}`;
+        rCircles += `<circle cx="${rx}" cy="${ry}" r="4" fill="#fbbf24" stroke="#0d1219" stroke-width="1.8"/>`;
+      });
+      realizedSvg = `
+        <path d="${rD}" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linejoin="round"/>
+        ${rCircles}
+      `;
+    }
+
+    const defs = `
+      <defs>
+        <linearGradient id="targetGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+    `;
+
+    return `
+      <svg viewBox="0 0 ${W} ${H}" width="100%" class="trajectory-svg" id="planTrajectorySvg" role="img" aria-label="Hedeflenen Sürede Kasa Ulaşma Grafiği" style="display:block;overflow:visible;">
+        ${defs}
+        <rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="#0d1219" rx="6"/>
+        ${gridLines}
+        ${xGuides}
+        ${targetGuide}
+        ${targetCurveSvg}
+        ${profilesSvg}
+        ${realizedSvg}
+        <line id="cursorGuide" x1="-10" y1="${T}" x2="-10" y2="${(T + ph).toFixed(1)}" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointCau" cx="-10" cy="-10" r="4.5" fill="#10b981" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointBal" cx="-10" cy="-10" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#a855f7" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <rect id="chartInteractiveOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair;"/>
+      </svg>
+    `;
+  }
+
+  function renderTrajectoryChartCardHtml(plan, curr, viewMode, trajData) {
+    if (!trajData) {
+      trajData = PE.calculatePlanTrajectories(plan, null);
+    }
+    const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, viewMode, (paperState && paperState.history) || []);
+    const cau = trajData.trajectories.cautious;
+    const bal = trajData.trajectories.balanced;
+    const agg = trajData.trajectories.aggressive;
+
+    const activeProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'cautious';
+
+    return `
+      <div class="card plan-chart-card" id="planChartCard">
+        <div class="chart-head">
+          <div>
+            <h3>📈 Hedef Kasa Ulaşma Grafiği · Risk Modelleri Projeksiyonu</h3>
+            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve risk modellerinin büyüme patikaları.</p>
+          </div>
+          <div class="chart-view-chips" id="chartViewChips">
+            <button type="button" class="cchip ${viewMode === 'all' ? 'active' : ''}" data-view="all">📊 Tüm Riskleri Karşılaştır</button>
+            <button type="button" class="cchip ${viewMode === 'cautious' ? 'active' : ''}" data-view="cautious">🛡️ Temkinli (%75 Rezerv)</button>
+            <button type="button" class="cchip ${viewMode === 'balanced' ? 'active' : ''}" data-view="balanced">⚖️ Dengeli (%50 Rezerv)</button>
+            <button type="button" class="cchip ${viewMode === 'aggressive' ? 'active' : ''}" data-view="aggressive">⚡ Agresif (%35 Rezerv)</button>
+          </div>
+        </div>
+
+        <div class="chart-svg-box">
+          ${svgHtml}
+        </div>
+
+        <div class="chart-tooltip-bar" id="planChartTracker">
+          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin projeksiyonlarını inceleyebilirsiniz.</span>
+        </div>
+
+        <div class="chart-legend">
+          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Hedef Yolu (Geometrik Referans)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Temkinli (%75 Kasa Rezervi)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Dengeli (%50 Kasa Rezervi)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#a855f7;"></span> 🟣 Agresif (%35 Kasa Rezervi)</span>
+          ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
+        </div>
+
+        <div class="chart-models-summary">
+          <div class="cms-card ${activeProf === 'cautious' ? 'active-profile' : ''}">
+            <div class="cms-head">
+              <b>🛡️ Temkinli Profil</b>
+              <span class="cms-badge b-cautious">%75 Rezerv</span>
+            </div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${cau.targetHitPct >= 50 ? 'good' : 'warn'}">%${cau.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(cau.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(cau.finalP10, curr)} – ${formatCurrency(cau.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${cau.halfBankLossPct > 15 ? 'bad' : 'good'}">%${cau.halfBankLossPct}</b></div>
+          </div>
+
+          <div class="cms-card ${activeProf === 'balanced' ? 'active-profile' : ''}">
+            <div class="cms-head">
+              <b>⚖️ Dengeli Profil</b>
+              <span class="cms-badge b-balanced">%50 Rezerv</span>
+            </div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${bal.targetHitPct >= 50 ? 'good' : 'warn'}">%${bal.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(bal.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(bal.finalP10, curr)} – ${formatCurrency(bal.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${bal.halfBankLossPct > 20 ? 'bad' : 'warn'}">%${bal.halfBankLossPct}</b></div>
+          </div>
+
+          <div class="cms-card ${activeProf === 'aggressive' ? 'active-profile' : ''}">
+            <div class="cms-head">
+              <b>⚡ Agresif Profil</b>
+              <span class="cms-badge b-aggressive">%35 Rezerv</span>
+            </div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${agg.targetHitPct >= 50 ? 'good' : 'warn'}">%${agg.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(agg.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(agg.finalP10, curr)} – ${formatCurrency(agg.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${agg.halfBankLossPct > 25 ? 'bad' : 'warn'}">%${agg.halfBankLossPct}</b></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireChartInteractiveEvents(container, trajData, curr, plan) {
+    if (!container || !trajData) return;
+    const overlay = container.querySelector('#chartInteractiveOverlay');
+    const svg = container.querySelector('#planTrajectorySvg');
+    const guide = container.querySelector('#cursorGuide');
+    const ptTarget = container.querySelector('#cursorPointTarget');
+    const ptCau = container.querySelector('#cursorPointCau');
+    const ptBal = container.querySelector('#cursorPointBal');
+    const ptAgg = container.querySelector('#cursorPointAgg');
+    const tracker = container.querySelector('#planChartTracker');
+
+    if (!overlay || !svg || !tracker) return;
+
+    const W = 820; const H = 360; const L = 70; const R = 35; const T = 35; const B = 45;
+    const pw = W - L - R; const ph = H - T - B;
+    const dur = Math.max(1, trajData.durationDays);
+    const targetBank = trajData.targetBank;
+
+    let maxVal = targetBank * 1.15;
+    if (trajData.trajectories) {
+      const agg = trajData.trajectories.aggressive;
+      const bal = trajData.trajectories.balanced;
+      const cau = trajData.trajectories.cautious;
+      if (agg && agg.finalP90) maxVal = Math.max(maxVal, agg.finalP90);
+      if (bal && bal.finalP90) maxVal = Math.max(maxVal, bal.finalP90);
+      if (cau && cau.finalP90) maxVal = Math.max(maxVal, cau.finalP90);
+    }
+    const maxY = Math.ceil(Math.min(targetBank * 2.5, Math.max(targetBank * 1.15, maxVal)) / 25) * 25;
+    const getX = (d) => L + (d / dur) * pw;
+    const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
+
+    function handleMove(e) {
+      const rect = overlay.getBoundingClientRect();
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      const mouseX = clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, mouseX / rect.width));
+      const day = Math.round(pct * dur);
+
+      const xPos = getX(day);
+      if (guide) {
+        guide.setAttribute('x1', xPos);
+        guide.setAttribute('x2', xPos);
+        guide.style.display = 'block';
+      }
+
+      const tPt = trajData.targetPoints && trajData.targetPoints[day];
+      const cPt = trajData.trajectories && trajData.trajectories.cautious && trajData.trajectories.cautious.dayPoints[day];
+      const bPt = trajData.trajectories && trajData.trajectories.balanced && trajData.trajectories.balanced.dayPoints[day];
+      const aPt = trajData.trajectories && trajData.trajectories.aggressive && trajData.trajectories.aggressive.dayPoints[day];
+
+      if (ptTarget && tPt) {
+        ptTarget.setAttribute('cx', xPos);
+        ptTarget.setAttribute('cy', getY(tPt.targetBank));
+        ptTarget.style.display = 'block';
+      }
+      if (ptCau && cPt) {
+        ptCau.setAttribute('cx', xPos);
+        ptCau.setAttribute('cy', getY(cPt.median));
+        ptCau.style.display = 'block';
+      }
+      if (ptBal && bPt) {
+        ptBal.setAttribute('cx', xPos);
+        ptBal.setAttribute('cy', getY(bPt.median));
+        ptBal.style.display = 'block';
+      }
+      if (ptAgg && aPt) {
+        ptAgg.setAttribute('cx', xPos);
+        ptAgg.setAttribute('cy', getY(aPt.median));
+        ptAgg.style.display = 'block';
+      }
+
+      const tVal = tPt ? formatCurrency(tPt.targetBank, curr) : '-';
+      const cVal = cPt ? formatCurrency(cPt.median, curr) : '-';
+      const bVal = bPt ? formatCurrency(bPt.median, curr) : '-';
+      const aVal = aPt ? formatCurrency(aPt.median, curr) : '-';
+
+      tracker.innerHTML = `
+        <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
+        <span>🎯 Hedef: <b>${tVal}</b></span>
+        <span>🟢 Temkinli: <b>${cVal}</b></span>
+        <span>🔵 Dengeli: <b>${bVal}</b></span>
+        <span>🟣 Agresif: <b>${aVal}</b></span>
+      `;
+    }
+
+    function handleLeave() {
+      if (guide) guide.style.display = 'none';
+      if (ptTarget) ptTarget.style.display = 'none';
+      if (ptCau) ptCau.style.display = 'none';
+      if (ptBal) ptBal.style.display = 'none';
+      if (ptAgg) ptAgg.style.display = 'none';
+      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin projeksiyonlarını inceleyebilirsiniz.</span>';
+    }
+
+    overlay.onmousemove = handleMove;
+    overlay.onmouseleave = handleLeave;
+    overlay.ontouchmove = (e) => { e.preventDefault(); handleMove(e); };
+    overlay.ontouchend = handleLeave;
+
+    const chips = container.querySelectorAll('.cchip');
+    chips.forEach(chip => {
+      chip.onclick = () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentChartMode = chip.dataset.view || 'all';
+        const newCardHtml = renderTrajectoryChartCardHtml(plan, curr, currentChartMode, trajData);
+        const temp = document.createElement('div');
+        temp.innerHTML = newCardHtml;
+        const newCard = temp.firstElementChild;
+        container.replaceWith(newCard);
+        wireChartInteractiveEvents(newCard, trajData, curr, plan);
+      };
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Kasa Planım Ekranı (#pane-plan)
   // ---------------------------------------------------------------------------
 
@@ -145,6 +538,10 @@
 
     // Adaptif seçenekler (eğer geride ise)
     const adaptive = PE.buildAdaptiveOptions(paperState.plan, paperState, null);
+
+    // Hedef Kasa Ulaşma Trajektorisi ve Risk Modelleri Projeksiyonları
+    const trajData = PE.calculatePlanTrajectories(paperState.plan, null);
+    cachedTrajData = trajData;
 
     pane.innerHTML = `
       <div class="paper-disclaimer">
@@ -204,6 +601,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Hedeflenen Sürede Kasa Ulaşma Grafiği -->
+      ${renderTrajectoryChartCardHtml(paperState.plan, curr, currentChartMode, trajData)}
 
       <!-- Monte Carlo Simülasyon Kartı -->
       <div class="card sim-card">
@@ -339,6 +739,12 @@
             </div>
           </div>
 
+          <div class="setup-chart-preview" id="setupChartPreviewBox">
+            <h4>📈 Hedeflenen Sürede Kasa Ulaşma Grafiği Canlı Önizlemesi</h4>
+            <p>Seçilen başlangıç kasası, hedef kasa ve süreye göre geometrik hedef yolu ve risk modellerinin büyüme patikaları.</p>
+            <div id="setupChartSvgContainer" class="chart-svg-box"></div>
+          </div>
+
           <div id="setupFormError" class="form-error" hidden></div>
 
           <div class="form-footer">
@@ -384,6 +790,22 @@
   }
 
   function wirePlanSetupEvents() {
+    function updateSetupChartPreview() {
+      const container = document.getElementById('setupChartSvgContainer');
+      if (!container) return;
+      const start = parseNumber(document.getElementById('setupStartBank')?.value) || 50;
+      const target = parseNumber(document.getElementById('setupTargetBank')?.value) || 500;
+      const duration = parseInt(document.getElementById('setupDuration')?.value, 10) || 30;
+      const curr = document.getElementById('setupCurrency')?.value || 'EUR';
+      if (start <= 0 || target <= start || duration <= 0) {
+        container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11.5px;">Geçerli başlangıç kasası, hedef kasa ve süre girildiğinde grafik görüntülenecektir.</div>';
+        return;
+      }
+      const dummyPlan = { startingBank: start, targetBank: target, durationDays: duration };
+      const previewTraj = PE.calculatePlanTrajectories(dummyPlan, null);
+      container.innerHTML = generateTrajectoryChartSvg(previewTraj, dummyPlan, curr, 'all', []);
+    }
+
     const pills = document.querySelectorAll('#durationPills .pill');
     const durInput = document.getElementById('setupDuration');
     pills.forEach(p => {
@@ -391,11 +813,13 @@
         pills.forEach(x => x.classList.remove('active'));
         p.classList.add('active');
         if (durInput) durInput.value = p.dataset.days;
+        updateSetupChartPreview();
       };
     });
     if (durInput) {
       durInput.oninput = () => {
         pills.forEach(x => x.classList.toggle('active', x.dataset.days === durInput.value));
+        updateSetupChartPreview();
       };
     }
 
@@ -406,8 +830,18 @@
         rc.classList.add('active');
         const radio = rc.querySelector('input[type="radio"]');
         if (radio) radio.checked = true;
+        updateSetupChartPreview();
       };
     });
+
+    const startInp = document.getElementById('setupStartBank');
+    const targetInp = document.getElementById('setupTargetBank');
+    const currInp = document.getElementById('setupCurrency');
+    if (startInp) startInp.oninput = updateSetupChartPreview;
+    if (targetInp) targetInp.oninput = updateSetupChartPreview;
+    if (currInp) currInp.onchange = updateSetupChartPreview;
+
+    updateSetupChartPreview();
 
     const btn = document.getElementById('btnCreatePlan');
     if (btn) {
@@ -447,6 +881,12 @@
   }
 
   function wirePlanDashboardEvents() {
+    const chartCard = document.getElementById('planChartCard');
+    if (chartCard && cachedTrajData && paperState && paperState.plan) {
+      const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+      wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan);
+    }
+
     const btnSim = document.getElementById('btnRerunSim');
     if (btnSim) {
       btnSim.onclick = () => {

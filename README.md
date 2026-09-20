@@ -176,7 +176,13 @@ BETAVUS, futbol toplam gol pazarları (0.5 Üst, 1.5 Üst, 2.5 Üst) için yapay
      - **Temkinli / Minimum Risk:** %75 Kasa Rezervi (%20 Minimum Risk kolu, %5 Orta Risk kolu, %0 Yüksek Risk).
      - **Dengeli / Medium:** %50 Kasa Rezervi (%30 Minimum Risk, %16 Orta Risk, %4 Yüksek Risk).
      - **Agresif:** %35 Kasa Rezervi (%40 Minimum Risk, %18 Orta Risk, %7 Yüksek Risk).
-   - **Geometrik Büyüme Patikası:** $\text{hedef\_yolu}(d) = S \cdot (T/S)^{d/D}$ formülüyle günlük hedeflenen bakiye çizgisi.
+   - **Hedef Kasa Ulaşma Grafiği & Çoklu Risk Projeksiyonu (Pure SVG):**
+     - **Geometrik Büyüme Patikası:** $\text{hedef\_yolu}(d) = S \cdot (T/S)^{d/D}$ formülüyle günlük hedeflenen bakiye çizgisi (kesikli sarı çizgi).
+     - **3 Risk Modeli Simülasyon Eğrisi:** Temkinli (%75 rezerv, yeşil), Dengeli (%50 rezerv, mavi) ve Agresif (%35 rezerv, mor) modellerinin gün bazlı medyan büyüme projeksiyonları.
+     - **Güven Aralığı Koridoru:** Tekil risk modeli görünümlerinde P10–P90 simülasyon olasılık bantları.
+     - **Gerçekleşen Kasa Hareketi:** Kuponlar sonuçlandıkça gün gün gerçekleşen bakiye eğrisi (noktalı sarı çizgi).
+     - **İnteraktif İzleyici & Çipler:** Gün bazlı hover/touch crosshair ile anlık hedef ve model bakiye takibi; `[Tümünü Gör]`, `[Temkinli]`, `[Dengeli]`, `[Agresif]` hızlı filtreleme butonları.
+     - **Canlı Kurulum Önizlemesi:** Yeni plan formu doldurulurken girilen bakiye ve süreye göre anlık olarak güncellenen canlı SVG önizleme grafiği.
    - **Monte Carlo Simülasyonu:** 5.000 iterasyonluk Mulberry32 PRNG motoru ile hedefe ulaşma olasılığı ($P(\text{hedef})$), beklenen medyan bakiye ve %5 VaR (Value at Risk) risk koridoru.
    - **Adaptif Öneri Motoru:** Planda sapma olduğunda kullanıcı onayıyla seçilebilecek 3 somut opsiyon: Süreyi uzatma, Hedefi revize etme, Risk profilini değiştirme.
    - **Veri Yedekleme:** `betavus.paper_v1` LocalStorage anahtarı üzerinden JSON dışa aktarma ve içe aktarma desteği.

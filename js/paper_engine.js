@@ -939,6 +939,132 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 7.1 Hedef Kasa Ulaşma Trajektorisi ve Karşılaştırmalı Projeksiyonlar
+  // ---------------------------------------------------------------------------
+
+  function calculatePlanTrajectories(plan, couponInputs, options = {}) {
+    const startBank = Math.max(1, Number(plan.startingBank) || 50);
+    const targetBank = Math.max(startBank, Number(plan.targetBank) || 500);
+    const durationDays = Math.max(1, Number(plan.durationDays || 30));
+    const iters = options.iterations || 1000;
+    const seed = options.seed != null ? options.seed : 42;
+
+    const profileKeys = ['cautious', 'balanced', 'aggressive'];
+    const trajectories = {};
+
+    for (let pIdx = 0; pIdx < profileKeys.length; pIdx++) {
+      const pKey = profileKeys[pIdx];
+      const prof = RISK_PROFILES[pKey];
+      const rng = mulberry32(seed + pIdx * 137);
+
+      const armConfigs = [
+        {
+          weight: prof.minRiskArmPct,
+          prob: (couponInputs && couponInputs.minimum && couponInputs.minimum.prob) || 0.82,
+          odds: (couponInputs && couponInputs.minimum && couponInputs.minimum.odds) || 1.25
+        },
+        {
+          weight: prof.midRiskArmPct,
+          prob: (couponInputs && couponInputs.medium && couponInputs.medium.prob) || 0.72,
+          odds: (couponInputs && couponInputs.medium && couponInputs.medium.odds) || 1.70
+        },
+        {
+          weight: prof.highRiskArmPct,
+          prob: (couponInputs && couponInputs.high && couponInputs.high.prob) || 0.58,
+          odds: (couponInputs && couponInputs.high && couponInputs.high.odds) || 3.25
+        }
+      ].filter(a => a.weight > 0);
+
+      const runs = new Float64Array(iters);
+      runs.fill(startBank);
+
+      const dayPoints = [];
+      dayPoints.push({
+        day: 0,
+        median: startBank,
+        p10: startBank,
+        p90: startBank,
+        mean: startBank
+      });
+
+      let targetHitCount = 0;
+      let halfBankLossCount = 0;
+
+      for (let day = 1; day <= durationDays; day++) {
+        for (let r = 0; r < iters; r++) {
+          let b = runs[r];
+          if (b > 0.1) {
+            for (let aIdx = 0; aIdx < armConfigs.length; aIdx++) {
+              const arm = armConfigs[aIdx];
+              const stake = b * arm.weight;
+              if (stake >= 0.25) {
+                b -= stake;
+                if (rng() < arm.prob) {
+                  b += stake * arm.odds;
+                }
+              }
+            }
+            if (b < 0.1) b = 0;
+            runs[r] = b;
+          }
+        }
+
+        const sorted = Array.from(runs).sort((a, b) => a - b);
+        const p10 = sorted[Math.floor(iters * 0.10)];
+        const median = sorted[Math.floor(iters * 0.50)];
+        const p90 = sorted[Math.floor(iters * 0.90)];
+        let sum = 0;
+        for (let s = 0; s < iters; s++) sum += sorted[s];
+
+        dayPoints.push({
+          day,
+          median: round(median, 2),
+          p10: round(p10, 2),
+          p90: round(p90, 2),
+          mean: round(sum / iters, 2)
+        });
+
+        if (day === durationDays) {
+          for (let r = 0; r < iters; r++) {
+            if (runs[r] >= targetBank) targetHitCount++;
+            if (runs[r] < startBank * 0.5) halfBankLossCount++;
+          }
+        }
+      }
+
+      trajectories[pKey] = {
+        profileKey: pKey,
+        profile: prof,
+        dayPoints,
+        targetHitPct: round((targetHitCount / iters) * 100, 1),
+        halfBankLossPct: round((halfBankLossCount / iters) * 100, 1),
+        finalMedian: dayPoints[dayPoints.length - 1].median,
+        finalP10: dayPoints[dayPoints.length - 1].p10,
+        finalP90: dayPoints[dayPoints.length - 1].p90
+      };
+    }
+
+    const targetPoints = [];
+    const dailyRate = (targetBank / startBank) ** (1 / durationDays) - 1;
+    for (let day = 0; day <= durationDays; day++) {
+      const val = startBank * (targetBank / startBank) ** (day / durationDays);
+      targetPoints.push({
+        day,
+        targetBank: round(val, 2)
+      });
+    }
+
+    return {
+      startBank,
+      targetBank,
+      durationDays,
+      dailyRatePct: round(dailyRate * 100, 2),
+      targetPoints,
+      trajectories
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // 8. Adaptif Plan Önerileri (Şartname Bölüm 12)
   // ---------------------------------------------------------------------------
 
@@ -1212,6 +1338,7 @@
     classifyPlanStatus,
     getPlanMetrics,
     runPlanSimulation,
+    calculatePlanTrajectories,
     buildAdaptiveOptions,
     createInitialState,
     addSlipToPlan,

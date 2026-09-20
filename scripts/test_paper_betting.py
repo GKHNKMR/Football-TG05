@@ -115,6 +115,34 @@ def main():
         assert plan_res['statusOnTrack'] == 'on_track'
         assert plan_res['statusAhead'] == 'ahead'
         assert plan_res['statusBehind'] == 'behind'
+
+        # Trajectories hesaplama testi (her risk modeli için hedeflenen sürede kasa ulaşma eğrisi)
+        traj_test = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const plan = { startingBank: 50, targetBank: 500, durationDays: 30 };
+            const traj = PE.calculatePlanTrajectories(plan, null, { iterations: 500, seed: 42 });
+            return {
+                startBank: traj.startBank,
+                targetBank: traj.targetBank,
+                durationDays: traj.durationDays,
+                targetPointsLen: traj.targetPoints.length,
+                target0: traj.targetPoints[0].targetBank,
+                target30: traj.targetPoints[30].targetBank,
+                hasCautious: !!traj.trajectories.cautious,
+                hasBalanced: !!traj.trajectories.balanced,
+                hasAggressive: !!traj.trajectories.aggressive,
+                cauPointsLen: traj.trajectories.cautious.dayPoints.length,
+                cau0: traj.trajectories.cautious.dayPoints[0].median,
+                cauHitPct: traj.trajectories.cautious.targetHitPct
+            };
+        }""")
+        assert traj_test['targetPointsLen'] == 31  # Gün 0'dan 30'a 31 nokta
+        assert traj_test['target0'] == 50.0
+        assert traj_test['target30'] == 500.0
+        assert traj_test['hasCautious'] and traj_test['hasBalanced'] and traj_test['hasAggressive']
+        assert traj_test['cauPointsLen'] == 31
+        assert traj_test['cau0'] == 50.0
+        print("  ✓ Hedeflenen sürede kasa ulaşma trajektorisi ve 3 risk modeli hesaplama projeksiyonu doğrulandı.")
         print(f"  ✓ Günlük gerekli oran: %{plan_res['dailyRate']}, Gün 0: {plan_res['day0']}€, Gün 15: {plan_res['day15']}€, Gün 30: {plan_res['day30']}€")
         print("  ✓ Geometrik hedef yolu ve durum sınıflandırması doğrulandı.")
 
@@ -425,6 +453,11 @@ def main():
         print(f"  Kasa Planım Başlığı: {setup_title}")
         assert "Sanal Kasa Planı" in setup_title
 
+        # Setup formundaki canlı önizleme grafiğini test et
+        setup_chart = page.query_selector("#setupChartSvgContainer svg")
+        assert setup_chart is not None, "Kurulum formu hedef grafiği önizlemesi bulunamadı"
+        print("  ✓ Kasa planı oluşturma formunda canlı hedef grafiği önizlemesi doğrulandı.")
+
         # Plan formu doldurup oluşturma testi
         page.fill("#setupStartBank", "100")
         page.fill("#setupTargetBank", "1000")
@@ -438,6 +471,21 @@ def main():
         plan_tiles = page.query_selector_all("#pane-plan .plan-tiles .tile")
         assert len(plan_tiles) == 4
         assert "100,00 €" in plan_tiles[0].inner_text()
+
+        # Plan panosundaki interaktif hedef ve risk modelleri grafiğini test et
+        assert page.query_selector("#planChartCard") is not None, "#planChartCard bulunamadı"
+        assert page.query_selector("#planTrajectorySvg") is not None, "#planTrajectorySvg bulunamadı"
+        chart_chips = page.query_selector_all("#chartViewChips .cchip")
+        assert len(chart_chips) == 4, f"Beklenen 4 grafik çipi, bulunan {len(chart_chips)}"
+        model_summaries = page.query_selector_all(".chart-models-summary .cms-card")
+        assert len(model_summaries) == 3, f"Beklenen 3 model özeti, bulunan {len(model_summaries)}"
+
+        # Çip geçiş testi
+        page.click("#chartViewChips button[data-view='cautious']")
+        time.sleep(0.3)
+        cautious_chip_class = page.get_attribute("#chartViewChips button[data-view='cautious']", "class")
+        assert "active" in cautious_chip_class
+        print("  ✓ Kasa planı panosunda interaktif hedef grafiği, risk karşılaştırma çipleri ve modeller özeti doğrulandı.")
 
         # Kupon Önerileri sekmesine geç
         page.click("#tab-rec")

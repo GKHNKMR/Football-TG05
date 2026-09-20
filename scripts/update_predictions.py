@@ -76,6 +76,29 @@ FD_HIST_SEASONS = ["2223", "2324", "2425", "2526", "2627"]   # oldest -> newest
 FD_MODEL_CODES = ["2627", "2526", "2425", "2324"]            # nearest -> ...
 FD_MODEL_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
 
+TIER2_BY_LEAGUE = {
+    "Bundesliga": "D2",
+    "LaLiga": "SP2",
+    "Serie A": "I2",
+    "Ligue 1": "F2",
+    "Primeira Liga": "P2",
+    "Premier League": "E1",
+}
+TIER2_LABELS = {
+    "D2": "2. Bundesliga",
+    "SP2": "Segunda División",
+    "I2": "Serie B",
+    "F2": "Ligue 2",
+    "P2": "Liga Portugal 2",
+    "E1": "Championship",
+}
+FD_SEASON_CODE = {
+    "2026-27": "2627",
+    "2025-26": "2526",
+    "2024-25": "2425",
+    "2023-24": "2324",
+}
+
 # Turkish fixtures: openfootball has none and football-data's fixtures.csv only
 # lists the imminent round, so read the schedule straight from the TFF site.
 TFF_FIXTURE_URL = "https://www.tff.org/default.aspx?pageID=198"
@@ -117,6 +140,11 @@ def fetch(path):
 def load_season(stem, season):
     """Fixture list for one league-season, refreshing the local cache."""
     cache = CACHE_DIR / f"{season}_{stem}.json"
+    if season != SEASONS[0][0] and cache.exists():
+        try:
+            return json.loads(cache.read_text(encoding="utf-8")).get("matches", [])
+        except Exception:
+            pass
     text = fetch(f"{season}/{stem}.json")
     if text is not None:
         try:
@@ -126,7 +154,6 @@ def load_season(stem, season):
         except json.JSONDecodeError:
             text = None
     if text is None and cache.exists():
-        print(f"  using cached {cache}")
         text = cache.read_text(encoding="utf-8")
     if text is None:
         return []
@@ -504,20 +531,49 @@ def main():
         xg_weight = XG_WEIGHT_BY_LEAGUE.get(name, 0.0)
         div = DIV_BY_LEAGUE.get(name)
         xg_seasons = None
+        raw_names = {m[side] for matches, _ in raw_seasons for m in matches
+                    for side in ("team1", "team2")}
+        clean_to_raw = {clean_name(r): r for r in raw_names}
+        for r in raw_names:
+            clean_to_raw[r] = r
+
+        tier2 = TIER2_BY_LEAGUE.get(name)
+        combined_seasons = []
+        lower_tier_h2h_pairs = {}
+        for matches, w in raw_seasons:
+            cur_matches = _of_matches(matches)
+            combined_seasons.append((cur_matches, w))
+
+        if tier2:
+            tier2_label = TIER2_LABELS.get(tier2, tier2)
+            for i, (s, w) in enumerate(SEASONS):
+                fd_c = FD_SEASON_CODE.get(s)
+                csv_p = FD_DIR / tier2 / f"{fd_c}.csv"
+                if not csv_p.exists():
+                    continue
+                with csv_p.open(encoding="utf-8-sig") as fh:
+                    for r in csv.DictReader(fh):
+                        try:
+                            hg, ag = int(r["FTHG"]), int(r["FTAG"])
+                            ht = r["HomeTeam"].strip()
+                            at = r["AwayTeam"].strip()
+                            ht_p = to_pretty(name, ht)
+                            at_p = to_pretty(name, at)
+                            h_of = clean_to_raw.get(clean_name(ht_p), clean_to_raw.get(ht_p, clean_name(ht_p)))
+                            a_of = clean_to_raw.get(clean_name(at_p), clean_to_raw.get(at_p, clean_name(at_p)))
+                            combined_seasons[i][0].append({
+                                "home": h_of, "away": a_of, "hg": hg, "ag": ag,
+                                "date": r.get("Date", "")
+                            })
+                            lower_tier_h2h_pairs[frozenset((h_of, a_of))] = tier2_label
+                        except (KeyError, ValueError):
+                            pass
+
         if xg_weight and div:
-            # openfootball's own raw names carry a club suffix clean_name()
-            # strips ("Manchester City FC", "AFC Bournemouth") - LeagueModel
-            # is trained and queried on those raw forms, so translate
-            # football-data.co.uk's short names (via to_pretty, which lands
-            # on the same clean display form clean_name() produces) back to
-            # whichever raw spelling this league's own fixtures actually use.
-            raw_names = {m[side] for matches, _ in raw_seasons for m in matches
-                        for side in ("team1", "team2")}
-            clean_to_raw = {clean_name(r): r for r in raw_names}
             xg_seasons = xg_seasons_for(
                 div, [(s, w) for s, w in SEASONS],
                 rename=lambda n: clean_to_raw.get(to_pretty(name, n), to_pretty(name, n)))
-        model = LeagueModel([(_of_matches(matches), w) for matches, w in raw_seasons],
+        model = LeagueModel(combined_seasons,
                             fit_rho_=False, default_rho=_league_rho(name),
                             xg_seasons=xg_seasons, xg_weight=xg_weight)
 
@@ -539,6 +595,9 @@ def main():
                 continue
             count += 1
             pred = of_predict(model, m["team1"], m["team2"])
+            pair = frozenset((m["team1"], m["team2"]))
+            if pair in lower_tier_h2h_pairs and pred.get("h2h_matches_used", 0) > 0:
+                pred["h2h_tier"] = lower_tier_h2h_pairs[pair]
             row = {
                 "match_id": f"{code}-{match_day.isoformat()}-{count:02d}",
                 "league_id": lid,

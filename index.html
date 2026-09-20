@@ -55,6 +55,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .kp-badge{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;text-transform:none;letter-spacing:normal}
 .kp-badge.confirmed{background:rgba(235,87,87,0.18);color:#ff6b6b;border:1px solid rgba(235,87,87,0.3)}
 .kp-badge.est{background:rgba(242,153,74,0.18);color:#f2994a;border:1px solid rgba(242,153,74,0.3)}
+.h2h-chip{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;text-transform:none;letter-spacing:normal;background:rgba(102,227,161,0.12);color:var(--good);border:1px solid rgba(102,227,161,0.3);white-space:nowrap}
 .teams{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kick{font-size:11px;color:var(--muted);margin-top:5px}
 .prob{display:flex;justify-content:center}
@@ -432,7 +433,8 @@ const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
 function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25]:(HL[hlKey]?[HL[hlKey]]:[]);}
 function isLimitedData(x){
   if(!x)return false;
-  const b=x.basis;
+  if(x.h2h_tier || (x.h2h_matches_used && x.h2h_matches_used >= 2)) return false;
+  const b=typeof x==='string'?x:x.basis;
   return b==='partial-form'||b==='league-avg'||(typeof b==='string'&&(b.startsWith('partial-form')||b.startsWith('league-avg')));
 }
 function hlHot(v,lineKey,x){if(isLimitedData(x))return false;return hlActive().some(h=>h.key===lineKey&&v!=null&&Number(v)>=h.min);}
@@ -490,7 +492,13 @@ function pillFor(x,line){
   }
   return `<span class="pill${hot?' hot':''}" title="${line}+ model olasılığı${hot?' · vurgulanan (Kuponlarım\'da otomatik sayılır)':''}">${pct(v)}</span>`;
 }
-function basisBadge(b){
+function basisBadge(x){
+  if(!x)return '';
+  if(typeof x==='object'&&x.h2h_tier){
+    const n=x.h2h_matches_used||0;
+    return `<span class="badge b3" style="border-color:#66e3a1;color:#66e3a1;background:rgba(102,227,161,0.12)" title="Alt lig (${esc(x.h2h_tier)}) dahil ${n} H2H maçı + form verisine dayanıyor">●●● ${esc(x.h2h_tier)} (${n} H2H)</span>`;
+  }
+  const b=typeof x==='string'?x:x.basis;
   if(b==='form+h2h')return `<span class="badge b3" title="H2H + form'a dayanıyor (en sağlam)">●●●</span>`;
   if(b==='form')return `<span class="badge b2" title="Form'a dayanıyor">●●</span>`;
   if(b==='partial-form'||(typeof b==='string'&&b.startsWith('partial-form')))return `<span class="badge b-lim" title="Kısıtlı form verisi (tek takım veya az maç) — yüksek belirsizlik">⚠️ Kısıtlı Veri</span>`;
@@ -656,9 +664,17 @@ function renderPred(){
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&anyHl?hlLabel+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&anyHl?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>{
     const mk=missingKeyInfo(x);
+    const ms=STATS.matches&&STATS.matches[x.match_id];
+    const h2h=ms&&ms.h2h&&ms.h2h.count?ms.h2h:null;
+    let h2hChip='';
+    if(h2h&&h2h.count>=2){
+      const tierTxt=x.h2h_tier||h2h.tier_label;
+      const title=`Aralarındaki son ${h2h.count} maç${tierTxt?` (${esc(tierTxt)} dahil)`:''}: ${h2h.home_wins}G-${h2h.draws}B-${h2h.away_wins}M · ortalama ${h2h.avg_total} gol · 2.5Ü %${h2h.over25_pct}`;
+      h2hChip=`<span class="h2h-chip" title="${title}">⚡ ${tierTxt?esc(tierTxt)+' · ':''}${h2h.count} H2H (ort. ${h2h.avg_total} gol)</span>`;
+    }
     return `<div class="row" data-mid="${esc(x.match_id||'')}">
     <div class="match">
-      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x.basis)}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
+      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
     </div>
@@ -863,7 +879,7 @@ function setTab(t){
 
 async function load(){
   rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
-  fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches)STATS=s;}).catch(()=>{});
+  fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){STATS=s;if(tab==='pred')renderPred();}}).catch(()=>{});
   fetch(H2H_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.pairs)H2H=s;}).catch(()=>{});
   fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;renderResults();if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
@@ -1276,9 +1292,10 @@ function openSheet(mid){
   sheet.hidden=false;
   if(!m){sheet.innerHTML=`<div class="sheet"><button class="s-close">×</button><h2>İstatistik yok</h2><div class="s-sub">Bu maç için CSV verisi bulunamadı.</div></div>`;return;}
   const h=m.home,a=m.away,x=m.h2h||{count:0,matches:[]};
-  const h2hHead=x.count?`<div class="s-sub" style="margin-bottom:6px">Son ${x.count} maç · ${h.name} ${x.home_wins} – ${x.draws} B – ${x.away_wins} ${a.name} · ort. ${n1(x.avg_total)} gol · 0.5Ü ${x.over05_pct}% · 1.5Ü ${x.over15_pct}% · 2.5Ü ${x.over25_pct}%</div>`:'<div class="s-note">Kayıtlı karşılaşma yok.</div>';
-  const h2hRows=(x.matches||[]).map(r=>`<div class="h2h-row"><span>${dmy(r.date)}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
   const pred=(window.__data||[]).find(p=>p.match_id===mid);
+  const tierInfo=(pred&&pred.h2h_tier)||(x.tier_label)?` (${esc((pred&&pred.h2h_tier)||x.tier_label)} dahil)`:'';
+  const h2hHead=x.count?`<div class="s-sub" style="margin-bottom:6px">Son ${x.count} maç${tierInfo} · ${h.name} ${x.home_wins} – ${x.draws} B – ${x.away_wins} ${a.name} · ort. ${n1(x.avg_total)} gol · 0.5Ü ${x.over05_pct}% · 1.5Ü ${x.over15_pct}% · 2.5Ü ${x.over25_pct}%</div>`:'<div class="s-note">Kayıtlı karşılaşma yok.</div>';
+  const h2hRows=(x.matches||[]).map(r=>`<div class="h2h-row"><span>${dmy(r.date)}${r.league?` <small style="color:var(--good);font-weight:700">(${esc(r.league)})</small>`:''}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${r.total} gol</span></div>`).join('');
   let kpCard='';
   if(pred&&(pred.lineup||pred.injury)){
     const l=pred.lineup, inj=pred.injury;
@@ -1306,6 +1323,18 @@ function openSheet(mid){
       </div>`;
     }
   }
+  let lowerTierCard='';
+  const tierName=(pred&&pred.h2h_tier)||x.tier_label;
+  if(tierName&&x.count){
+    lowerTierCard=`<div class="s-card" style="border-left:3px solid #66e3a1;background:rgba(102,227,161,0.08);padding:12px 14px;border-radius:10px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;font-weight:800;color:#66e3a1;font-size:12.5px;margin-bottom:4px">
+        <span>✓ Alt Lig Karşılaşma ve Form Verisi Aktif (${esc(tierName)})</span>
+      </div>
+      <div style="font-size:12px;color:var(--text);line-height:1.45">
+        Bu iki takım daha önce <b>${esc(tierName)}</b> liginde ${x.count} kez karşı karşıya gelmiştir (ort. <b>${n1(x.avg_total)}</b> gol · 2.5Ü <b>%${x.over25_pct}</b>). Alt ligdeki bu resmi karşılaşmalar ve form geçmişi modele dahil edilmiş, 0.5 / 1.5 / 2.5 olasılıkları yüksek veri güvenirliğiyle hesaplanmıştır.
+      </div>
+    </div>`;
+  }
   let limCard='';
   if(isLimitedData(pred)){
     const isAvg=(pred.basis||'').startsWith('league-avg');
@@ -1323,6 +1352,7 @@ function openSheet(mid){
     <button class="s-close">×</button>
     <h2>${esc(h.name)} — ${esc(a.name)}</h2>
     <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)} · kaynak: football-data.co.uk</div>
+    ${lowerTierCard}
     ${limCard}
     ${kpCard}
     ${standingsTable(h,a)}

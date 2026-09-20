@@ -117,6 +117,14 @@ TIER2_BY_LEAGUE = {
     "Primeira Liga": ["P2"],
     "Premier League": ["E1"],
 }
+TIER2_LABELS = {
+    "D2": "2. Bundesliga",
+    "SP2": "Segunda División",
+    "I2": "Serie B",
+    "F2": "Ligue 2",
+    "P2": "Liga Portugal 2",
+    "E1": "Championship",
+}
 
 
 def num(value):
@@ -146,6 +154,7 @@ def load_division(div):
                 hhg, hag = num(row.get("HTHG")), num(row.get("HTAG"))
                 out.append(
                     {
+                        "div": div,
                         "season": season,
                         "date": date.isoformat(),
                         "home": row["HomeTeam"].strip(),
@@ -288,11 +297,14 @@ def head_to_head(matches, home_fd, away_fd):
         or (m["ftag"] > m["fthg"] and m["away"] == away_fd)
         for m in recent
     )
+    tiers = [TIER2_LABELS[m["div"]] for m in recent if m.get("div") in TIER2_LABELS]
+    tier_label = tiers[0] if tiers else None
     return {
         "count": n,
         "home_wins": hw,
         "away_wins": aw,
         "draws": n - hw - aw,
+        "tier_label": tier_label,
         "avg_total": round(sum(m["total"] for m in recent) / n, 2),
         "over05_pct": pct(sum(m["total"] > 0.5 for m in recent), n),
         "over15_pct": pct(sum(m["total"] > 1.5 for m in recent), n),
@@ -302,6 +314,7 @@ def head_to_head(matches, home_fd, away_fd):
             {
                 "date": m["date"], "home": m["home"], "away": m["away"],
                 "score": f"{m['fthg']}-{m['ftag']}",
+                "league": TIER2_LABELS.get(m.get("div")),
                 "ht": (
                     f"{m['hthg']}-{m['htag']}"
                     if m["hthg"] is not None else None
@@ -334,15 +347,20 @@ def head_to_head_years(matches, team_a, team_b, years):
         or (m["ftag"] > m["fthg"] and m["away"] == team_b)
         for m in pair
     )
+    tiers = [TIER2_LABELS[m["div"]] for m in pair if m.get("div") in TIER2_LABELS]
+    tier_label = tiers[0] if tiers else None
     return {
         "count": n, "teamA_wins": a_wins, "teamB_wins": b_wins, "draws": n - a_wins - b_wins,
+        "tier_label": tier_label,
         "avg_total": round(sum(m["total"] for m in pair) / n, 2),
         "over05_pct": pct(sum(m["total"] > 0.5 for m in pair), n),
         "over15_pct": pct(sum(m["total"] > 1.5 for m in pair), n),
         "over25_pct": pct(sum(m["total"] > 2.5 for m in pair), n),
         "matches": [
             {"date": m["date"], "home": m["home"], "away": m["away"],
-             "score": f"{m['fthg']}-{m['ftag']}", "total": m["total"]}
+             "score": f"{m['fthg']}-{m['ftag']}",
+             "league": TIER2_LABELS.get(m.get("div")),
+             "total": m["total"]}
             for m in pair
         ],
     }

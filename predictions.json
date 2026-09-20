@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
+    "updated_at": "2026-09-20T20:45:13.785884+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -29,261 +29,6 @@
       "d": 4.02,
       "a": 6.09,
       "edge25": -0.1453
-    }
-  },
-  {
-    "match_id": "PR-2026-09-20-02",
-    "league_id": 94,
-    "league": "Primeira Liga",
-    "kickoff_utc": "2026-09-20T17:00:00Z",
-    "home": "Santa Clara",
-    "away": "Sporting Braga",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "lam_home": 1.364,
-    "lam_away": 1.139,
-    "exp_goals": 2.503,
-    "rho": 0.02,
-    "p_over_0_5": 0.9207,
-    "p_over_1_5": 0.7108,
-    "p_over_2_5": 0.4569,
-    "label": "HIGH",
-    "base_lam_home": 1.364,
-    "base_lam_away": 1.139,
-    "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "88'",
-      "score": "0-0"
-    },
-    "market": {
-      "o25_odds": 2.42,
-      "u25_odds": 1.51,
-      "o25_implied": 0.3842,
-      "h": 3.66,
-      "d": 3.11,
-      "a": 2.05,
-      "edge25": 0.0727
-    }
-  },
-  {
-    "match_id": "PR-2026-09-20-03",
-    "league_id": 94,
-    "league": "Primeira Liga",
-    "kickoff_utc": "2026-09-20T17:00:00Z",
-    "home": "Estoril",
-    "away": "Casa Pia",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.275,
-    "lam_away": 0.93,
-    "exp_goals": 2.206,
-    "rho": 0.02,
-    "p_over_0_5": 0.8924,
-    "p_over_1_5": 0.6442,
-    "p_over_2_5": 0.3788,
-    "label": "MEDIUM",
-    "base_lam_home": 1.275,
-    "base_lam_away": 0.93,
-    "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "85'",
-      "score": "1-1"
-    },
-    "market": {
-      "o25_odds": 1.88,
-      "u25_odds": 1.84,
-      "o25_implied": 0.4946,
-      "h": 1.75,
-      "d": 3.59,
-      "a": 4.36,
-      "edge25": -0.1158
-    }
-  },
-  {
-    "match_id": "TR-2026-09-20-01",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-20T17:00:00Z",
-    "home": "Amedspor",
-    "away": "Beşiktaş",
-    "source": "tff.org",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "lam_home": 2.247,
-    "lam_away": 0.92,
-    "exp_goals": 3.167,
-    "rho": -0.12,
-    "p_over_0_5": 0.9474,
-    "p_over_1_5": 0.8349,
-    "p_over_2_5": 0.6131,
-    "label": "HIGH",
-    "base_lam_home": 2.247,
-    "base_lam_away": 0.92,
-    "base_rho": -0.12,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "88'",
-      "score": "3-1"
-    },
-    "market": {
-      "o25_odds": 1.63,
-      "u25_odds": 2.18,
-      "o25_implied": 0.5722,
-      "h": 3.82,
-      "d": 3.71,
-      "a": 1.79,
-      "edge25": 0.0409
-    }
-  },
-  {
-    "match_id": "TR-2026-09-20-02",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-20T17:00:00Z",
-    "home": "Göztepe",
-    "away": "Rizespor",
-    "source": "tff.org",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "lam_home": 1.642,
-    "lam_away": 1.701,
-    "exp_goals": 3.343,
-    "rho": -0.12,
-    "p_over_0_5": 0.9528,
-    "p_over_1_5": 0.8583,
-    "p_over_2_5": 0.649,
-    "label": "ULTRA",
-    "base_lam_home": 1.642,
-    "base_lam_away": 1.701,
-    "base_rho": -0.12,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "85'",
-      "score": "1-2"
-    },
-    "market": {
-      "o25_odds": 1.73,
-      "u25_odds": 2.01,
-      "o25_implied": 0.5374,
-      "h": 2.28,
-      "d": 3.36,
-      "a": 2.83,
-      "edge25": 0.1116
-    }
-  },
-  {
-    "match_id": "BL-2026-09-20-01",
-    "league_id": 78,
-    "league": "Bundesliga",
-    "kickoff_utc": "2026-09-20T17:30:00Z",
-    "home": "Paderborn",
-    "away": "Hoffenheim",
-    "source": "openfootball/football.json",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "lam_home": 2.078,
-    "lam_away": 1.586,
-    "exp_goals": 3.665,
-    "rho": -0.08,
-    "p_over_0_5": 0.9676,
-    "p_over_1_5": 0.8873,
-    "p_over_2_5": 0.7085,
-    "label": "ULTRA",
-    "base_lam_home": 2.078,
-    "base_lam_away": 1.586,
-    "base_rho": -0.08,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "60'",
-      "score": "2-1"
-    },
-    "market": {
-      "o25_odds": 1.4,
-      "u25_odds": 2.86,
-      "o25_implied": 0.6714,
-      "h": 4.31,
-      "d": 4.34,
-      "a": 1.65,
-      "edge25": 0.0371
-    }
-  },
-  {
-    "match_id": "SA-2026-09-20-01",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-20T18:45:00Z",
-    "home": "Milan",
-    "away": "Lecce",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.344,
-    "lam_away": 1.128,
-    "exp_goals": 2.472,
-    "rho": -0.03,
-    "p_over_0_5": 0.9117,
-    "p_over_1_5": 0.7107,
-    "p_over_2_5": 0.4489,
-    "label": "HIGH",
-    "base_lam_home": 1.344,
-    "base_lam_away": 1.128,
-    "base_rho": -0.03,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "market": {
-      "o25_odds": 1.63,
-      "u25_odds": 2.21,
-      "o25_implied": 0.5755,
-      "h": 1.25,
-      "d": 5.58,
-      "a": 11.46,
-      "edge25": -0.1266
-    }
-  },
-  {
-    "match_id": "L1-2026-09-20-01",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-20T18:45:00Z",
-    "home": "Marseille",
-    "away": "Paris Saint-Germain",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.604,
-    "lam_away": 1.564,
-    "exp_goals": 3.168,
-    "rho": -0.05,
-    "p_over_0_5": 0.9526,
-    "p_over_1_5": 0.8299,
-    "p_over_2_5": 0.6135,
-    "label": "ULTRA",
-    "base_lam_home": 1.715,
-    "base_lam_away": 1.564,
-    "base_rho": -0.05,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
-    "live": {
-      "status": "3'",
-      "score": "0-0"
-    },
-    "market": {
-      "o25_odds": 1.36,
-      "u25_odds": 3.01,
-      "o25_implied": 0.6888,
-      "h": 6.72,
-      "d": 5.18,
-      "a": 1.38,
-      "edge25": -0.0523
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [
-        "P. Aubameyang"
-      ],
-      "away_missing_key": []
     }
   },
   {
@@ -297,17 +42,21 @@
     "basis": "form+h2h",
     "h2h_matches_used": 6,
     "lam_home": 1.37,
-    "lam_away": 1.304,
-    "exp_goals": 2.674,
+    "lam_away": 1.41,
+    "exp_goals": 2.78,
     "rho": -0.01,
-    "p_over_0_5": 0.9298,
-    "p_over_1_5": 0.7479,
-    "p_over_2_5": 0.5,
+    "p_over_0_5": 0.9368,
+    "p_over_1_5": 0.7667,
+    "p_over_2_5": 0.5257,
     "label": "HIGH",
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
+    "updated_at": "2026-09-20T20:45:13.785884+00:00",
+    "live": {
+      "status": "85'",
+      "score": "1-2"
+    },
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -316,17 +65,10 @@
       "d": 3.35,
       "a": 2.52,
       "edge25": 0.0297
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": [
-        "O. Óskarsson"
-      ]
     }
   },
   {
-    "match_id": "PR-2026-09-20-04",
+    "match_id": "PR-2026-09-20-02",
     "league_id": 94,
     "league": "Primeira Liga",
     "kickoff_utc": "2026-09-20T19:30:00Z",
@@ -346,7 +88,11 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:48:59.440061+00:00",
+    "updated_at": "2026-09-20T20:45:13.785884+00:00",
+    "live": {
+      "status": "49'",
+      "score": "1-0"
+    },
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,
@@ -355,11 +101,6 @@
       "d": 3.35,
       "a": 2.5,
       "edge25": 0.0712
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": []
     }
   }
 ]

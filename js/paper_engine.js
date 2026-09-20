@@ -26,28 +26,28 @@
       id: 'cautious',
       name: 'Temkinli',
       desc: 'Sermaye koruma odaklı, düşük varyanslı plan.',
-      reservePct: 0.90,
-      minRiskArmPct: 0.08,
-      midRiskArmPct: 0.02,
+      reservePct: 0.75,
+      minRiskArmPct: 0.20,
+      midRiskArmPct: 0.05,
       highRiskArmPct: 0.00
     },
     balanced: {
       id: 'balanced',
       name: 'Dengeli',
       desc: 'Dengeli büyüme ve kontrollü risk dağılımı.',
-      reservePct: 0.75,
-      minRiskArmPct: 0.15,
-      midRiskArmPct: 0.08,
-      highRiskArmPct: 0.02
+      reservePct: 0.50,
+      minRiskArmPct: 0.30,
+      midRiskArmPct: 0.16,
+      highRiskArmPct: 0.04
     },
     aggressive: {
       id: 'aggressive',
       name: 'Agresif',
       desc: 'Yüksek büyüme hedefi, yüksek varyans ve düşüş toleransı.',
-      reservePct: 0.50,
-      minRiskArmPct: 0.30,
-      midRiskArmPct: 0.15,
-      highRiskArmPct: 0.05
+      reservePct: 0.35,
+      minRiskArmPct: 0.40,
+      midRiskArmPct: 0.18,
+      highRiskArmPct: 0.07
     }
   };
 

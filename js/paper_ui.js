@@ -315,18 +315,18 @@
               <label class="risk-card active">
                 <input type="radio" name="setupRisk" value="cautious" checked>
                 <div class="r-head">
-                  <b>Temkinli (Varsayılan)</b>
+                  <b>Temkinli / Minimum Risk (Varsayılan)</b>
                   <span class="r-badge b-cautious">Düşük Risk</span>
                 </div>
-                <p>Sermaye koruma odaklı. %90 Rezervde kalır, %8 Minimum Risk koluna (0.5 Üst), %2 Orta Risk koluna ayrılır.</p>
+                <p>Sermaye koruma odaklı. %75 Kasa Rezervinde kalır, %20 Minimum Risk koluna (0.5 Üst), %5 Orta Risk koluna ayrılır.</p>
               </label>
               <label class="risk-card">
                 <input type="radio" name="setupRisk" value="balanced">
                 <div class="r-head">
-                  <b>Dengeli</b>
+                  <b>Dengeli / Medium</b>
                   <span class="r-badge b-balanced">Dengeli</span>
                 </div>
-                <p>Büyüme ve koruma dengesi. %75 Rezerv, %15 Minimum Risk, %8 Orta Risk, %2 Yüksek Risk.</p>
+                <p>Büyüme ve koruma dengesi. %50 Kasa Rezervi, %30 Minimum Risk, %16 Orta Risk, %4 Yüksek Risk.</p>
               </label>
               <label class="risk-card">
                 <input type="radio" name="setupRisk" value="aggressive">
@@ -334,7 +334,7 @@
                   <b>Agresif</b>
                   <span class="r-badge b-aggressive">Yüksek Varyans</span>
                 </div>
-                <p>Yüksek getiri & yüksek çekilme riski. %50 Rezerv, %30 Minimum Risk, %15 Orta Risk, %5 Yüksek Risk.</p>
+                <p>Yüksek getiri & yüksek çekilme riski. %35 Kasa Rezervi, %40 Minimum Risk, %18 Orta Risk, %7 Yüksek Risk.</p>
               </label>
             </div>
           </div>

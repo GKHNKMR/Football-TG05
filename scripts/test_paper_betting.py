@@ -50,6 +50,8 @@ def main():
             return {
                 profiles: Object.keys(PE.RISK_PROFILES),
                 cautious: PE.RISK_PROFILES.cautious,
+                balanced: PE.RISK_PROFILES.balanced,
+                aggressive: PE.RISK_PROFILES.aggressive,
                 classes: Object.keys(PE.COUPON_CLASSES),
                 minClass: PE.COUPON_CLASSES.minimum,
                 medClass: PE.COUPON_CLASSES.medium,
@@ -58,12 +60,16 @@ def main():
         }""")
         assert 'error' not in cfg_res, f"Config error: {cfg_res.get('error')}"
         assert 'cautious' in cfg_res['profiles'] and 'balanced' in cfg_res['profiles'] and 'aggressive' in cfg_res['profiles']
-        assert cfg_res['cautious']['reservePct'] == 0.90
-        assert cfg_res['cautious']['minRiskArmPct'] == 0.08
+        assert cfg_res['cautious']['reservePct'] == 0.75
+        assert cfg_res['cautious']['minRiskArmPct'] == 0.20
+        assert cfg_res['balanced']['reservePct'] == 0.50
+        assert cfg_res['balanced']['minRiskArmPct'] == 0.30
+        assert cfg_res['aggressive']['reservePct'] == 0.35
+        assert cfg_res['aggressive']['minRiskArmPct'] == 0.40
         assert cfg_res['minClass']['minModelProb'] == 0.95
         assert cfg_res['medClass']['minModelProb'] == 0.85
         assert cfg_res['highClass']['minModelProb'] == 0.75
-        print("  ✓ Risk profilleri ve kupon sınıfları konfigürasyonu doğrulandı.")
+        print("  ✓ Risk profilleri (%75, %50, %35 rezerv) ve kupon sınıfları konfigürasyonu doğrulandı.")
 
         # ----------------------------------------------------------------------
         # TEST 2: Senaryo A — Plan Oluşturma & Geometrik Hedef Yolu

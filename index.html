@@ -987,13 +987,21 @@ rows.addEventListener('click',e=>{
 });
 
 // ---- sepet / kupon ----
-// Kuponlarım — artık manuel bir sepet değil: Tahminler'deki sabit vurgu
-// eşiklerini (0.5 ≥ %95 · 1.5 ≥ %85 · 2.5 ≥ %75) geçen HER geçmiş maç
-// otomatik olarak bir "bacak" sayılır, gün bazında gruplanır ve gerçek
-// sonuca karşı analiz edilir. Hiçbir şey elle eklenmez/silinmez.
-const CPN_CAP_DAYS=30;
+// Kuponlarım — modelin canlı olarak uygulanmaya ve istatistiklere dayanarak
+// kupon yapılmaya başlandığı 12.09.2026 tarihinden itibaren (12 Eylül 2026 dahil)
+// Tahminler'deki sabit vurgu eşiklerini (0.5 ≥ %95 · 1.5 ≥ %85 · 2.5 ≥ %75) geçen
+// her maç otomatik olarak bir bacak sayılır ve gerçek sonuçlara göre başarı oranı ölçülür.
+const CPN_START_DATE='2026-09-12';
+const CPN_CAP_DAYS=60;
 function autoLegs(){
   let ms=(RESULTS&&RESULTS.matches)||[];
+  ms=ms.filter(m=>dayKey(m.kickoff_utc)>=CPN_START_DATE);
+  const doneKeys=new Set(ms.map(m=>m.league+'|'+m.home+'|'+m.away+'|'+m.kickoff_utc));
+  (window.__data||[]).forEach(p=>{
+    if(dayKey(p.kickoff_utc)>=CPN_START_DATE && !doneKeys.has(p.league+'|'+p.home+'|'+p.away+'|'+p.kickoff_utc)){
+      ms.push(p);
+    }
+  });
   if(selected!=='Tümü')ms=ms.filter(m=>m.league===selected);
   if(qCpn)ms=ms.filter(m=>teamHit(m,qCpn));
   const LN=[['0.5','p_over_0_5',HL.o05.min],['1.5','p_over_1_5',HL.o15.min],['2.5','p_over_2_5',HL.o25.min]];
@@ -1065,13 +1073,13 @@ function matchTableHtml(matches){
 function renderCoupons(){
   const sum=$('cpnSummary'),list=$('cpnList');
   if(!RESULTS){sum.innerHTML='';list.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';return;}
-  const lede=`<p class="lede">Bu sayfa artık bahis takibi değil <b>analiz</b>: Tahminler'de vurgulanan
-    (0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 model güveni) her geçmiş maç, hiçbir şey elle eklenmeden
-    otomatik olarak burada bir bacak sayılır ve gerçek sonuca karşı ölçülür.</p>`;
+  const lede=`<p class="lede">Kuponlarım, modelin canlı olarak uygulanmaya ve istatistiklere dayanarak kupon yapılmaya başlandığı
+    <b>12 Eylül 2026</b> tarihinden itibaren (12.09.2026 dahil) Tahminler'de vurgulanan
+    (0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 model güveni) her maçı otomatik olarak bir bacak sayar ve gerçek sonuçlara göre başarı oranını analiz eder.</p>`;
   const legsAll=autoLegs();
   if(!legsAll.length){
     sum.innerHTML=lede;
-    list.innerHTML=`<div class="empty"><strong>${qCpn?`«${esc(qCpn)}» için vurgulanan maç yok`:selected!=='Tümü'?`${esc(selected)} için henüz vurgulanan maç yok`:'Henüz vurgulanan maç yok'}</strong>Eşikleri geçen bir sonuç oluştukça burası dolacak.</div>`;
+    list.innerHTML=`<div class="empty"><strong>${qCpn?`«${esc(qCpn)}» için 12 Eylül'den bu yana vurgulanan maç yok`:selected!=='Tümü'?`${esc(selected)} için 12 Eylül'den bu yana vurgulanan maç yok`:'12 Eylül 2026\'dan bu yana vurgulanan maç yok'}</strong>Eşikleri geçen yeni maçlar oluştukça burası güncellenir.</div>`;
     return;
   }
   const done=legsAll.filter(l=>l.status!=='pending');
@@ -1080,7 +1088,7 @@ function renderCoupons(){
   const pct1=(n,d)=>d?Math.round(1000*n/d)/10+'%':'—';
   const tileActive=f=>cpnFilter===f?' active':'';
   sum.innerHTML=lede+`<div class="tiles">
-    <div class="tile${tileActive('all')}" data-f="all" title="Tüm günlere dön"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak</div></div>
+    <div class="tile${tileActive('all')}" data-f="all" title="Tüm günlere dön"><div class="v">${pct1(legWon,done.length)}</div><div class="k">toplam başarı</div><div class="n">${legWon}/${done.length} bacak (12 Eyl'den beri)</div></div>
     <div class="tile${tileActive('line05')}" data-f="line05" title="0.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['0.5'][0],byLine['0.5'][1])}</div><div class="k">0.5 üstü başarı</div><div class="n">${byLine['0.5'][0]}/${byLine['0.5'][1]} maç</div></div>
     <div class="tile${tileActive('line15')}" data-f="line15" title="1.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['1.5'][0],byLine['1.5'][1])}</div><div class="k">1.5 üstü başarı</div><div class="n">${byLine['1.5'][0]}/${byLine['1.5'][1]} maç</div></div>
     <div class="tile${tileActive('line25')}" data-f="line25" title="2.5 çizgisinde vurgulanan tüm maçlar"><div class="v">${pct1(byLine['2.5'][0],byLine['2.5'][1])}</div><div class="k">2.5 üstü başarı</div><div class="n">${byLine['2.5'][0]}/${byLine['2.5'][1]} maç</div></div>

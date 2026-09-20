@@ -70,6 +70,7 @@ CROSSWALK = {
         "Bayern München": "Bayern Munich", "Mönchengladbach": "M'gladbach",
         "Borussia Dortmund": "Dortmund", "Eintracht Frankfurt": "Ein Frankfurt",
         "Köln": "FC Koln", "Hamburger SV": "Hamburg", "Mainz 05": "Mainz",
+        "SV 07 Elversberg": "Elversberg",
     },
     "Championship": {
         "Birmingham City": "Birmingham", "Blackburn Rovers": "Blackburn",
@@ -102,10 +103,19 @@ CROSSWALK = {
     },
     "Primeira Liga": {
         "Académico de Viseu": "Academico Viseu", "Estrela da Amadora": "Estrela",
-        "Marítimo": "Maritimo", "Famalicão": "Famalicao",
+        "Marítimo": "Maritimo", "Famalicão": "Famalicao", "FC Famalicão": "Famalicao",
         "Sporting Braga": "Sp Braga", "Sporting CP": "Sp Lisbon",
         "Vitória Guimarães": "Guimaraes",
     },
+}
+
+TIER2_BY_LEAGUE = {
+    "Bundesliga": ["D2"],
+    "LaLiga": ["SP2"],
+    "Serie A": ["I2"],
+    "Ligue 1": ["F2"],
+    "Primeira Liga": ["P2"],
+    "Premier League": ["E1"],
 }
 
 
@@ -401,10 +411,18 @@ def main():
     standings_by_league = {}
     league_size = {}
     for div, (league, _lid) in DIVISIONS.items():
-        matches = by_league[league] = load_division(div)
-        team_names = {m["home"] for m in matches} | {m["away"] for m in matches}
-        standings_by_league[league], league_size[league] = standings_table(matches, team_names, CURRENT_SEASON)
-        print(f"{league:15} {len(matches)} completed matches · {league_size[league]} teams in {CURRENT_SEASON} table")
+        primary_matches = load_division(div)
+        standings_teams = {m["home"] for m in primary_matches if m["season"] == CURRENT_SEASON} | {m["away"] for m in primary_matches if m["season"] == CURRENT_SEASON}
+        if not standings_teams:
+            standings_teams = {m["home"] for m in primary_matches} | {m["away"] for m in primary_matches}
+        standings_by_league[league], league_size[league] = standings_table(primary_matches, standings_teams, CURRENT_SEASON)
+
+        matches = primary_matches[:]
+        for t2 in TIER2_BY_LEAGUE.get(league, []):
+            matches.extend(load_division(t2))
+        matches.sort(key=lambda m: m["date"])
+        by_league[league] = matches
+        print(f"{league:15} {len(matches)} total matches (D1+lower) · {league_size[league]} teams in {CURRENT_SEASON} table")
 
     out_matches = {}
     unmatched = set()

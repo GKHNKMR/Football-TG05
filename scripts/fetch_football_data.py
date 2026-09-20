@@ -43,6 +43,11 @@ DIVISIONS = {
     "F1": "Ligue 1",
     "N1": "Eredivisie",
     "P1": "Primeira Liga",
+    "D2": "2. Bundesliga",
+    "SP2": "Segunda División",
+    "I2": "Serie B",
+    "F2": "Ligue 2",
+    "P2": "Liga Portugal 2",
 }
 
 # newest first; "2627" == season 2026/27

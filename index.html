@@ -63,9 +63,12 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
 @keyframes pillhot{0%,100%{background:var(--panel2);color:var(--good);box-shadow:0 0 0 0 transparent}50%{background:var(--good);color:var(--good-ink);box-shadow:0 0 15px 1px color-mix(in srgb,var(--good) 50%,transparent)}}
 @media(prefers-reduced-motion:reduce){.pill.hot{animation:none;background:var(--good);color:var(--good-ink)}}
+.pill.limited{border:1px dashed rgba(242,153,74,0.55)!important;color:var(--muted);position:relative}
+.pill.limited .lim-tilde{color:#f2994a;font-size:11px;font-weight:900;vertical-align:super;margin-left:2px}
 .badge{font-size:9px;letter-spacing:1px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 4px;font-weight:900}
 .badge.b3{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,transparent)}
 .badge.b2{color:var(--text)}
+.badge.b-lim{background:rgba(242,153,74,0.15);color:#f2994a;border:1px solid rgba(242,153,74,0.35);font-size:9px;letter-spacing:normal;text-transform:none;padding:1px 5px;border-radius:5px}
 .row{cursor:pointer}.row:hover{background:var(--panel2)}
 .row .teams::after{content:"›";color:var(--muted);font-weight:900;margin-left:7px}
 .empty{padding:48px 20px;text-align:center;color:var(--muted)}
@@ -427,8 +430,13 @@ const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
          o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'}};
 // hlKey: 'off' | 'all' (üçü birden) | HL anahtarı
 function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25]:(HL[hlKey]?[HL[hlKey]]:[]);}
-function hlHot(v,lineKey){return hlActive().some(h=>h.key===lineKey&&v!=null&&Number(v)>=h.min);}
-function hlPass(x){return hlActive().some(h=>x[h.key]!=null&&Number(x[h.key])>=h.min);}
+function isLimitedData(x){
+  if(!x)return false;
+  const b=x.basis;
+  return b==='partial-form'||b==='league-avg'||(typeof b==='string'&&(b.startsWith('partial-form')||b.startsWith('league-avg')));
+}
+function hlHot(v,lineKey,x){if(isLimitedData(x))return false;return hlActive().some(h=>h.key===lineKey&&v!=null&&Number(v)>=h.min);}
+function hlPass(x){if(isLimitedData(x))return false;return hlActive().some(h=>x[h.key]!=null&&Number(x[h.key])>=h.min);}
 const store=(k,d)=>{try{return localStorage.getItem('betavus.'+k)??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
@@ -475,14 +483,18 @@ function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
 const LINE_KEY={'0.5':'p_over_0_5','1.5':'p_over_1_5','2.5':'p_over_2_5'};
 function pillFor(x,line){
   const lineKey=LINE_KEY[line], v=x[lineKey];
-  const hot=hlHot(v,lineKey);
+  const lim=isLimitedData(x);
+  const hot=!lim&&hlHot(v,lineKey,x);
+  if(lim){
+    return `<span class="pill limited" title="${line}+ tahmini: %${(Number(v)*100).toFixed(1)} · ⚠️ Kısıtlı Veri (${x.basis==='league-avg'?'lig ortalaması':'kısmi form'}) — yüksek belirsizlik nedeniyle vurgulanmaz">${pct(v)}<span class="lim-tilde" title="Kısıtlı veri">~</span></span>`;
+  }
   return `<span class="pill${hot?' hot':''}" title="${line}+ model olasılığı${hot?' · vurgulanan (Kuponlarım\'da otomatik sayılır)':''}">${pct(v)}</span>`;
 }
 function basisBadge(b){
   if(b==='form+h2h')return `<span class="badge b3" title="H2H + form'a dayanıyor (en sağlam)">●●●</span>`;
   if(b==='form')return `<span class="badge b2" title="Form'a dayanıyor">●●</span>`;
-  if(b==='partial-form')return `<span class="badge b1" title="Sınırlı veri">●</span>`;
-  return `<span class="badge b0" title="Sadece lig ortalaması (zayıf)">○</span>`;
+  if(b==='partial-form'||(typeof b==='string'&&b.startsWith('partial-form')))return `<span class="badge b-lim" title="Kısıtlı form verisi (tek takım veya az maç) — yüksek belirsizlik">⚠️ Kısıtlı Veri</span>`;
+  return `<span class="badge b-lim" title="Yetersiz veri (sadece lig ortalaması) — yüksek belirsizlik">⚠️ Yetersiz Veri</span>`;
 }
 const LIVE_STATUS_LABEL={'1H':'İlk yarı','HT':'Devre arası','2H':'İkinci yarı','ET':'Uzatma','BT':'Mola','P':'Penaltılar','SUSP':'Askıda','INT':'Yarıda kaldı'};
 function liveStatusLabel(s){return LIVE_STATUS_LABEL[s]||s||'';}
@@ -971,6 +983,7 @@ function autoLegs(){
   const LN=[['0.5','p_over_0_5',HL.o05.min],['1.5','p_over_1_5',HL.o15.min],['2.5','p_over_2_5',HL.o25.min]];
   const legs=[];
   ms.forEach(m=>{
+    if(isLimitedData(m))return;
     LN.forEach(([line,key,thr])=>{
       const p=m[key];
       if(p==null||Number(p)<thr)return;
@@ -1138,7 +1151,7 @@ function histAcc(league,line){
 }
 function buildDailyCoupon(){
   const now=Date.now();
-  const up=(window.__data||[]).filter(x=>new Date(x.kickoff_utc)>now&&x.p_over_2_5!=null)
+  const up=(window.__data||[]).filter(x=>new Date(x.kickoff_utc)>now&&x.p_over_2_5!=null&&!isLimitedData(x))
     .sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
   if(!up.length)return null;
   const d0=dayKey(up[0].kickoff_utc), d0d=new Date(d0+'T00:00:00');
@@ -1293,10 +1306,24 @@ function openSheet(mid){
       </div>`;
     }
   }
+  let limCard='';
+  if(isLimitedData(pred)){
+    const isAvg=(pred.basis||'').startsWith('league-avg');
+    limCard=`<div class="s-card" style="border-left:3px solid #f2994a;background:rgba(242,153,74,0.08);padding:12px 14px;border-radius:10px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;font-weight:800;color:#f2994a;font-size:12.5px;margin-bottom:4px">
+        <span>⚠️ Kısıtlı Veri / Yetersiz Sezon Uyarısı</span>
+      </div>
+      <div style="font-size:12px;color:var(--text);line-height:1.45">
+        ${isAvg?'Bu maçtaki takımların bu ligde yeterli maç geçmişi bulunmadığı için model <b>sadece lig ortalamasını</b> temel almıştır.':'Takımlardan birinin bu ligdeki geçmiş maç verisi sınırlı olduğu için model <b>kısmi form</b> üzerinden hesaplanmıştır.'}
+        Küçük örneklem nedeniyle hesaplanan 0.5 / 1.5 / 2.5 olasılıkları yüksek istatistiksel varyans içerir ve güvenli vurgu sayılmaz.
+      </div>
+    </div>`;
+  }
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
     <h2>${esc(h.name)} — ${esc(a.name)}</h2>
     <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)} · kaynak: football-data.co.uk</div>
+    ${limCard}
     ${kpCard}
     ${standingsTable(h,a)}
     <div class="s-card"><h3>Aralarındaki maçlar (H2H)</h3>${h2hHead}${h2hRows}</div>
@@ -1316,7 +1343,7 @@ function openInfo(){
     <div class="s-card"><h3>Kilit Oyuncu Törpüleme</h3>
       <p>Opta xG ve xA verileriyle takımların hücum yükünü çeken kilit oyuncular tespit edilir. Maç günü ilk 11'de (ESPN) veya sakatlık bültenlerinde (Transfermarkt) kilit isimlerin olmadığı doğrulanırsa o takımın gol beklentisi (λ) otomatik törpülenir.</p></div>
     <div class="s-card"><h3>Rozetler</h3>
-      <p><span class="badge b3">●●●</span> H2H + form'a dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b0">○</span> sadece lig ortalaması (zayıf)</p>
+      <p><span class="badge b3">●●●</span> H2H + form'a dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b-lim">⚠️ Kısıtlı Veri</span> tek takım / yetersiz maç geçmişi (yüksek varyans nedeniyle yeşil vurgulanmaz)</p>
       <p><b>Vurgu</b> seçtiğin pazarda backtest'te sürdürülebilir en yüksek isabet bölgesini yeşil yakar — garanti değil, "modelin en emin olduğu" demektir. <b>Sonuçlar</b> sekmesindeki yeşil şerit tam da bu eşiklerin üstündeki tahminlerin gerçekte nasıl tuttuğunu gösterir — riski azaltmanın yolu bu.</p></div>
     <div class="s-card"><h3>Dürüstlük</h3>
       <p>Model <b>kalibre</b>: "%60" dediğinde uzun vadede ~%60 gerçekleşir. Tüm tahminlere bakınca tek maç ayrıştırma gücü piyasanın çok az üstünde; ama <b>yüksek güven eşiğinin üstündeki</b> daha az sayıda tahmin belirgin biçimde daha iyi tutuyor. <a href="#" onclick="closeSheet();setTab('bt');return false">Model doğruluğu</a> sekmesi ve Sonuçlar sekmesi hepsini açıkça verir. Kayıp garantisi yoktur.</p></div>

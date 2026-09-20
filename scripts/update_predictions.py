@@ -140,6 +140,11 @@ def ft_goals(match):
             return int(score["ft"][0]), int(score["ft"][1])
         except (TypeError, ValueError):
             return None
+    if isinstance(score, list) and len(score) == 2:
+        try:
+            return int(score[0]), int(score[1])
+        except (TypeError, ValueError):
+            return None
     return None
 
 

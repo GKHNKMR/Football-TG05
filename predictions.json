@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -52,9 +52,9 @@
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
-      "status": "60'",
+      "status": "71'",
       "score": "0-1"
     },
     "market": {
@@ -88,9 +88,9 @@
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
-      "status": "65'",
+      "status": "76'",
       "score": "2-1"
     },
     "market": {
@@ -124,7 +124,7 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
       "status": "HT",
       "score": "0-0"
@@ -160,7 +160,7 @@
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
       "status": "HT",
       "score": "0-0"
@@ -196,7 +196,7 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
       "status": "HT",
       "score": "2-0"
@@ -232,7 +232,7 @@
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
       "status": "HT",
       "score": "1-0"
@@ -268,10 +268,10 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "live": {
-      "status": "24'",
-      "score": "0-0"
+      "status": "35'",
+      "score": "1-0"
     },
     "market": {
       "o25_odds": 1.4,
@@ -304,7 +304,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -325,18 +325,18 @@
     "source": "openfootball/football.json",
     "basis": "form+h2h",
     "h2h_matches_used": 6,
-    "lam_home": 1.495,
+    "lam_home": 1.604,
     "lam_away": 1.564,
-    "exp_goals": 3.059,
+    "exp_goals": 3.168,
     "rho": -0.05,
-    "p_over_0_5": 0.9476,
-    "p_over_1_5": 0.8149,
-    "p_over_2_5": 0.5898,
+    "p_over_0_5": 0.9526,
+    "p_over_1_5": 0.8299,
+    "p_over_2_5": 0.6135,
     "label": "ULTRA",
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -349,8 +349,7 @@
     "lineup": {
       "source": "ESPN starting XI",
       "home_missing_key": [
-        "P. Aubameyang",
-        "A. Gouiri"
+        "P. Aubameyang"
       ],
       "away_missing_key": []
     }
@@ -376,7 +375,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -415,7 +414,7 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "updated_at": "2026-09-20T18:06:12.923767+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

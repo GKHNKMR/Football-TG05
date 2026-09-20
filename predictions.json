@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -29,42 +29,6 @@
       "d": 4.02,
       "a": 6.09,
       "edge25": -0.1453
-    }
-  },
-  {
-    "match_id": "L1-2026-09-20-01",
-    "league_id": 61,
-    "league": "Ligue 1",
-    "kickoff_utc": "2026-09-20T15:15:00Z",
-    "home": "Nice",
-    "away": "Lille",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 0.781,
-    "lam_away": 1.455,
-    "exp_goals": 2.237,
-    "rho": -0.05,
-    "p_over_0_5": 0.8871,
-    "p_over_1_5": 0.6604,
-    "p_over_2_5": 0.3871,
-    "label": "MEDIUM",
-    "base_lam_home": 0.781,
-    "base_lam_away": 1.455,
-    "base_rho": -0.05,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
-    "live": {
-      "status": "85'",
-      "score": "2-1"
-    },
-    "market": {
-      "o25_odds": 1.85,
-      "u25_odds": 1.86,
-      "o25_implied": 0.5013,
-      "h": 3.48,
-      "d": 3.45,
-      "a": 2.04,
-      "edge25": -0.1142
     }
   },
   {
@@ -88,10 +52,10 @@
     "base_lam_home": 1.297,
     "base_lam_away": 1.329,
     "base_rho": -0.06,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "live": {
-      "status": "74'",
-      "score": "1-0"
+      "status": "90'+1'",
+      "score": "1-1"
     },
     "market": {
       "o25_odds": 1.55,
@@ -125,9 +89,9 @@
     "base_lam_away": 1.555,
     "base_rho": -0.08,
     "h2h_tier": "2. Bundesliga",
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "live": {
-      "status": "72'",
+      "status": "89'",
       "score": "0-0"
     },
     "market": {
@@ -161,9 +125,9 @@
     "base_lam_home": 1.389,
     "base_lam_away": 1.079,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "live": {
-      "status": "HT",
+      "status": "57'",
       "score": "1-0"
     },
     "market": {
@@ -197,10 +161,10 @@
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "live": {
-      "status": "28'",
-      "score": "0-0"
+      "status": "45'",
+      "score": "0-1"
     },
     "market": {
       "o25_odds": 1.79,
@@ -233,10 +197,10 @@
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "live": {
-      "status": "29'",
-      "score": "0-0"
+      "status": "45'+2'",
+      "score": "1-1"
     },
     "market": {
       "o25_odds": 1.46,
@@ -259,17 +223,17 @@
     "basis": "form+h2h",
     "h2h_matches_used": 4,
     "lam_home": 1.364,
-    "lam_away": 1.063,
-    "exp_goals": 2.427,
+    "lam_away": 1.139,
+    "exp_goals": 2.503,
     "rho": 0.02,
-    "p_over_0_5": 0.9142,
-    "p_over_1_5": 0.6948,
-    "p_over_2_5": 0.4372,
+    "p_over_0_5": 0.9207,
+    "p_over_1_5": 0.7108,
+    "p_over_2_5": 0.4569,
     "label": "HIGH",
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 2.42,
       "u25_odds": 1.51,
@@ -278,13 +242,6 @@
       "d": 3.11,
       "a": 2.05,
       "edge25": 0.0727
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": [
-        "R. Zalazar"
-      ]
     }
   },
   {
@@ -299,16 +256,20 @@
     "h2h_matches_used": 6,
     "lam_home": 1.275,
     "lam_away": 0.93,
-    "exp_goals": 2.205,
+    "exp_goals": 2.206,
     "rho": 0.02,
     "p_over_0_5": 0.8924,
-    "p_over_1_5": 0.644,
-    "p_over_2_5": 0.3786,
+    "p_over_1_5": 0.6442,
+    "p_over_2_5": 0.3788,
     "label": "MEDIUM",
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
+    "live": {
+      "status": "15'",
+      "score": "0-0"
+    },
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.84,
@@ -317,11 +278,6 @@
       "d": 3.59,
       "a": 4.36,
       "edge25": -0.1158
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": []
     }
   },
   {
@@ -345,7 +301,11 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
+    "live": {
+      "status": "16'",
+      "score": "1-0"
+    },
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.18,
@@ -371,13 +331,17 @@
     "exp_goals": 3.343,
     "rho": -0.12,
     "p_over_0_5": 0.9528,
-    "p_over_1_5": 0.8584,
-    "p_over_2_5": 0.6491,
+    "p_over_1_5": 0.8583,
+    "p_over_2_5": 0.649,
     "label": "ULTRA",
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
+    "live": {
+      "status": "15'",
+      "score": "1-0"
+    },
     "market": {
       "o25_odds": 1.73,
       "u25_odds": 2.01,
@@ -386,11 +350,6 @@
       "d": 3.36,
       "a": 2.83,
       "edge25": 0.1116
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": []
     }
   },
   {
@@ -414,7 +373,7 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.4,
       "u25_odds": 2.86,
@@ -446,7 +405,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -458,7 +417,7 @@
     }
   },
   {
-    "match_id": "L1-2026-09-20-02",
+    "match_id": "L1-2026-09-20-01",
     "league_id": 61,
     "league": "Ligue 1",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -478,7 +437,7 @@
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -518,7 +477,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -557,7 +516,7 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:00:28.033053+00:00",
+    "updated_at": "2026-09-20T17:17:57.411538+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

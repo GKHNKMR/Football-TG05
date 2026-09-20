@@ -1,77 +1,5 @@
 [
   {
-    "match_id": "TR-2026-09-20-01",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-20T14:00:00Z",
-    "home": "Fenerbahçe",
-    "away": "Eyupspor",
-    "source": "tff.org",
-    "basis": "form+h2h",
-    "h2h_matches_used": 4,
-    "lam_home": 2.165,
-    "lam_away": 1.148,
-    "exp_goals": 3.313,
-    "rho": -0.12,
-    "p_over_0_5": 0.9527,
-    "p_over_1_5": 0.8538,
-    "p_over_2_5": 0.6431,
-    "label": "ULTRA",
-    "base_lam_home": 2.165,
-    "base_lam_away": 1.148,
-    "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
-    "live": {
-      "status": "79'",
-      "score": "7-0"
-    },
-    "market": {
-      "o25_odds": 1.42,
-      "u25_odds": 2.67,
-      "o25_implied": 0.6528,
-      "h": 1.18,
-      "d": 6.44,
-      "a": 12.0,
-      "edge25": -0.0097
-    }
-  },
-  {
-    "match_id": "TR-2026-09-20-02",
-    "league_id": 203,
-    "league": "Turkish Süper Lig",
-    "kickoff_utc": "2026-09-20T14:00:00Z",
-    "home": "Erzurumspor",
-    "away": "Samsunspor",
-    "source": "tff.org",
-    "basis": "form",
-    "h2h_matches_used": 0,
-    "lam_home": 1.01,
-    "lam_away": 1.552,
-    "exp_goals": 2.561,
-    "rho": -0.12,
-    "p_over_0_5": 0.9083,
-    "p_over_1_5": 0.7396,
-    "p_over_2_5": 0.4719,
-    "label": "HIGH",
-    "base_lam_home": 1.01,
-    "base_lam_away": 1.552,
-    "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
-    "live": {
-      "status": "80'",
-      "score": "1-0"
-    },
-    "market": {
-      "o25_odds": 1.99,
-      "u25_odds": 1.74,
-      "o25_implied": 0.4665,
-      "h": 2.58,
-      "d": 3.21,
-      "a": 2.57,
-      "edge25": 0.0054
-    }
-  },
-  {
     "match_id": "LL-2026-09-20-01",
     "league_id": 140,
     "league": "LaLiga",
@@ -92,10 +20,10 @@
     "base_lam_home": 1.78,
     "base_lam_away": 1.291,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "59'",
-      "score": "1-0"
+      "status": "90'+4'",
+      "score": "2-1"
     },
     "market": {
       "o25_odds": 1.43,
@@ -128,7 +56,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -160,9 +88,9 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.532,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "51'",
+      "status": "86'",
       "score": "0-2"
     },
     "market": {
@@ -196,9 +124,9 @@
     "base_lam_home": 2.017,
     "base_lam_away": 1.637,
     "base_rho": -0.06,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "HT",
+      "status": "73'",
       "score": "1-1"
     },
     "market": {
@@ -232,9 +160,9 @@
     "base_lam_home": 0.781,
     "base_lam_away": 1.455,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "23'",
+      "status": "HT",
       "score": "1-0"
     },
     "market": {
@@ -268,9 +196,9 @@
     "base_lam_home": 1.297,
     "base_lam_away": 1.329,
     "base_rho": -0.06,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "9'",
+      "status": "43'",
       "score": "0-0"
     },
     "market": {
@@ -305,9 +233,9 @@
     "base_lam_away": 1.555,
     "base_rho": -0.08,
     "h2h_tier": "2. Bundesliga",
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "live": {
-      "status": "8'",
+      "status": "43'",
       "score": "0-0"
     },
     "market": {
@@ -341,7 +269,11 @@
     "base_lam_home": 1.389,
     "base_lam_away": 1.079,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
+    "live": {
+      "status": "11'",
+      "score": "0-0"
+    },
     "market": {
       "o25_odds": 1.82,
       "u25_odds": 1.92,
@@ -378,7 +310,7 @@
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.79,
       "u25_odds": 1.94,
@@ -415,7 +347,7 @@
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.46,
       "u25_odds": 2.58,
@@ -455,7 +387,7 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 2.42,
       "u25_odds": 1.51,
@@ -498,7 +430,7 @@
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.84,
@@ -517,7 +449,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-20-03",
+    "match_id": "TR-2026-09-20-01",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-20T17:00:00Z",
@@ -537,7 +469,7 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.18,
@@ -549,7 +481,7 @@
     }
   },
   {
-    "match_id": "TR-2026-09-20-04",
+    "match_id": "TR-2026-09-20-02",
     "league_id": 203,
     "league": "Turkish Süper Lig",
     "kickoff_utc": "2026-09-20T17:00:00Z",
@@ -558,18 +490,18 @@
     "source": "tff.org",
     "basis": "form+h2h",
     "h2h_matches_used": 4,
-    "lam_home": 1.465,
-    "lam_away": 1.592,
-    "exp_goals": 3.057,
+    "lam_home": 1.642,
+    "lam_away": 1.701,
+    "exp_goals": 3.343,
     "rho": -0.12,
-    "p_over_0_5": 0.9398,
-    "p_over_1_5": 0.8223,
-    "p_over_2_5": 0.5894,
+    "p_over_0_5": 0.9528,
+    "p_over_1_5": 0.8584,
+    "p_over_2_5": 0.6491,
     "label": "ULTRA",
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.73,
       "u25_odds": 2.01,
@@ -581,12 +513,8 @@
     },
     "lineup": {
       "source": "ESPN starting XI",
-      "home_missing_key": [
-        "Juan"
-      ],
-      "away_missing_key": [
-        "Q. Laçi"
-      ]
+      "home_missing_key": [],
+      "away_missing_key": []
     }
   },
   {
@@ -610,7 +538,7 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.4,
       "u25_odds": 2.86,
@@ -642,7 +570,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -674,7 +602,7 @@
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -706,7 +634,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -738,7 +666,7 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:08:03.413460+00:00",
+    "updated_at": "2026-09-20T16:14:08.318791+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

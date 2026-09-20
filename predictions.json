@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -52,10 +52,10 @@
     "base_lam_home": 0.781,
     "base_lam_away": 1.455,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "66'",
-      "score": "1-0"
+      "status": "85'",
+      "score": "2-1"
     },
     "market": {
       "o25_odds": 1.85,
@@ -88,10 +88,10 @@
     "base_lam_home": 1.297,
     "base_lam_away": 1.329,
     "base_rho": -0.06,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "55'",
-      "score": "0-0"
+      "status": "74'",
+      "score": "1-0"
     },
     "market": {
       "o25_odds": 1.55,
@@ -125,9 +125,9 @@
     "base_lam_away": 1.555,
     "base_rho": -0.08,
     "h2h_tier": "2. Bundesliga",
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "53'",
+      "status": "72'",
       "score": "0-0"
     },
     "market": {
@@ -161,9 +161,9 @@
     "base_lam_home": 1.389,
     "base_lam_away": 1.079,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "39'",
+      "status": "HT",
       "score": "1-0"
     },
     "market": {
@@ -190,16 +190,16 @@
     "lam_away": 1.317,
     "exp_goals": 2.809,
     "rho": -0.01,
-    "p_over_0_5": 0.9386,
+    "p_over_0_5": 0.9385,
     "p_over_1_5": 0.7716,
     "p_over_2_5": 0.5327,
     "label": "HIGH",
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "10'",
+      "status": "28'",
       "score": "0-0"
     },
     "market": {
@@ -210,11 +210,6 @@
       "d": 3.51,
       "a": 2.07,
       "edge25": 0.0126
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [],
-      "away_missing_key": []
     }
   },
   {
@@ -227,20 +222,20 @@
     "source": "openfootball/football.json",
     "basis": "form+h2h",
     "h2h_matches_used": 2,
-    "lam_home": 1.617,
+    "lam_home": 1.876,
     "lam_away": 1.189,
-    "exp_goals": 2.806,
+    "exp_goals": 3.065,
     "rho": -0.01,
-    "p_over_0_5": 0.9384,
-    "p_over_1_5": 0.7711,
-    "p_over_2_5": 0.532,
+    "p_over_0_5": 0.9523,
+    "p_over_1_5": 0.8114,
+    "p_over_2_5": 0.5913,
     "label": "ULTRA",
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "live": {
-      "status": "11'",
+      "status": "29'",
       "score": "0-0"
     },
     "market": {
@@ -251,14 +246,6 @@
       "d": 4.6,
       "a": 5.53,
       "edge25": -0.0473
-    },
-    "lineup": {
-      "source": "ESPN starting XI",
-      "home_missing_key": [
-        "G. Mikautadze",
-        "Gerard Moreno"
-      ],
-      "away_missing_key": []
     }
   },
   {
@@ -282,7 +269,7 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 2.42,
       "u25_odds": 1.51,
@@ -321,7 +308,7 @@
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.84,
@@ -358,7 +345,7 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.18,
@@ -390,7 +377,7 @@
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.73,
       "u25_odds": 2.01,
@@ -427,7 +414,7 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.4,
       "u25_odds": 2.86,
@@ -459,7 +446,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -491,7 +478,7 @@
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -531,7 +518,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -560,17 +547,17 @@
     "basis": "form+h2h",
     "h2h_matches_used": 6,
     "lam_home": 1.286,
-    "lam_away": 1.755,
-    "exp_goals": 3.041,
+    "lam_away": 1.569,
+    "exp_goals": 2.855,
     "rho": 0.02,
-    "p_over_0_5": 0.9544,
-    "p_over_1_5": 0.8047,
-    "p_over_2_5": 0.5859,
+    "p_over_0_5": 0.9448,
+    "p_over_1_5": 0.7758,
+    "p_over_2_5": 0.5435,
     "label": "ULTRA",
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T16:42:20.272186+00:00",
+    "updated_at": "2026-09-20T17:00:28.033053+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,
@@ -579,6 +566,13 @@
       "d": 3.35,
       "a": 2.5,
       "edge25": 0.0712
+    },
+    "lineup": {
+      "source": "ESPN starting XI",
+      "home_missing_key": [],
+      "away_missing_key": [
+        "V. Pavlidis"
+      ]
     }
   }
 ]

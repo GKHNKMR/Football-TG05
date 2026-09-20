@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -52,9 +52,9 @@
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "76'",
+      "status": "86'",
       "score": "0-1"
     },
     "market": {
@@ -88,10 +88,10 @@
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "81'",
-      "score": "2-1"
+      "status": "90'+1'",
+      "score": "3-1"
     },
     "market": {
       "o25_odds": 1.46,
@@ -124,9 +124,9 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "50'",
+      "status": "61'",
       "score": "0-0"
     },
     "market": {
@@ -160,9 +160,9 @@
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "47'",
+      "status": "58'",
       "score": "0-0"
     },
     "market": {
@@ -196,10 +196,10 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "50'",
-      "score": "2-0"
+      "status": "60'",
+      "score": "3-1"
     },
     "market": {
       "o25_odds": 1.63,
@@ -232,9 +232,9 @@
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "47'",
+      "status": "57'",
       "score": "1-0"
     },
     "market": {
@@ -268,10 +268,10 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "live": {
-      "status": "40'",
-      "score": "1-0"
+      "status": "HT",
+      "score": "2-0"
     },
     "market": {
       "o25_odds": 1.4,
@@ -304,7 +304,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -336,7 +336,7 @@
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -375,7 +375,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -414,7 +414,7 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T18:11:11.052131+00:00",
+    "updated_at": "2026-09-20T18:21:18.965780+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

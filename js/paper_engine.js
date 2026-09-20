@@ -22,41 +22,98 @@
   const STORAGE_KEY = 'betavus.paper_v1';
 
   const RISK_PROFILES = {
-    cautious: {
-      id: 'cautious',
-      name: 'Temkinli',
-      desc: 'Sermaye koruma odaklı, düşük varyanslı plan.',
-      reservePct: 0.75,
-      minRiskArmPct: 0.20,
-      midRiskArmPct: 0.05,
-      highRiskArmPct: 0.00
+    minimum: {
+      id: 'minimum',
+      name: 'Minimum Risk',
+      kol: 'Minimum Risk',
+      badgeClass: 'b-min',
+      color: '#10b981',
+      stakePct: 0.30,
+      targetOdds: 1.25,
+      legsCount: 5,
+      marketTarget: 'over_0_5',
+      note: '5 adet 0,5 ustu mac',
+      marketLabel: '0.5 Üst',
+      reservePct: 0.70,
+      minRiskArmPct: 0.30,
+      midRiskArmPct: 0.00,
+      highRiskArmPct: 0.00,
+      dailyFactor: 1.075,
+      dailyProfitRate: 0.075,
+      desc: 'Toplam kasanın %30,0 payı ile 1,25x oran (5 adet 0,5 üstü maç). Kasa rezervi: %70.'
     },
-    balanced: {
-      id: 'balanced',
-      name: 'Dengeli',
-      desc: 'Dengeli büyüme ve kontrollü risk dağılımı.',
+    medium: {
+      id: 'medium',
+      name: 'Orta Risk',
+      kol: 'Orta Risk',
+      badgeClass: 'b-med',
+      color: '#3b82f6',
+      stakePct: 0.15,
+      targetOdds: 1.70,
+      legsCount: 3,
+      marketTarget: 'over_1_5',
+      note: '3 adet 1,5 ustu mac',
+      marketLabel: '1.5 Üst',
+      reservePct: 0.85,
+      minRiskArmPct: 0.00,
+      midRiskArmPct: 0.15,
+      highRiskArmPct: 0.00,
+      dailyFactor: 1.105,
+      dailyProfitRate: 0.105,
+      desc: 'Toplam kasanın %15,0 payı ile 1,70x oran (3 adet 1,5 üstü maç). Kasa rezervi: %85.'
+    },
+    high: {
+      id: 'high',
+      name: 'Yüksek Risk',
+      kol: 'Yuksek Risk',
+      badgeClass: 'b-high',
+      color: '#ef4444',
+      stakePct: 0.05,
+      targetOdds: 3.25,
+      legsCount: 3,
+      marketTarget: 'over_2_5',
+      note: '3 adet 2,5 ustu mac',
+      marketLabel: '2.5 Üst',
+      reservePct: 0.95,
+      minRiskArmPct: 0.00,
+      midRiskArmPct: 0.00,
+      highRiskArmPct: 0.05,
+      dailyFactor: 1.1125,
+      dailyProfitRate: 0.1125,
+      desc: 'Toplam kasanın %5,0 payı ile 3,25x oran (3 adet 2,5 üstü maç). Kasa rezervi: %95.'
+    },
+    multi: {
+      id: 'multi',
+      name: 'Çok Kollu Model (Excel)',
+      kol: 'Çok Kollu Karma',
+      badgeClass: 'b-excel',
+      color: '#38bdf8',
+      targetOdds: 1.2925,
       reservePct: 0.50,
       minRiskArmPct: 0.30,
       midRiskArmPct: 0.15,
-      highRiskArmPct: 0.05
-    },
-    aggressive: {
-      id: 'aggressive',
-      name: 'Agresif',
-      desc: 'Yüksek büyüme hedefi, yüksek varyans ve düşüş toleransı.',
-      reservePct: 0.35,
-      minRiskArmPct: 0.40,
-      midRiskArmPct: 0.18,
-      highRiskArmPct: 0.07
+      highRiskArmPct: 0.05,
+      dailyFactor: 1.2925,
+      dailyProfitRate: 0.2925,
+      desc: '%50 Kasa Rezervi + 3 Bahis Kolu (%30 Min + %15 Orta + %5 Yüksek = Günlük %29.25 kâr).'
     }
   };
+
+  // Geriye dönük uyumluluk takma adları (Aliases)
+  RISK_PROFILES.cautious = RISK_PROFILES.minimum;
+  RISK_PROFILES.balanced = RISK_PROFILES.medium;
+  RISK_PROFILES.aggressive = RISK_PROFILES.high;
 
   const COUPON_CLASSES = {
     minimum: {
       id: 'minimum',
       name: 'Minimum Risk',
       badgeClass: 'b-min',
+      color: '#10b981',
       armKey: 'minRiskArmPct',
+      stakePct: 0.30,
+      targetOdds: 1.25,
+      note: '5 adet 0,5 ustu mac',
       market: 'over_0_5',
       line: '0.5',
       marketLabel: '0.5 Üst',
@@ -64,13 +121,17 @@
       minModelProb: 0.95,
       maxLegs: 5,
       fallbackOdds: 1.25,
-      desc: '0.5 Üst (≥ %95 güven), en fazla 5 maç'
+      desc: '5 adet 0,5 üstü maç (≥ %95 model güveni, %30,0 kasa payı, 1.25x oran)'
     },
     medium: {
       id: 'medium',
       name: 'Orta Risk',
       badgeClass: 'b-med',
+      color: '#3b82f6',
       armKey: 'midRiskArmPct',
+      stakePct: 0.15,
+      targetOdds: 1.70,
+      note: '3 adet 1,5 ustu mac',
       market: 'over_1_5',
       line: '1.5',
       marketLabel: '1.5 Üst',
@@ -78,13 +139,17 @@
       minModelProb: 0.85,
       maxLegs: 3,
       fallbackOdds: 1.70,
-      desc: '1.5 Üst (≥ %85 güven), en fazla 3 maç'
+      desc: '3 adet 1,5 üstü maç (≥ %85 model güveni, %15,0 kasa payı, 1.70x oran)'
     },
     high: {
       id: 'high',
       name: 'Yüksek Risk',
       badgeClass: 'b-high',
+      color: '#ef4444',
       armKey: 'highRiskArmPct',
+      stakePct: 0.05,
+      targetOdds: 3.25,
+      note: '3 adet 2,5 ustu mac',
       market: 'over_2_5',
       line: '2.5',
       marketLabel: '2.5 Üst',
@@ -92,7 +157,7 @@
       minModelProb: 0.75,
       maxLegs: 3,
       fallbackOdds: 3.25,
-      desc: '2.5 Üst (≥ %75 güven), en fazla 3 maç'
+      desc: '3 adet 2,5 üstü maç (≥ %75 model güveni, %5,0 kasa payı, 3.25x oran)'
     }
   };
 
@@ -200,8 +265,18 @@
   }
 
   function getRiskAllocation(profileKey, currentBank) {
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.cautious;
+    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
     const bank = Math.max(0, Number(currentBank) || 0);
+    if (prof.id === 'multi' || profileKey === 'multi') {
+      return {
+        profile: 'multi',
+        bank: round(bank, 2),
+        reserve: round(bank * 0.50, 2),
+        minimum: round(bank * 0.30, 2),
+        medium: round(bank * 0.15, 2),
+        high: round(bank * 0.05, 2)
+      };
+    }
     return {
       profile: prof.id,
       bank: round(bank, 2),
@@ -234,8 +309,11 @@
     const cls = COUPON_CLASSES[couponClassKey];
     if (!cls) return null;
 
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.cautious;
-    const armPct = prof[cls.armKey] || 0;
+    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
+    // Excel modeline göre her kolun kasa payı: Minimum %30, Orta %15, Yüksek %5
+    const armPct = (prof.id === 'multi' || profileKey === 'multi' || !prof[cls.armKey])
+      ? (cls.stakePct || 0.10)
+      : (prof[cls.armKey] || cls.stakePct || 0.10);
     const maxStake = round((availableBalance || 0) * armPct, 2);
 
     const now = options.now ? new Date(options.now).getTime() : Date.now();
@@ -330,7 +408,7 @@
   }
 
   function buildAllRecommendations(matches, profileKey, availableBalance, options = {}) {
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.cautious;
+    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
     const res = {};
     for (const key of Object.keys(COUPON_CLASSES)) {
       res[key] = buildRecommendedCoupon(matches, key, prof.id, availableBalance, options);
@@ -395,7 +473,7 @@
       id: options.id || `slip-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       createdAt: options.createdAt || new Date().toISOString(),
       source: options.source || 'user', // 'recommended' | 'user' | 'mixed'
-      riskProfile: options.riskProfile || 'cautious',
+      riskProfile: options.riskProfile || 'minimum',
       couponClass,
       status: options.status || 'draft', // 'draft' | 'pending' | 'won' | 'lost' | 'void'
       stake: round(stake, 2),
@@ -851,7 +929,7 @@
     const remainingDays = Math.max(1, Number(options.remainingDays || plan.durationDays || 30));
     const currentBank = options.currentBank != null ? Number(options.currentBank) : startBank;
 
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.cautious;
+    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
 
     // Her risk sınıfının olasılık ve ortalama oran girdisi
     const armConfigs = [
@@ -949,7 +1027,7 @@
     const iters = options.iterations || 1000;
     const seed = options.seed != null ? options.seed : 42;
 
-    const profileKeys = ['cautious', 'balanced', 'aggressive'];
+    const profileKeys = ['minimum', 'medium', 'high', 'multi'];
     const trajectories = {};
 
     for (let pIdx = 0; pIdx < profileKeys.length; pIdx++) {
@@ -1044,6 +1122,15 @@
       };
     }
 
+    // Geriye dönük uyumluluk takma adları
+    trajectories.cautious = trajectories.minimum;
+    trajectories.balanced = trajectories.medium;
+    trajectories.aggressive = trajectories.high;
+
+    const excelModel = calculateExcelGrowthModel(plan, 'multi');
+    trajectories.excel = excelModel;
+    trajectories.excelModel = excelModel;
+
     const targetPoints = [];
     const dailyRate = (targetBank / startBank) ** (1 / durationDays) - 1;
     for (let day = 0; day <= durationDays; day++) {
@@ -1061,7 +1148,7 @@
       dailyRatePct: round(dailyRate * 100, 2),
       targetPoints,
       trajectories,
-      excelModel: calculateExcelGrowthModel(plan, 'balanced')
+      excelModel
     };
   }
 
@@ -1069,8 +1156,9 @@
   // 7.2 Betavus Çok Kollu Kasa Büyüme Modeli (Betavus Kasa Modeli 1 Excel)
   // ---------------------------------------------------------------------------
 
-  function calculateExcelGrowthModel(plan, profileKey = 'balanced', customOdds = null) {
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.balanced;
+  function calculateExcelGrowthModel(plan, profileKey = 'multi', customOdds = null) {
+    const profKey = (profileKey === 'cautious' ? 'minimum' : (profileKey === 'balanced' || profileKey === 'multi') ? 'multi' : profileKey === 'aggressive' ? 'high' : profileKey);
+    const prof = RISK_PROFILES[profKey] || RISK_PROFILES.multi;
     const S = Math.max(1, Number(plan && plan.startingBank) || 50);
     const D = Math.max(1, Number(plan && plan.durationDays) || 30);
 
@@ -1078,10 +1166,11 @@
     const midOdds = (customOdds && customOdds.medium) || COUPON_CLASSES.medium.fallbackOdds || 1.70;
     const highOdds = (customOdds && customOdds.high) || COUPON_CLASSES.high.fallbackOdds || 3.25;
 
-    const reserve = prof.reservePct;
-    const minPct = prof.minRiskArmPct;
-    const midPct = prof.midRiskArmPct;
-    const highPct = prof.highRiskArmPct;
+    // Excel Kasa Modeli 1 Standartı: Kenarda kalan pay %50, Kollar: %30 Min, %15 Orta, %5 Yüksek
+    const reserve = (profKey === 'multi' || prof.id === 'multi' || profileKey === 'balanced') ? 0.50 : prof.reservePct;
+    const minPct = (profKey === 'multi' || prof.id === 'multi' || profileKey === 'balanced') ? 0.30 : prof.minRiskArmPct;
+    const midPct = (profKey === 'multi' || prof.id === 'multi' || profileKey === 'balanced') ? 0.15 : prof.midRiskArmPct;
+    const highPct = (profKey === 'multi' || prof.id === 'multi' || profileKey === 'balanced') ? 0.05 : prof.highRiskArmPct;
 
     // Excel C14: Kontrol: kenarda kalan + kollar toplamı
     const sumPct = round(reserve + minPct + midPct + highPct, 4);
@@ -1133,7 +1222,7 @@
     };
   }
 
-  function generateExcelDailyTable(plan, state, profileKey = 'balanced') {
+  function generateExcelDailyTable(plan, state, profileKey = 'multi') {
     const model = calculateExcelGrowthModel(plan, profileKey);
     const S = model.startingBank;
     const D = model.durationDays;
@@ -1188,8 +1277,8 @@
         day: d,
         dateStr: dayDateStr,
         theoreticalBank,
-        actualStartBank: actualStartBank != null ? round(actualStartBank, 2) : null,
-        actualEndBank: actualEndBank != null ? round(actualEndBank, 2) : null,
+        actualStartBank,
+        actualEndBank,
         dailyGrowthPct,
         totalGrowthPct,
         isSettled
@@ -1221,7 +1310,7 @@
       };
     }
 
-    const currentProfile = state.settings.riskProfile || 'cautious';
+    const currentProfile = state.settings.riskProfile || 'minimum';
     const curBank = metrics.totalBank;
 
     // 1. Alternatif: Süreyi Uzat (Mevcut risk profili, güncel kasadan hedefe ulaşmak için +%50 gün ekle)
@@ -1241,10 +1330,11 @@
     // Medyan kasa veya başlangıç kasasının mantıklı büyümesi
     const revisedTarget = round(Math.max(curBank * 1.15, simCurrent.medianBank), 0);
 
-    // 3. Alternatif: Risk Profilini Değiştir (Temkinli -> Dengeli veya Dengeli -> Agresif)
-    let nextProfile = 'balanced';
-    if (currentProfile === 'balanced') nextProfile = 'aggressive';
-    if (currentProfile === 'aggressive') nextProfile = 'aggressive';
+    // 3. Alternatif: Risk Modelini Değiştir (Minimum -> Orta veya Orta -> Çok Kollu)
+    let nextProfile = 'medium';
+    if (currentProfile === 'medium') nextProfile = 'high';
+    if (currentProfile === 'high') nextProfile = 'multi';
+    if (currentProfile === 'multi') nextProfile = 'multi';
 
     const simProfile = runPlanSimulation(plan, nextProfile, simulationInputs, {
       remainingDays: metrics.remainingDays,
@@ -1294,9 +1384,9 @@
         },
         {
           id: 'change_risk',
-          title: `Risk Profilini Değiştir (${RISK_PROFILES[nextProfile].name})`,
+          title: `Kasa Modelini Değiştir (${RISK_PROFILES[nextProfile].name})`,
           tag: 'Yüksek Varyans',
-          desc: 'Daha yüksek risk koluna geçerek toparlanma potansiyelini artırın (kasa düşüş riski artar).',
+          desc: 'Daha yüksek risk koluna veya çok kollu modele geçerek toparlanma potansiyelini artırın.',
           changes: {
             riskProfile: nextProfile
           },
@@ -1308,7 +1398,7 @@
             halfBankLossPct: simProfile.halfBankLossPct,
             maxDrawdownPct: simProfile.maxDrawdownPct
           },
-          warning: 'Risk profili yükseltildiğinde maksimum düşüş ve sermaye kaybı ihtimali belirgin şekilde artar.'
+          warning: 'Risk profili yükseltildiğinde maksimum düşüş ve sermaye kaybı ihtimali artabilir.'
         }
       ]
     };
@@ -1320,7 +1410,7 @@
 
   function createInitialState(settings = {}, planParams = {}) {
     const cur = settings.currency || 'EUR';
-    const prof = settings.riskProfile || 'cautious';
+    const prof = settings.riskProfile || 'minimum';
     const startBank = Number(planParams.startingBank) || 50;
     const targetBank = Number(planParams.targetBank) || 500;
     const duration = Number(planParams.durationDays) || 30;

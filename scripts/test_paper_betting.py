@@ -49,6 +49,10 @@ def main():
             if (!PE) return { error: 'BETAVUS_PAPER bulunamadı' };
             return {
                 profiles: Object.keys(PE.RISK_PROFILES),
+                minimum: PE.RISK_PROFILES.minimum,
+                medium: PE.RISK_PROFILES.medium,
+                high: PE.RISK_PROFILES.high,
+                multi: PE.RISK_PROFILES.multi,
                 cautious: PE.RISK_PROFILES.cautious,
                 balanced: PE.RISK_PROFILES.balanced,
                 aggressive: PE.RISK_PROFILES.aggressive,
@@ -59,19 +63,38 @@ def main():
             };
         }""")
         assert 'error' not in cfg_res, f"Config error: {cfg_res.get('error')}"
-        assert 'cautious' in cfg_res['profiles'] and 'balanced' in cfg_res['profiles'] and 'aggressive' in cfg_res['profiles']
-        assert cfg_res['cautious']['reservePct'] == 0.75
-        assert cfg_res['cautious']['minRiskArmPct'] == 0.20
-        assert cfg_res['balanced']['reservePct'] == 0.50
-        assert cfg_res['balanced']['minRiskArmPct'] == 0.30
-        assert cfg_res['balanced']['midRiskArmPct'] == 0.15
-        assert cfg_res['balanced']['highRiskArmPct'] == 0.05
-        assert cfg_res['aggressive']['reservePct'] == 0.35
-        assert cfg_res['aggressive']['minRiskArmPct'] == 0.40
-        assert cfg_res['minClass']['minModelProb'] == 0.95
-        assert cfg_res['medClass']['minModelProb'] == 0.85
-        assert cfg_res['highClass']['minModelProb'] == 0.75
-        print("  ✓ Risk profilleri (%75, %50, %35 rezerv) ve kupon sınıfları konfigürasyonu doğrulandı.")
+        assert 'minimum' in cfg_res['profiles'] and 'medium' in cfg_res['profiles'] and 'high' in cfg_res['profiles'] and 'multi' in cfg_res['profiles']
+        # Excel Kol 1: Minimum Risk (Pay: %30, Oran: 1.25x, 5 adet 0.5 üstü, Rezerv: %70)
+        assert cfg_res['minimum']['minRiskArmPct'] == 0.30
+        assert cfg_res['minimum']['reservePct'] == 0.70
+        assert cfg_res['minimum']['targetOdds'] == 1.25
+        assert cfg_res['minimum']['legsCount'] == 5
+        assert cfg_res['minimum']['marketTarget'] == 'over_0_5'
+
+        # Excel Kol 2: Orta Risk (Pay: %15, Oran: 1.70x, 3 adet 1.5 üstü, Rezerv: %85)
+        assert cfg_res['medium']['midRiskArmPct'] == 0.15
+        assert cfg_res['medium']['reservePct'] == 0.85
+        assert cfg_res['medium']['targetOdds'] == 1.70
+        assert cfg_res['medium']['legsCount'] == 3
+        assert cfg_res['medium']['marketTarget'] == 'over_1_5'
+
+        # Excel Kol 3: Yüksek Risk (Pay: %5, Oran: 3.25x, 3 adet 2.5 üstü, Rezerv: %95)
+        assert cfg_res['high']['highRiskArmPct'] == 0.05
+        assert cfg_res['high']['reservePct'] == 0.95
+        assert cfg_res['high']['targetOdds'] == 3.25
+        assert cfg_res['high']['legsCount'] == 3
+        assert cfg_res['high']['marketTarget'] == 'over_2_5'
+
+        # Çok Kollu Model (Excel Standart: %50 Rezerv, %30 Min, %15 Orta, %5 Yüksek = Günlük 1.2925x)
+        assert cfg_res['multi']['reservePct'] == 0.50
+        assert cfg_res['multi']['minRiskArmPct'] == 0.30
+        assert cfg_res['multi']['midRiskArmPct'] == 0.15
+        assert cfg_res['multi']['highRiskArmPct'] == 0.05
+        assert cfg_res['multi']['targetOdds'] == 1.2925
+
+        # Geriye dönük uyumluluk takma adları
+        assert cfg_res['cautious'] is not None and cfg_res['balanced'] is not None and cfg_res['aggressive'] is not None
+        print("  ✓ Excel Kasa Modeli 1 modelleri (Minimum Risk %30/1.25x, Orta Risk %15/1.70x, Yüksek Risk %5/3.25x, Çok Kollu %50 Rezerv) doğrulandı.")
 
         # Excel Modeli Matematik Doğrulaması (Betavus Kasa Modeli 1)
         excel_math = page.evaluate("""() => {
@@ -157,21 +180,22 @@ def main():
                 targetPointsLen: traj.targetPoints.length,
                 target0: traj.targetPoints[0].targetBank,
                 target30: traj.targetPoints[30].targetBank,
-                hasCautious: !!traj.trajectories.cautious,
-                hasBalanced: !!traj.trajectories.balanced,
-                hasAggressive: !!traj.trajectories.aggressive,
-                cauPointsLen: traj.trajectories.cautious.dayPoints.length,
-                cau0: traj.trajectories.cautious.dayPoints[0].median,
-                cauHitPct: traj.trajectories.cautious.targetHitPct
+                hasMinimum: !!traj.trajectories.minimum,
+                hasMedium: !!traj.trajectories.medium,
+                hasHigh: !!traj.trajectories.high,
+                hasMulti: !!traj.trajectories.multi,
+                minPointsLen: traj.trajectories.minimum.dayPoints.length,
+                min0: traj.trajectories.minimum.dayPoints[0].median,
+                minHitPct: traj.trajectories.minimum.targetHitPct
             };
         }""")
         assert traj_test['targetPointsLen'] == 31  # Gün 0'dan 30'a 31 nokta
         assert traj_test['target0'] == 50.0
         assert traj_test['target30'] == 500.0
-        assert traj_test['hasCautious'] and traj_test['hasBalanced'] and traj_test['hasAggressive']
-        assert traj_test['cauPointsLen'] == 31
-        assert traj_test['cau0'] == 50.0
-        print("  ✓ Hedeflenen sürede kasa ulaşma trajektorisi ve 3 risk modeli hesaplama projeksiyonu doğrulandı.")
+        assert traj_test['hasMinimum'] and traj_test['hasMedium'] and traj_test['hasHigh'] and traj_test['hasMulti']
+        assert traj_test['minPointsLen'] == 31
+        assert traj_test['min0'] == 50.0
+        print("  ✓ Hedeflenen sürede kasa ulaşma trajektorisi ve 4 model hesaplama projeksiyonu doğrulandı.")
         print(f"  ✓ Günlük gerekli oran: %{plan_res['dailyRate']}, Gün 0: {plan_res['day0']}€, Gün 15: {plan_res['day15']}€, Gün 30: {plan_res['day30']}€")
         print("  ✓ Geometrik hedef yolu ve durum sınıflandırması doğrulandı.")
 
@@ -509,23 +533,23 @@ def main():
         model_summaries = page.query_selector_all(".chart-models-summary .cms-card")
         assert len(model_summaries) == 4, f"Beklenen 4 model özeti, bulunan {len(model_summaries)}"
 
-        # Agresif profil kırmızı renk ve çip geçiş testi
-        page.click("#chartViewChips button[data-view='aggressive']")
+        # Yüksek risk profil kırmızı renk ve çip geçiş testi
+        page.click("#chartViewChips button[data-view='high']")
         time.sleep(0.3)
-        agg_chip_class = page.get_attribute("#chartViewChips button[data-view='aggressive']", "class")
-        assert "active" in agg_chip_class
+        high_chip_class = page.get_attribute("#chartViewChips button[data-view='high']", "class")
+        assert "active" in high_chip_class
         # SVG içinde kırmızı (#ef4444) çizgi kontrolü
-        agg_stroke = page.evaluate("""() => {
+        high_stroke = page.evaluate("""() => {
             const svg = document.querySelector('#planTrajectorySvg');
             return svg ? svg.innerHTML.includes('#ef4444') : false;
         }""")
-        assert agg_stroke is True, "Agresif profil SVG içinde #ef4444 kırmızı rengi ile çizilmemiş!"
-        print("  ✓ Agresif profil kırmızı (#ef4444) renk ile grafikte doğrulandı.")
+        assert high_stroke is True, "Yüksek risk profil SVG içinde #ef4444 kırmızı rengi ile çizilmemiş!"
+        print("  ✓ Yüksek risk profili kırmızı (#ef4444) renk ile grafikte doğrulandı.")
 
         # Excel çok kollu modeli çipi ve SVG kontrolü
-        page.click("#chartViewChips button[data-view='excel']")
+        page.click("#chartViewChips button[data-view='multi']")
         time.sleep(0.3)
-        excel_chip_class = page.get_attribute("#chartViewChips button[data-view='excel']", "class")
+        excel_chip_class = page.get_attribute("#chartViewChips button[data-view='multi']", "class")
         assert "active" in excel_chip_class
 
         # Excel Modeli Günlük Takip Çizelgesi kontrolü (Betavus Kasa Modeli 1)

@@ -134,12 +134,10 @@
 
     let maxVal = targetBank * 1.15;
     if (trajData && trajData.trajectories) {
-      const agg = trajData.trajectories.aggressive;
-      const bal = trajData.trajectories.balanced;
-      const cau = trajData.trajectories.cautious;
-      if (agg && agg.finalP90) maxVal = Math.max(maxVal, agg.finalP90);
-      if (bal && bal.finalP90) maxVal = Math.max(maxVal, bal.finalP90);
-      if (cau && cau.finalP90) maxVal = Math.max(maxVal, cau.finalP90);
+      for (const k of ['minimum', 'medium', 'high', 'multi', 'cautious', 'balanced', 'aggressive']) {
+        const t = trajData.trajectories[k];
+        if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
+      }
     }
     if (history && history.length) {
       for (const h of history) {
@@ -202,26 +200,31 @@
       <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
     `;
 
-    // 2. Risk Profilleri Çizgileri
+    // 2. Risk Modelleri Çizgileri (Minimum %30, Orta %15, Yüksek %5)
     let profilesSvg = '';
-    const profilesToDraw = viewMode === 'all'
-      ? ['cautious', 'balanced', 'aggressive']
-      : (viewMode === 'excel' ? [] : [viewMode]);
+    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : viewMode);
+    const profilesToDraw = normView === 'all'
+      ? ['minimum', 'medium', 'high']
+      : (normView === 'excel' || normView === 'multi' ? [] : [normView]);
 
     const profColors = {
-      cautious: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Temkinli (%75 Rezerv)' },
-      balanced: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Dengeli (%50 Rezerv)' },
-      aggressive: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Agresif (%35 Rezerv)' }
+      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (Kol 1: %30 Pay)' },
+      medium: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (Kol 2: %15 Pay)' },
+      high: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (Kol 3: %5 Pay)' },
+      multi: { main: '#38bdf8', fill: 'rgba(56, 189, 248, 0.12)', name: 'Çok Kollu Model' },
+      cautious: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (Kol 1: %30 Pay)' },
+      balanced: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (Kol 2: %15 Pay)' },
+      aggressive: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (Kol 3: %5 Pay)' }
     };
 
     if (trajData && trajData.trajectories) {
       for (const pKey of profilesToDraw) {
         const pData = trajData.trajectories[pKey];
         if (!pData || !pData.dayPoints) continue;
-        const c = profColors[pKey];
+        const c = profColors[pKey] || profColors.minimum;
 
         // Tekil risk modu seçildiyse P10-P90 güven koridorunu çiz
-        if (viewMode !== 'all' && viewMode !== 'excel') {
+        if (normView !== 'all' && normView !== 'excel' && normView !== 'multi') {
           let p90Path = '';
           let p10Path = '';
           pData.dayPoints.forEach((pt, idx) => {
@@ -249,7 +252,7 @@
           else medD += ` L ${px},${py}`;
         });
 
-        const strokeW = viewMode === pKey ? 3.2 : (viewMode === 'all' ? 2.4 : 2.8);
+        const strokeW = normView === pKey ? 3.2 : (normView === 'all' ? 2.4 : 2.8);
         profilesSvg += `<path d="${medD}" fill="none" stroke="${c.main}" stroke-width="${strokeW}" stroke-linejoin="round"/>`;
 
         const lastPt = pData.dayPoints[pData.dayPoints.length - 1];
@@ -261,7 +264,7 @@
 
     // 2.1 Excel Çok Kollu Teorik Büyüme Eğrisi (Betavus Kasa Modeli 1: 1.2925x)
     const em = (trajData && trajData.excelModel) || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
-    if (em && em.dayPoints && (viewMode === 'excel' || viewMode === 'all')) {
+    if (em && em.dayPoints && (normView === 'excel' || normView === 'multi' || normView === 'all')) {
       let emD = '';
       em.dayPoints.forEach((pt, idx) => {
         const px = getX(pt.day).toFixed(1);
@@ -269,7 +272,7 @@
         if (idx === 0) emD += `M ${px},${py}`;
         else emD += ` L ${px},${py}`;
       });
-      const isSolo = viewMode === 'excel';
+      const isSolo = normView === 'excel' || normView === 'multi';
       profilesSvg += `<path d="${emD}" fill="none" stroke="#38bdf8" stroke-width="${isSolo ? 3.4 : 2.0}" stroke-dasharray="${isSolo ? 'none' : '4,3'}" opacity="${isSolo ? 1.0 : 0.8}"/>`;
       const lastEm = em.dayPoints[em.dayPoints.length - 1];
       if (lastEm) {
@@ -332,26 +335,27 @@
       trajData = PE.calculatePlanTrajectories(plan, null);
     }
     const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, viewMode, (paperState && paperState.history) || []);
-    const cau = trajData.trajectories.cautious;
-    const bal = trajData.trajectories.balanced;
-    const agg = trajData.trajectories.aggressive;
+    const minM = trajData.trajectories.minimum || trajData.trajectories.cautious;
+    const medM = trajData.trajectories.medium || trajData.trajectories.balanced;
+    const highM = trajData.trajectories.high || trajData.trajectories.aggressive;
     const em = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
 
-    const activeProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'cautious';
+    const rawProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'minimum';
+    const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
 
     return `
       <div class="card plan-chart-card" id="planChartCard">
         <div class="chart-head">
           <div>
-            <h3>📈 Hedef Kasa Ulaşma Grafiği · Risk Modelleri Projeksiyonu</h3>
-            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu, risk modelleri ve Excel çok kollu büyüme patikası.</p>
+            <h3>📈 Hedef Kasa Ulaşma Grafiği · Excel Kasa Modelleri Projeksiyonu</h3>
+            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve Excel çok kollu kasa modeli büyüme patikaları.</p>
           </div>
           <div class="chart-view-chips" id="chartViewChips">
             <button type="button" class="cchip ${viewMode === 'all' ? 'active' : ''}" data-view="all">📊 Tümünü Karşılaştır</button>
-            <button type="button" class="cchip ${viewMode === 'cautious' ? 'active' : ''}" data-view="cautious">🛡️ Temkinli (%75 Rezerv)</button>
-            <button type="button" class="cchip ${viewMode === 'balanced' ? 'active' : ''}" data-view="balanced">⚖️ Dengeli (%50 Rezerv)</button>
-            <button type="button" class="cchip ${viewMode === 'aggressive' ? 'active' : ''}" data-view="aggressive">⚡ Agresif (%35 Rezerv)</button>
-            <button type="button" class="cchip ${viewMode === 'excel' ? 'active' : ''}" data-view="excel">📐 Excel Çok Kollu Modeli</button>
+            <button type="button" class="cchip ${viewMode === 'minimum' || viewMode === 'cautious' ? 'active' : ''}" data-view="minimum">🟢 Minimum Risk (%30 Pay · 1.25x)</button>
+            <button type="button" class="cchip ${viewMode === 'medium' || viewMode === 'balanced' ? 'active' : ''}" data-view="medium">🔵 Orta Risk (%15 Pay · 1.70x)</button>
+            <button type="button" class="cchip ${viewMode === 'high' || viewMode === 'aggressive' ? 'active' : ''}" data-view="high">🔴 Yüksek Risk (%5 Pay · 3.25x)</button>
+            <button type="button" class="cchip ${viewMode === 'excel' || viewMode === 'multi' ? 'active' : ''}" data-view="multi">📐 Çok Kollu Model (Bileşik %29.25)</button>
           </div>
         </div>
 
@@ -365,56 +369,59 @@
 
         <div class="chart-legend">
           <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Hedef Yolu (Geometrik Referans)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Temkinli (%75 Kasa Rezervi)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Dengeli (%50 Kasa Rezervi)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Agresif (%35 Kasa Rezervi)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 📐 Excel Çok Kollu Büyüme (${em ? em.dailyGrowthFactor : '1.2925'}×)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (Kol 1: %30 Pay · 1.25x · 5 maç 0.5+)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (Kol 2: %15 Pay · 1.70x · 3 maç 1.5+)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (Kol 3: %5 Pay · 3.25x · 3 maç 2.5+)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 📐 Çok Kollu Model (%50 Rezerv · ${em ? em.dailyGrowthFactor : '1.2925'}×)</span>
           ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
         </div>
 
         <div class="chart-models-summary">
-          <div class="cms-card ${activeProf === 'cautious' ? 'active-profile' : ''}">
+          <div class="cms-card minimum ${activeProf === 'minimum' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b>🛡️ Temkinli Profil</b>
-              <span class="cms-badge b-cautious">%75 Rezerv</span>
+              <b>🟢 Minimum Risk (Kol 1)</b>
+              <span class="cms-badge b-min">Pay: %30,0 · 1,25x</span>
             </div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${cau.targetHitPct >= 50 ? 'good' : 'warn'}">%${cau.targetHitPct}</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(cau.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(cau.finalP10, curr)} – ${formatCurrency(cau.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${cau.halfBankLossPct > 15 ? 'bad' : 'good'}">%${cau.halfBankLossPct}</b></div>
+            <div class="cms-row"><span>Kupon Tipi:</span><b>5 adet 0,5 üstü maç</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${minM.targetHitPct >= 50 ? 'good' : 'warn'}">%${minM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(minM.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(minM.finalP10, curr)} – ${formatCurrency(minM.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%70 Rezerv</b></div>
           </div>
 
-          <div class="cms-card ${activeProf === 'balanced' ? 'active-profile' : ''}">
+          <div class="cms-card medium ${activeProf === 'medium' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b>⚖️ Dengeli Profil</b>
-              <span class="cms-badge b-balanced">%50 Rezerv</span>
+              <b>🔵 Orta Risk (Kol 2)</b>
+              <span class="cms-badge b-med">Pay: %15,0 · 1,70x</span>
             </div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${bal.targetHitPct >= 50 ? 'good' : 'warn'}">%${bal.targetHitPct}</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(bal.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(bal.finalP10, curr)} – ${formatCurrency(bal.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${bal.halfBankLossPct > 20 ? 'bad' : 'warn'}">%${bal.halfBankLossPct}</b></div>
+            <div class="cms-row"><span>Kupon Tipi:</span><b>3 adet 1,5 üstü maç</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${medM.targetHitPct >= 50 ? 'good' : 'warn'}">%${medM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(medM.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(medM.finalP10, curr)} – ${formatCurrency(medM.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%85 Rezerv</b></div>
           </div>
 
-          <div class="cms-card aggressive ${activeProf === 'aggressive' ? 'active-profile' : ''}">
+          <div class="cms-card high aggressive ${activeProf === 'high' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b style="color:#f87171;">⚡ Agresif Profil</b>
-              <span class="cms-badge b-aggressive">%35 Rezerv</span>
+              <b style="color:#f87171;">🔴 Yüksek Risk (Kol 3)</b>
+              <span class="cms-badge b-high">Pay: %5,0 · 3,25x</span>
             </div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${agg.targetHitPct >= 50 ? 'good' : 'warn'}">%${agg.targetHitPct}</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(agg.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(agg.finalP10, curr)} – ${formatCurrency(agg.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Yarı Kasa Riski:</span><b class="${agg.halfBankLossPct > 25 ? 'bad' : 'warn'}">%${agg.halfBankLossPct}</b></div>
+            <div class="cms-row"><span>Kupon Tipi:</span><b>3 adet 2,5 üstü maç</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${highM.targetHitPct >= 50 ? 'good' : 'warn'}">%${highM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(highM.finalMedian, curr)}</b></div>
+            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(highM.finalP10, curr)} – ${formatCurrency(highM.finalP90, curr)}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%95 Rezerv</b></div>
           </div>
 
-          <div class="cms-card excel ${viewMode === 'excel' ? 'active-profile' : ''}">
+          <div class="cms-card excel multi ${viewMode === 'excel' || viewMode === 'multi' || activeProf === 'multi' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b style="color:#38bdf8;">📐 Excel Çok Kollu</b>
-              <span class="cms-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">${em ? em.dailyGrowthFactor : '1.2925'}×/gün</span>
+              <b style="color:#38bdf8;">📐 Çok Kollu Model (Excel)</b>
+              <span class="cms-badge b-excel">${em ? em.dailyGrowthFactor : '1.2925'}×/gün</span>
             </div>
             <div class="cms-row"><span>Günlük Kâr Oranı:</span><b style="color:#38bdf8;">+%${em ? em.dailyGrowthRatePct : '29.25'}</b></div>
             <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#38bdf8;">${formatCurrency(em ? em.finalTheoreticalBank : 110125.16, curr)}</b></div>
             <div class="cms-row"><span>Toplam Çarpan:</span><b>${em ? em.totalGrowthMultiplier : '2202.5'}×</b></div>
-            <div class="cms-row"><span>Rezerv / Kontrol:</span><b class="good">%50 / OK</b></div>
+            <div class="cms-row"><span>Kasa Dağılımı:</span><b class="good">%50 Rezerv + 3 Kol (OK)</b></div>
           </div>
         </div>
       </div>
@@ -468,9 +475,9 @@
       }
 
       const tPt = trajData.targetPoints && trajData.targetPoints[day];
-      const cPt = trajData.trajectories && trajData.trajectories.cautious && trajData.trajectories.cautious.dayPoints[day];
-      const bPt = trajData.trajectories && trajData.trajectories.balanced && trajData.trajectories.balanced.dayPoints[day];
-      const aPt = trajData.trajectories && trajData.trajectories.aggressive && trajData.trajectories.aggressive.dayPoints[day];
+      const minPt = trajData.trajectories && (trajData.trajectories.minimum || trajData.trajectories.cautious) && (trajData.trajectories.minimum || trajData.trajectories.cautious).dayPoints[day];
+      const medPt = trajData.trajectories && (trajData.trajectories.medium || trajData.trajectories.balanced) && (trajData.trajectories.medium || trajData.trajectories.balanced).dayPoints[day];
+      const highPt = trajData.trajectories && (trajData.trajectories.high || trajData.trajectories.aggressive) && (trajData.trajectories.high || trajData.trajectories.aggressive).dayPoints[day];
       const emData = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
       const emPt = emData && emData.dayPoints && emData.dayPoints[day];
 
@@ -479,19 +486,19 @@
         ptTarget.setAttribute('cy', getY(tPt.targetBank));
         ptTarget.style.display = 'block';
       }
-      if (ptCau && cPt) {
+      if (ptCau && minPt) {
         ptCau.setAttribute('cx', xPos);
-        ptCau.setAttribute('cy', getY(cPt.median));
+        ptCau.setAttribute('cy', getY(minPt.median));
         ptCau.style.display = 'block';
       }
-      if (ptBal && bPt) {
+      if (ptBal && medPt) {
         ptBal.setAttribute('cx', xPos);
-        ptBal.setAttribute('cy', getY(bPt.median));
+        ptBal.setAttribute('cy', getY(medPt.median));
         ptBal.style.display = 'block';
       }
-      if (ptAgg && aPt) {
+      if (ptAgg && highPt) {
         ptAgg.setAttribute('cx', xPos);
-        ptAgg.setAttribute('cy', getY(aPt.median));
+        ptAgg.setAttribute('cy', getY(highPt.median));
         ptAgg.style.display = 'block';
       }
       if (ptExcel && emPt) {
@@ -501,18 +508,18 @@
       }
 
       const tVal = tPt ? formatCurrency(tPt.targetBank, curr) : '-';
-      const cVal = cPt ? formatCurrency(cPt.median, curr) : '-';
-      const bVal = bPt ? formatCurrency(bPt.median, curr) : '-';
-      const aVal = aPt ? formatCurrency(aPt.median, curr) : '-';
+      const minVal = minPt ? formatCurrency(minPt.median, curr) : '-';
+      const medVal = medPt ? formatCurrency(medPt.median, curr) : '-';
+      const highVal = highPt ? formatCurrency(highPt.median, curr) : '-';
       const emVal = emPt ? formatCurrency(emPt.theoreticalBank, curr) : '-';
 
       tracker.innerHTML = `
         <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
         <span>🎯 Hedef: <b>${tVal}</b></span>
-        <span>🟢 Temkinli: <b>${cVal}</b></span>
-        <span>🔵 Dengeli: <b>${bVal}</b></span>
-        <span>🔴 Agresif: <b style="color:#ef4444;">${aVal}</b></span>
-        <span>📐 Excel: <b style="color:#38bdf8;">${emVal}</b></span>
+        <span>🟢 Minimum Risk (%30): <b>${minVal}</b></span>
+        <span>🔵 Orta Risk (%15): <b>${medVal}</b></span>
+        <span>🔴 Yüksek Risk (%5): <b style="color:#ef4444;">${highVal}</b></span>
+        <span>📐 Çok Kollu (Excel): <b style="color:#38bdf8;">${emVal}</b></span>
       `;
     }
 
@@ -650,7 +657,9 @@
 
     const metrics = PE.getPlanMetrics(paperState);
     const curr = paperState.settings.currency || 'EUR';
-    const prof = PE.RISK_PROFILES[paperState.settings.riskProfile] || PE.RISK_PROFILES.cautious;
+    const rawProfKey = paperState.settings.riskProfile || 'minimum';
+    const profKey = (rawProfKey === 'cautious' ? 'minimum' : rawProfKey === 'balanced' ? 'medium' : rawProfKey === 'aggressive' ? 'high' : rawProfKey);
+    const prof = PE.RISK_PROFILES[profKey] || PE.RISK_PROFILES.minimum;
 
     // Simülasyonu hesapla (eğer çalıştırılmamışsa veya eski ise)
     if (!paperState.simulation || !paperState.simulation.result) {
@@ -684,7 +693,7 @@
       <div class="plan-header-card">
         <div class="plan-title-row">
           <div>
-            <h2>Sanal Kasa Planım · ${esc(prof.name)} Profil</h2>
+            <h2>Sanal Kasa Planım · ${esc(prof.name)}</h2>
             <div class="plan-sub">Başlangıç: ${dmy(paperState.plan.startDate)} · ${metrics.durationDays} Günlük Plan (${metrics.elapsedDays}. Gün / ${metrics.remainingDays} Gün Kaldı)</div>
           </div>
           <div class="plan-status-badge ${metrics.status.code}">
@@ -844,31 +853,39 @@
           </div>
 
           <div class="form-group" style="margin-top:16px;">
-            <label>Genel Risk Toleransı *</label>
+            <label>Kasa Modeli &amp; Risk Toleransı *</label>
             <div class="risk-cards">
               <label class="risk-card active">
-                <input type="radio" name="setupRisk" value="cautious" checked>
+                <input type="radio" name="setupRisk" value="minimum" checked>
                 <div class="r-head">
-                  <b>Temkinli / Minimum Risk (Varsayılan)</b>
-                  <span class="r-badge b-cautious">Düşük Risk</span>
+                  <b>🟢 Minimum Risk (Kol 1)</b>
+                  <span class="r-badge b-min">Pay: %30,0 · 1,25x</span>
                 </div>
-                <p>Sermaye koruma odaklı. %75 Kasa Rezervinde kalır, %20 Minimum Risk koluna (0.5 Üst), %5 Orta Risk koluna ayrılır.</p>
+                <p>Toplam kasanın %30'u riske edilir. 1,25x hedef oran (5 adet 0,5 üstü maç). Kasanın %70'i güvence kasasında kalır.</p>
               </label>
               <label class="risk-card">
-                <input type="radio" name="setupRisk" value="balanced">
+                <input type="radio" name="setupRisk" value="medium">
                 <div class="r-head">
-                  <b>Dengeli / Medium</b>
-                  <span class="r-badge b-balanced">Dengeli</span>
+                  <b>🔵 Orta Risk (Kol 2)</b>
+                  <span class="r-badge b-med">Pay: %15,0 · 1,70x</span>
                 </div>
-                <p>Büyüme ve koruma dengesi. %50 Kasa Rezervi, %30 Minimum Risk, %16 Orta Risk, %4 Yüksek Risk.</p>
+                <p>Toplam kasanın %15'i riske edilir. 1,70x hedef oran (3 adet 1,5 üstü maç). Kasanın %85'i güvence kasasında kalır.</p>
               </label>
               <label class="risk-card">
-                <input type="radio" name="setupRisk" value="aggressive">
+                <input type="radio" name="setupRisk" value="high">
                 <div class="r-head">
-                  <b>Agresif</b>
-                  <span class="r-badge b-aggressive">Yüksek Varyans</span>
+                  <b style="color:#f87171;">🔴 Yüksek Risk (Kol 3)</b>
+                  <span class="r-badge b-high">Pay: %5,0 · 3,25x</span>
                 </div>
-                <p>Yüksek getiri & yüksek çekilme riski. %35 Kasa Rezervi, %40 Minimum Risk, %18 Orta Risk, %7 Yüksek Risk.</p>
+                <p>Toplam kasanın %5'i riske edilir. 3,25x hedef oran (3 adet 2,5 üstü maç). Kasanın %95'i güvence kasasında kalır.</p>
+              </label>
+              <label class="risk-card">
+                <input type="radio" name="setupRisk" value="multi">
+                <div class="r-head">
+                  <b style="color:#38bdf8;">📐 Çok Kollu Model (Excel Standart)</b>
+                  <span class="r-badge b-excel">3 Kol · Günlük +%29.25</span>
+                </div>
+                <p>Betavus Kasa Modeli 1: %50 Rezerv + 3 Bahis Kolu bir arada (%30 Min + %15 Orta + %5 Yüksek). Günlük büyüme katsayısı: 1.2925x.</p>
               </label>
             </div>
           </div>
@@ -985,7 +1002,7 @@
         const duration = parseInt(document.getElementById('setupDuration')?.value, 10);
         const curr = document.getElementById('setupCurrency')?.value || 'EUR';
         const riskRadio = document.querySelector('input[name="setupRisk"]:checked');
-        const risk = riskRadio ? riskRadio.value : 'cautious';
+        const risk = riskRadio ? riskRadio.value : 'minimum';
         const errEl = document.getElementById('setupFormError');
 
         const errors = [];
@@ -1136,8 +1153,9 @@
     if (!pane) return;
 
     const matches = window.__data || [];
-    const profKey = (paperState && paperState.settings && paperState.settings.riskProfile) || 'cautious';
-    const prof = PE.RISK_PROFILES[profKey] || PE.RISK_PROFILES.cautious;
+    const rawProfKey = (paperState && paperState.settings && paperState.settings.riskProfile) || 'minimum';
+    const profKey = (rawProfKey === 'cautious' ? 'minimum' : rawProfKey === 'balanced' ? 'medium' : rawProfKey === 'aggressive' ? 'high' : rawProfKey);
+    const prof = PE.RISK_PROFILES[profKey] || PE.RISK_PROFILES.minimum;
     const available = (paperState && paperState.plan && paperState.plan.availableBalance) || 50;
     const curr = (paperState && paperState.settings && paperState.settings.currency) || 'EUR';
 
@@ -1153,10 +1171,10 @@
       <div class="rec-header">
         <div>
           <h2>Kişiselleştirilmiş Kupon Önerileri</h2>
-          <p>Seçili Risk Profiliniz: <b>${esc(prof.name)}</b> (%${Math.round(prof.reservePct * 100)} Rezervde · Kullanılabilir: ${formatCurrency(available, curr)})</p>
+          <p>Seçili Kasa Modeliniz: <b>${esc(prof.name)}</b> (%${Math.round(prof.reservePct * 100)} Rezervde · Kullanılabilir: ${formatCurrency(available, curr)})</p>
         </div>
         <div class="rec-actions">
-          <button class="btn-sec" id="btnRecChangeRisk" type="button">⚙️ Risk Profilini Değiştir</button>
+          <button class="btn-sec" id="btnRecChangeRisk" type="button">⚙️ Kasa Modelini Değiştir</button>
         </div>
       </div>
 
@@ -1321,10 +1339,10 @@
     const btnChangeRisk = document.getElementById('btnRecChangeRisk');
     if (btnChangeRisk) {
       btnChangeRisk.onclick = () => {
-        const pKeys = Object.keys(PE.RISK_PROFILES);
-        const cur = (paperState && paperState.settings.riskProfile) || 'cautious';
-        const next = cur === 'cautious' ? 'balanced' : cur === 'balanced' ? 'aggressive' : 'cautious';
-        if (confirm(`Risk profilinizi "${PE.RISK_PROFILES[next].name}" olarak değiştirmek istiyor musunuz?`)) {
+        const rawCur = (paperState && paperState.settings.riskProfile) || 'minimum';
+        const cur = (rawCur === 'cautious' ? 'minimum' : rawCur === 'balanced' ? 'medium' : rawCur === 'aggressive' ? 'high' : rawCur);
+        const next = cur === 'minimum' ? 'medium' : cur === 'medium' ? 'high' : cur === 'high' ? 'multi' : 'minimum';
+        if (confirm(`Kasa modelinizi "${PE.RISK_PROFILES[next].name}" olarak değiştirmek istiyor musunuz?`)) {
           if (!paperState) paperState = PE.createInitialState();
           paperState.settings.riskProfile = next;
           saveState();
@@ -1344,7 +1362,7 @@
     editingSlip = {
       id: isNew ? `slip-${Date.now().toString(36)}` : slipOrRec.id,
       source: slipOrRec.source || (isNew ? 'recommended' : 'user'),
-      riskProfile: (paperState && paperState.settings && paperState.settings.riskProfile) || slipOrRec.riskProfile || 'cautious',
+      riskProfile: (paperState && paperState.settings && paperState.settings.riskProfile) || slipOrRec.riskProfile || 'minimum',
       couponClass: slipOrRec.couponClass || 'medium',
       stake: slipOrRec.stake != null ? Number(slipOrRec.stake) : (slipOrRec.recommendedStake || 10),
       actualOdds: slipOrRec.actualOdds || null,

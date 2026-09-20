@@ -20,7 +20,7 @@
     "base_lam_home": 1.359,
     "base_lam_away": 0.717,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "market": {
       "o25_odds": 1.9,
       "u25_odds": 1.82,
@@ -29,42 +29,6 @@
       "d": 4.02,
       "a": 6.09,
       "edge25": -0.1453
-    }
-  },
-  {
-    "match_id": "SA-2026-09-20-01",
-    "league_id": 135,
-    "league": "Serie A",
-    "kickoff_utc": "2026-09-20T16:00:00Z",
-    "home": "Juventus",
-    "away": "Atalanta",
-    "source": "openfootball/football.json",
-    "basis": "form+h2h",
-    "h2h_matches_used": 6,
-    "lam_home": 1.389,
-    "lam_away": 1.079,
-    "exp_goals": 2.468,
-    "rho": -0.03,
-    "p_over_0_5": 0.9114,
-    "p_over_1_5": 0.7099,
-    "p_over_2_5": 0.4479,
-    "label": "HIGH",
-    "base_lam_home": 1.389,
-    "base_lam_away": 1.079,
-    "base_rho": -0.03,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
-    "live": {
-      "status": "71'",
-      "score": "1-0"
-    },
-    "market": {
-      "o25_odds": 1.82,
-      "u25_odds": 1.92,
-      "o25_implied": 0.5134,
-      "h": 1.69,
-      "d": 3.77,
-      "a": 4.84,
-      "edge25": -0.0655
     }
   },
   {
@@ -88,9 +52,9 @@
     "base_lam_home": 1.492,
     "base_lam_away": 1.317,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "HT",
+      "status": "60'",
       "score": "0-1"
     },
     "market": {
@@ -124,10 +88,10 @@
     "base_lam_home": 1.876,
     "base_lam_away": 1.189,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "HT",
-      "score": "1-1"
+      "status": "65'",
+      "score": "2-1"
     },
     "market": {
       "o25_odds": 1.46,
@@ -160,9 +124,9 @@
     "base_lam_home": 1.364,
     "base_lam_away": 1.139,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "29'",
+      "status": "HT",
       "score": "0-0"
     },
     "market": {
@@ -196,9 +160,9 @@
     "base_lam_home": 1.275,
     "base_lam_away": 0.93,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "29'",
+      "status": "HT",
       "score": "0-0"
     },
     "market": {
@@ -232,9 +196,9 @@
     "base_lam_home": 2.247,
     "base_lam_away": 0.92,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "30'",
+      "status": "HT",
       "score": "2-0"
     },
     "market": {
@@ -268,9 +232,9 @@
     "base_lam_home": 1.642,
     "base_lam_away": 1.701,
     "base_rho": -0.12,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "live": {
-      "status": "29'",
+      "status": "HT",
       "score": "1-0"
     },
     "market": {
@@ -304,7 +268,11 @@
     "base_lam_home": 2.078,
     "base_lam_away": 1.586,
     "base_rho": -0.08,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
+    "live": {
+      "status": "24'",
+      "score": "0-0"
+    },
     "market": {
       "o25_odds": 1.4,
       "u25_odds": 2.86,
@@ -316,7 +284,7 @@
     }
   },
   {
-    "match_id": "SA-2026-09-20-02",
+    "match_id": "SA-2026-09-20-01",
     "league_id": 135,
     "league": "Serie A",
     "kickoff_utc": "2026-09-20T18:45:00Z",
@@ -336,7 +304,7 @@
     "base_lam_home": 1.344,
     "base_lam_away": 1.128,
     "base_rho": -0.03,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "market": {
       "o25_odds": 1.63,
       "u25_odds": 2.21,
@@ -368,7 +336,7 @@
     "base_lam_home": 1.715,
     "base_lam_away": 1.564,
     "base_rho": -0.05,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "market": {
       "o25_odds": 1.36,
       "u25_odds": 3.01,
@@ -408,7 +376,7 @@
     "base_lam_home": 1.37,
     "base_lam_away": 1.41,
     "base_rho": -0.01,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "market": {
       "o25_odds": 1.88,
       "u25_odds": 1.85,
@@ -447,7 +415,7 @@
     "base_lam_home": 1.286,
     "base_lam_away": 1.755,
     "base_rho": 0.02,
-    "updated_at": "2026-09-20T17:31:15.507040+00:00",
+    "updated_at": "2026-09-20T17:55:03.131777+00:00",
     "market": {
       "o25_odds": 1.81,
       "u25_odds": 1.92,

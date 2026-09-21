@@ -587,6 +587,127 @@ def main():
         assert json_roundtrip['hasPlan'] is True
         print("  ✓ JSON dışa ve içe aktarma şema doğrulaması başarılı.")
 
+        # ----------------------------------------------------------------------
+        # TEST 11: Gerçekçi Piyasa Oranları & 30 Günlük Geçmiş Simülasyon Motoru
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 11: Realistic Market Odds & 30-Day Simulation Engine ---")
+        sim_res = page.evaluate("""async () => {
+            const PE = window.BETAVUS_PAPER;
+            let resData = (window.RESULTS && window.RESULTS.matches) ? window.RESULTS.matches : [];
+            if (!resData.length) {
+                const fetched = await fetch('data/results.json').then(r => r.json()).catch(() => null);
+                if (fetched && fetched.matches) {
+                    resData = fetched.matches;
+                    window.RESULTS = fetched;
+                }
+            }
+            
+            // Oran kalibrasyonu testi
+            const dummyMatch = { p_over_0_5: 0.96, p_over_1_5: 0.88, p_over_2_5: 0.76 };
+            const o05 = PE.calculateEstimatedLegOdds(dummyMatch, '0.5 Üst');
+            const o15 = PE.calculateEstimatedLegOdds(dummyMatch, '1.5 Üst');
+            const o25 = PE.calculateEstimatedLegOdds(dummyMatch, '2.5 Üst');
+
+            const sim = PE.generate30DayHistoricalSimulation(resData, { startingBank: 50.0 });
+            return {
+                odds: { o05, o15, o25 },
+                simWindow: sim.simulationWindow,
+                startingBank: sim.startingBank,
+                profiles: {
+                    minimum: {
+                        couponsCount: sim.profiles.minimum.coupons.length,
+                        ledgerCount: sim.profiles.minimum.ledger.length,
+                        firstStake: sim.profiles.minimum.coupons[0] ? sim.profiles.minimum.coupons[0].stake : 0,
+                        firstOdds: sim.profiles.minimum.coupons[0] ? sim.profiles.minimum.coupons[0].totalOdds : 0,
+                        finalBank: sim.profiles.minimum.stats.finalBank,
+                        reservePct: sim.profiles.minimum.reservePct,
+                        stakePct: sim.profiles.minimum.stakePct
+                    },
+                    medium: {
+                        couponsCount: sim.profiles.medium.coupons.length,
+                        ledgerCount: sim.profiles.medium.ledger.length,
+                        firstStake: sim.profiles.medium.coupons[0] ? sim.profiles.medium.coupons[0].stake : 0,
+                        firstOdds: sim.profiles.medium.coupons[0] ? sim.profiles.medium.coupons[0].totalOdds : 0,
+                        finalBank: sim.profiles.medium.stats.finalBank,
+                        reservePct: sim.profiles.medium.reservePct,
+                        stakePct: sim.profiles.medium.stakePct
+                    },
+                    high: {
+                        couponsCount: sim.profiles.high.coupons.length,
+                        ledgerCount: sim.profiles.high.ledger.length,
+                        firstStake: sim.profiles.high.coupons[0] ? sim.profiles.high.coupons[0].stake : 0,
+                        firstOdds: sim.profiles.high.coupons[0] ? sim.profiles.high.coupons[0].totalOdds : 0,
+                        finalBank: sim.profiles.high.stats.finalBank,
+                        reservePct: sim.profiles.high.reservePct,
+                        stakePct: sim.profiles.high.stakePct
+                    }
+                }
+            };
+        }""")
+
+        odds = sim_res['odds']
+        print(f"  Piyasa Kalibre Oranlar -> 0.5 Üst: {odds['o05']}, 1.5 Üst: {odds['o15']}, 2.5 Üst: {odds['o25']}")
+        assert 1.03 <= odds['o05'] <= 1.07, f"0.5 Üst oranı gerçekçi aralıkta değil: {odds['o05']}"
+        assert 1.16 <= odds['o15'] <= 1.25, f"1.5 Üst oranı gerçekçi aralıkta değil: {odds['o15']}"
+        assert 1.42 <= odds['o25'] <= 1.68, f"2.5 Üst oranı gerçekçi aralıkta değil: {odds['o25']}"
+        print("  ✓ Gerçekçi internet bahis oranları kalibrasyonu doğrulandı.")
+
+        win = sim_res['simWindow']
+        print(f"  Simülasyon Penceresi: {win['startDate']} - {win['endDate']} ({win['totalDays']} gün, {win['matchesInWindow']} maç)")
+        assert win['totalDays'] == 31
+        assert win['matchesInWindow'] >= 400
+        assert sim_res['startingBank'] == 50.0
+
+        for p_name in ['minimum', 'medium', 'high']:
+            p_data = sim_res['profiles'][p_name]
+            assert p_data['couponsCount'] == 31, f"{p_name} için 31 kupon bekleniyordu"
+            assert p_data['ledgerCount'] == 31, f"{p_name} için 31 muhasebe satırı bekleniyordu"
+            print(f"  ✓ {p_name.upper()} profili: 31 kupon, 31 çizelge satırı, Final Kasa: {p_data['finalBank']} EUR")
+
+        # ----------------------------------------------------------------------
+        # TEST 12: 30 Günlük Geçmiş Simülasyon UI & Alt Görünümler
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 12: 30-Day Historical Simulation UI & Subviews ---")
+        # Plan sekmesine geri dön
+        page.click("#tab-plan")
+        time.sleep(0.5)
+
+        # Plan üst navigasyon butonlarını doğrula
+        btn_active = page.query_selector("#btnPmnActive")
+        btn_sim30 = page.query_selector("#btnPmnSim30")
+        assert btn_active is not None, "#btnPmnActive butonu bulunamadı"
+        assert btn_sim30 is not None, "#btnPmnSim30 butonu bulunamadı"
+
+        # 30 Günlük Simülasyon butonuna tıkla
+        page.click("#btnPmnSim30")
+        page.wait_for_selector(".sim30-kpi-card", timeout=8000)
+
+        assert "active" in page.get_attribute("#btnPmnSim30", "class")
+        sim_kpi_cards = page.query_selector_all(".sim30-kpi-card")
+        print(f"  Simülasyon KPI Kartları Sayısı: {len(sim_kpi_cards)}")
+        assert len(sim_kpi_cards) == 3
+
+        # SVG grafiğini kontrol et
+        assert page.query_selector("#sim30Svg") is not None, "#sim30Svg grafiği render edilmedi"
+
+        # Kuponlarım simülasyon kartlarını doğrula
+        sim_cpn_cards = page.query_selector_all(".sim30-cpn-card")
+        print(f"  Simülasyon Kupon Kartı Sayısı: {len(sim_cpn_cards)}")
+        assert len(sim_cpn_cards) == 31
+
+        # Kasa Muhasebe Çizelgesi sekmesine tıkla
+        page.click("#btnSim30TabLedger")
+        page.wait_for_selector("#sim30SubtabContent .sim30-table tbody tr", timeout=5000)
+        ledger_rows = page.query_selector_all("#sim30SubtabContent .sim30-table tbody tr")
+        print(f"  Simülasyon Muhasebe Çizelgesi Satır Sayısı: {len(ledger_rows)}")
+        assert len(ledger_rows) == 31
+
+        # Tekrar Aktif Plana dön
+        page.click("#btnPmnActive")
+        page.wait_for_selector("#planChartCard", timeout=5000)
+        assert page.query_selector("#planChartCard") is not None
+        print("  ✓ 30 Günlük Geçmiş Kasa ve Kuponlarım Simülasyon panosu, KPI kartları, kupon listesi ve muhasebe tablosu başarıyla doğrulandı.")
+
         browser.close()
         print("\n========================================================")
         print(">>> TÜM PAPER-BETTING VE ŞARTNAME TESTLERİ BAŞARIYLA GEÇTİ! <<<")

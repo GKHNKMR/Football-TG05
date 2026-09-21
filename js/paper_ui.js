@@ -24,6 +24,12 @@
   let currentChartMode = 'all'; // 'all' | 'cautious' | 'balanced' | 'aggressive'
   let cachedTrajData = null;
 
+  let planSubView = 'active'; // 'active' | 'sim30'
+  let sim30ActiveProfile = 'minimum'; // 'minimum' | 'medium' | 'high' | 'all'
+  let sim30ActiveSubtab = 'coupons'; // 'coupons' | 'ledger'
+  let sim30Data = null;
+  let fetchingResultsPromise = null;
+
   // ---------------------------------------------------------------------------
   // Yardımcı Biçimlendirme Fonksiyonları
   // ---------------------------------------------------------------------------
@@ -608,6 +614,664 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 30 Günlük Geçmiş Kasa & Kuponlarım Simülasyonu (50 € Örnek Model)
+  // ---------------------------------------------------------------------------
+
+  function renderPlanMainNavHtml() {
+    return `
+      <div class="plan-main-nav">
+        <button type="button" class="plan-main-nav-btn ${planSubView === 'active' ? 'active' : ''}" id="btnPmnActive">
+          🎯 Aktif Kasa Planım &amp; Yönetim
+        </button>
+        <button type="button" class="plan-main-nav-btn ${planSubView === 'sim30' ? 'active' : ''}" id="btnPmnSim30">
+          ⚡ 30 Günlük Geçmiş Kasa &amp; Kuponlarım Simülasyonu (50 € Örnek Model)
+        </button>
+      </div>
+    `;
+  }
+
+  function wirePlanNavEvents() {
+    const btnActive = document.getElementById('btnPmnActive');
+    const btnSim30 = document.getElementById('btnPmnSim30');
+    if (btnActive) {
+      btnActive.onclick = () => {
+        if (planSubView !== 'active') {
+          planSubView = 'active';
+          renderPlanPane();
+        }
+      };
+    }
+    if (btnSim30) {
+      btnSim30.onclick = () => {
+        if (planSubView !== 'sim30') {
+          planSubView = 'sim30';
+          renderPlanPane();
+        }
+      };
+    }
+  }
+
+  function getOrGenerateSim30Data(callback) {
+    if (sim30Data) {
+      callback(sim30Data);
+      return;
+    }
+
+    let matchesList = null;
+    if (typeof RESULTS !== 'undefined' && RESULTS && Array.isArray(RESULTS.matches) && RESULTS.matches.length > 0) {
+      matchesList = RESULTS.matches;
+    } else if (typeof window !== 'undefined' && window.RESULTS && Array.isArray(window.RESULTS.matches) && window.RESULTS.matches.length > 0) {
+      matchesList = window.RESULTS.matches;
+    }
+
+    if (matchesList) {
+      sim30Data = PE.generate30DayHistoricalSimulation(matchesList, { startingBank: 50.0 });
+      callback(sim30Data);
+      return;
+    }
+
+    if (!fetchingResultsPromise) {
+      fetchingResultsPromise = fetch('data/results.json?ts=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          const list = (data && Array.isArray(data.matches)) ? data.matches : [];
+          sim30Data = PE.generate30DayHistoricalSimulation(list, { startingBank: 50.0 });
+          return sim30Data;
+        })
+        .catch(err => {
+          console.error('Failed to load results.json for 30-day simulation:', err);
+          sim30Data = PE.generate30DayHistoricalSimulation([], { startingBank: 50.0 });
+          return sim30Data;
+        });
+    }
+
+    fetchingResultsPromise.then(res => {
+      callback(res);
+    });
+  }
+
+  function render30DaySimulationViewHtml(simData) {
+    if (!simData || !simData.profiles) {
+      return `
+        <div class="card" style="padding:24px;text-align:center;color:var(--muted);">
+          Simülasyon verisi yüklenemedi. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.
+        </div>
+      `;
+    }
+
+    const minProf = simData.profiles.minimum;
+    const medProf = simData.profiles.medium;
+    const highProf = simData.profiles.high;
+    const win = simData.simulationWindow;
+
+    const activeProfData = simData.profiles[sim30ActiveProfile] || minProf;
+
+    return `
+      <div class="paper-disclaimer">
+        <span class="p-badge">30 GÜNLÜK GEÇMİŞ SİMÜLASYON MODELİ</span>
+        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Aşağıdaki model, <b>${dmy(win.startDate)} – ${dmy(win.endDate)}</b> tarihleri arasında oynanmış <b>${win.matchesInWindow} adet gerçek maç</b> ve gerçek skorlar ile Avrupa bahis piyasası oranları üzerinden çalıştırılmış 30 günlük disiplinli kasa &amp; kupon simülasyonudur.</p>
+        <div class="p-quote">« 50 € Başlangıç Kasası · 3 Risk Modeli · Gerçek Maçlar · Disiplinli Kasa Rezervi »</div>
+      </div>
+
+      <div class="sim30-hero-card">
+        <div class="sim30-hero-title">
+          <div>
+            <h3>📈 30 Günlük Geçmiş Kasa Büyümesi &amp; Kuponlarım Simülasyonu</h3>
+            <div class="sim30-desc">
+              Başlangıç Kasası: <b>50,00 €</b> · Dönem: <b>${dmy(win.startDate)} – ${dmy(win.endDate)} (${win.totalDays} Gün)</b> · Maç Havuzu: <b>${win.matchesInWindow} Resmi Maç</b>
+            </div>
+          </div>
+          <div class="sim30-badges">
+            <span class="sim30-badge">🇪🇺 Avrupa Gerçek Piyasa Oranları</span>
+            <span class="sim30-badge">🛡️ Korumalı Kasa Rezervi</span>
+            <span class="sim30-badge">📊 Excel Modeli Uyumlu</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Profili Seçim & KPI Grid Kartları -->
+      <div class="sim30-kpi-grid">
+        <!-- Minimum Risk Kartı -->
+        <div class="sim30-kpi-card minimum ${sim30ActiveProfile === 'minimum' ? 'active-card' : ''}" data-prof="minimum">
+          <div class="sim30-kpi-head">
+            <b style="color:#10b981;font-size:13px;">🟢 Minimum Risk (%50 Rezerv)</b>
+            <span class="r-badge b-min">5x 0.5 Üst · ~1.25x</span>
+          </div>
+          <div class="sim30-kpi-rows">
+            <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
+            <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#10b981;font-size:13px;">${formatCurrency(minProf.stats.finalBank, 'EUR')}</b></div>
+            <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${minProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${minProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(minProf.stats.totalNetProfit, 'EUR')} (${minProf.stats.totalRoiPct >= 0 ? '+' : ''}%${minProf.stats.totalRoiPct})</b></div>
+            <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${minProf.stats.wonCoupons} / ${minProf.stats.totalCoupons} (%${minProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(minProf.stats.reserveBank, 'EUR')} / ${formatCurrency(minProf.stats.activeBank, 'EUR')}</span></div>
+            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${minProf.stats.maxDrawdownPct}</b></div>
+          </div>
+        </div>
+
+        <!-- Orta Risk Kartı -->
+        <div class="sim30-kpi-card medium ${sim30ActiveProfile === 'medium' ? 'active-card' : ''}" data-prof="medium">
+          <div class="sim30-kpi-head">
+            <b style="color:#38bdf8;font-size:13px;">🔵 Orta Risk (%35 Rezerv)</b>
+            <span class="r-badge b-med">3x 1.5 Üst · ~1.70x</span>
+          </div>
+          <div class="sim30-kpi-rows">
+            <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
+            <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#38bdf8;font-size:13px;">${formatCurrency(medProf.stats.finalBank, 'EUR')}</b></div>
+            <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${medProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${medProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(medProf.stats.totalNetProfit, 'EUR')} (${medProf.stats.totalRoiPct >= 0 ? '+' : ''}%${medProf.stats.totalRoiPct})</b></div>
+            <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${medProf.stats.wonCoupons} / ${medProf.stats.totalCoupons} (%${medProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(medProf.stats.reserveBank, 'EUR')} / ${formatCurrency(medProf.stats.activeBank, 'EUR')}</span></div>
+            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${medProf.stats.maxDrawdownPct}</b></div>
+          </div>
+        </div>
+
+        <!-- Yüksek Risk Kartı -->
+        <div class="sim30-kpi-card high ${sim30ActiveProfile === 'high' ? 'active-card' : ''}" data-prof="high">
+          <div class="sim30-kpi-head">
+            <b style="color:#ef4444;font-size:13px;">🔴 Yüksek Risk (%25 Rezerv)</b>
+            <span class="r-badge b-high">3x 2.5 Üst · ~3.25x</span>
+          </div>
+          <div class="sim30-kpi-rows">
+            <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
+            <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#ef4444;font-size:13px;">${formatCurrency(highProf.stats.finalBank, 'EUR')}</b></div>
+            <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${highProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${highProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(highProf.stats.totalNetProfit, 'EUR')} (${highProf.stats.totalRoiPct >= 0 ? '+' : ''}%${highProf.stats.totalRoiPct})</b></div>
+            <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${highProf.stats.wonCoupons} / ${highProf.stats.totalCoupons} (%${highProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(highProf.stats.reserveBank, 'EUR')} / ${formatCurrency(highProf.stats.activeBank, 'EUR')}</span></div>
+            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${highProf.stats.maxDrawdownPct}</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 30 Günlük Kasa Gelişim Grafiği (SVG) -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div>
+            <h4 style="margin:0;font-size:14px;color:var(--text);">📊 30 Günlük Kasa Büyüme Patikası &amp; Gerçekleşen Eğri</h4>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+              50 € başlangıç sermayesiyle 31 günlük gerçek kupon neticelerine göre oluşan kasanın günlük hareketi.
+            </div>
+          </div>
+          <div class="chart-mode-pills" id="sim30ChartPills">
+            <button type="button" class="cmp-btn ${sim30ActiveProfile === 'minimum' ? 'active' : ''}" data-prof="minimum">🟢 Minimum</button>
+            <button type="button" class="cmp-btn ${sim30ActiveProfile === 'medium' ? 'active' : ''}" data-prof="medium">🔵 Orta</button>
+            <button type="button" class="cmp-btn ${sim30ActiveProfile === 'high' ? 'active' : ''}" data-prof="high">🔴 Yüksek</button>
+            <button type="button" class="cmp-btn ${sim30ActiveProfile === 'all' ? 'active' : ''}" data-prof="all">🌈 Hepsini Karşılaştır</button>
+          </div>
+        </div>
+        <div id="sim30ChartContainer" class="chart-svg-box">
+          ${render30DaySimulationSvg(simData, sim30ActiveProfile)}
+        </div>
+      </div>
+
+      <!-- Alt Sekmeler: Kuponlarım Simülasyonu & Kasa Muhasebe Çizelgesi -->
+      <div class="sim30-subtabs-bar">
+        <button type="button" class="sim30-subtab ${sim30ActiveSubtab === 'coupons' ? 'active' : ''}" id="btnSim30TabCoupons">
+          🎫 Kuponlarım Simülasyonu (${activeProfData.coupons.length} Günlük Kupon)
+        </button>
+        <button type="button" class="sim30-subtab ${sim30ActiveSubtab === 'ledger' ? 'active' : ''}" id="btnSim30TabLedger">
+          📊 Kasa Muhasebe Çizelgesi (31 Gün Finansal Tablo)
+        </button>
+      </div>
+
+      <!-- Alt Sekme İçeriği -->
+      <div id="sim30SubtabContent">
+        ${sim30ActiveSubtab === 'coupons'
+          ? render30DayCouponsListHtml(simData, sim30ActiveProfile)
+          : render30DayLedgerTableHtml(simData, sim30ActiveProfile)}
+      </div>
+    `;
+  }
+
+  function render30DayCouponsListHtml(simData, activeProfile) {
+    const profKey = (activeProfile === 'all' || !simData.profiles[activeProfile]) ? 'minimum' : activeProfile;
+    const prof = simData.profiles[profKey];
+    if (!prof || !prof.coupons) return '';
+
+    return `
+      <div class="sim30-coupon-list">
+        ${prof.coupons.map(cpn => `
+          <div class="sim30-cpn-card">
+            <div class="sim30-cpn-head">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-weight:800;font-size:13px;color:var(--text);">Gün ${cpn.day} · ${dmy(cpn.date)}</span>
+                <span class="r-badge ${profKey === 'minimum' ? 'b-min' : profKey === 'medium' ? 'b-med' : 'b-high'}">${esc(prof.name)}</span>
+                <span style="font-size:11px;color:var(--muted);">Hedef Pazar: <b>${esc(cpn.targetMarket)}</b> (${prof.legCount} Maç)</span>
+              </div>
+              <div>
+                <span class="c-badge ${cpn.status === 'won' ? 'won' : 'lost'}" style="font-size:12px;padding:3px 10px;font-weight:700;">
+                  ${cpn.status === 'won' ? '✅ KAZANDI' : '❌ KAYBETTİ'}
+                </span>
+              </div>
+            </div>
+
+            <div class="sim30-cpn-stats">
+              <div>Güne Başlangıç: <b>${formatCurrency(cpn.startBank, 'EUR')}</b></div>
+              <div>Rezerv Kasa: <b>${formatCurrency(cpn.reserveBank, 'EUR')}</b></div>
+              <div>Kullanılabilir Aktif: <b>${formatCurrency(cpn.activeBank, 'EUR')}</b></div>
+              <div>Kupon Stake (%${prof.stakePct}): <b>${formatCurrency(cpn.stake, 'EUR')}</b></div>
+              <div>Kupon Oranı: <b style="color:#38bdf8;">${cpn.totalOdds.toFixed(2)}x</b></div>
+              <div>Net Getiri: <b class="${cpn.netProfit >= 0 ? 'good' : 'bad'}">${cpn.netProfit >= 0 ? '+' : ''}${formatCurrency(cpn.netProfit, 'EUR')}</b></div>
+              <div>Gün Sonu Kasa: <b style="color:var(--accent);font-size:12px;">${formatCurrency(cpn.endBank, 'EUR')}</b></div>
+              <div>Günlük Değişim: <b class="${cpn.dailyChangePct >= 0 ? 'good' : 'bad'}">${cpn.dailyChangePct >= 0 ? '+' : ''}%${cpn.dailyChangePct}</b></div>
+            </div>
+
+            <div class="tbl-scroll" style="overflow-x:auto;">
+              <table class="sim30-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Lig</th>
+                    <th>Karşılaşma</th>
+                    <th>Başlama</th>
+                    <th>Tahmin / Pazar</th>
+                    <th>Piyasa Oranı</th>
+                    <th>Biten Skor</th>
+                    <th>Toplam Gol</th>
+                    <th>Sonuç</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${cpn.legs.map((leg, lIdx) => `
+                    <tr>
+                      <td>${lIdx + 1}</td>
+                      <td>${flag(leg.league)} ${esc(leg.league)}</td>
+                      <td><b>${esc(leg.home)}</b> vs <b>${esc(leg.away)}</b></td>
+                      <td style="color:var(--muted);">${timeStr(leg.kickoff_utc)}</td>
+                      <td><span class="line-badge">${esc(leg.market)}</span></td>
+                      <td><b style="color:#38bdf8;">${leg.odds.toFixed(2)}</b></td>
+                      <td><b>${leg.realScore || (leg.homeGoals != null ? `${leg.homeGoals} - ${leg.awayGoals}` : '—')}</b></td>
+                      <td>${leg.totalGoals != null ? `${leg.totalGoals} Gol` : '—'}</td>
+                      <td>
+                        <span class="${leg.isWon ? 'good' : 'bad'}" style="font-weight:700;">
+                          ${leg.isWon ? '✅ Geldi' : '❌ Yatış'}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function render30DayLedgerTableHtml(simData, activeProfile) {
+    const profKey = (activeProfile === 'all' || !simData.profiles[activeProfile]) ? 'minimum' : activeProfile;
+    const prof = simData.profiles[profKey];
+    if (!prof) return '';
+
+    return `
+      <div class="card" style="padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <h4 style="margin:0;font-size:14px;">📋 ${esc(prof.name)} · 31 Günlük Kasa Muhasebe Çizelgesi</h4>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+              Rezerv Oranı: <b>%${prof.reservePct}</b> · Kupon Stake Oranı: <b>%${prof.stakePct}</b> · Pazar: <b>${esc(prof.market)} (${prof.legCount} Maç)</b>
+            </div>
+          </div>
+          <span class="r-badge ${profKey === 'minimum' ? 'b-min' : profKey === 'medium' ? 'b-med' : 'b-high'}">
+            Kapanış Kasası: ${formatCurrency(prof.stats.finalBank, 'EUR')} (${prof.stats.totalRoiPct >= 0 ? '+' : ''}%${prof.stats.totalRoiPct})
+          </span>
+        </div>
+
+        <div class="tbl-scroll" style="max-height:480px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;">
+          <table class="sim30-table" style="font-size:11.5px;">
+            <thead>
+              <tr>
+                <th>Gün</th>
+                <th>Tarih</th>
+                <th>Başlangıç Kasa</th>
+                <th>Rezerv Kasa</th>
+                <th>Aktif Kasa</th>
+                <th>Stake</th>
+                <th>Kupon Oranı</th>
+                <th>Kupon Durumu</th>
+                <th>Net Kâr/Zarar</th>
+                <th>Gün Sonu Kasa</th>
+                <th>Günlük Değişim</th>
+                <th>Teorik Hedef Kasa</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${prof.ledger.map(row => `
+                <tr style="${row.status === 'won' ? 'background:rgba(16,185,129,0.03);' : 'background:rgba(239,68,68,0.03);'}">
+                  <td><b>${row.day}</b></td>
+                  <td>${dmy(row.date)}</td>
+                  <td>${formatCurrency(row.startBank, 'EUR')}</td>
+                  <td><span style="color:var(--muted);">${formatCurrency(row.reserveBank, 'EUR')}</span></td>
+                  <td>${formatCurrency(row.activeBank, 'EUR')}</td>
+                  <td><b>${formatCurrency(row.stake, 'EUR')}</b></td>
+                  <td><b style="color:#38bdf8;">${row.odds.toFixed(2)}x</b></td>
+                  <td>
+                    <span class="c-badge ${row.status === 'won' ? 'won' : 'lost'}" style="font-size:10px;padding:2px 6px;">
+                      ${row.status === 'won' ? '✅ Kazandı' : '❌ Kaybetti'}
+                    </span>
+                  </td>
+                  <td>
+                    <b class="${row.netProfit >= 0 ? 'good' : 'bad'}">
+                      ${row.netProfit >= 0 ? '+' : ''}${formatCurrency(row.netProfit, 'EUR')}
+                    </b>
+                  </td>
+                  <td>
+                    <b style="color:var(--text);">${formatCurrency(row.endBank, 'EUR')}</b>
+                  </td>
+                  <td>
+                    <span class="${row.dailyChangePct >= 0 ? 'good' : 'bad'}" style="font-weight:700;">
+                      ${row.dailyChangePct >= 0 ? '+' : ''}%${row.dailyChangePct}
+                    </span>
+                  </td>
+                  <td>
+                    <span style="color:#f59e0b;font-weight:600;">${formatCurrency(row.theoreticalTarget, 'EUR')}</span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--panel2);font-weight:800;border-top:2px solid var(--line);">
+                <td colspan="2">TOPLAM ÖZET</td>
+                <td>${formatCurrency(prof.stats.startingBank, 'EUR')}</td>
+                <td>${formatCurrency(prof.stats.reserveBank, 'EUR')}</td>
+                <td>${formatCurrency(prof.stats.activeBank, 'EUR')}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>${prof.stats.wonCoupons} K / ${prof.stats.lostCoupons} Y (%${prof.stats.winRatePct})</td>
+                <td>
+                  <b class="${prof.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">
+                    ${prof.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(prof.stats.totalNetProfit, 'EUR')}
+                  </b>
+                </td>
+                <td style="color:var(--accent);font-size:13px;">
+                  ${formatCurrency(prof.stats.finalBank, 'EUR')}
+                </td>
+                <td>
+                  <span class="${prof.stats.totalRoiPct >= 0 ? 'good' : 'bad'}">
+                    ${prof.stats.totalRoiPct >= 0 ? '+' : ''}%${prof.stats.totalRoiPct}
+                  </span>
+                </td>
+                <td>—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5;">
+          🛡️ <b>Kasa Yönetim Notu:</b> ${esc(prof.name)} modelinde her gün kasanın %${prof.reservePct}'si (dokunulmaz sermaye tabanı) korunmuştur. Kupon yatması halinde bile kasa sıfırlanmaz, sonraki günün stake tutarı geriye kalan toplam kasanın %${prof.stakePct}'si olarak otomatik küçülür.
+        </div>
+      </div>
+    `;
+  }
+
+  function render30DaySimulationSvg(simData, activeProfile) {
+    if (!simData || !simData.profiles) return '';
+
+    const W = 820;
+    const H = 340;
+    const L = 65;
+    const R = 30;
+    const T = 30;
+    const B = 40;
+    const pw = W - L - R;
+    const ph = H - T - B;
+
+    const totalDays = (simData.simulationWindow && simData.simulationWindow.totalDays) || 31;
+    const getX = (d) => L + (d / totalDays) * pw;
+
+    // Find maxY
+    let maxVal = 70;
+    const profilesToCheck = (activeProfile === 'all' || !activeProfile)
+      ? ['minimum', 'medium', 'high']
+      : [activeProfile];
+
+    profilesToCheck.forEach(k => {
+      const prof = simData.profiles[k];
+      if (!prof) return;
+      (prof.ledger || []).forEach(pt => {
+        if (pt.endBank) maxVal = Math.max(maxVal, pt.endBank);
+        if (pt.theoreticalTarget && activeProfile !== 'all') {
+          maxVal = Math.max(maxVal, Math.min(pt.theoreticalTarget, 400));
+        }
+      });
+    });
+
+    const maxY = Math.ceil(Math.max(70, maxVal * 1.12) / 10) * 10;
+    const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
+
+    // Grid lines
+    let gridLines = '';
+    const numYSteps = 5;
+    const yStepVal = maxY / numYSteps;
+    for (let i = 0; i <= numYSteps; i++) {
+      const v = Math.round(i * yStepVal);
+      const yPos = getY(v);
+      gridLines += `
+        <line x1="${L}" y1="${yPos.toFixed(1)}" x2="${W - R}" y2="${yPos.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <text x="${(L - 8).toFixed(1)}" y="${(yPos + 3.5).toFixed(1)}" fill="var(--muted)" font-size="10" text-anchor="end" font-family="inherit">${formatCurrency(v, 'EUR')}</text>
+      `;
+    }
+
+    // X axis day guides
+    let xGuides = '';
+    const xSteps = [0, 7, 14, 21, totalDays];
+    for (const d of xSteps) {
+      const xPos = getX(d);
+      xGuides += `
+        <line x1="${xPos.toFixed(1)}" y1="${T}" x2="${xPos.toFixed(1)}" y2="${(T + ph).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <text x="${xPos.toFixed(1)}" y="${(T + ph + 16).toFixed(1)}" fill="var(--muted)" font-size="10.5" text-anchor="middle" font-family="inherit">${d === 0 ? '0. Gün' : `${d}. Gün`}</text>
+      `;
+    }
+
+    // Curves
+    const profStyles = {
+      minimum: { stroke: '#10b981', fill: 'rgba(16,185,129,0.12)', gradId: 'gradSimMin', name: 'Minimum Risk' },
+      medium: { stroke: '#38bdf8', fill: 'rgba(56,189,248,0.12)', gradId: 'gradSimMed', name: 'Orta Risk' },
+      high: { stroke: '#ef4444', fill: 'rgba(239,68,68,0.14)', gradId: 'gradSimHigh', name: 'Yüksek Risk' }
+    };
+
+    let curvesSvg = '';
+    let dotsSvg = '';
+
+    profilesToCheck.forEach(profKey => {
+      const prof = simData.profiles[profKey];
+      if (!prof || !prof.ledger) return;
+      const st = profStyles[profKey] || profStyles.minimum;
+
+      // Realized curve
+      let pathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
+      let areaD = `M ${getX(0).toFixed(1)},${(T + ph).toFixed(1)} L ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
+
+      prof.ledger.forEach(pt => {
+        const px = getX(pt.day).toFixed(1);
+        const py = getY(pt.endBank).toFixed(1);
+        pathD += ` L ${px},${py}`;
+        areaD += ` L ${px},${py}`;
+
+        dotsSvg += `
+          <circle class="sim30-dot" cx="${px}" cy="${py}" r="3.5" fill="${st.stroke}" stroke="#0b1120" stroke-width="1.5"
+            data-day="${pt.day}" data-date="${pt.date}" data-prof="${prof.name}" data-bank="${pt.endBank}" data-change="${pt.dailyChangePct}" data-status="${pt.status}"
+            style="cursor:pointer;transition:r .15s;" />
+        `;
+      });
+
+      areaD += ` L ${getX(totalDays).toFixed(1)},${(T + ph).toFixed(1)} Z`;
+
+      curvesSvg += `
+        <path d="${areaD}" fill="url(#${st.gradId})" opacity="${activeProfile === 'all' ? 0.35 : 0.5}"/>
+        <path d="${pathD}" fill="none" stroke="${st.stroke}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      `;
+
+      // Draw theoretical curve if single profile selected
+      if (activeProfile !== 'all') {
+        let theoPathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
+        prof.ledger.forEach(pt => {
+          const px = getX(pt.day).toFixed(1);
+          const py = getY(Math.min(pt.theoreticalTarget, maxY)).toFixed(1);
+          theoPathD += ` L ${px},${py}`;
+        });
+        curvesSvg += `
+          <path d="${theoPathD}" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="4,4" opacity="0.7"/>
+        `;
+      }
+    });
+
+    return `
+      <svg viewBox="0 0 ${W} ${H}" class="trajectory-svg" id="sim30Svg" style="width:100%;height:auto;display:block;user-select:none;">
+        <defs>
+          <linearGradient id="gradSimMin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+          </linearGradient>
+          <linearGradient id="gradSimMed" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
+          </linearGradient>
+          <linearGradient id="gradSimHigh" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Arka Plan Kılavuz Çizgileri -->
+        ${gridLines}
+        ${xGuides}
+
+        <!-- 50 Euro Başlangıç Kılavuzu -->
+        <line x1="${L}" y1="${getY(50.0).toFixed(1)}" x2="${W - R}" y2="${getY(50.0).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-dasharray="2,2"/>
+        <text x="${(W - R).toFixed(1)}" y="${(getY(50.0) - 5).toFixed(1)}" fill="var(--muted)" font-size="9.5" text-anchor="end" font-family="inherit">Başlangıç: 50,00 €</text>
+
+        <!-- Eğriler ve Alanlar -->
+        ${curvesSvg}
+        ${dotsSvg}
+
+        <!-- İnteraktif Tooltip Kutusu -->
+        <g id="sim30ChartTooltip" opacity="0" pointer-events="none">
+          <rect id="sim30TooltipBg" x="0" y="0" width="160" height="62" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.5))"/>
+          <text id="sim30TtTitle" x="0" y="0" fill="#94a3b8" font-size="10" font-weight="700" font-family="inherit"></text>
+          <text id="sim30TtVal" x="0" y="0" fill="#38bdf8" font-size="12" font-weight="800" font-family="inherit"></text>
+          <text id="sim30TtSub" x="0" y="0" fill="#94a3b8" font-size="9.5" font-family="inherit"></text>
+        </g>
+      </svg>
+    `;
+  }
+
+  function wire30DaySimulationEvents(simData) {
+    // KPI kart tıklamaları -> aktif profili değiştir
+    document.querySelectorAll('.sim30-kpi-card').forEach(card => {
+      card.onclick = () => {
+        const prof = card.dataset.prof;
+        if (prof) {
+          sim30ActiveProfile = prof;
+          const pane = document.getElementById('pane-plan');
+          if (pane) {
+            pane.innerHTML = `
+              ${renderPlanMainNavHtml()}
+              ${render30DaySimulationViewHtml(simData)}
+            `;
+            wirePlanNavEvents();
+            wire30DaySimulationEvents(simData);
+          }
+        }
+      };
+    });
+
+    // Grafik üstü profil filtreleme butonları
+    document.querySelectorAll('#sim30ChartPills .cmp-btn').forEach(btn => {
+      btn.onclick = () => {
+        const prof = btn.dataset.prof;
+        if (prof) {
+          sim30ActiveProfile = prof;
+          const pane = document.getElementById('pane-plan');
+          if (pane) {
+            pane.innerHTML = `
+              ${renderPlanMainNavHtml()}
+              ${render30DaySimulationViewHtml(simData)}
+            `;
+            wirePlanNavEvents();
+            wire30DaySimulationEvents(simData);
+          }
+        }
+      };
+    });
+
+    // Subtab butonları: Kuponlarım vs Kasa Muhasebe Çizelgesi
+    const btnCpn = document.getElementById('btnSim30TabCoupons');
+    const btnLedger = document.getElementById('btnSim30TabLedger');
+    const contentEl = document.getElementById('sim30SubtabContent');
+
+    if (btnCpn && contentEl) {
+      btnCpn.onclick = () => {
+        sim30ActiveSubtab = 'coupons';
+        btnCpn.classList.add('active');
+        if (btnLedger) btnLedger.classList.remove('active');
+        contentEl.innerHTML = render30DayCouponsListHtml(simData, sim30ActiveProfile);
+      };
+    }
+    if (btnLedger && contentEl) {
+      btnLedger.onclick = () => {
+        sim30ActiveSubtab = 'ledger';
+        btnLedger.classList.add('active');
+        if (btnCpn) btnCpn.classList.remove('active');
+        contentEl.innerHTML = render30DayLedgerTableHtml(simData, sim30ActiveProfile);
+      };
+    }
+
+    // Grafik tooltip olayları
+    const svgEl = document.getElementById('sim30Svg');
+    if (svgEl) {
+      wire30DaySimulationChartEvents(svgEl);
+    }
+  }
+
+  function wire30DaySimulationChartEvents(svgEl) {
+    const tooltip = svgEl.querySelector('#sim30ChartTooltip');
+    const ttBg = svgEl.querySelector('#sim30TooltipBg');
+    const ttTitle = svgEl.querySelector('#sim30TtTitle');
+    const ttVal = svgEl.querySelector('#sim30TtVal');
+    const ttSub = svgEl.querySelector('#sim30TtSub');
+    if (!tooltip || !ttBg || !ttTitle || !ttVal || !ttSub) return;
+
+    const dots = svgEl.querySelectorAll('.sim30-dot');
+    dots.forEach(dot => {
+      dot.onmouseenter = () => {
+        const cx = parseFloat(dot.getAttribute('cx'));
+        const cy = parseFloat(dot.getAttribute('cy'));
+        const day = dot.dataset.day;
+        const date = dmy(dot.dataset.date);
+        const prof = dot.dataset.prof;
+        const bank = formatCurrency(dot.dataset.bank, 'EUR');
+        const change = parseFloat(dot.dataset.change);
+        const status = dot.dataset.status === 'won' ? '✅ Kupon Kazandı' : '❌ Kupon Kaybetti';
+
+        dot.setAttribute('r', '6');
+
+        ttTitle.textContent = `Gün ${day} · ${date} (${prof})`;
+        ttVal.textContent = `Kasa: ${bank}`;
+        ttSub.textContent = `${status} (${change >= 0 ? '+' : ''}%${change})`;
+
+        let boxX = cx + 12;
+        let boxY = cy - 35;
+        if (boxX + 170 > 820) boxX = cx - 175;
+        if (boxY < 10) boxY = 10;
+
+        ttBg.setAttribute('x', boxX);
+        ttBg.setAttribute('y', boxY);
+        ttTitle.setAttribute('x', boxX + 10);
+        ttTitle.setAttribute('y', boxY + 16);
+        ttVal.setAttribute('x', boxX + 10);
+        ttVal.setAttribute('y', boxY + 34);
+        ttSub.setAttribute('x', boxX + 10);
+        ttSub.setAttribute('y', boxY + 50);
+
+        tooltip.setAttribute('opacity', '1');
+      };
+
+      dot.onmouseleave = () => {
+        dot.setAttribute('r', '3.5');
+        tooltip.setAttribute('opacity', '0');
+      };
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Kasa Planım Ekranı (#pane-plan)
   // ---------------------------------------------------------------------------
 
@@ -615,8 +1279,33 @@
     const pane = document.getElementById('pane-plan');
     if (!pane) return;
 
+    if (planSubView === 'sim30') {
+      pane.innerHTML = `
+        ${renderPlanMainNavHtml()}
+        <div class="sim30-loading" style="padding:48px 24px;text-align:center;color:var(--muted);">
+          <div style="font-size:24px;margin-bottom:8px;">⏳</div>
+          <div>30 Günlük Geçmiş Kasa ve Kupon Simülasyonu Hazırlanıyor...</div>
+        </div>
+      `;
+      wirePlanNavEvents();
+      getOrGenerateSim30Data((data) => {
+        if (planSubView !== 'sim30') return;
+        pane.innerHTML = `
+          ${renderPlanMainNavHtml()}
+          ${render30DaySimulationViewHtml(data)}
+        `;
+        wirePlanNavEvents();
+        wire30DaySimulationEvents(data);
+      });
+      return;
+    }
+
     if (!paperState || !paperState.plan) {
-      pane.innerHTML = renderPlanSetupHtml();
+      pane.innerHTML = `
+        ${renderPlanMainNavHtml()}
+        ${renderPlanSetupHtml()}
+      `;
+      wirePlanNavEvents();
       wirePlanSetupEvents();
       return;
     }
@@ -650,6 +1339,8 @@
     cachedTrajData = trajData;
 
     pane.innerHTML = `
+      ${renderPlanMainNavHtml()}
+
       <div class="paper-disclaimer">
         <span class="p-badge">SANAL KASA SİMÜLASYONU</span>
         <p><b>BETAVUS</b> bahis kabul etmez, ödeme almaz ve kupon oynatmaz. Gösterilen kasa, stake ve getiriler sanaldır. Tahminler olasılıksaldır ve sonuç garantisi vermez.</p>
@@ -990,6 +1681,8 @@
   }
 
   function wirePlanDashboardEvents() {
+    wirePlanNavEvents();
+
     const chartCard = document.getElementById('planChartCard');
     if (chartCard && cachedTrajData && paperState && paperState.plan) {
       const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
@@ -1994,7 +2687,10 @@
     renderRecPane,
     renderCouponsPane,
     triggerSettlementCheck,
-    openCouponEditor
+    openCouponEditor,
+    getSim30Data: () => sim30Data,
+    getPlanSubView: () => planSubView,
+    setPlanSubView: (v) => { planSubView = v; renderPlanPane(); }
   };
 
   // Sayfa yüklendiğinde otomatik başlat

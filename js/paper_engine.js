@@ -98,16 +98,16 @@
       color: '#10b981',
       armKey: 'minRiskArmPct',
       stakePct: 0.50,
-      targetOdds: 1.30,
+      targetOdds: 1.25,
       note: '5 adet 0,5 ustu mac',
       market: 'over_0_5',
       line: '0.5',
       marketLabel: '0.5 Üst',
       propKey: 'p_over_0_5',
-      minModelProb: 0.95,
+      minModelProb: 0.94,
       maxLegs: 5,
-      fallbackOdds: 1.30,
-      desc: '5 adet 0,5 üstü maç (≥ %95 model güveni, %50 kasa payı, %15 günlük büyüme)'
+      fallbackOdds: 1.25,
+      desc: '5 adet 0,5 üstü maç (≥ %94 model güveni, %50 kasa rezervi, %15 günlük büyüme hedefi, ~1.25x)'
     },
     medium: {
       id: 'medium',
@@ -116,16 +116,16 @@
       color: '#3b82f6',
       armKey: 'midRiskArmPct',
       stakePct: 0.65,
-      targetOdds: 1.50,
+      targetOdds: 1.70,
       note: '3 adet 1,5 ustu mac',
       market: 'over_1_5',
       line: '1.5',
       marketLabel: '1.5 Üst',
       propKey: 'p_over_1_5',
-      minModelProb: 0.85,
+      minModelProb: 0.82,
       maxLegs: 3,
-      fallbackOdds: 1.50,
-      desc: '3 adet 1,5 üstü maç (≥ %85 model güveni, %65 kasa payı, %20 günlük büyüme)'
+      fallbackOdds: 1.70,
+      desc: '3 adet 1,5 üstü maç (≥ %82 model güveni, %35 kasa rezervi, %20 günlük büyüme hedefi, ~1.70x)'
     },
     high: {
       id: 'high',
@@ -134,16 +134,16 @@
       color: '#ef4444',
       armKey: 'highRiskArmPct',
       stakePct: 0.75,
-      targetOdds: 2.00,
+      targetOdds: 3.25,
       note: '3 adet 2,5 ustu mac',
       market: 'over_2_5',
       line: '2.5',
       marketLabel: '2.5 Üst',
       propKey: 'p_over_2_5',
-      minModelProb: 0.75,
+      minModelProb: 0.65,
       maxLegs: 3,
-      fallbackOdds: 2.00,
-      desc: '3 adet 2,5 üstü maç (≥ %75 model güveni, %75 kasa payı, %25 günlük büyüme)'
+      fallbackOdds: 3.25,
+      desc: '3 adet 2,5 üstü maç (≥ %65 model güveni, %25 kasa rezervi, %25 günlük büyüme hedefi, ~3.25x)'
     }
   };
 
@@ -194,16 +194,68 @@
     return round(p, 4);
   }
 
-  function calculateEstimatedLegOdds(selection) {
+  function calculateEstimatedLegOdds(selection, optMarket) {
     if (!selection) return 1.0;
-    // 1. Piyasa oranı mevcut ve geçerliyse
+
+    let prob = selection.probability;
+    let mkt = optMarket || selection.market || selection.marketKey;
+
+    if (optMarket) {
+      if (optMarket === '0.5 Üst' || optMarket === 'over_0_5' || optMarket === '0.5') {
+        prob = selection.p_over_0_5 ?? selection.probability ?? 0.95;
+        mkt = 'over_0_5';
+      } else if (optMarket === '1.5 Üst' || optMarket === 'over_1_5' || optMarket === '1.5') {
+        prob = selection.p_over_1_5 ?? selection.probability ?? 0.85;
+        mkt = 'over_1_5';
+      } else if (optMarket === '2.5 Üst' || optMarket === 'over_2_5' || optMarket === '2.5') {
+        prob = selection.p_over_2_5 ?? selection.probability ?? 0.75;
+        mkt = 'over_2_5';
+      }
+    }
+
+    // 1. Piyasa oranı veya tahmini oran önceden set edilmişse öncelikle kullan
     if (selection.marketOdds && Number(selection.marketOdds) > 1.0) {
       return round(Number(selection.marketOdds), 2);
     }
-    // 2. Model adil oranı = 1 / p
-    const prob = Number(selection.probability);
+    if (selection.estimatedLegOdds && Number(selection.estimatedLegOdds) > 1.0) {
+      return round(Number(selection.estimatedLegOdds), 2);
+    }
+
+    prob = Number(prob);
+    if (!mkt) {
+      mkt = selection.line === '0.5' ? 'over_0_5' : selection.line === '1.5' ? 'over_1_5' : selection.line === '2.5' ? 'over_2_5' : 'over_0_5';
+    }
+
+    // 2. İnternet bahis piyasası normları (Bet365 / Pinnacle) ve overround marjı (%5)
+    if (mkt === 'over_0_5' || mkt === '0.5' || mkt === '0.5 Üst') {
+      // 0.5 Üst: Dünya genelinde tipik olarak 1.03 - 1.06 aralığı (5 maç birleştiğinde ~1.22x - 1.28x)
+      if (prob > 0 && prob <= 1.0) {
+        const raw = 0.98 / prob;
+        return round(Math.max(1.03, Math.min(1.06, raw)), 2);
+      }
+      return 1.05;
+    }
+
+    if (mkt === 'over_1_5' || mkt === '1.5' || mkt === '1.5 Üst') {
+      // 1.5 Üst: Dünya genelinde tipik olarak 1.16 - 1.25 aralığı (3 maç birleştiğinde ~1.60x - 1.75x)
+      if (prob > 0 && prob <= 1.0) {
+        const raw = 0.95 / prob;
+        return round(Math.max(1.16, Math.min(1.25, raw)), 2);
+      }
+      return 1.20;
+    }
+
+    if (mkt === 'over_2_5' || mkt === '2.5' || mkt === '2.5 Üst') {
+      // 2.5 Üst: Yüksek gol beklentili takımlarda tipik olarak 1.42 - 1.68 aralığı (3 maç birleştiğinde ~2.85x - 3.35x)
+      if (prob > 0 && prob <= 1.0) {
+        const raw = 0.92 / prob;
+        return round(Math.max(1.42, Math.min(1.68, raw)), 2);
+      }
+      return 1.50;
+    }
+
     if (prob > 0 && prob <= 1.0) {
-      return round(1.0 / prob, 2);
+      return round(0.95 / prob, 2);
     }
     return 1.0;
   }
@@ -1491,7 +1543,386 @@
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Dışa Aktarılan Arayüz
+  // 10. 30 Günlük Geçmiş Kasa ve Kuponlarım Simülasyonu (50 € Örnek Model)
+  // ---------------------------------------------------------------------------
+
+  function generate30DayHistoricalSimulation(matchesList, options = {}) {
+    const startBank = Math.max(1, Number(options.startingBank) || 50);
+    const startDate = options.startDate || '2026-08-21';
+    const endDate = options.endDate || '2026-09-20';
+    const curr = options.currency || 'EUR';
+
+    const matches = Array.isArray(matchesList) ? matchesList : [];
+
+    // Tarih aralığındaki maçları filtrele
+    const windowMatches = matches.filter(m => {
+      const dt = (m.kickoff_utc || m.date || '').slice(0, 10);
+      return dt >= startDate && dt <= endDate;
+    });
+
+    // Benzersiz sıralı tarihleri topla
+    const dateSet = new Set();
+    windowMatches.forEach(m => {
+      const dt = (m.kickoff_utc || m.date || '').slice(0, 10);
+      if (dt) dateSet.add(dt);
+    });
+    const sortedDates = Array.from(dateSet).sort();
+
+    // 3 Profil için simülasyon konfigürasyonu
+    const profileConfigs = [
+      {
+        key: 'minimum',
+        name: 'Minimum Risk',
+        badgeClass: 'b-min',
+        color: '#10b981',
+        reservePct: 0.50,
+        stakePct: 0.30, // Excel Kasa Modeli 1: Pay %30 (Kasa rezervi %50 dokunulmaz)
+        dailyGrowthRate: 0.15,
+        dailyFactor: 1.15,
+        market: 'over_0_5',
+        marketLabel: '0.5 Üst',
+        hitKey: 'hit_05',
+        propKey: 'p_over_0_5',
+        minProb: 0.90,
+        maxLegs: 5,
+        targetOdds: 1.25,
+        note: '5 adet 0,5 ustu mac'
+      },
+      {
+        key: 'medium',
+        name: 'Orta Risk',
+        badgeClass: 'b-med',
+        color: '#3b82f6',
+        reservePct: 0.35,
+        stakePct: 0.15, // Excel Kasa Modeli 1: Pay %15 (Kasa rezervi %35 dokunulmaz)
+        dailyGrowthRate: 0.20,
+        dailyFactor: 1.20,
+        market: 'over_1_5',
+        marketLabel: '1.5 Üst',
+        hitKey: 'hit_15',
+        propKey: 'p_over_1_5',
+        minProb: 0.78,
+        maxLegs: 3,
+        targetOdds: 1.70,
+        note: '3 adet 1,5 ustu mac'
+      },
+      {
+        key: 'high',
+        name: 'Yüksek Risk',
+        badgeClass: 'b-high',
+        color: '#ef4444',
+        reservePct: 0.25,
+        stakePct: 0.05, // Excel Kasa Modeli 1: Pay %5 (Kasa rezervi %25 dokunulmaz)
+        dailyGrowthRate: 0.25,
+        dailyFactor: 1.25,
+        market: 'over_2_5',
+        marketLabel: '2.5 Üst',
+        hitKey: 'hit_25',
+        propKey: 'p_over_2_5',
+        minProb: 0.58,
+        maxLegs: 3,
+        targetOdds: 3.25,
+        note: '3 adet 2,5 ustu mac'
+      }
+    ];
+
+    const models = {};
+
+    profileConfigs.forEach(cfg => {
+      let bank = startBank;
+      const days = [];
+      const trajPoints = [{
+        day: 0,
+        date: startDate,
+        bank: startBank,
+        theoreticalBank: startBank,
+        reserveBank: round(startBank * cfg.reservePct, 2),
+        activeBank: round(startBank * (1.0 - cfg.reservePct), 2),
+        status: 'start'
+      }];
+
+      let wonCount = 0;
+      let lostCount = 0;
+      let noBetCount = 0;
+
+      sortedDates.forEach((dStr, dIdx) => {
+        const dayNum = dIdx + 1;
+        const theoBank = round(startBank * Math.pow(cfg.dailyFactor, dayNum), 2);
+        const bankStart = bank;
+        const reserveBank = round(bankStart * cfg.reservePct, 2);
+        const activeBank = round(Math.max(0, bankStart - reserveBank), 2);
+
+        // O günün uygun maçları
+        let dayMatches = windowMatches.filter(m => (m.kickoff_utc || m.date || '').slice(0, 10) === dStr && (Number(m[cfg.propKey]) || 0) >= cfg.minProb);
+        if (dayMatches.length < cfg.maxLegs) {
+          const allDayMatches = windowMatches.filter(m => (m.kickoff_utc || m.date || '').slice(0, 10) === dStr);
+          allDayMatches.sort((a, b) => (Number(b[cfg.propKey]) || 0) - (Number(a[cfg.propKey]) || 0));
+          dayMatches = allDayMatches.slice(0, cfg.maxLegs);
+        } else {
+          dayMatches.sort((a, b) => (Number(b[cfg.propKey]) || 0) - (Number(a[cfg.propKey]) || 0));
+          dayMatches = dayMatches.slice(0, cfg.maxLegs);
+        }
+
+        const selectedMatches = dayMatches;
+
+        if (!selectedMatches.length) {
+          noBetCount++;
+          days.push({
+            day: dayNum,
+            date: dStr,
+            bankStart,
+            reserveBank,
+            activeBank,
+            stake: 0,
+            odds: 1.0,
+            status: 'no_bet',
+            netProfit: 0,
+            bankEnd: bankStart,
+            dailyChangePct: 0,
+            theoreticalBank: theoBank,
+            coupon: null
+          });
+          trajPoints.push({
+            day: dayNum,
+            date: dStr,
+            bank: bankStart,
+            theoreticalBank: theoBank,
+            reserveBank,
+            activeBank,
+            status: 'no_bet'
+          });
+          return;
+        }
+
+        // Bahis tutarı: kasanın yüzdesi (asgari 0.50 € ve aktif kasa ile sınırlı)
+        let stake = round(bankStart * cfg.stakePct, 2);
+        if (stake < 0.50) stake = Math.min(bankStart, 0.50);
+        if (stake > activeBank && activeBank > 0) stake = activeBank;
+
+        let combOdds = 1.0;
+        let couponWon = true;
+        const legs = [];
+
+        selectedMatches.forEach(m => {
+          const prob = Number(m[cfg.propKey]) || 0.90;
+          let legOdds = 1.0;
+          if (cfg.market === 'over_0_5') {
+            legOdds = calculateEstimatedLegOdds({ market: 'over_0_5', probability: prob });
+          } else if (cfg.market === 'over_1_5') {
+            legOdds = calculateEstimatedLegOdds({ market: 'over_1_5', probability: prob });
+          } else {
+            const mktOdds = (m.market && m.market.o25_odds) || m.o25_odds || null;
+            legOdds = calculateEstimatedLegOdds({
+              market: 'over_2_5',
+              probability: prob,
+              marketOdds: (mktOdds && mktOdds >= 1.40 && mktOdds <= 1.68) ? mktOdds : null
+            });
+          }
+          combOdds *= legOdds;
+
+          // Skor ve hit değerlendirmesi
+          let hit = false;
+          if (m.hits && m.hits[cfg.hitKey] != null) {
+            hit = m.hits[cfg.hitKey] === 1;
+          } else if (m.total != null) {
+            const lineNum = cfg.market === 'over_0_5' ? 0.5 : cfg.market === 'over_1_5' ? 1.5 : 2.5;
+            hit = Number(m.total) > lineNum;
+          } else if (m.score) {
+            const parts = String(m.score).split('-');
+            const tot = (parseInt(parts[0], 10) || 0) + (parseInt(parts[1], 10) || 0);
+            const lineNum = cfg.market === 'over_0_5' ? 0.5 : cfg.market === 'over_1_5' ? 1.5 : 2.5;
+            hit = tot > lineNum;
+          }
+
+          if (!hit) couponWon = false;
+
+          legs.push({
+            matchId: m.match_id || `${m.home}-${m.away}`,
+            date: dStr,
+            home: m.home,
+            away: m.away,
+            league: m.league || 'Lig',
+            market: cfg.market,
+            marketLabel: cfg.marketLabel,
+            probability: prob,
+            odds: legOdds,
+            score: m.score || '—',
+            totalGoals: m.total != null ? m.total : null,
+            hit
+          });
+        });
+
+        combOdds = round(combOdds, 2);
+        let netProfit = 0;
+        if (couponWon) {
+          wonCount++;
+          netProfit = round(stake * (combOdds - 1.0), 2);
+          bank = round(bankStart + netProfit, 2);
+        } else {
+          lostCount++;
+          netProfit = -stake;
+          bank = round(Math.max(0.01, bankStart - stake), 2);
+        }
+
+        const dailyChangePct = bankStart > 0 ? round(((bank - bankStart) / bankStart) * 100, 1) : 0;
+
+        const couponObj = {
+          day: dayNum,
+          date: dStr,
+          couponClass: cfg.key,
+          marketLabel: cfg.marketLabel,
+          totalOdds: combOdds,
+          stake,
+          potentialReturn: round(stake * combOdds, 2),
+          netProfit,
+          status: couponWon ? 'won' : 'lost',
+          legs
+        };
+
+        days.push({
+          day: dayNum,
+          date: dStr,
+          bankStart,
+          reserveBank,
+          activeBank,
+          stake,
+          odds: combOdds,
+          status: couponWon ? 'won' : 'lost',
+          netProfit,
+          bankEnd: bank,
+          dailyChangePct,
+          theoreticalBank: theoBank,
+          coupon: couponObj
+        });
+
+        trajPoints.push({
+          day: dayNum,
+          date: dStr,
+          bank,
+          theoreticalBank: theoBank,
+          reserveBank: round(bank * cfg.reservePct, 2),
+          activeBank: round(bank * (1.0 - cfg.reservePct), 2),
+          status: couponWon ? 'won' : 'lost',
+          couponOdds: combOdds,
+          netProfit
+        });
+      });
+
+      const totalCoupons = wonCount + lostCount;
+      const winRatePct = totalCoupons > 0 ? round((wonCount / totalCoupons) * 100, 1) : 0;
+      const totalReturnPct = round(((bank - startBank) / startBank) * 100, 1);
+      const finalTheo = round(startBank * Math.pow(cfg.dailyFactor, sortedDates.length), 2);
+
+      models[cfg.key] = {
+        profileKey: cfg.key,
+        name: cfg.name,
+        badgeClass: cfg.badgeClass,
+        color: cfg.color,
+        reservePct: cfg.reservePct,
+        dailyGrowthRate: cfg.dailyGrowthRate,
+        dailyFactor: cfg.dailyFactor,
+        targetOdds: cfg.targetOdds,
+        startingBank: startBank,
+        finalBank: bank,
+        finalTheoreticalBank: finalTheo,
+        totalReturnPct,
+        wonCount,
+        lostCount,
+        noBetCount,
+        totalCoupons,
+        winRatePct,
+        days,
+        trajectoryPoints: trajPoints
+      };
+    });
+
+    const profiles = {};
+    for (const k of ['minimum', 'medium', 'high']) {
+      if (models[k]) {
+        const m = models[k];
+        const coupons = m.days.filter(d => d.coupon != null).map(d => ({
+          day: d.day,
+          date: d.date,
+          profileId: k,
+          profileName: m.name,
+          targetMarket: k === 'minimum' ? '0.5 Üst' : k === 'medium' ? '1.5 Üst' : '2.5 Üst',
+          stake: d.stake,
+          startBank: d.bankStart,
+          reserveBank: d.reserveBank,
+          activeBank: d.activeBank,
+          legs: d.coupon.legs,
+          totalOdds: d.odds,
+          status: d.status,
+          actualReturn: d.status === 'won' ? round(d.stake * d.odds, 2) : 0,
+          netProfit: d.netProfit,
+          endBank: d.bankEnd,
+          dailyChangePct: d.dailyChangePct
+        }));
+
+        const ledger = m.days.map(d => ({
+          day: d.day,
+          date: d.date,
+          startBank: d.bankStart,
+          reserveBank: d.reserveBank,
+          activeBank: d.activeBank,
+          stake: d.stake,
+          odds: d.odds,
+          status: d.status,
+          netProfit: d.netProfit,
+          endBank: d.bankEnd,
+          dailyChangePct: d.dailyChangePct,
+          theoreticalTarget: d.theoreticalBank
+        }));
+
+        profiles[k] = {
+          id: k,
+          name: m.name,
+          legCount: k === 'minimum' ? 5 : 3,
+          market: k === 'minimum' ? '0.5 Üst' : k === 'medium' ? '1.5 Üst' : '2.5 Üst',
+          reservePct: Math.round(m.reservePct * 100),
+          stakePct: Math.round((k === 'minimum' ? 0.30 : k === 'medium' ? 0.15 : 0.05) * 100),
+          dailyRate: Math.round(m.dailyGrowthRate * 100),
+          stats: {
+            totalCoupons: m.totalCoupons,
+            wonCoupons: m.wonCount,
+            lostCoupons: m.lostCount,
+            winRatePct: m.winRatePct,
+            startingBank: m.startingBank,
+            finalBank: m.finalBank,
+            reserveBank: round(m.finalBank * m.reservePct, 2),
+            activeBank: round(m.finalBank * (1.0 - m.reservePct), 2),
+            totalNetProfit: round(m.finalBank - m.startingBank, 2),
+            totalRoiPct: m.totalReturnPct,
+            maxDrawdownPct: 0
+          },
+          coupons,
+          ledger,
+          days: m.days,
+          trajectoryPoints: m.trajectoryPoints
+        };
+      }
+    }
+
+    return {
+      simulationWindow: {
+        startDate,
+        endDate,
+        totalDays: sortedDates.length,
+        matchesInWindow: windowMatches.length
+      },
+      startDate,
+      endDate,
+      durationDays: sortedDates.length,
+      startingBank: startBank,
+      currency: curr,
+      dates: sortedDates,
+      models,
+      profiles
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 11. Dışa Aktarılan Arayüz
   // ---------------------------------------------------------------------------
 
   return {
@@ -1529,6 +1960,7 @@
     calculatePlanTrajectories,
     calculateExcelGrowthModel,
     generateExcelDailyTable,
+    generate30DayHistoricalSimulation,
     buildAdaptiveOptions,
     createInitialState,
     addSlipToPlan,

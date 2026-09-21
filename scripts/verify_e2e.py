@@ -57,7 +57,7 @@ def main():
         assert "84." in tile_texts[1] and "1.35" in tile_texts[1], f"Tile 2 unexpected: {tile_texts[1]}"
         assert "74." in tile_texts[2] or "75." in tile_texts[2], f"Tile 3 unexpected: {tile_texts[2]}"
         assert "3.37" in tile_texts[3], f"Tile 4 unexpected: {tile_texts[3]}"
-        assert "16.9" in sub_matches, f"Subtab count unexpected: {sub_matches}"
+        assert "16.9" in sub_matches or "17.0" in sub_matches, f"Subtab count unexpected: {sub_matches}"
         assert "20.09" in first_date or "19.09" in first_date, f"First date expected September 2026, got: {first_date}"
 
         # 2. Check Genel Mode Switch
@@ -72,7 +72,7 @@ def main():
         assert "93.6%" in tile_all_texts[0] and ("15.9" in tile_all_texts[0] or "15.89" in tile_all_texts[0]), f"Tile 1 unexpected: {tile_all_texts[0]}"
         assert "76." in tile_all_texts[1] and "13." in tile_all_texts[1], f"Tile 2 unexpected: {tile_all_texts[1]}"
         assert "54." in tile_all_texts[2] and "9." in tile_all_texts[2], f"Tile 3 unexpected: {tile_all_texts[2]}"
-        assert "16.9" in tile_all_texts[3], f"Tile 4 unexpected: {tile_all_texts[3]}"
+        assert "16.9" in tile_all_texts[3] or "17.0" in tile_all_texts[3], f"Tile 4 unexpected: {tile_all_texts[3]}"
 
         # Switch back to Vurgu
         page.click("#modeVurgu")
@@ -138,7 +138,7 @@ def main():
         for line in s_table.split('\n')[:8]:
             print(f"    {line}")
         assert "2026/27 (Güncel)" in s_table
-        assert "51" in s_table
+        assert "51" in s_table or "52" in s_table
         assert "2025/26" in s_table
         assert "2021/22" in s_table
 

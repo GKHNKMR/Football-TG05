@@ -1478,45 +1478,78 @@ function renderBacktest(){
     return;
   }
 
-  // === KPI Cards ===
+  // === KPI Cards — results.json'dan gerçek vurgulanan & tutanlar ===
   const kpiEl=$('btpane-kpi');
   if(kpiEl){
-    const ov=d.overall;
-    kpiEl.innerHTML=MARKETS.map(mk=>{
-      const m=ov.markets[mk.key];
-      if(!m) return '';
-      const total=ov.n_matches;
-      const hiN=m.conf_n||0;            // vurgulanan maç sayısı
-      const hiHits=Math.round(hiN*(m.conf_acc||0)); // tutanlar
-      const hiPct=m.conf_acc!=null?pct1(m.conf_acc):'—';
-      const allPct=m.pick_acc!=null?pct1(m.pick_acc):'—';
+    // results.json maçlarından hesapla: p >= threshold olup gerçekte tutanlar
+    const allMatches = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
+    const totalScored = allMatches.filter(m=>m.total!=null||('-' in (String(m.score||'')))).length || d.overall.n_matches;
+
+    const mkDefs=[
+      {key:'0.5',rKey:'p_over_0_5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95',total_key:'05'},
+      {key:'1.5',rKey:'p_over_1_5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85',total_key:'15'},
+      {key:'2.5',rKey:'p_over_2_5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75',total_key:'25'},
+    ];
+
+    function getMatchTotal(m){
+      if(m.total!=null) return Number(m.total);
+      const sc=String(m.score||'');
+      if(sc.includes('-')){const p=sc.split('-');return (parseInt(p[0])||0)+(parseInt(p[1])||0);}
+      return 0;
+    }
+
+    const ovData=allMatches.length>0 ? allMatches : null;
+
+    kpiEl.innerHTML=mkDefs.map(mk=>{
+      let hiN=0, hiHits=0, totalM=totalScored;
+
+      if(ovData){
+        // Gerçek hesap: sonuclanan maçlardan
+        const scored=ovData.filter(m=>m.total!=null||String(m.score||'').includes('-'));
+        totalM=scored.length;
+        const hiList=scored.filter(m=>Number(m[mk.rKey]||0)>=mk.thr);
+        hiN=hiList.length;
+        hiHits=hiList.filter(m=>getMatchTotal(m)>Number(mk.key)).length;
+      } else {
+        // Fallback: backtest.json calibration bucketından tahmin
+        const bm=d.overall.markets[mk.key];
+        if(bm){ hiN=bm.conf_n||0; hiHits=Math.round(hiN*(bm.conf_acc||0)); }
+      }
+
+      const hiPct = hiN>0 ? ((hiHits/hiN)*100).toFixed(1)+'%' : '—';
+      const hiMiss = hiN - hiHits;
+      const goodColor = mk.key==='0.5'?(hiHits/hiN>=0.95):mk.key==='1.5'?(hiHits/hiN>=0.85):(hiHits/hiN>=0.75);
+
       return `<div class="card" style="border-top:3px solid ${mk.color};padding:16px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
           <span style="font-size:18px;">${mk.emoji}</span>
           <span style="font-weight:900;font-size:14px;color:${mk.color};">${mk.label}</span>
           <span style="margin-left:auto;font-size:10.5px;color:var(--muted);background:var(--panel2);padding:2px 7px;border-radius:99px;">${mk.threshold}</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;">
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--text);">${num(total)}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Toplam Maç</div>
-          </div>
-          <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--text);">${allPct}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Genel Yön İsabeti</div>
+            <div style="font-size:22px;font-weight:900;color:var(--text);">${num(totalM)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Toplam Sonuçlanan Maç</div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
             <div style="font-size:22px;font-weight:900;color:${mk.color};">${num(hiN)}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Vurgulanan Maç <span style="opacity:.7;">(${mk.threshold})</span></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Sistem Vurguladı <span style="opacity:.65;">(${mk.threshold})</span></div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:${mk.color};">${hiPct}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Vurgulanan İsabet</div>
+            <div style="font-size:22px;font-weight:900;color:var(--good);">${num(hiHits)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Tahmin Tuttu ✓</div>
+          </div>
+          <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--bad);">${num(hiMiss)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Tutmadı ✗</div>
           </div>
         </div>
-        <div style="margin-top:10px;font-size:11.5px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:8px 10px;">
-          Vurgulanan ${num(hiN)} maçtan <b style="color:var(--good);">${num(hiHits)}</b> tanesi tuttu
-          &nbsp;·&nbsp; <b style="color:${mk.color};">${hiPct}</b> başarı oranı
+        <div style="background:${mk.color}18;border:1px solid ${mk.color}44;border-radius:10px;padding:10px 14px;text-align:center;">
+          <span style="font-size:28px;font-weight:900;color:${mk.color};">${hiPct}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">Başarı Oranı</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+            ${num(hiN)} vurgulanan maçtan <b style="color:var(--good);">${num(hiHits)}</b> tuttu, <b style="color:var(--bad);">${num(hiMiss)}</b> tutmadı
+          </div>
         </div>
       </div>`;
     }).join('');

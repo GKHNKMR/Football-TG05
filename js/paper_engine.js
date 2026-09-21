@@ -1053,26 +1053,48 @@
     const remainingDays = Math.max(1, Number(options.remainingDays || plan.durationDays || 30));
     const currentBank = options.currentBank != null ? Number(options.currentBank) : startBank;
 
-    const prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
-
-    // Her risk sınıfının olasılık ve ortalama oran girdisi
-    const armConfigs = [
-      {
-        weight: prof.minRiskArmPct,
-        prob: (couponInputs && couponInputs.minimum && couponInputs.minimum.prob) || 0.82,
-        odds: (couponInputs && couponInputs.minimum && couponInputs.minimum.odds) || 1.25
-      },
-      {
-        weight: prof.midRiskArmPct,
-        prob: (couponInputs && couponInputs.medium && couponInputs.medium.prob) || 0.72,
-        odds: (couponInputs && couponInputs.medium && couponInputs.medium.odds) || 1.70
-      },
-      {
-        weight: prof.highRiskArmPct,
-        prob: (couponInputs && couponInputs.high && couponInputs.high.prob) || 0.58,
-        odds: (couponInputs && couponInputs.high && couponInputs.high.odds) || 3.25
-      }
-    ].filter(a => a.weight > 0);
+    let prof = RISK_PROFILES[profileKey] || RISK_PROFILES.minimum;
+    let armConfigs = [];
+    if (profileKey === 'custom' || (plan && plan.customRisk) || (plan && plan.riskProfile === 'custom')) {
+      const cr = (plan && plan.customRisk) || {};
+      let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+      if (rPct > 1) rPct /= 100;
+      let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+      if (sRate > 1) sRate /= 100;
+      const tOdds = Number(cr.targetOdds) || 1.30;
+      prof = {
+        id: 'custom',
+        name: cr.name || 'Özel Risk',
+        reservePct: rPct,
+        dailyStakePct: round((1.0 - rPct) * sRate, 4)
+      };
+      const estProb = Math.max(0.40, Math.min(0.98, round(0.95 / (tOdds * 0.9), 2)));
+      armConfigs = [
+        {
+          weight: 1.0,
+          prob: estProb,
+          odds: tOdds
+        }
+      ];
+    } else {
+      armConfigs = [
+        {
+          weight: prof.minRiskArmPct,
+          prob: (couponInputs && couponInputs.minimum && couponInputs.minimum.prob) || 0.82,
+          odds: (couponInputs && couponInputs.minimum && couponInputs.minimum.odds) || 1.25
+        },
+        {
+          weight: prof.midRiskArmPct,
+          prob: (couponInputs && couponInputs.medium && couponInputs.medium.prob) || 0.72,
+          odds: (couponInputs && couponInputs.medium && couponInputs.medium.odds) || 1.70
+        },
+        {
+          weight: prof.highRiskArmPct,
+          prob: (couponInputs && couponInputs.high && couponInputs.high.prob) || 0.58,
+          odds: (couponInputs && couponInputs.high && couponInputs.high.odds) || 3.25
+        }
+      ].filter(a => a.weight > 0);
+    }
 
     const finalBanks = [];
     let targetHitCount = 0;
@@ -1152,11 +1174,36 @@
     const seed = options.seed != null ? options.seed : 42;
 
     const profileKeys = ['minimum', 'medium', 'high'];
+    if ((plan && plan.customRisk) || (plan && plan.riskProfile === 'custom')) {
+      profileKeys.push('custom');
+    }
     const trajectories = {};
 
     for (let pIdx = 0; pIdx < profileKeys.length; pIdx++) {
       const pKey = profileKeys[pIdx];
-      const prof = RISK_PROFILES[pKey];
+      let prof = RISK_PROFILES[pKey];
+      if (pKey === 'custom') {
+        const cr = (plan && plan.customRisk) || {};
+        let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+        if (rPct > 1) rPct /= 100;
+        let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+        if (sRate > 1) sRate /= 100;
+        let tOdds = Number(cr.targetOdds) || 1.30;
+        const dFactor = round(1 + (1.0 - rPct) * sRate * (tOdds - 1.0), 4);
+        prof = {
+          id: 'custom',
+          name: cr.name || 'Özel Risk',
+          badgeClass: 'b-custom',
+          color: '#a855f7',
+          reservePct: rPct,
+          stakePct: sRate,
+          dailyFactor: dFactor,
+          dailyGrowthRate: round(dFactor - 1.0, 4),
+          minRiskArmPct: 0.5,
+          midRiskArmPct: 0.5,
+          highRiskArmPct: 0
+        };
+      }
       const rng = mulberry32(seed + pIdx * 137);
 
       const armConfigs = [
@@ -1288,7 +1335,24 @@
 
   function calculateExcelGrowthModel(plan, profileKey = 'minimum', customOdds = null) {
     const profKey = (profileKey === 'cautious' ? 'minimum' : (profileKey === 'balanced') ? 'medium' : (profileKey === 'aggressive') ? 'high' : (profileKey === 'multi') ? 'minimum' : profileKey);
-    const prof = RISK_PROFILES[profKey] || RISK_PROFILES.minimum;
+    let prof = RISK_PROFILES[profKey] || RISK_PROFILES.minimum;
+    if (profKey === 'custom' || (plan && plan.customRisk) || (plan && plan.riskProfile === 'custom')) {
+      const cr = (plan && plan.customRisk) || {};
+      let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+      if (rPct > 1) rPct /= 100;
+      let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+      if (sRate > 1) sRate /= 100;
+      let tOdds = Number(cr.targetOdds) || 1.30;
+      const dFactor = round(1 + (1.0 - rPct) * sRate * (tOdds - 1.0), 4);
+      prof = {
+        id: 'custom',
+        name: cr.name || 'Özel Risk',
+        reservePct: rPct,
+        stakePct: sRate,
+        dailyFactor: dFactor,
+        dailyGrowthRate: round(dFactor - 1.0, 4)
+      };
+    }
     const S = Math.max(1, Number(plan && plan.startingBank) || 50);
     const D = Math.max(1, Number(plan && plan.durationDays) || 30);
 
@@ -1342,7 +1406,22 @@
       high:    { name: 'Yüksek Risk',  resPct: 0.25, stakeRate: 0.60, targetOdds: 1.36, color: '#ef4444' }
     };
 
-    const cfg = cfgMap[profKey] || cfgMap.minimum;
+    let cfg = cfgMap[profKey] || cfgMap.minimum;
+    if (profKey === 'custom' || (plan && plan.customRisk) || (plan && plan.riskProfile === 'custom')) {
+      const cr = (plan && plan.customRisk) || {};
+      let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+      if (rPct > 1) rPct /= 100;
+      let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+      if (sRate > 1) sRate /= 100;
+      let tOdds = Number(cr.targetOdds) || 1.30;
+      cfg = {
+        name: cr.name || 'Özel Risk',
+        resPct: rPct,
+        stakeRate: sRate,
+        targetOdds: tOdds,
+        color: '#a855f7'
+      };
+    }
     let bank = S;
     const days = [];
 
@@ -1583,9 +1662,31 @@
     const startBank = Number(planParams.startingBank) || 50;
     const targetBank = Number(planParams.targetBank) || 500;
     const duration = Number(planParams.durationDays) || 30;
+    const customRisk = planParams.customRisk || null;
+
+    const defaultName = (
+      prof === 'custom' ? ((customRisk && customRisk.name) || 'Özel Risk Kasası') :
+      prof === 'medium' ? 'Orta Risk Kasası' :
+      prof === 'high' ? 'Yüksek Risk Kasası' : 'Minimum Risk Kasası'
+    );
+    const planName = planParams.name || defaultName;
 
     const nowIso = new Date().toISOString();
     const planId = `plan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const initialPlan = {
+      id: planId,
+      name: planName,
+      createdAt: nowIso,
+      startDate: nowIso.slice(0, 10),
+      durationDays: duration,
+      startingBank: round(startBank, 2),
+      targetBank: round(targetBank, 2),
+      availableBalance: round(startBank, 2),
+      riskProfile: prof,
+      customRisk,
+      status: 'active'
+    };
 
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -1593,16 +1694,9 @@
         currency: cur,
         riskProfile: prof
       },
-      plan: {
-        id: planId,
-        createdAt: nowIso,
-        startDate: nowIso.slice(0, 10),
-        durationDays: duration,
-        startingBank: round(startBank, 2),
-        targetBank: round(targetBank, 2),
-        availableBalance: round(startBank, 2),
-        status: 'active'
-      },
+      plan: initialPlan,
+      plans: [initialPlan],
+      activePlanId: planId,
       slips: [],
       ledger: [
         {
@@ -1612,7 +1706,7 @@
           amount: round(startBank, 2),
           balanceAfter: round(startBank, 2),
           referenceId: planId,
-          description: `Sanal kasa planı başlatıldı (${startBank} ${cur})`
+          description: `${planName} başlatıldı (${startBank} ${cur})`
         }
       ],
       simulation: {
@@ -1621,6 +1715,121 @@
         result: null
       }
     };
+  }
+
+  function ensurePlansArray(state) {
+    if (!state) return null;
+    if (!state.plans || !Array.isArray(state.plans) || state.plans.length === 0) {
+      if (state.plan) {
+        if (!state.plan.id) state.plan.id = `plan-${Date.now().toString(36)}`;
+        if (!state.plan.name) {
+          const r = (state.plan.riskProfile) || (state.settings && state.settings.riskProfile) || 'minimum';
+          const rName = r === 'medium' ? 'Orta Risk' : r === 'high' ? 'Yüksek Risk' : r === 'custom' ? 'Özel Risk' : 'Minimum Risk';
+          state.plan.name = `${rName} Kasası`;
+        }
+        if (!state.plan.riskProfile && state.settings && state.settings.riskProfile) {
+          state.plan.riskProfile = state.settings.riskProfile;
+        }
+        state.plans = [state.plan];
+        state.activePlanId = state.plan.id;
+      } else {
+        state.plans = [];
+        state.activePlanId = null;
+      }
+    }
+    if (!state.activePlanId && state.plans.length > 0) {
+      state.activePlanId = state.plans[0].id;
+    }
+    state.plan = state.plans.find(p => p.id === state.activePlanId) || state.plans[0] || null;
+    return state;
+  }
+
+  function getActivePlan(state) {
+    if (!state) return null;
+    ensurePlansArray(state);
+    return state.plan;
+  }
+
+  function createNewPlan(state, planParams = {}, settings = {}) {
+    ensurePlansArray(state);
+    const nowIso = new Date().toISOString();
+    const planId = `plan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const startBank = Number(planParams.startingBank) || 50;
+    const targetBank = Number(planParams.targetBank) || 500;
+    const duration = Number(planParams.durationDays) || 30;
+    const riskProfile = planParams.riskProfile || 'minimum';
+    const customRisk = planParams.customRisk || null;
+    const cur = settings.currency || (state.settings && state.settings.currency) || 'EUR';
+
+    const defaultName = (
+      riskProfile === 'custom' ? ((customRisk && customRisk.name) || 'Özel Risk Kasası') :
+      riskProfile === 'medium' ? 'Orta Risk Kasası' :
+      riskProfile === 'high' ? 'Yüksek Risk Kasası' : 'Minimum Risk Kasası'
+    );
+    const planName = planParams.name || defaultName;
+
+    const newPlan = {
+      id: planId,
+      name: planName,
+      createdAt: nowIso,
+      startDate: nowIso.slice(0, 10),
+      durationDays: duration,
+      startingBank: round(startBank, 2),
+      targetBank: round(targetBank, 2),
+      availableBalance: round(startBank, 2),
+      riskProfile,
+      customRisk,
+      status: 'active'
+    };
+
+    state.plans.push(newPlan);
+    state.activePlanId = planId;
+    state.plan = newPlan;
+    if (!state.settings) state.settings = {};
+    if (settings.currency) state.settings.currency = settings.currency;
+    state.settings.riskProfile = riskProfile;
+
+    if (!state.ledger) state.ledger = [];
+    state.ledger.push({
+      id: `tx-init-${planId}`,
+      timestamp: nowIso,
+      type: 'plan_created',
+      amount: round(startBank, 2),
+      balanceAfter: round(startBank, 2),
+      referenceId: planId,
+      description: `${planName} başlatıldı (${startBank} ${cur})`
+    });
+
+    return newPlan;
+  }
+
+  function switchActivePlan(state, planId) {
+    ensurePlansArray(state);
+    const found = state.plans.find(p => p.id === planId);
+    if (found) {
+      state.activePlanId = planId;
+      state.plan = found;
+      if (found.riskProfile) {
+        if (!state.settings) state.settings = {};
+        state.settings.riskProfile = found.riskProfile;
+      }
+      return found;
+    }
+    return null;
+  }
+
+  function deletePlan(state, planId) {
+    ensurePlansArray(state);
+    const idx = state.plans.findIndex(p => p.id === planId);
+    if (idx !== -1) {
+      state.plans.splice(idx, 1);
+      if (state.activePlanId === planId) {
+        state.activePlanId = state.plans.length > 0 ? state.plans[0].id : null;
+        state.plan = state.plans.length > 0 ? state.plans[0] : null;
+      }
+      return true;
+    }
+    return false;
   }
 
   function addSlipToPlan(state, slip) {
@@ -2275,6 +2484,11 @@
     generate30DayHistoricalSimulation,
     buildAdaptiveOptions,
     createInitialState,
+    ensurePlansArray,
+    getActivePlan,
+    createNewPlan,
+    switchActivePlan,
+    deletePlan,
     addSlipToPlan,
     exportPaperState,
     validateImportedJSON

@@ -347,6 +347,23 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cms-badge.b-balanced,.cms-badge.b-med{background:color-mix(in srgb,#3987e5 20%,transparent);color:#3987e5}
 .cms-badge.b-aggressive,.cms-badge.b-high{background:rgba(239,68,68,0.18);color:#f87171}
 .cms-badge.b-excel,.cms-badge.b-multi{background:rgba(56,189,248,0.18);color:#38bdf8}
+.cms-badge.b-custom{background:rgba(168,85,247,0.18);color:#c084fc}
+.cms-card.custom{border-top:3px solid #a855f7}
+.cms-card.custom.active-profile{border-color:#a855f7;background:color-mix(in srgb,#a855f7 8%,var(--panel2))}
+.bankroll-switcher-bar{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.bankroll-tabs-scroll{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:2px 0}
+.bs-label{font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:.05em;margin-right:4px}
+.bankroll-tab{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--muted);transition:all .15s;white-space:nowrap}
+.bankroll-tab:hover{border-color:var(--text);color:var(--text)}
+.bankroll-tab.active{background:color-mix(in srgb,var(--accent) 12%,var(--panel2));border-color:var(--accent);color:var(--text);font-weight:800;box-shadow:0 0 10px rgba(0,255,180,0.1)}
+.bt-icon{font-size:13px}
+.bt-name{font-weight:700}
+.bt-bank{background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:800;color:var(--accent)}
+.bankroll-actions{display:flex;align-items:center;gap:8px}
+.btn-new-bankroll{border:1px dashed var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-new-bankroll:hover{background:var(--accent);color:var(--accent-ink)}
+.btn-delete-bankroll{border:1px solid rgba(239,68,68,0.3);background:transparent;color:#f87171;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-delete-bankroll:hover{background:rgba(239,68,68,0.15);border-color:#ef4444}
 .cms-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .cms-row b{color:var(--text)}
 .cms-row .good{color:var(--good)}
@@ -398,6 +415,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .risk-card.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel2))}
 .risk-card:has(#risk-high).active,.risk-card:has(#risk-aggressive).active{border-color:#ef4444;background:color-mix(in srgb,#ef4444 8%,var(--panel2))}
 .risk-card:has(#risk-multi).active,.risk-card:has(#risk-excel).active{border-color:#38bdf8;background:color-mix(in srgb,#38bdf8 8%,var(--panel2))}
+.risk-card[data-risk="custom"].active,.risk-card:has(input[value="custom"]).active{border-color:#a855f7;background:color-mix(in srgb,#a855f7 8%,var(--panel2))}
 .r-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .r-head b{font-size:12.5px}
 .r-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px}
@@ -405,6 +423,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .r-badge.b-balanced,.r-badge.b-med{background:color-mix(in srgb,#3987e5 20%,transparent);color:#3987e5}
 .r-badge.b-aggressive,.r-badge.b-high{background:color-mix(in srgb,#ef4444 20%,transparent);color:#f87171}
 .r-badge.b-excel,.r-badge.b-multi{background:color-mix(in srgb,#38bdf8 20%,transparent);color:#38bdf8}
+.r-badge.b-custom{background:color-mix(in srgb,#a855f7 20%,transparent);color:#c084fc}
 .risk-card p{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
 .form-error{color:var(--bad);font-size:12px;font-weight:700;margin:10px 0;padding:8px 12px;background:color-mix(in srgb,var(--bad) 12%,transparent);border-radius:8px;border:1px solid color-mix(in srgb,var(--bad) 30%,transparent)}
 .form-footer{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}

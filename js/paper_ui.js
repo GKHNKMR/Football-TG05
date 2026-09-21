@@ -25,6 +25,7 @@
   let cachedTrajData = null;
 
   let planSubView = 'active'; // 'active' | 'sim30'
+  let isAddingNewPlan = false;
   let sim30ActiveProfile = 'minimum'; // 'minimum' | 'medium' | 'high' | 'all'
   let sim30ActiveSubtab = 'coupons'; // 'coupons' | 'ledger'
   let sim30Data = null;
@@ -136,32 +137,35 @@
     const startBank = (trajData && trajData.startBank) || (plan && plan.startingBank) || 50;
     const targetBank = (trajData && trajData.targetBank) || (plan && plan.targetBank) || 500;
 
-    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : (viewMode === 'multi' || viewMode === 'excel') ? 'minimum' : viewMode);
-    const profilesToDraw = (normView === 'all' || !normView)
-      ? ['minimum', 'medium', 'high']
-      : [normView];
+    const rawProf = (plan && plan.riskProfile) || (viewMode && viewMode !== 'all' ? viewMode : 'minimum');
+    const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
 
-    const getX = (day) => L + (day / dur) * pw;
+    const profColors = {
+      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%50 Rezerv · %15 Büyüme)' },
+      medium:  { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (%35 Rezerv · %20 Büyüme)' },
+      high:    { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (%25 Rezerv · %25 Büyüme)' },
+      custom:  { main: '#a855f7', fill: 'rgba(168, 85, 247, 0.14)', name: (plan && plan.customRisk && plan.customRisk.name) || 'Özel Risk' }
+    };
 
-    let maxVal = targetBank * 1.15;
-    if (trajData && trajData.trajectories) {
-      for (const k of ['minimum', 'medium', 'high', 'multi', 'cautious', 'balanced', 'aggressive']) {
-        const t = trajData.trajectories[k];
-        if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
-      }
-    }
+    const c = profColors[activeProf] || profColors.minimum;
+    const pData = trajData && trajData.trajectories && (trajData.trajectories[activeProf] || trajData.trajectories.minimum);
+
+    let noLoss = null;
     if (PE.calculateNoLossIteration && plan) {
-      for (const k of profilesToDraw) {
-        const nl = PE.calculateNoLossIteration(plan, k);
-        if (nl && nl.finalBank) maxVal = Math.max(maxVal, nl.finalBank);
-      }
+      noLoss = PE.calculateNoLossIteration(plan, activeProf);
     }
+
+    const peakCandidates = [targetBank];
+    if (noLoss && noLoss.finalBank) peakCandidates.push(noLoss.finalBank);
+    if (pData && pData.finalMedian) peakCandidates.push(pData.finalMedian);
     if (history && history.length) {
       for (const h of history) {
-        if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
+        if (h.closingBankroll) peakCandidates.push(h.closingBankroll);
       }
     }
-    const maxY = Math.ceil(Math.max(targetBank * 1.15, maxVal) / 25) * 25;
+    const chartPeak = Math.max(...peakCandidates);
+    const maxY = Math.ceil((chartPeak * 1.15) / 25) * 25;
+    const getX = (day) => L + (day / dur) * pw;
     const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
 
     // Y Ekseni Kılavuz Çizgileri
@@ -217,74 +221,53 @@
       <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
     `;
 
-    // 2. Risk Modelleri Çizgileri (Minimum %15, Orta %20, Yüksek %25) ve Sıfır Kayıp Patikaları
-    let profilesSvg = '';
-
-    const profColors = {
-      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%50 Rezerv · %15 Büyüme)' },
-      medium: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (%35 Rezerv · %20 Büyüme)' },
-      high: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (%25 Rezerv · %25 Büyüme)' }
-    };
-
-    if (trajData && trajData.trajectories) {
-      for (const pKey of profilesToDraw) {
-        const pData = trajData.trajectories[pKey];
-        if (!pData || !pData.dayPoints) continue;
-        const c = profColors[pKey] || profColors.minimum;
-
-        // Tekil risk modu seçildiyse P10-P90 güven koridorunu çiz
-        if (normView !== 'all') {
-          let p90Path = '';
-          let p10Path = '';
-          pData.dayPoints.forEach((pt, idx) => {
-            const px = getX(pt.day).toFixed(1);
-            const py90 = getY(pt.p90).toFixed(1);
-            const py10 = getY(pt.p10).toFixed(1);
-            if (idx === 0) {
-              p90Path += `M ${px},${py90}`;
-              p10Path = `L ${px},${py10}`;
-            } else {
-              p90Path += ` L ${px},${py90}`;
-              p10Path = ` L ${px},${py10}` + p10Path;
-            }
-          });
-          const bandD = p90Path + ' ' + p10Path + ' Z';
-          profilesSvg += `<path d="${bandD}" fill="${c.fill}" stroke="none"/>`;
+    // 2. Seçili Risk Modeli Çizgisi & P10-P90 Güven Koridoru & Sıfır Kayıp Patikası
+    let profileSvg = '';
+    if (pData && pData.dayPoints) {
+      let p90Path = '';
+      let p10Path = '';
+      pData.dayPoints.forEach((pt, idx) => {
+        const px = getX(pt.day).toFixed(1);
+        const py90 = getY(Math.min(maxY, pt.p90)).toFixed(1);
+        const py10 = getY(Math.min(maxY, pt.p10)).toFixed(1);
+        if (idx === 0) {
+          p90Path += `M ${px},${py90}`;
+          p10Path = `L ${px},${py10}`;
+        } else {
+          p90Path += ` L ${px},${py90}`;
+          p10Path = ` L ${px},${py10}` + p10Path;
         }
+      });
+      const bandD = p90Path + ' ' + p10Path + ' Z';
+      profileSvg += `<path d="${bandD}" fill="${c.fill}" stroke="none"/>`;
 
-        // Medyan çizgisi
-        let medD = '';
-        pData.dayPoints.forEach((pt, idx) => {
-          const px = getX(pt.day).toFixed(1);
-          const py = getY(pt.median).toFixed(1);
-          if (idx === 0) medD += `M ${px},${py}`;
-          else medD += ` L ${px},${py}`;
-        });
+      // Medyan çizgisi
+      let medD = '';
+      pData.dayPoints.forEach((pt, idx) => {
+        const px = getX(pt.day).toFixed(1);
+        const py = getY(pt.median).toFixed(1);
+        if (idx === 0) medD += `M ${px},${py}`;
+        else medD += ` L ${px},${py}`;
+      });
+      profileSvg += `<path d="${medD}" fill="none" stroke="${c.main}" stroke-width="3" stroke-linejoin="round"/>`;
 
-        const strokeW = normView === pKey ? 3.2 : (normView === 'all' ? 2.4 : 2.8);
-        profilesSvg += `<path d="${medD}" fill="none" stroke="${c.main}" stroke-width="${strokeW}" stroke-linejoin="round"/>`;
+      const lastPt = pData.dayPoints[pData.dayPoints.length - 1];
+      const endX = getX(lastPt.day).toFixed(1);
+      const endY = getY(lastPt.median).toFixed(1);
+      profileSvg += `<circle cx="${endX}" cy="${endY}" r="4.5" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
+    }
 
-        const lastPt = pData.dayPoints[pData.dayPoints.length - 1];
-        const endX = getX(lastPt.day).toFixed(1);
-        const endY = getY(lastPt.median).toFixed(1);
-        profilesSvg += `<circle cx="${endX}" cy="${endY}" r="4" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
-
-        // Sıfır Kayıp (Hiç Maç Kaybetmeme Durumu) Patikası
-        if (PE.calculateNoLossIteration && plan) {
-          const nl = PE.calculateNoLossIteration(plan, pKey);
-          if (nl && nl.days && nl.days.length) {
-            let nlD = `M ${getX(0).toFixed(1)},${getY(startBank).toFixed(1)}`;
-            nl.days.forEach(d => {
-              nlD += ` L ${getX(d.day).toFixed(1)},${getY(d.endBank).toFixed(1)}`;
-            });
-            const nlColor = (normView === 'all') ? c.main : '#fbbf24';
-            profilesSvg += `<path d="${nlD}" fill="none" stroke="${nlColor}" stroke-width="${normView === 'all' ? '1.8' : '2.2'}" stroke-dasharray="5,4" opacity="0.9" stroke-linejoin="round"/>`;
-            const nlLast = nl.days[nl.days.length - 1];
-            if (nlLast) {
-              profilesSvg += `<circle cx="${getX(nlLast.day).toFixed(1)}" cy="${getY(nlLast.endBank).toFixed(1)}" r="3.5" fill="${nlColor}" stroke="#0d1219" stroke-width="1.5"/>`;
-            }
-          }
-        }
+    // Sıfır Kayıp (Hiç Maç Kaybetmeme Durumu) Patikası
+    let noLossSvg = '';
+    if (noLoss && noLoss.days && noLoss.days.length) {
+      let nlD = `M ${getX(0).toFixed(1)},${getY(startBank).toFixed(1)}`;
+      noLoss.days.forEach(d => {
+        nlD += ` L ${getX(d.day).toFixed(1)},${getY(d.endBank).toFixed(1)}`;
+      });
+      noLossSvg = `<path d="${nlD}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="5,4" opacity="0.95" stroke-linejoin="round"/>`;
+      const nlLast = noLoss.days[noLoss.days.length - 1];
+      if (nlLast) {
+        noLossSvg += `<circle cx="${getX(nlLast.day).toFixed(1)}" cy="${getY(nlLast.endBank).toFixed(1)}" r="4" fill="#fbbf24" stroke="#0d1219" stroke-width="1.8"/>`;
       }
     }
 
@@ -325,13 +308,13 @@
         ${xGuides}
         ${targetGuide}
         ${targetCurveSvg}
-        ${profilesSvg}
+        ${profileSvg}
+        ${noLossSvg}
         ${realizedSvg}
         <line id="cursorGuide" x1="-10" y1="${T}" x2="-10" y2="${(T + ph).toFixed(1)}" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        ${profilesToDraw.includes('minimum') ? `<circle id="cursorPointCau" cx="-10" cy="-10" r="4.5" fill="#10b981" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
-        ${profilesToDraw.includes('medium') ? `<circle id="cursorPointBal" cx="-10" cy="-10" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
-        ${profilesToDraw.includes('high') ? `<circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#ef4444" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
+        <circle id="cursorPointProf" cx="-10" cy="-10" r="4.5" fill="${c.main}" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointNoLoss" cx="-10" cy="-10" r="4.5" fill="#fbbf24" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <rect id="chartInteractiveOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair;"/>
       </svg>
     `;
@@ -341,29 +324,48 @@
     if (!trajData) {
       trajData = PE.calculatePlanTrajectories(plan, null);
     }
-    const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, viewMode, (paperState && paperState.history) || []);
-    const minM = trajData.trajectories.minimum || trajData.trajectories.cautious;
-    const medM = trajData.trajectories.medium || trajData.trajectories.balanced;
-    const highM = trajData.trajectories.high || trajData.trajectories.aggressive;
-    const minNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'minimum') : null;
-    const medNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'medium') : null;
-    const highNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'high') : null;
-
-    const rawProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'minimum';
+    const rawProf = (plan && plan.riskProfile) || (paperState && paperState.settings && paperState.settings.riskProfile) || (viewMode && viewMode !== 'all' ? viewMode : 'minimum');
     const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
+
+    const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, activeProf, (paperState && paperState.history) || []);
+    const pData = trajData.trajectories ? (trajData.trajectories[activeProf] || trajData.trajectories.minimum) : null;
+    const noLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, activeProf) : null;
+
+    const profConfigs = {
+      minimum: { name: '🟢 Minimum Risk', icon: '🟢', resPct: 0.50, stakePct: 0.50, dailyGrowthPct: '15,0', dailyFactor: '1.15', badgeClass: 'b-min', badgeText: '%50 Rezerv · %15/gün', color: '#10b981' },
+      medium:  { name: '🔵 Orta Risk',    icon: '🔵', resPct: 0.35, stakePct: 0.65, dailyGrowthPct: '20,0', dailyFactor: '1.20', badgeClass: 'b-med', badgeText: '%35 Rezerv · %20/gün', color: '#3b82f6' },
+      high:    { name: '🔴 Yüksek Risk',  icon: '🔴', resPct: 0.25, stakePct: 0.75, dailyGrowthPct: '25,0', dailyFactor: '1.25', badgeClass: 'b-high', badgeText: '%25 Rezerv · %25/gün', color: '#ef4444' },
+      custom:  { name: '⚙️ Özel Risk',   icon: '⚙️', resPct: 0.40, stakePct: 0.50, dailyGrowthPct: '9,0', dailyFactor: '1.09', badgeClass: 'b-custom', badgeText: 'Özel Parametreler', color: '#a855f7' }
+    };
+
+    const cfg = Object.assign({}, profConfigs[activeProf] || profConfigs.minimum);
+    if (activeProf === 'custom' && plan && plan.customRisk) {
+      const cr = plan.customRisk;
+      if (cr.name) cfg.name = `⚙️ ${cr.name}`;
+      let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+      if (rPct > 1) rPct /= 100;
+      let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+      if (sRate > 1) sRate /= 100;
+      const tOdds = Number(cr.targetOdds) || 1.30;
+      const dFactor = PE.round(1 + (1.0 - rPct) * sRate * (tOdds - 1.0), 4);
+      cfg.resPct = rPct;
+      cfg.stakePct = sRate;
+      cfg.dailyFactor = dFactor.toFixed(4);
+      cfg.dailyGrowthPct = (PE.round((dFactor - 1.0) * 100, 2)).toLocaleString('tr-TR');
+      cfg.badgeText = `%${Math.round(rPct * 100)} Rezerv · +%${cfg.dailyGrowthPct}/gün`;
+    }
+
+    const dur = trajData.durationDays || (plan && plan.durationDays) || 30;
+    const startBank = trajData.startBank || (plan && plan.startingBank) || 50;
+    const targetBank = trajData.targetBank || (plan && plan.targetBank) || 500;
+    const theoreticalFinal = PE.round(startBank * Math.pow(parseFloat(cfg.dailyFactor), dur), 2);
 
     return `
       <div class="card plan-chart-card" id="planChartCard">
         <div class="chart-head">
           <div>
-            <h3>📈 Hedef Kasa Ulaşma Grafiği · Günlük Büyüme Projeksiyonu</h3>
-            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve risk modellerinin bileşik büyüme patikaları.</p>
-          </div>
-          <div class="chart-view-chips" id="chartViewChips">
-            <button type="button" class="cchip ${viewMode === 'all' || !viewMode ? 'active' : ''}" data-view="all">📊 Tümünü Karşılaştır</button>
-            <button type="button" class="cchip ${viewMode === 'minimum' || viewMode === 'cautious' ? 'active' : ''}" data-view="minimum">🟢 Minimum Risk (%50 Rezerv · %15)</button>
-            <button type="button" class="cchip ${viewMode === 'medium' || viewMode === 'balanced' ? 'active' : ''}" data-view="medium">🔵 Orta Risk (%35 Rezerv · %20)</button>
-            <button type="button" class="cchip ${viewMode === 'high' || viewMode === 'aggressive' ? 'active' : ''}" data-view="high">🔴 Yüksek Risk (%25 Rezerv · %25)</button>
+            <h3>📈 Hedef Kasa Ulaşma Grafiği · ${esc(cfg.name)}</h3>
+            <p>Hedeflenen <b>${dur} günde</b> ${formatCurrency(startBank, curr)} ➔ ${formatCurrency(targetBank, curr)} geometrik hedef yolu, ${esc(cfg.name)} medyan patikası ve sıfır kayıp projeksiyonu.</p>
           </div>
         </div>
 
@@ -372,222 +374,137 @@
         </div>
 
         <div class="chart-tooltip-bar" id="planChartTracker">
-          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>
+          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, model medyanı ve sıfır kayıp projeksiyonunu inceleyebilirsiniz.</span>
         </div>
 
         <div class="chart-legend">
-          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Geometrik Hedef Yolu (${formatCurrency(trajData.targetBank, curr)})</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (%50 Rezerv)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (%35 Rezerv)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (%25 Rezerv)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Geometrik Hedef Yolu (${formatCurrency(targetBank, curr)})</span>
+          <span class="cl-item"><span class="cl-dot" style="background:${cfg.color};"></span> ${esc(cfg.name)} (Medyan)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:1px dashed #fbbf24;"></span> ⭐ Kesikli: Sıfır Kayıp Potansiyeli</span>
           ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
         </div>
 
-        <div class="chart-models-summary">
-          <div class="cms-card minimum ${activeProf === 'minimum' ? 'active-profile' : ''}">
+        <div class="chart-models-summary single-model" style="grid-template-columns:1fr;max-width:650px;margin-top:14px;">
+          <div class="cms-card ${activeProf} active-profile" style="border-top:3px solid ${cfg.color};">
             <div class="cms-head">
-              <b>🟢 Minimum Risk</b>
-              <span class="cms-badge b-min">%50 Rezerv · %15/gün</span>
+              <b>${esc(cfg.name)}</b>
+              <span class="cms-badge ${cfg.badgeClass}" style="background:rgba(255,255,255,0.08);color:${cfg.color};border:1px solid ${cfg.color};">${cfg.badgeText}</span>
             </div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%50 (Dokunulmaz)</b></div>
-            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%50</b></div>
-            <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%15,0 (1.15×)</b></div>
-            <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.15, trajData.durationDays), 2), curr)}</b></div>
-            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${minNoLoss ? formatCurrency(minNoLoss.finalBank, curr) : '-'} (+%${minNoLoss ? minNoLoss.roiPct : '-'})</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(minM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${minM.targetHitPct >= 50 ? 'good' : 'warn'}">%${minM.targetHitPct}</b></div>
-          </div>
-
-          <div class="cms-card medium ${activeProf === 'medium' ? 'active-profile' : ''}">
-            <div class="cms-head">
-              <b>🔵 Orta Risk</b>
-              <span class="cms-badge b-med">%35 Rezerv · %20/gün</span>
-            </div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%35 (Dokunulmaz)</b></div>
-            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%65</b></div>
-            <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%20,0 (1.20×)</b></div>
-            <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.20, trajData.durationDays), 2), curr)}</b></div>
-            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${medNoLoss ? formatCurrency(medNoLoss.finalBank, curr) : '-'} (+%${medNoLoss ? medNoLoss.roiPct : '-'})</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(medM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${medM.targetHitPct >= 50 ? 'good' : 'warn'}">%${medM.targetHitPct}</b></div>
-          </div>
-
-          <div class="cms-card high aggressive ${activeProf === 'high' ? 'active-profile' : ''}">
-            <div class="cms-head">
-              <b style="color:#f87171;">🔴 Yüksek Risk</b>
-              <span class="cms-badge b-high">%25 Rezerv · %25/gün</span>
-            </div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%25 (Dokunulmaz)</b></div>
-            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%75</b></div>
-            <div class="cms-row"><span>Günlük Büyüme:</span><b style="color:#f87171;">+%25,0 (1.25×)</b></div>
-            <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#f87171;">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.25, trajData.durationDays), 2), curr)}</b></div>
-            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${highNoLoss ? formatCurrency(highNoLoss.finalBank, curr) : '-'} (+%${highNoLoss ? highNoLoss.roiPct : '-'})</b></div>
-            <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(highM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${highM.targetHitPct >= 50 ? 'good' : 'warn'}">%${highM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%${Math.round(cfg.resPct * 100)} (Dokunulmaz)</b></div>
+            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%${Math.round(cfg.stakePct * 100)}</b></div>
+            <div class="cms-row"><span>Günlük Büyüme Katsayısı:</span><b class="good">+%${cfg.dailyGrowthPct} (${cfg.dailyFactor}×)</b></div>
+            <div class="cms-row"><span>${dur}. Gün Teorik Büyüme:</span><b class="good">${formatCurrency(theoreticalFinal, curr)}</b></div>
+            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${noLoss ? formatCurrency(noLoss.finalBank, curr) : '-'} (+%${noLoss ? noLoss.roiPct : '-'})</b></div>
+            <div class="cms-row"><span>Simüle Medyan Kasa:</span><b>${formatCurrency(pData ? pData.finalMedian : theoreticalFinal, curr)}</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma İhtimali:</span><b class="${(pData && pData.targetHitPct >= 50) ? 'good' : 'warn'}">%${pData ? pData.targetHitPct : '-'}</b></div>
           </div>
         </div>
       </div>
     `;
   }
 
-  function wireChartInteractiveEvents(container, trajData, curr, plan, viewMode = 'all') {
+  function wireChartInteractiveEvents(container, trajData, curr, plan, viewMode) {
     if (!container || !trajData) return;
     const overlay = container.querySelector('#chartInteractiveOverlay');
     const svg = container.querySelector('#planTrajectorySvg');
     const guide = container.querySelector('#cursorGuide');
     const ptTarget = container.querySelector('#cursorPointTarget');
-    const ptCau = container.querySelector('#cursorPointCau');
-    const ptBal = container.querySelector('#cursorPointBal');
-    const ptAgg = container.querySelector('#cursorPointAgg');
-    const ptExcel = container.querySelector('#cursorPointExcel');
+    const ptProf = container.querySelector('#cursorPointProf');
+    const ptNoLoss = container.querySelector('#cursorPointNoLoss');
     const tracker = container.querySelector('#planChartTracker');
 
     if (!overlay || !svg || !tracker) return;
 
-    const normView = (viewMode === 'all' || !viewMode) ? 'all' : (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : viewMode);
-    const profilesToDraw = normView === 'all'
-      ? ['minimum', 'medium', 'high']
-      : [normView];
+    const rawProf = (plan && plan.riskProfile) || (viewMode && viewMode !== 'all' ? viewMode : 'minimum');
+    const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
 
-    const W = 820; const H = 360; const L = 70; const R = 35; const T = 35; const B = 45;
-    const pw = W - L - R; const ph = H - T - B;
-    const dur = Math.max(1, trajData.durationDays);
-    const targetBank = trajData.targetBank;
+    const dur = trajData.durationDays || (plan && plan.durationDays) || 30;
+    const W = 820;
+    const L = 70;
+    const R = 35;
+    const T = 35;
+    const B = 45;
+    const pw = W - L - R;
+    const ph = 360 - T - B;
 
-    let maxVal = targetBank * 1.15;
-    if (trajData.trajectories) {
-      for (const k of ['minimum', 'medium', 'high', 'multi', 'cautious', 'balanced', 'aggressive']) {
-        const t = trajData.trajectories[k];
-        if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
-      }
-    }
-    if (PE.calculateNoLossIteration && plan) {
-      for (const k of profilesToDraw) {
-        const nl = PE.calculateNoLossIteration(plan, k);
-        if (nl && nl.finalBank) maxVal = Math.max(maxVal, nl.finalBank);
-      }
-    }
+    const pData = trajData && trajData.trajectories && (trajData.trajectories[activeProf] || trajData.trajectories.minimum);
+    const noLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, activeProf) : null;
     const history = (paperState && paperState.history) || [];
+
+    const peakCandidates = [(trajData.targetBank || (plan && plan.targetBank) || 500)];
+    if (noLoss && noLoss.finalBank) peakCandidates.push(noLoss.finalBank);
+    if (pData && pData.finalMedian) peakCandidates.push(pData.finalMedian);
     if (history.length) {
       for (const h of history) {
-        if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
+        if (h.closingBankroll) peakCandidates.push(h.closingBankroll);
       }
     }
-    const maxY = Math.ceil(Math.max(targetBank * 1.15, maxVal) / 25) * 25;
-    const getX = (d) => L + (d / dur) * pw;
+    const chartPeak = Math.max(...peakCandidates);
+    const maxY = Math.ceil((chartPeak * 1.15) / 25) * 25;
+
+    const getX = (day) => L + (day / dur) * pw;
     const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
 
     function handleMove(e) {
-      const rect = overlay.getBoundingClientRect();
+      const rect = svg.getBoundingClientRect();
       const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-      const mouseX = clientX - rect.left;
-      const pct = Math.max(0, Math.min(1, mouseX / rect.width));
-      const day = Math.round(pct * dur);
+      if (clientX == null) return;
+      const svgX = ((clientX - rect.left) / rect.width) * W;
+      const clampedX = Math.max(L, Math.min(W - R, svgX));
+      const dayFrac = ((clampedX - L) / pw) * dur;
+      const day = Math.max(0, Math.min(dur, Math.round(dayFrac)));
+      const xPos = getX(day).toFixed(1);
 
-      const xPos = getX(day);
       if (guide) {
         guide.setAttribute('x1', xPos);
         guide.setAttribute('x2', xPos);
         guide.style.display = 'block';
       }
 
-      const tPt = trajData.targetPoints && trajData.targetPoints[day];
-      const minPt = trajData.trajectories && (trajData.trajectories.minimum || trajData.trajectories.cautious) && (trajData.trajectories.minimum || trajData.trajectories.cautious).dayPoints[day];
-      const medPt = trajData.trajectories && (trajData.trajectories.medium || trajData.trajectories.balanced) && (trajData.trajectories.medium || trajData.trajectories.balanced).dayPoints[day];
-      const highPt = trajData.trajectories && (trajData.trajectories.high || trajData.trajectories.aggressive) && (trajData.trajectories.high || trajData.trajectories.aggressive).dayPoints[day];
-      const emData = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
-      const emPt = emData && emData.dayPoints && emData.dayPoints[day];
-
-      if (ptTarget && tPt) {
+      const tgtPt = trajData.targetPoints && trajData.targetPoints.find(p => p.day === day);
+      const tgtVal = tgtPt ? tgtPt.targetBank : 0;
+      if (ptTarget && tgtPt) {
         ptTarget.setAttribute('cx', xPos);
-        ptTarget.setAttribute('cy', getY(tPt.targetBank));
+        ptTarget.setAttribute('cy', getY(tgtVal).toFixed(1));
         ptTarget.style.display = 'block';
       }
-      if (ptCau) {
-        if (profilesToDraw.includes('minimum') && minPt) {
-          ptCau.setAttribute('cx', xPos);
-          ptCau.setAttribute('cy', getY(minPt.median));
-          ptCau.style.display = 'block';
-        } else {
-          ptCau.style.display = 'none';
-        }
-      }
-      if (ptBal) {
-        if (profilesToDraw.includes('medium') && medPt) {
-          ptBal.setAttribute('cx', xPos);
-          ptBal.setAttribute('cy', getY(medPt.median));
-          ptBal.style.display = 'block';
-        } else {
-          ptBal.style.display = 'none';
-        }
-      }
-      if (ptAgg) {
-        if (profilesToDraw.includes('high') && highPt) {
-          ptAgg.setAttribute('cx', xPos);
-          ptAgg.setAttribute('cy', getY(highPt.median));
-          ptAgg.style.display = 'block';
-        } else {
-          ptAgg.style.display = 'none';
-        }
-      }
-      if (ptExcel && emPt) {
-        ptExcel.setAttribute('cx', xPos);
-        ptExcel.setAttribute('cy', getY(emPt.theoreticalBank));
-        ptExcel.style.display = 'block';
+
+      const profPt = pData && pData.dayPoints && pData.dayPoints.find(p => p.day === day);
+      const profMed = profPt ? profPt.median : 0;
+      if (ptProf && profPt) {
+        ptProf.setAttribute('cx', xPos);
+        ptProf.setAttribute('cy', getY(profMed).toFixed(1));
+        ptProf.style.display = 'block';
       }
 
-      const tVal = tPt ? formatCurrency(tPt.targetBank, curr) : '-';
-      const minVal = minPt ? formatCurrency(minPt.median, curr) : '-';
-      const medVal = medPt ? formatCurrency(medPt.median, curr) : '-';
-      const highVal = highPt ? formatCurrency(highPt.median, curr) : '-';
+      const nlPt = noLoss && noLoss.days && (day === 0 ? { endBank: trajData.startBank } : noLoss.days.find(d => d.day === day));
+      const nlVal = nlPt ? nlPt.endBank : 0;
+      if (ptNoLoss && nlPt) {
+        ptNoLoss.setAttribute('cx', xPos);
+        ptNoLoss.setAttribute('cy', getY(nlVal).toFixed(1));
+        ptNoLoss.style.display = 'block';
+      }
 
-      let trackerHtml = `
-        <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
-        <span>🎯 Hedef: <b>${tVal}</b></span>
+      tracker.innerHTML = `
+        <span class="ct-day">📅 <b>${day}. Gün</b></span>
+        <span class="ct-tgt" style="color:#f59e0b;">🎯 Hedef: <b>${formatCurrency(tgtVal, curr)}</b></span>
+        <span class="ct-prof" style="color:var(--text);">📊 Model Medyan: <b>${formatCurrency(profMed, curr)}</b></span>
+        <span class="ct-nl" style="color:#fbbf24;">⭐ Sıfır Kayıp: <b>${formatCurrency(nlVal, curr)}</b></span>
       `;
-      if (profilesToDraw.includes('minimum')) {
-        trackerHtml += `<span>🟢 Minimum Risk (%50 Rezerv · %15): <b>${minVal}</b></span>`;
-      }
-      if (profilesToDraw.includes('medium')) {
-        trackerHtml += `<span>🔵 Orta Risk (%35 Rezerv · %20): <b>${medVal}</b></span>`;
-      }
-      if (profilesToDraw.includes('high')) {
-        trackerHtml += `<span>🔴 Yüksek Risk (%25 Rezerv · %25): <b style="color:#ef4444;">${highVal}</b></span>`;
-      }
-
-      tracker.innerHTML = trackerHtml;
     }
 
     function handleLeave() {
       if (guide) guide.style.display = 'none';
       if (ptTarget) ptTarget.style.display = 'none';
-      if (ptCau) ptCau.style.display = 'none';
-      if (ptBal) ptBal.style.display = 'none';
-      if (ptAgg) ptAgg.style.display = 'none';
-      if (ptExcel) ptExcel.style.display = 'none';
-      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve 3 risk modelinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>';
+      if (ptProf) ptProf.style.display = 'none';
+      if (ptNoLoss) ptNoLoss.style.display = 'none';
+      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, model medyanı ve sıfır kayıp projeksiyonunu inceleyebilirsiniz.</span>';
     }
 
     overlay.onmousemove = handleMove;
     overlay.onmouseleave = handleLeave;
     overlay.ontouchmove = (e) => { e.preventDefault(); handleMove(e); };
     overlay.ontouchend = handleLeave;
-
-    const chips = container.querySelectorAll('.cchip');
-    chips.forEach(chip => {
-      chip.onclick = () => {
-        chips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentChartMode = chip.dataset.view || 'all';
-        const newCardHtml = renderTrajectoryChartCardHtml(plan, curr, currentChartMode, trajData);
-        const temp = document.createElement('div');
-        temp.innerHTML = newCardHtml;
-        const newCard = temp.firstElementChild;
-        container.replaceWith(newCard);
-        wireChartInteractiveEvents(newCard, trajData, curr, plan, currentChartMode);
-      };
-    });
   }
 
   // ---------------------------------------------------------------------------
@@ -596,7 +513,8 @@
 
   function renderExcelDailyTableCardHtml(plan, state, curr) {
     if (!PE.generateExcelDailyTable) return '';
-    const activeProf = (state && state.settings && state.settings.riskProfile) || 'balanced';
+    const rawProf = (plan && plan.riskProfile) || (state && state.settings && state.settings.riskProfile) || 'minimum';
+    const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
     const data = PE.generateExcelDailyTable(plan, state, activeProf);
     const m = data.model;
     const rows = data.rows;
@@ -1634,21 +1552,34 @@
     const pane = document.getElementById('pane-plan');
     if (!pane) return;
 
-    if (!paperState || !paperState.plan) {
+    if (paperState) {
+      PE.ensurePlansArray(paperState);
+    }
+
+    if (!paperState || !paperState.plans || paperState.plans.length === 0 || isAddingNewPlan) {
+      pane.innerHTML = renderPlanSetupHtml();
+      wirePlanSetupEvents();
+      return;
+    }
+
+    const currentPlan = PE.getActivePlan(paperState);
+    if (!currentPlan) {
       pane.innerHTML = renderPlanSetupHtml();
       wirePlanSetupEvents();
       return;
     }
 
     const metrics = PE.getPlanMetrics(paperState);
-    const curr = paperState.settings.currency || 'EUR';
-    const rawProfKey = paperState.settings.riskProfile || 'minimum';
+    const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+    const rawProfKey = currentPlan.riskProfile || (paperState.settings && paperState.settings.riskProfile) || 'minimum';
     const profKey = (rawProfKey === 'cautious' ? 'minimum' : rawProfKey === 'balanced' ? 'medium' : rawProfKey === 'aggressive' ? 'high' : rawProfKey);
-    const prof = PE.RISK_PROFILES[profKey] || PE.RISK_PROFILES.minimum;
+    const prof = (profKey === 'custom')
+      ? { id: 'custom', name: (currentPlan.customRisk && currentPlan.customRisk.name) || 'Özel Risk' }
+      : (PE.RISK_PROFILES[profKey] || PE.RISK_PROFILES.minimum);
 
     // Simülasyonu hesapla (eğer çalıştırılmamışsa veya eski ise)
     if (!paperState.simulation || !paperState.simulation.result) {
-      const sim = PE.runPlanSimulation(paperState.plan, prof.id, null, {
+      const sim = PE.runPlanSimulation(currentPlan, prof.id, null, {
         remainingDays: metrics.remainingDays,
         currentBank: metrics.totalBank
       });
@@ -1662,10 +1593,10 @@
     const simRes = paperState.simulation.result;
 
     // Adaptif seçenekler (eğer geride ise)
-    const adaptive = PE.buildAdaptiveOptions(paperState.plan, paperState, null);
+    const adaptive = PE.buildAdaptiveOptions(currentPlan, paperState, null);
 
     // Hedef Kasa Ulaşma Trajektorisi ve Risk Modelleri Projeksiyonları
-    const trajData = PE.calculatePlanTrajectories(paperState.plan, null);
+    const trajData = PE.calculatePlanTrajectories(currentPlan, null);
     cachedTrajData = trajData;
 
     pane.innerHTML = `
@@ -1675,11 +1606,37 @@
         <div class="p-quote">« Önce simüle et. Riskini gör. Stratejini ölç. Sonra karar ver. »</div>
       </div>
 
+      <!-- Çoklu Kasa Yönetimi (Bankroll Switcher Bar) -->
+      <div class="bankroll-switcher-bar">
+        <div class="bankroll-tabs-scroll">
+          <span class="bs-label">KASALARIM:</span>
+          ${paperState.plans.map(p => {
+            const isActive = p.id === paperState.activePlanId;
+            const r = p.riskProfile || 'minimum';
+            const icon = r === 'high' ? '🔴' : r === 'medium' ? '🔵' : r === 'custom' ? '⚙️' : '🟢';
+            const bal = p.availableBalance != null ? p.availableBalance : p.startingBank;
+            return `
+              <button type="button" class="bankroll-tab ${isActive ? 'active' : ''}" data-plan-id="${p.id}">
+                <span class="bt-icon">${icon}</span>
+                <span class="bt-name">${esc(p.name || 'Kasa')}</span>
+                <span class="bt-bank">${formatCurrency(bal, curr)}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+        <div class="bankroll-actions">
+          <button type="button" class="btn-new-bankroll" id="btnAddNewPlan">➕ Yeni Kasa Aç</button>
+          ${paperState.plans.length > 1 ? `
+            <button type="button" class="btn-delete-bankroll" id="btnDeleteCurrentPlan" title="Aktif Kasayı Sil">🗑️ Kasayı Sil</button>
+          ` : ''}
+        </div>
+      </div>
+
       <div class="plan-header-card">
         <div class="plan-title-row">
           <div>
-            <h2>Sanal Kasa Planım · ${esc(prof.name)}</h2>
-            <div class="plan-sub">Başlangıç: ${dmy(paperState.plan.startDate)} · ${metrics.durationDays} Günlük Plan (${metrics.elapsedDays}. Gün / ${metrics.remainingDays} Gün Kaldı)</div>
+            <h2>${esc(currentPlan.name || 'Sanal Kasa Planım')} · ${esc(prof.name || 'Minimum Risk')}</h2>
+            <div class="plan-sub">Başlangıç: ${dmy(currentPlan.startDate)} · ${metrics.durationDays} Günlük Plan (${metrics.elapsedDays}. Gün / ${metrics.remainingDays} Gün Kaldı)</div>
           </div>
           <div class="plan-status-badge ${metrics.status.code}">
             <span class="dot">●</span> ${metrics.status.label} (${metrics.status.diffPct > 0 ? '+' : ''}${metrics.status.diffPct}%)
@@ -1728,10 +1685,10 @@
       </div>
 
       <!-- Hiç Maç Kaybetmeme Durumu / Sıfır Kayıp Kartı (Gerçek Kasa) -->
-      ${renderPlanNoLossCardHtml(paperState.plan, profKey, curr)}
+      ${renderPlanNoLossCardHtml(currentPlan, profKey, curr)}
 
-      <!-- Hedeflenen Sürede Kasa Ulaşma Grafiği -->
-      ${renderTrajectoryChartCardHtml(paperState.plan, curr, currentChartMode, trajData)}
+      <!-- Hedeflenen Sürede Kasa Ulaşma Grafiği (Sadece Seçili Risk ve Sıfır Kayıp Eğrisi) -->
+      ${renderTrajectoryChartCardHtml(currentPlan, curr, profKey, trajData)}
 
       <!-- Monte Carlo Simülasyon Kartı -->
       <div class="card sim-card">
@@ -1771,8 +1728,8 @@
         </div>
       </div>
 
-      <!-- Betavus Çok Kollu Kasa Büyüme Modeli (Excel Çizelgesi) -->
-      ${renderExcelDailyTableCardHtml(paperState.plan, paperState, curr)}
+      <!-- Betavus Çok Kollu Kasa Büyüme Modeli -->
+      ${renderExcelDailyTableCardHtml(currentPlan, paperState, curr)}
 
       <!-- Adaptif Öneriler (Gerekirse) -->
       ${adaptive && adaptive.showAdaptive ? renderAdaptiveCardHtml(adaptive, curr) : ''}
@@ -1785,7 +1742,7 @@
           <input type="file" id="jsonFileInput" accept=".json" style="display:none">
         </div>
         <div class="p-act-right">
-          <button class="btn-danger-subtle" id="btnResetPlan" type="button">⚠️ Planı Sıfırla / Yeni Plan Kur</button>
+          <button class="btn-danger-subtle" id="btnResetPlan" type="button">⚠️ Tüm Kasaları Sıfırla</button>
         </div>
       </div>
     `;
@@ -1794,6 +1751,7 @@
   }
 
   function renderPlanSetupHtml() {
+    const isAdding = isAddingNewPlan && paperState && paperState.plans && paperState.plans.length > 0;
     return `
       <div class="paper-disclaimer">
         <span class="p-badge">SANAL KASA SİMÜLASYONU</span>
@@ -1802,10 +1760,16 @@
       </div>
 
       <div class="card plan-setup-card">
-        <h2>🎯 Sanal Kasa Planı Oluştur</h2>
+        <h2>${isAdding ? '🎯 Yeni Sanal Kasa Planı Aç' : '🎯 Sanal Kasa Planı Oluştur'}</h2>
         <p>Disiplinli kasa yönetimi için sanal başlangıç bütçenizi, hedefinizi ve risk toleransınızı tanımlayın.</p>
 
         <form id="planSetupForm" onsubmit="return false;">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="setupPlanName">Kasa Adı (Opsiyonel)</label>
+            <input type="text" id="setupPlanName" class="form-input" placeholder="Örn: 1. Minimum Kasa, Agresif Hedef, 50€ Başlangıç..." autocomplete="off">
+            <span class="form-hint">Birden fazla kasanızı kolayca ayırt etmek için özel bir isim verebilirsiniz.</span>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="setupStartBank">Sanal Başlangıç Kasası *</label>
@@ -1843,7 +1807,7 @@
           <div class="form-group" style="margin-top:16px;">
             <label>Kasa Modeli &amp; Risk Toleransı *</label>
             <div class="risk-cards">
-              <label class="risk-card active">
+              <label class="risk-card active" data-risk="minimum">
                 <input type="radio" name="setupRisk" value="minimum" checked>
                 <div class="r-head">
                   <b>🟢 Minimum Risk</b>
@@ -1851,7 +1815,7 @@
                 </div>
                 <p>Kasanın %50'si dokunulmaz rezerv olarak tutulur. %50 aktif payla günlük %15 büyüme hedeflenir (1.15x/gün).</p>
               </label>
-              <label class="risk-card">
+              <label class="risk-card" data-risk="medium">
                 <input type="radio" name="setupRisk" value="medium">
                 <div class="r-head">
                   <b>🔵 Orta Risk</b>
@@ -1859,7 +1823,7 @@
                 </div>
                 <p>Kasanın %35'i dokunulmaz rezerv olarak tutulur. %65 aktif payla günlük %20 büyüme hedeflenir (1.20x/gün).</p>
               </label>
-              <label class="risk-card">
+              <label class="risk-card" data-risk="high">
                 <input type="radio" name="setupRisk" value="high">
                 <div class="r-head">
                   <b style="color:#f87171;">🔴 Yüksek Risk</b>
@@ -1867,12 +1831,48 @@
                 </div>
                 <p>Kasanın %25'i dokunulmaz rezerv olarak tutulur. %75 aktif payla günlük %25 büyüme hedeflenir (1.25x/gün).</p>
               </label>
+              <label class="risk-card" data-risk="custom">
+                <input type="radio" name="setupRisk" value="custom">
+                <div class="r-head">
+                  <b style="color:#a855f7;">⚙️ Özel Risk</b>
+                  <span class="r-badge b-custom">Özel Parametreler</span>
+                </div>
+                <p>Dokunulmaz rezervi, aktif kupon payını ve hedef oranı kendiniz belirleyin.</p>
+              </label>
+            </div>
+          </div>
+
+          <!-- Özel Risk Parametreleri Paneli -->
+          <div id="customRiskControls" class="custom-risk-panel" style="display:none;margin-top:14px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px;">
+            <div style="font-weight:800;color:#c084fc;font-size:12.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>⚙️ Özel Risk Stratejisi Parametreleri</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="customReservePct">Dokunulmaz Rezerv Payı (%)</label>
+                <input type="number" id="customReservePct" class="form-input" min="0" max="80" value="40" step="5">
+                <span class="form-hint">Kasanın korunacak rezerv yüzdesi (0 - %80)</span>
+              </div>
+              <div class="form-group">
+                <label for="customStakeRate">Aktif Bahis Payı (%)</label>
+                <input type="number" id="customStakeRate" class="form-input" min="10" max="100" value="50" step="5">
+                <span class="form-hint">Aktif kasanın kupona ayrılan yüzdesi (10 - %100)</span>
+              </div>
+              <div class="form-group">
+                <label for="customTargetOdds">Hedef Oran (Odds)</label>
+                <input type="number" id="customTargetOdds" class="form-input" min="1.10" max="5.00" value="1.30" step="0.05">
+                <span class="form-hint">Hedeflenen kupon çarpanı (Örn: 1.30)</span>
+              </div>
+            </div>
+            <div id="customRiskLivePreview" style="margin-top:10px;font-size:11.5px;color:var(--text);background:rgba(0,0,0,0.35);padding:8px 12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <span>Hesaplanan Günlük Bileşik Büyüme Katsayısı:</span>
+              <b id="customDailyGrowthText" style="color:#a855f7;font-size:13px;">+%9,00 / gün (1.0900×)</b>
             </div>
           </div>
 
           <div class="setup-chart-preview" id="setupChartPreviewBox">
             <h4>📈 Hedeflenen Sürede Kasa Ulaşma Grafiği Canlı Önizlemesi</h4>
-            <p>Seçilen başlangıç kasası, hedef kasa ve süreye göre geometrik hedef yolu ve risk modellerinin büyüme patikaları.</p>
+            <p>Seçilen başlangıç kasası, hedef kasa, süre ve risk modeline göre büyüme patikası ve sıfır kayıp projeksiyonu.</p>
             <div id="setupChartSvgContainer" class="chart-svg-box"></div>
           </div>
 
@@ -1880,8 +1880,11 @@
 
           <div class="form-footer">
             <button type="button" id="btnCreatePlan" class="btn-primary" style="padding:14px 28px;font-size:14px;">
-              🚀 Sanal Kasa Planı Oluştur
+              🚀 ${isAdding ? 'Yeni Kasa Planı Aç' : 'Sanal Kasa Planı Oluştur'}
             </button>
+            ${isAdding ? `
+              <button type="button" id="btnCancelAddPlan" class="btn-sec" style="padding:14px 22px;font-size:14px;">Vazgeç</button>
+            ` : ''}
             <span class="form-guarantee-note">⚠️ Bu bir simülasyondur; hedef garantisi veya kesin kâr vaadi verilmez.</span>
           </div>
         </form>
@@ -1889,38 +1892,43 @@
     `;
   }
 
-  function renderAdaptiveCardHtml(adaptive, curr) {
-    return `
-      <div class="card adaptive-card">
-        <div class="adapt-head">
-          <div>
-            <h3>⚖️ Hedef Yolu Karşılaştırması &amp; Adaptif Alternatifler</h3>
-            <p>Sanal kasanız güncel hedef yolunun gerisinde seyrediyor. Sistem riski otomatik artırmaz; stratejinizi korumak için 3 alternatifi karşılaştırın:</p>
-          </div>
-        </div>
-        <div class="adapt-grid">
-          ${adaptive.options.map(opt => `
-            <div class="adapt-col ${opt.id}">
-              <div class="col-tag">${esc(opt.tag)}</div>
-              <h4>${esc(opt.title)}</h4>
-              <p class="desc">${esc(opt.desc)}</p>
-              <div class="adapt-metrics">
-                <div class="am-row"><span>Başarı İhtimali:</span><b>%${opt.metrics.newTargetProbPct}</b></div>
-                <div class="am-row"><span>Medyan Kasa:</span><b>${formatCurrency(opt.metrics.medianBank, curr)}</b></div>
-                <div class="am-row"><span>P10 / P90:</span><b>${formatCurrency(opt.metrics.p10, curr)} – ${formatCurrency(opt.metrics.p90, curr)}</b></div>
-                <div class="am-row"><span>Yarı Kasa Kaybı:</span><b class="${opt.metrics.halfBankLossPct > 25 ? 'bad' : 'warn'}">%${opt.metrics.halfBankLossPct}</b></div>
-                <div class="am-row"><span>Maks. Düşüş:</span><b>%${opt.metrics.maxDrawdownPct}</b></div>
-              </div>
-              ${opt.warning ? `<div class="adapt-warn">⚠️ ${esc(opt.warning)}</div>` : ''}
-              <button class="btn-apply-adapt" data-opt="${opt.id}" type="button">Bu Alternatifi Uygula</button>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-
   function wirePlanSetupEvents() {
+    function getCustomRiskParams() {
+      let rPct = parseFloat(document.getElementById('customReservePct')?.value);
+      if (isNaN(rPct)) rPct = 40;
+      if (rPct < 0) rPct = 0;
+      if (rPct > 80) rPct = 80;
+
+      let sRate = parseFloat(document.getElementById('customStakeRate')?.value);
+      if (isNaN(sRate)) sRate = 50;
+      if (sRate < 10) sRate = 10;
+      if (sRate > 100) sRate = 100;
+
+      let tOdds = parseFloat(document.getElementById('customTargetOdds')?.value);
+      if (isNaN(tOdds)) tOdds = 1.30;
+      if (tOdds < 1.10) tOdds = 1.10;
+      if (tOdds > 5.00) tOdds = 5.00;
+
+      const rFrac = rPct / 100;
+      const sFrac = sRate / 100;
+      const dFactor = PE.round(1 + (1.0 - rFrac) * sFrac * (tOdds - 1.0), 4);
+      const dRatePct = (PE.round((dFactor - 1.0) * 100, 2)).toLocaleString('tr-TR');
+
+      const textEl = document.getElementById('customDailyGrowthText');
+      if (textEl) {
+        textEl.textContent = `+%${dRatePct} / gün (${dFactor.toFixed(4)}×)`;
+      }
+
+      return {
+        name: 'Özel Risk',
+        reservePct: rFrac,
+        stakeRate: sFrac,
+        targetOdds: tOdds,
+        dailyFactor: dFactor,
+        dailyGrowthRate: PE.round(dFactor - 1.0, 4)
+      };
+    }
+
     function updateSetupChartPreview() {
       const container = document.getElementById('setupChartSvgContainer');
       if (!container) return;
@@ -1928,13 +1936,22 @@
       const target = parseNumber(document.getElementById('setupTargetBank')?.value) || 500;
       const duration = parseInt(document.getElementById('setupDuration')?.value, 10) || 30;
       const curr = document.getElementById('setupCurrency')?.value || 'EUR';
+      const riskRadio = document.querySelector('input[name="setupRisk"]:checked');
+      const risk = riskRadio ? riskRadio.value : 'minimum';
+
       if (start <= 0 || target <= start || duration <= 0) {
         container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11.5px;">Geçerli başlangıç kasası, hedef kasa ve süre girildiğinde grafik görüntülenecektir.</div>';
         return;
       }
-      const dummyPlan = { startingBank: start, targetBank: target, durationDays: duration };
+
+      let customRisk = null;
+      if (risk === 'custom') {
+        customRisk = getCustomRiskParams();
+      }
+
+      const dummyPlan = { startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk };
       const previewTraj = PE.calculatePlanTrajectories(dummyPlan, null);
-      container.innerHTML = generateTrajectoryChartSvg(previewTraj, dummyPlan, curr, 'all', []);
+      container.innerHTML = generateTrajectoryChartSvg(previewTraj, dummyPlan, curr, risk, []);
     }
 
     const pills = document.querySelectorAll('#durationPills .pill');
@@ -1954,6 +1971,7 @@
       };
     }
 
+    const customPanel = document.getElementById('customRiskControls');
     const rCards = document.querySelectorAll('.risk-card');
     rCards.forEach(rc => {
       rc.onclick = () => {
@@ -1961,8 +1979,23 @@
         rc.classList.add('active');
         const radio = rc.querySelector('input[type="radio"]');
         if (radio) radio.checked = true;
+        const val = rc.dataset.risk || (radio && radio.value);
+        if (customPanel) {
+          customPanel.style.display = (val === 'custom') ? 'block' : 'none';
+        }
         updateSetupChartPreview();
       };
+    });
+
+    const customInps = ['customReservePct', 'customStakeRate', 'customTargetOdds'];
+    customInps.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.oninput = () => {
+          getCustomRiskParams();
+          updateSetupChartPreview();
+        };
+      }
     });
 
     const startInp = document.getElementById('setupStartBank');
@@ -1974,9 +2007,18 @@
 
     updateSetupChartPreview();
 
+    const btnCancel = document.getElementById('btnCancelAddPlan');
+    if (btnCancel) {
+      btnCancel.onclick = () => {
+        isAddingNewPlan = false;
+        renderPlanPane();
+      };
+    }
+
     const btn = document.getElementById('btnCreatePlan');
     if (btn) {
       btn.onclick = () => {
+        const planName = (document.getElementById('setupPlanName')?.value || '').trim();
         const start = parseNumber(document.getElementById('setupStartBank')?.value);
         const target = parseNumber(document.getElementById('setupTargetBank')?.value);
         const duration = parseInt(document.getElementById('setupDuration')?.value, 10);
@@ -1999,10 +2041,26 @@
           return;
         }
 
-        paperState = PE.createInitialState(
-          { currency: curr, riskProfile: risk },
-          { startingBank: start, targetBank: target, durationDays: duration }
-        );
+        let customRisk = null;
+        if (risk === 'custom') {
+          customRisk = getCustomRiskParams();
+          if (planName) customRisk.name = planName;
+        }
+
+        if (paperState && paperState.plans && paperState.plans.length > 0) {
+          PE.createNewPlan(
+            paperState,
+            { name: planName || undefined, startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk },
+            { currency: curr }
+          );
+        } else {
+          paperState = PE.createInitialState(
+            { currency: curr, riskProfile: risk },
+            { name: planName || undefined, startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk }
+          );
+        }
+
+        isAddingNewPlan = false;
         saveState();
         renderPlanPane();
         renderRecPane();
@@ -2012,28 +2070,48 @@
   }
 
   function wirePlanDashboardEvents() {
-    const chartCard = document.getElementById('planChartCard');
-    if (chartCard) {
-      const chipBtns = chartCard.querySelectorAll('#chartViewChips .cchip');
-      chipBtns.forEach(btn => {
-        btn.onclick = () => {
-          const view = btn.dataset.view;
-          if (!view) return;
-          currentChartMode = view;
-          chipBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
-          const chartBox = chartCard.querySelector('.chart-svg-box');
-          if (chartBox && cachedTrajData && paperState && paperState.plan) {
-            const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
-            chartBox.innerHTML = generateTrajectoryChartSvg(cachedTrajData, paperState.plan, curr, currentChartMode, (paperState && paperState.history) || []);
-            wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan, currentChartMode);
-          }
-        };
-      });
+    // Bankroll tabs switching
+    const bTabs = document.querySelectorAll('.bankroll-tab');
+    bTabs.forEach(tab => {
+      tab.onclick = () => {
+        const pId = tab.dataset.planId;
+        if (pId && pId !== paperState.activePlanId) {
+          PE.switchActivePlan(paperState, pId);
+          saveState();
+          renderPlanPane();
+          renderRecPane();
+          renderCouponsPane();
+        }
+      };
+    });
 
-      if (cachedTrajData && paperState && paperState.plan) {
-        const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
-        wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan, currentChartMode);
-      }
+    const btnNewBank = document.getElementById('btnAddNewPlan');
+    if (btnNewBank) {
+      btnNewBank.onclick = () => {
+        isAddingNewPlan = true;
+        renderPlanPane();
+      };
+    }
+
+    const btnDelBank = document.getElementById('btnDeleteCurrentPlan');
+    if (btnDelBank) {
+      btnDelBank.onclick = () => {
+        const cPlan = PE.getActivePlan(paperState);
+        const pName = cPlan ? cPlan.name : 'Bu kasa';
+        if (confirm(`"${pName}" kasasını silmek istediğinize emin misiniz? Diğer kasalarınız korunacaktır.`)) {
+          PE.deletePlan(paperState, paperState.activePlanId);
+          saveState();
+          renderPlanPane();
+          renderRecPane();
+          renderCouponsPane();
+        }
+      };
+    }
+
+    const chartCard = document.getElementById('planChartCard');
+    if (chartCard && cachedTrajData && paperState && paperState.plan) {
+      const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+      wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan, paperState.plan.riskProfile);
     }
 
     const btnSim = document.getElementById('btnRerunSim');
@@ -2059,8 +2137,9 @@
     const btnReset = document.getElementById('btnResetPlan');
     if (btnReset) {
       btnReset.onclick = () => {
-        if (confirm('Mevcut sanal kasa planını ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+        if (confirm('Tüm sanal kasa planlarını ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
           paperState = null;
+          isAddingNewPlan = false;
           try { localStorage.removeItem(PE.STORAGE_KEY); } catch (e) {}
           renderPlanPane();
           renderRecPane();

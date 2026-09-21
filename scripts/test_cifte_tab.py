@@ -97,6 +97,17 @@ with sync_playwright() as p:
 
     eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
     assert len(eligible_rows) > 0, "Bültende yüksek güvenli Çifte Şans vurgusu bulunamadı!"
+
+    # Vurgu kapalıyken Çifte Şans dahil hiçbir kutu yanıp sönmemeli
+    page.select_option('#hlSel', 'off')
+    time.sleep(0.2)
+    assert not page.query_selector('#rows .dc-pill.hot'), "Vurgu kapalıyken Çifte Şans kutusu yanıyor"
+    assert not page.query_selector('#rows .row.dc-highlighted'), "Vurgu kapalıyken Çifte Şans satırı vurgulanıyor"
+
+    # Tüm vurgular açıldığında uygun Çifte Şans kutuları yeniden yanmalı
+    page.select_option('#hlSel', 'all')
+    time.sleep(0.2)
+    eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
     assert all(r.query_selector('.dc-pill.is-highlight.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen yeşil vurgu eksik"
     dc_animation = page.eval_on_selector('.dc-pill.is-highlight.hot', "el => getComputedStyle(el).animationName")
     assert dc_animation == 'pillhot', f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"

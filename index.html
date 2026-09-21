@@ -63,9 +63,10 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .dc-prob{min-width:0}
 .dc-pill{width:100%;min-width:112px;text-align:center;padding:7px 8px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);line-height:1.15}
 .dc-pill.is-highlight{background:rgba(102,227,161,.12);border-color:color-mix(in srgb,var(--good) 55%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--good) 22%,transparent)}
-.dc-pill .dc-pick{font-size:14px;font-weight:950;color:var(--good);margin-right:5px}
+.dc-pill .dc-pick{font-size:14px;font-weight:950;color:var(--muted);margin-right:5px}
 .dc-pill .dc-pct{font-size:13px;font-weight:900;color:var(--text)}
-.dc-pill .dc-note{display:block;margin-top:3px;color:var(--good);font-size:9px;font-weight:900;letter-spacing:.02em;text-transform:uppercase}
+.dc-pill .dc-note{display:block;margin-top:3px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.02em;text-transform:uppercase}
+.dc-pill.is-highlight .dc-pick,.dc-pill.is-highlight .dc-note{color:var(--good)}
 .dc-pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
 .dc-pill.hot .dc-pick,.dc-pill.hot .dc-pct,.dc-pill.hot .dc-note{color:inherit}
 .dc-empty{color:var(--muted);font-size:14px;font-weight:800;opacity:.55}
@@ -1246,9 +1247,11 @@ function doubleChanceInfo(x){
     return {eligible:true,pick,pct,reason:'Yüksek güven eşiğini geçti'};
   }catch(e){return fail('Çifte Şans analizi hesaplanamadı');}
 }
-function doubleChancePill(info){
+function doubleChanceHighlightOn(){return hlActive().some(h=>h.key==='dc');}
+function doubleChancePill(info,highlighted){
   if(!info||!info.eligible)return `<span class="dc-empty" title="${esc((info&&info.reason)||'Vurgulanmadı')}">—</span>`;
-  return `<span class="dc-pill is-highlight hot" title="Model olasılığı %${info.pct.toFixed(1)} · yüksek güven vurgusu, garanti değildir">
+  const cls=highlighted?' is-highlight hot':'';
+  return `<span class="dc-pill${cls}" title="Model olasılığı %${info.pct.toFixed(1)} · yüksek güven vurgusu, garanti değildir">
     <span class="dc-pick">${esc(info.pick)}</span><span class="dc-pct">%${info.pct.toFixed(1)}</span>
     <span class="dc-note">★ Yüksek güven</span>
   </span>`;
@@ -1275,6 +1278,7 @@ function renderPred(){
   rows.innerHTML=list.map(x=>{
     const mk=missingKeyInfo(x);
     const dc=doubleChanceInfo(x);
+    const dcHot=dc.eligible&&doubleChanceHighlightOn();
     const ms=STATS.matches&&STATS.matches[x.match_id];
     const h2h=ms&&ms.h2h&&ms.h2h.count?ms.h2h:null;
     let h2hChip='';
@@ -1283,7 +1287,7 @@ function renderPred(){
       const title=`Aralarındaki son ${h2h.count} maç${tierTxt?` (${esc(tierTxt)} dahil)`:''}: ${h2h.home_wins}G-${h2h.draws}B-${h2h.away_wins}M · ortalama ${h2h.avg_total} gol · 2.5Ü %${h2h.over25_pct}`;
       h2hChip=`<span class="h2h-chip" title="${title}">⚡ ${tierTxt?esc(tierTxt)+' · ':''}${h2h.count} H2H (ort. ${h2h.avg_total} gol)</span>`;
     }
-    return `<div class="row ${dc.eligible?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
+    return `<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
@@ -1292,7 +1296,7 @@ function renderPred(){
     <div class="prob p05">${pillFor(x,'0.5')}</div>
     <div class="prob">${pillFor(x,'1.5')}</div>
     <div class="prob">${pillFor(x,'2.5')}</div>
-    <div class="prob dc-prob">${doubleChancePill(dc)}</div>
+    <div class="prob dc-prob">${doubleChancePill(dc,dcHot)}</div>
   </div>`;
   }).join('');
 }

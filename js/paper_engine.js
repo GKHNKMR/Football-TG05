@@ -1327,6 +1327,70 @@
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // 7.3 Hiç Maç Kaybetmeme (Sıfır Kayıp) 30 Günlük Maksimum Kazanç İterasyonu
+  // ---------------------------------------------------------------------------
+
+  function calculateNoLossIteration(plan, profileKey = 'minimum') {
+    const profKey = (profileKey === 'cautious' ? 'minimum' : (profileKey === 'balanced') ? 'medium' : (profileKey === 'aggressive') ? 'high' : profileKey);
+    const S = Math.max(1, Number(plan && plan.startingBank) || 50);
+    const D = Math.max(1, Number(plan && plan.durationDays) || 30);
+
+    const cfgMap = {
+      minimum: { name: 'Minimum Risk', resPct: 0.50, stakeRate: 0.60, targetOdds: 1.28, color: '#10b981' },
+      medium:  { name: 'Orta Risk',    resPct: 0.35, stakeRate: 0.50, targetOdds: 1.42, color: '#38bdf8' },
+      high:    { name: 'Yüksek Risk',  resPct: 0.25, stakeRate: 0.60, targetOdds: 1.36, color: '#ef4444' }
+    };
+
+    const cfg = cfgMap[profKey] || cfgMap.minimum;
+    let bank = S;
+    const days = [];
+
+    for (let d = 1; d <= D; d++) {
+      const bStart = bank;
+      const rBank = round(bStart * cfg.resPct, 2);
+      const aBank = round(Math.max(0, bStart - rBank), 2);
+      let st = round(aBank * cfg.stakeRate, 2);
+      if (st < 0.50) st = Math.min(bStart, 0.50);
+      if (st > aBank && aBank > 0) st = aBank;
+
+      const nProfit = round(st * (cfg.targetOdds - 1.0), 2);
+      bank = round(bStart + nProfit, 2);
+
+      days.push({
+        day: d,
+        startBank: bStart,
+        reserveBank: rBank,
+        activeBank: aBank,
+        stake: st,
+        odds: cfg.targetOdds,
+        netProfit: nProfit,
+        endBank: bank,
+        dailyChangePct: bStart > 0 ? round(((bank - bStart) / bStart) * 100, 1) : 0
+      });
+    }
+
+    const totalNetProfit = round(bank - S, 2);
+    const roiPct = round((totalNetProfit / S) * 100, 1);
+    const multiplier = round(bank / S, 2);
+
+    return {
+      profileKey: profKey,
+      profileName: cfg.name,
+      color: cfg.color,
+      startingBank: S,
+      finalBank: bank,
+      totalNetProfit,
+      roiPct,
+      multiplier,
+      durationDays: D,
+      reservePct: Math.round(cfg.resPct * 100),
+      stakeRatePct: Math.round(cfg.stakeRate * 100),
+      targetOdds: cfg.targetOdds,
+      days
+    };
+  }
+
   function generateExcelDailyTable(plan, state, profileKey = 'minimum') {
     const model = calculateExcelGrowthModel(plan, profileKey);
     const S = model.startingBank;
@@ -2207,6 +2271,7 @@
     calculatePlanTrajectories,
     calculateExcelGrowthModel,
     generateExcelDailyTable,
+    calculateNoLossIteration,
     generate30DayHistoricalSimulation,
     buildAdaptiveOptions,
     createInitialState,

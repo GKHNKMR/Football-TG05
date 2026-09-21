@@ -136,6 +136,11 @@
     const startBank = (trajData && trajData.startBank) || (plan && plan.startingBank) || 50;
     const targetBank = (trajData && trajData.targetBank) || (plan && plan.targetBank) || 500;
 
+    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : (viewMode === 'multi' || viewMode === 'excel') ? 'minimum' : viewMode);
+    const profilesToDraw = (normView === 'all' || !normView)
+      ? ['minimum', 'medium', 'high']
+      : [normView];
+
     const getX = (day) => L + (day / dur) * pw;
 
     let maxVal = targetBank * 1.15;
@@ -145,12 +150,18 @@
         if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
       }
     }
+    if (PE.calculateNoLossIteration && plan) {
+      for (const k of profilesToDraw) {
+        const nl = PE.calculateNoLossIteration(plan, k);
+        if (nl && nl.finalBank) maxVal = Math.max(maxVal, nl.finalBank);
+      }
+    }
     if (history && history.length) {
       for (const h of history) {
         if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
       }
     }
-    const maxY = Math.ceil(Math.min(targetBank * 2.5, Math.max(targetBank * 1.15, maxVal)) / 25) * 25;
+    const maxY = Math.ceil(Math.max(targetBank * 1.15, maxVal) / 25) * 25;
     const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
 
     // Y Ekseni Kılavuz Çizgileri
@@ -206,12 +217,8 @@
       <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
     `;
 
-    // 2. Risk Modelleri Çizgileri (Minimum %15, Orta %20, Yüksek %25)
+    // 2. Risk Modelleri Çizgileri (Minimum %15, Orta %20, Yüksek %25) ve Sıfır Kayıp Patikaları
     let profilesSvg = '';
-    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : (viewMode === 'multi' || viewMode === 'excel') ? 'minimum' : viewMode);
-    const profilesToDraw = (normView === 'all' || !normView)
-      ? ['minimum', 'medium', 'high']
-      : [normView];
 
     const profColors = {
       minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%50 Rezerv · %15 Büyüme)' },
@@ -261,6 +268,23 @@
         const endX = getX(lastPt.day).toFixed(1);
         const endY = getY(lastPt.median).toFixed(1);
         profilesSvg += `<circle cx="${endX}" cy="${endY}" r="4" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
+
+        // Sıfır Kayıp (Hiç Maç Kaybetmeme Durumu) Patikası
+        if (PE.calculateNoLossIteration && plan) {
+          const nl = PE.calculateNoLossIteration(plan, pKey);
+          if (nl && nl.days && nl.days.length) {
+            let nlD = `M ${getX(0).toFixed(1)},${getY(startBank).toFixed(1)}`;
+            nl.days.forEach(d => {
+              nlD += ` L ${getX(d.day).toFixed(1)},${getY(d.endBank).toFixed(1)}`;
+            });
+            const nlColor = (normView === 'all') ? c.main : '#fbbf24';
+            profilesSvg += `<path d="${nlD}" fill="none" stroke="${nlColor}" stroke-width="${normView === 'all' ? '1.8' : '2.2'}" stroke-dasharray="5,4" opacity="0.9" stroke-linejoin="round"/>`;
+            const nlLast = nl.days[nl.days.length - 1];
+            if (nlLast) {
+              profilesSvg += `<circle cx="${getX(nlLast.day).toFixed(1)}" cy="${getY(nlLast.endBank).toFixed(1)}" r="3.5" fill="${nlColor}" stroke="#0d1219" stroke-width="1.5"/>`;
+            }
+          }
+        }
       }
     }
 
@@ -321,7 +345,9 @@
     const minM = trajData.trajectories.minimum || trajData.trajectories.cautious;
     const medM = trajData.trajectories.medium || trajData.trajectories.balanced;
     const highM = trajData.trajectories.high || trajData.trajectories.aggressive;
-    const em = trajData.excelModel || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
+    const minNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'minimum') : null;
+    const medNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'medium') : null;
+    const highNoLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, 'high') : null;
 
     const rawProf = (paperState && paperState.settings && paperState.settings.riskProfile) || 'minimum';
     const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
@@ -351,9 +377,10 @@
 
         <div class="chart-legend">
           <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Geometrik Hedef Yolu (${formatCurrency(trajData.targetBank, curr)})</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (%50 Rezerv · %15 Büyüme · 1.15×)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (%35 Rezerv · %20 Büyüme · 1.20×)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (%25 Rezerv · %25 Büyüme · 1.25×)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (%50 Rezerv)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (%35 Rezerv)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (%25 Rezerv)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:1px dashed #fbbf24;"></span> ⭐ Kesikli: Sıfır Kayıp Potansiyeli</span>
           ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
         </div>
 
@@ -367,6 +394,7 @@
             <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%50</b></div>
             <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%15,0 (1.15×)</b></div>
             <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.15, trajData.durationDays), 2), curr)}</b></div>
+            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${minNoLoss ? formatCurrency(minNoLoss.finalBank, curr) : '-'} (+%${minNoLoss ? minNoLoss.roiPct : '-'})</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(minM.finalMedian, curr)}</b></div>
             <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${minM.targetHitPct >= 50 ? 'good' : 'warn'}">%${minM.targetHitPct}</b></div>
           </div>
@@ -380,6 +408,7 @@
             <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%65</b></div>
             <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%20,0 (1.20×)</b></div>
             <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.20, trajData.durationDays), 2), curr)}</b></div>
+            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${medNoLoss ? formatCurrency(medNoLoss.finalBank, curr) : '-'} (+%${medNoLoss ? medNoLoss.roiPct : '-'})</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(medM.finalMedian, curr)}</b></div>
             <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${medM.targetHitPct >= 50 ? 'good' : 'warn'}">%${medM.targetHitPct}</b></div>
           </div>
@@ -393,6 +422,7 @@
             <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%75</b></div>
             <div class="cms-row"><span>Günlük Büyüme:</span><b style="color:#f87171;">+%25,0 (1.25×)</b></div>
             <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#f87171;">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.25, trajData.durationDays), 2), curr)}</b></div>
+            <div class="cms-row"><span>Sıfır Kayıp Potansiyeli:</span><b style="color:#fbbf24;">${highNoLoss ? formatCurrency(highNoLoss.finalBank, curr) : '-'} (+%${highNoLoss ? highNoLoss.roiPct : '-'})</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(highM.finalMedian, curr)}</b></div>
             <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${highM.targetHitPct >= 50 ? 'good' : 'warn'}">%${highM.targetHitPct}</b></div>
           </div>
@@ -432,13 +462,19 @@
         if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
       }
     }
+    if (PE.calculateNoLossIteration && plan) {
+      for (const k of profilesToDraw) {
+        const nl = PE.calculateNoLossIteration(plan, k);
+        if (nl && nl.finalBank) maxVal = Math.max(maxVal, nl.finalBank);
+      }
+    }
     const history = (paperState && paperState.history) || [];
     if (history.length) {
       for (const h of history) {
         if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
       }
     }
-    const maxY = Math.ceil(Math.min(targetBank * 2.5, Math.max(targetBank * 1.15, maxVal)) / 25) * 25;
+    const maxY = Math.ceil(Math.max(targetBank * 1.15, maxVal) / 25) * 25;
     const getX = (d) => L + (d / dur) * pw;
     const getY = (val) => T + ph - (Math.max(0, val) / maxY) * ph;
 
@@ -945,6 +981,46 @@
             <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">%${prof.reservePct} Korumada Kaldı</div>
           </div>
         </div>
+
+        <!-- Hiç Maç Kaybetmeme Durumu (Sıfır Kayıp / %100 İsabet İterasyonu) -->
+        ${prof.maxPotential ? `
+          <div class="sim-noloss-banner" style="margin-top:14px;background:linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(16,185,129,0.08) 100%);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:14px 16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:16px;">⭐</span>
+                <b style="color:#fbbf24;font-size:13px;">Hiç Maç Kaybetmeme Durumu (Sıfır Kayıp / %100 İsabet İterasyonu)</b>
+              </div>
+              <span style="background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:99px;">
+                ${prof.maxPotential.wonCoupons}/${prof.maxPotential.wonCoupons} Kupon Kazandı · %100 Başarı
+              </span>
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:12px;">
+              31 günlük kupon serisinde <b>hiçbir maç veya kuponun kaybedilmemesi</b> (her gün kuponun tutması ve kasanın dokunulmaz rezervi ayrı tutularak aktif payın bileşik katlanması) halinde modelin ulaştığı teorik maksimum:
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;">
+              <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;">Başlangıç Kasa</div>
+                <div style="font-size:15px;font-weight:800;color:var(--text);margin-top:2px;">${formatCurrency(prof.maxPotential.startingBank, 'EUR')}</div>
+              </div>
+              <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:10.5px;color:#fbbf24;font-weight:700;">30 Gün Sonu Kasa</div>
+                <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-top:2px;">${formatCurrency(prof.maxPotential.finalBank, 'EUR')}</div>
+              </div>
+              <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(16,185,129,0.35);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:10.5px;color:#10b981;font-weight:700;">Maksimum Net Kâr</div>
+                <div style="font-size:16px;font-weight:900;color:#10b981;margin-top:2px;">+${formatCurrency(prof.maxPotential.totalNetProfit, 'EUR')}</div>
+              </div>
+              <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(56,189,248,0.35);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:10.5px;color:#38bdf8;font-weight:700;">Maksimum ROI</div>
+                <div style="font-size:16px;font-weight:900;color:#38bdf8;margin-top:2px;">+%${prof.maxPotential.roiPct}</div>
+              </div>
+              <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(168,85,247,0.35);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:10.5px;color:#c084fc;font-weight:700;">Kasa Katlama</div>
+                <div style="font-size:16px;font-weight:900;color:#c084fc;margin-top:2px;">${(prof.maxPotential.finalBank / prof.maxPotential.startingBank).toFixed(1)}x</div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Kuponlar Listesi -->
@@ -1174,8 +1250,8 @@
       (prof.ledger || []).forEach(pt => {
         if (pt.endBank) maxVal = Math.max(maxVal, pt.endBank);
       });
-      // Tek profil seçiliyken sıfır kayıp potansiyel kasasını da ölçeklemeye kat
-      if (activeProfile !== 'all' && prof.maxPotential && prof.maxPotential.ledger) {
+      // Sıfır kayıp potansiyel kasasını hem tek profil hem de all modunda ölçeklemeye dahil et
+      if (prof.maxPotential && prof.maxPotential.ledger) {
         prof.maxPotential.ledger.forEach(pt => {
           if (pt.endBank) maxVal = Math.max(maxVal, pt.endBank);
         });
@@ -1225,7 +1301,7 @@
       if (!prof || !prof.ledger) return;
       const st = profStyles[profKey] || profStyles.minimum;
 
-      // Realized curve
+      // 1. Gerçekleşen Eğri
       let pathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
       let areaD = `M ${getX(0).toFixed(1)},${(T + ph).toFixed(1)} L ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
 
@@ -1245,42 +1321,59 @@
       areaD += ` L ${getX(totalDays).toFixed(1)},${(T + ph).toFixed(1)} Z`;
 
       curvesSvg += `
-        <path d="${areaD}" fill="url(#${st.gradId})" opacity="${activeProfile === 'all' ? 0.35 : 0.5}"/>
+        <path d="${areaD}" fill="url(#${st.gradId})" opacity="${activeProfile === 'all' ? 0.30 : 0.45}"/>
         <path d="${pathD}" fill="none" stroke="${st.stroke}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       `;
 
-      // Sıfır Kayıp / Maksimum Potansiyel Eğrisi (tek profil modunda)
-      if (activeProfile !== 'all' && prof.maxPotential && prof.maxPotential.ledger) {
+      // 2. Sıfır Kayıp / Maksimum Potansiyel Eğrisi
+      if (prof.maxPotential && prof.maxPotential.ledger) {
         let noLossPathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
+        const isAll = (activeProfile === 'all');
+        const curveColor = isAll ? st.stroke : '#fbbf24';
+
         prof.maxPotential.ledger.forEach(pt => {
           const px = getX(pt.day).toFixed(1);
           const py = getY(pt.endBank).toFixed(1);
           noLossPathD += ` L ${px},${py}`;
 
           dotsSvg += `
-            <circle class="sim30-dot sim30-dot-noloss" cx="${px}" cy="${py}" r="3" fill="#fbbf24" stroke="#0b1120" stroke-width="1.2"
-              data-day="${pt.day}" data-date="${pt.date}" data-prof="Sıfır Kayıp Potansiyeli" data-bank="${pt.endBank}" data-change="${pt.dailyChangePct}" data-status="won"
+            <circle class="sim30-dot sim30-dot-noloss" cx="${px}" cy="${py}" r="${isAll ? 2.8 : 3.2}" fill="${curveColor}" stroke="#0b1120" stroke-width="1.2"
+              data-day="${pt.day}" data-date="${pt.date}" data-prof="${prof.name} (Sıfır Kayıp Potansiyeli)" data-bank="${pt.endBank}" data-change="${pt.dailyChangePct}" data-status="won"
               style="cursor:pointer;transition:r .15s;" />
           `;
         });
 
         curvesSvg += `
-          <path d="${noLossPathD}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="${noLossPathD}" fill="none" stroke="${curveColor}" stroke-width="${isAll ? '1.8' : '2.2'}" ${isAll ? 'stroke-dasharray="5,4"' : ''} stroke-linecap="round" stroke-linejoin="round"/>
         `;
 
-        legendSvg = `
-          <g transform="translate(${L + 10}, ${T - 12})">
-            <line x1="0" y1="0" x2="16" y2="0" stroke="${st.stroke}" stroke-width="2.4"/>
-            <circle cx="8" cy="0" r="3.5" fill="${st.stroke}"/>
-            <text x="22" y="3.5" fill="var(--text)" font-size="11" font-weight="700" font-family="inherit">Gerçekleşen Kasa (${formatCurrency(prof.stats.finalBank, 'EUR')})</text>
+        if (!isAll) {
+          legendSvg = `
+            <g transform="translate(${L + 10}, ${T - 12})">
+              <line x1="0" y1="0" x2="16" y2="0" stroke="${st.stroke}" stroke-width="2.4"/>
+              <circle cx="8" cy="0" r="3.5" fill="${st.stroke}"/>
+              <text x="22" y="3.5" fill="var(--text)" font-size="11" font-weight="700" font-family="inherit">Gerçekleşen Kasa (${formatCurrency(prof.stats.finalBank, 'EUR')})</text>
 
-            <line x1="190" y1="0" x2="206" y2="0" stroke="#fbbf24" stroke-width="2.2"/>
-            <circle cx="198" cy="0" r="3" fill="#fbbf24"/>
-            <text x="212" y="3.5" fill="#fbbf24" font-size="11" font-weight="700" font-family="inherit">★ Sıfır Kayıp Maksimum Potansiyel (${formatCurrency(prof.maxPotential.finalBank, 'EUR')})</text>
-          </g>
-        `;
+              <line x1="190" y1="0" x2="206" y2="0" stroke="#fbbf24" stroke-width="2.2"/>
+              <circle cx="198" cy="0" r="3" fill="#fbbf24"/>
+              <text x="212" y="3.5" fill="#fbbf24" font-size="11" font-weight="700" font-family="inherit">★ Sıfır Kayıp Maksimum Potansiyel (${formatCurrency(prof.maxPotential.finalBank, 'EUR')})</text>
+            </g>
+          `;
+        }
       }
     });
+
+    if (activeProfile === 'all') {
+      legendSvg = `
+        <g transform="translate(${L + 10}, ${T - 12})">
+          <line x1="0" y1="0" x2="16" y2="0" stroke="#94a3b8" stroke-width="2.4"/>
+          <text x="22" y="3.5" fill="var(--text)" font-size="10.5" font-weight="700" font-family="inherit">Dolu Çizgiler: Gerçekleşen</text>
+
+          <line x1="170" y1="0" x2="190" y2="0" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="5,4"/>
+          <text x="196" y="3.5" fill="#fbbf24" font-size="10.5" font-weight="700" font-family="inherit">Kesikli Çizgiler: Sıfır Kayıp Potansiyelleri</text>
+        </g>
+      `;
+    }
 
     let defsSvg = '<defs>';
     if (profilesToCheck.includes('minimum')) {
@@ -1474,6 +1567,69 @@
   // Kasa Planım Ekranı (#pane-plan) — Gerçek Kasa
   // ---------------------------------------------------------------------------
 
+  function renderPlanNoLossCardHtml(plan, profKey, curr) {
+    if (!PE.calculateNoLossIteration || !plan) return '';
+    const nl = PE.calculateNoLossIteration(plan, profKey);
+    if (!nl) return '';
+
+    return `
+      <div class="card plan-noloss-card" style="margin-bottom:18px;background:linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(16,185,129,0.07) 100%);border:1px solid rgba(245,158,11,0.28);border-radius:14px;padding:18px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(245,158,11,0.3);">
+              ⭐
+            </div>
+            <div>
+              <h3 style="margin:0;font-size:15.5px;font-weight:900;color:var(--text);">Hiç Maç Kaybetmeme Durumu (Sıfır Kayıp / Maksimum Potansiyel İterasyonu)</h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+                Seçili Plan: <b>${esc(nl.profileName)}</b> · ${nl.durationDays} Günlük İterasyon (%${nl.reservePct} Rezerv, %${nl.stakeRatePct} Aktif Stake, ${nl.targetOdds}x Hedef Oran)
+              </div>
+            </div>
+          </div>
+          <span style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;">
+            %100 İsabet Senaryosu (0 Kayıp)
+          </span>
+        </div>
+
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;">
+          Oluşturduğunuz <b>${formatCurrency(nl.startingBank, curr)}</b> başlangıç kasası ile <b>${nl.durationDays} gün boyunca hiçbir kupon veya maçın kaybedilmemesi</b> (her gün hedeflenen oranın gelmesi ve kasanın dokunulmaz rezervi korunarak aktif payın bileşik büyümesi) durumunda ulaşılabilecek teorik üst limit:
+        </p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:12px;">
+          <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Başlangıç Kasa</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-top:4px;">${formatCurrency(nl.startingBank, curr)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">0. Gün</div>
+          </div>
+
+          <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#fbbf24;font-weight:700;">${nl.durationDays}. Gün Sonu Kasa</div>
+            <div style="font-size:18px;font-weight:900;color:#fbbf24;margin-top:4px;">${formatCurrency(nl.finalBank, curr)}</div>
+            <div style="font-size:10.5px;color:#fbbf24;margin-top:3px;font-weight:600;">${nl.multiplier}x Katlama</div>
+          </div>
+
+          <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(16,185,129,0.35);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#10b981;font-weight:700;">Maksimum Net Kâr</div>
+            <div style="font-size:17px;font-weight:900;color:#10b981;margin-top:4px;">+${formatCurrency(nl.totalNetProfit, curr)}</div>
+            <div style="font-size:10px;color:#34d399;margin-top:3px;font-weight:600;">Net Kazanç</div>
+          </div>
+
+          <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#38bdf8;font-weight:700;">Maksimum ROI</div>
+            <div style="font-size:17px;font-weight:900;color:#38bdf8;margin-top:4px;">+%${nl.roiPct}</div>
+            <div style="font-size:10px;color:#38bdf8;margin-top:3px;font-weight:600;">Getiri Oranı</div>
+          </div>
+
+          <div style="background:rgba(11,17,32,0.65);border:1px solid rgba(168,85,247,0.35);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#c084fc;font-weight:700;">Korunan Rezerv</div>
+            <div style="font-size:16px;font-weight:900;color:#c084fc;margin-top:4px;">%${nl.reservePct}</div>
+            <div style="font-size:10px;color:#c084fc;margin-top:3px;font-weight:600;">Dokunulmaz Kasa</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderPlanPane() {
     const pane = document.getElementById('pane-plan');
     if (!pane) return;
@@ -1570,6 +1726,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Hiç Maç Kaybetmeme Durumu / Sıfır Kayıp Kartı (Gerçek Kasa) -->
+      ${renderPlanNoLossCardHtml(paperState.plan, profKey, curr)}
 
       <!-- Hedeflenen Sürede Kasa Ulaşma Grafiği -->
       ${renderTrajectoryChartCardHtml(paperState.plan, curr, currentChartMode, trajData)}

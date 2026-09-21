@@ -875,45 +875,60 @@
     return `
       <!-- Model İsabet ve Yanılma Analiz Özeti Kartı -->
       <div class="sim-analysis-summary-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:12px;">
           <div>
-            <h3 style="margin:0;font-size:15px;color:var(--text);">🎯 30 Günlük Kupon &amp; Model Başarı Analizi (Tahmin vs Gerçekleşen)</h3>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
-              Modelin hesapladığı beklenen gol (λ) ve olasılıklar ile 31 günde biten gerçek skorların performans analizi:
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text);">🎯 30 Günlük Kupon &amp; Model Başarı Analizi</h3>
+              <span style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:99px;">Tahmin vs Gerçekleşen</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">
+              Modelin hesapladığı beklenen gol (λ) ve olasılıklar ile 31 günde sonuçlanan gerçek maçların performans dökümü:
             </div>
           </div>
-          <div class="chart-mode-pills" id="simKuponProfilePills">
-            <button type="button" class="cmp-btn ${profKey === 'minimum' ? 'active' : ''}" data-prof="minimum">🟢 Minimum Risk (5x 0.5Ü)</button>
-            <button type="button" class="cmp-btn ${profKey === 'medium' ? 'active' : ''}" data-prof="medium">🔵 Orta Risk (3x 1.5Ü)</button>
-            <button type="button" class="cmp-btn ${profKey === 'high' ? 'active' : ''}" data-prof="high">🔴 Yüksek Risk (~1.35x Kombinasyon)</button>
+          <div class="chart-mode-pills" id="simKuponProfilePills" style="padding:5px;gap:8px;">
+            <button type="button" class="cmp-btn ${profKey === 'minimum' ? 'active' : ''}" data-prof="minimum">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span>
+              <span>Minimum Risk</span>
+              <span style="font-size:10px;opacity:.75;font-weight:600;">(5x 0.5Ü)</span>
+            </button>
+            <button type="button" class="cmp-btn ${profKey === 'medium' ? 'active' : ''}" data-prof="medium">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#38bdf8;box-shadow:0 0 8px #38bdf8;"></span>
+              <span>Orta Risk</span>
+              <span style="font-size:10px;opacity:.75;font-weight:600;">(3x 1.5Ü)</span>
+            </button>
+            <button type="button" class="cmp-btn ${profKey === 'high' ? 'active' : ''}" data-prof="high">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;"></span>
+              <span>Yüksek Risk</span>
+              <span style="font-size:10px;opacity:.75;font-weight:600;">(~1.35x Kombo)</span>
+            </button>
           </div>
         </div>
 
         <div class="sim-analysis-grid">
-          <div class="sim-analysis-box">
+          <div class="sim-analysis-box" style="border-top:3px solid #10b981;">
             <div class="sav" style="color:#10b981;">%${prof.stats.legSuccessRatePct || 95.5}</div>
-            <div class="sal">Maç Başına Başarı Oranı</div>
-            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${prof.stats.wonLegs} / ${prof.stats.totalLegs} Maç Geldi</div>
+            <div class="sal">Maç Başına Başarı</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">${prof.stats.wonLegs} / ${prof.stats.totalLegs} Maç Geldi</div>
           </div>
-          <div class="sim-analysis-box">
+          <div class="sim-analysis-box" style="border-top:3px solid #f59e0b;">
             <div class="sav" style="color:#f59e0b;">%${prof.stats.legErrorRatePct || 4.5}</div>
-            <div class="sal">Maç Başına Yanılma Oranı</div>
-            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Yalnızca ${prof.stats.lostLegs} Maçta Iska</div>
+            <div class="sal">Maç Başına Yanılma</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">Yalnızca ${prof.stats.lostLegs} Maçta Iska</div>
           </div>
-          <div class="sim-analysis-box">
+          <div class="sim-analysis-box" style="border-top:3px solid #38bdf8;">
             <div class="sav" style="color:#38bdf8;">${prof.stats.wonCoupons} / ${prof.stats.totalCoupons}</div>
             <div class="sal">Kupon Tutma Oranı</div>
-            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">%${prof.stats.winRatePct} Başarılı Gün</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">%${prof.stats.winRatePct} Başarılı Gün</div>
           </div>
-          <div class="sim-analysis-box">
-            <div class="sav" style="color:#10b981;">+${formatCurrency(prof.stats.totalNetProfit, 'EUR')}</div>
+          <div class="sim-analysis-box" style="border-top:3px solid #34d399;">
+            <div class="sav" style="color:#34d399;">+${formatCurrency(prof.stats.totalNetProfit, 'EUR')}</div>
             <div class="sal">Net Kasa Kârı</div>
-            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">ROI: +%${prof.stats.totalRoiPct}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">ROI: +%${prof.stats.totalRoiPct}</div>
           </div>
-          <div class="sim-analysis-box">
-            <div class="sav" style="color:#a855f7;">${formatCurrency(prof.stats.reserveBank, 'EUR')}</div>
-            <div class="sal">Dokunulmaz Kasa Rezervi</div>
-            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">%${prof.reservePct} Korumada Kaldı</div>
+          <div class="sim-analysis-box" style="border-top:3px solid #a855f7;">
+            <div class="sav" style="color:#c084fc;">${formatCurrency(prof.stats.reserveBank, 'EUR')}</div>
+            <div class="sal">Kasa Rezervi</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600;">%${prof.reservePct} Korumada Kaldı</div>
           </div>
         </div>
       </div>

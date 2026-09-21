@@ -538,11 +538,35 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   .ai-badge.med{background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.3)}
   .ai-badge.risky{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
 
-  .sim-analysis-summary-card{background:linear-gradient(135deg,rgba(16,185,129,0.08) 0%,rgba(56,189,248,0.06) 100%);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:14px}
-  .sim-analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px}
-  .sim-analysis-box{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
-  .sim-analysis-box .sav{font-size:17px;font-weight:800;color:var(--text);margin-bottom:2px}
-  .sim-analysis-box .sal{font-size:10.5px;color:var(--muted)}
+  /* 30 Günlük Simülasyon Kumanda Paneli & Segment Switcher */
+  .chart-mode-pills{display:inline-flex;align-items:center;background:rgba(15,23,42,0.75);border:1px solid rgba(255,255,255,0.12);padding:4px;border-radius:12px;gap:6px;box-shadow:0 4px 16px rgba(0,0,0,0.35);backdrop-filter:blur(10px)}
+  .cmp-btn{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .2s cubic-bezier(0.4,0,0.2,1);outline:none;white-space:nowrap}
+  .cmp-btn:hover{background:rgba(255,255,255,0.09);color:#f1f5f9;border-color:rgba(255,255,255,0.2);transform:translateY(-1px)}
+  .cmp-btn:active{transform:translateY(0)}
+
+  /* Minimum Risk Butonu Aktif */
+  .cmp-btn[data-prof="minimum"].active{background:linear-gradient(135deg,rgba(16,185,129,0.3) 0%,rgba(16,185,129,0.14) 100%);border-color:#10b981;color:#6ee7b7;box-shadow:0 0 16px rgba(16,185,129,0.4),inset 0 1px 0 rgba(255,255,255,0.25);font-weight:900}
+  .cmp-btn[data-prof="minimum"]:hover:not(.active){border-color:rgba(16,185,129,0.5);color:#a7f3d0}
+
+  /* Orta Risk Butonu Aktif */
+  .cmp-btn[data-prof="medium"].active{background:linear-gradient(135deg,rgba(56,189,248,0.3) 0%,rgba(56,189,248,0.14) 100%);border-color:#38bdf8;color:#7dd3fc;box-shadow:0 0 16px rgba(56,189,248,0.4),inset 0 1px 0 rgba(255,255,255,0.25);font-weight:900}
+  .cmp-btn[data-prof="medium"]:hover:not(.active){border-color:rgba(56,189,248,0.5);color:#bae6fd}
+
+  /* Yüksek Risk Butonu Aktif */
+  .cmp-btn[data-prof="high"].active{background:linear-gradient(135deg,rgba(239,68,68,0.3) 0%,rgba(239,68,68,0.14) 100%);border-color:#ef4444;color:#fca5a5;box-shadow:0 0 16px rgba(239,68,68,0.4),inset 0 1px 0 rgba(255,255,255,0.25);font-weight:900}
+  .cmp-btn[data-prof="high"]:hover:not(.active){border-color:rgba(239,68,68,0.5);color:#fecaca}
+
+  /* Hepsini Karşılaştır Butonu Aktif */
+  .cmp-btn[data-prof="all"].active{background:linear-gradient(135deg,rgba(168,85,247,0.3) 0%,rgba(168,85,247,0.14) 100%);border-color:#a855f7;color:#d8b4fe;box-shadow:0 0 16px rgba(168,85,247,0.4),inset 0 1px 0 rgba(255,255,255,0.25);font-weight:900}
+  .cmp-btn[data-prof="all"]:hover:not(.active){border-color:rgba(168,85,247,0.5);color:#e9d5ff}
+
+  /* Özet Analiz Kartı & 5'li Metrik Grid */
+  .sim-analysis-summary-card{background:linear-gradient(145deg,rgba(30,41,59,0.7) 0%,rgba(15,23,42,0.85) 100%);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px 22px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,0.35);backdrop-filter:blur(8px)}
+  .sim-analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+  .sim-analysis-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 14px;text-align:center;transition:all .2s ease;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+  .sim-analysis-box:hover{transform:translateY(-2px);background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.18);box-shadow:0 6px 18px rgba(0,0,0,0.35)}
+  .sim-analysis-box .sav{font-size:22px;font-weight:900;color:var(--text);margin-bottom:4px;letter-spacing:-0.5px}
+  .sim-analysis-box .sal{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
   
   .admin-notice-banner{background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:#d8b4fe;display:flex;align-items:center;gap:8px}
 

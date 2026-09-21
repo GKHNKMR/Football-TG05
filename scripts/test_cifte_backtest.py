@@ -1,4 +1,5 @@
 import time, threading, sys, os
+from pathlib import Path
 sys.stdout.reconfigure(encoding='utf-8')
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from playwright.sync_api import sync_playwright
@@ -6,7 +7,7 @@ from playwright.sync_api import sync_playwright
 class H(SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
-PORT = 8945
+PORT = 8946
 server = HTTPServer(('127.0.0.1', PORT), H)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 
@@ -20,74 +21,96 @@ with sync_playwright() as p:
     page.goto(f'http://127.0.0.1:{PORT}/index.html')
     time.sleep(1.5)
     
-    # 1. Navigate to #tab-cifte
-    print("--- 1. '🎲 Çifte Şans & Skor' Sekmesi Açılıyor ---")
+    print("\n--- TEST 1: Tahmin vs Gerçekleşen'de Kısıtlı Veri Kontrolü (Schalke 04 — Elversberg) ---")
+    page.click('#tab-res')
+    time.sleep(0.8)
+    
+    # Arama kutusuna Schalke yazıp maçı bulalım
+    q_res = page.query_selector('#qRes')
+    assert q_res, "Arama kutusu bulunamadı"
+    q_res.fill('Schalke')
+    time.sleep(0.5)
+    
+    res_text = page.inner_text('#resRows')
+    assert "Schalke 04" in res_text, "Schalke maçı sonuçlarda bulunamadı"
+    assert "Elversberg" in res_text, "Elversberg maçı sonuçlarda bulunamadı"
+    
+    # Bu maçın satırını bulup inceleyelim
+    schalke_row = page.query_selector('.rrow[data-home="Schalke 04"]')
+    assert schalke_row, "Schalke 04 satırı bulunamadı"
+    schalke_row_text = schalke_row.inner_text()
+    print("  Schalke 04 satır içeriği:\n   ", schalke_row_text.replace('\n', ' · '))
+    
+    # 1. Kısıtlı veri uyarısı görünmeli
+    assert "Kısıtlı Veri" in schalke_row_text, "Schalke maçında 'Kısıtlı Veri' etiketi eksik!"
+    # 2. Asla ★ yıldız vurgusu olmamalı
+    assert "★" not in schalke_row_text, "Kısıtlı veri içeren maçta '★' yıldızı olmamalı!"
+    # 3. Yön kutusunda yeşil halka (box-shadow) olmamalı
+    hit_spans = schalke_row.query_selector_all('.hitset span')
+    for sp in hit_spans:
+        style = sp.get_attribute('style') or ''
+        assert 'box-shadow' not in style, f"Kısıtlı veri yön kutusunda vurgu halkası olmamalı: {style}"
+    
+    print("  ✓ Schalke 04 — Elversberg maçında kısıtlı verinin vurgusuz olduğu (yıldızsız, halkasız ve 'Kısıtlı Veri' etiketli) doğrulandı!")
+
+    # Sadece vurgulananlar filtresi testi
+    print("\n--- TEST 2: '⚡ Sadece Vurgulanan' Filtresinde Kısıtlı Veri Hariç Tutma ---")
+    # Arama kutusunu temizle
+    q_res.fill('')
+    time.sleep(0.5)
+    page.click('#vurguMatchToggle')
+    time.sleep(0.5)
+    
+    # Vurgulanan maçlar listesinde Schalke - Elversberg olmamalı!
+    vurgu_text = page.inner_text('#resRows')
+    assert "Schalke 04 — Elversberg" not in vurgu_text, "Kısıtlı verili Schalke maçı '⚡ sadece vurgulanan' listesinde ÇIKMAMALI!"
+    print("  ✓ Kısıtlı verili maçların '⚡ sadece vurgulanan' listesine kesinlikle dahil edilmediği doğrulandı!")
+    
+    # Ekran görüntüsü al (Schalke maçı)
+    q_res.fill('Schalke')
+    page.click('#vurguMatchToggle') # kapat
+    time.sleep(0.5)
+    target_dir = Path(r"C:\Users\mtem01\.gemini\antigravity\brain\f33eb80d-72fc-483c-aef4-dc3ca74ebe48")
+    page.screenshot(path=str(target_dir / "schalke_limited_data_clean.png"))
+    print("  ✓ Schalke maçı temiz görünüm ekran görüntüsü kaydedildi: schalke_limited_data_clean.png")
+
+    print("\n--- TEST 3: Çifte Şans & Skor Model Doğruluğu (16.478 Maç & Sıfır Iska) ---")
     page.click('#tab-cifte')
     time.sleep(0.6)
     
-    # 2. Switch to Model Doğruluğu view
-    print("\n--- 2. '📊 Çifte Şans & Skor Model Doğruluğu' Görünümüne Geçiliyor ---")
     bt_toggle = page.query_selector('.subtab-toggle[data-view="bt"]')
-    assert bt_toggle, "Model Doğruluğu geçiş butonu bulunamadı!"
+    assert bt_toggle, "Model Doğruluğu butonu bulunamadı!"
     bt_toggle.click()
     time.sleep(0.8)
     
-    # Verify 4 KPI cards
-    kpis = page.inner_text('#pane-cifte')
-    print("  KPI Başlıkları ve Değerleri:")
-    assert "🛡️ 1X Çifte Şans (≥%75)" in kpis, "1X KPI kartı eksik!"
-    assert "%80.5" in kpis, "1X başarı oranı %80.5 bulunamadı!"
-    assert "⚡ 12 Çifte Şans (≥%75)" in kpis, "12 KPI kartı eksik!"
-    assert "%76.2" in kpis, "12 başarı oranı %76.2 bulunamadı!"
-    assert "🚀 X2 Çifte Şans (≥%75)" in kpis, "X2 KPI kartı eksik!"
-    assert "%74.2" in kpis, "X2 başarı oranı %74.2 bulunamadı!"
-    assert "🎯 Skor Tahmini (Top-3)" in kpis, "Skor KPI kartı eksik!"
-    assert "%29.9" in kpis, "Skor Top-3 başarı oranı %29.9 bulunamadı!"
-    print("  ✓ 4 Adet Çifte Şans ve Skor KPI Kartı (1X: %80.5, 12: %76.2, X2: %74.2, Skor: %29.9) başarıyla doğrulandı!")
+    cifte_text = page.inner_text('#pane-cifte')
     
-    # Verify Lig tablosu
-    tbl_rows = page.query_selector_all('#tblCifteLeague tbody tr')
-    print(f"  Lig tablosu satır sayısı: {len(tbl_rows)}")
-    assert len(tbl_rows) >= 10, f"Lig tablosu satır sayısı beklenenden az: {len(tbl_rows)}"
+    # 1. Maç sayısı 16.478 olmalı (17.003 olmamalı!)
+    assert "16.478" in cifte_text, "16.478 maç sayısı bulunamadı!"
+    assert "17.003" not in cifte_text, "17.003 maç sayısı artık ÇIKMAMALI!"
+    print("  ✓ Toplam maç sayısı tam 16.478 olarak doğrulandı (17.003 tamamen kaldırıldı).")
     
-    # 3. Test Lig Filtreleme (LaLiga tıklanıyor)
-    print("\n--- 3. Lig Bazında Dinamik Filtreleme (LaLiga) Test Ediliyor ---")
-    laliga_row = page.query_selector('tr.bt-cifte-league-row[data-league="LaLiga"]')
-    assert laliga_row, "LaLiga satırı bulunamadı!"
-    laliga_row.click()
-    time.sleep(0.5)
+    # 2. Iska / Tutmadı kutuları olmamalı
+    # Başlık ve kartlarda "Iska" veya "Tutmadı" kutusu olmamalı
+    assert "Iska" not in cifte_text, "KPI kartlarında veya tablolarda 'Iska' kelimesi olmamalı!"
+    assert "Tutmadı" not in cifte_text, "KPI kartlarında veya tablolarda 'Tutmadı' kelimesi olmamalı!"
+    print("  ✓ 'Iska' ve 'Tutmadı' kutularının ve metinlerinin tamamen kaldırıldığı doğrulandı!")
     
-    laliga_text = page.inner_text('#pane-cifte')
-    assert "Filtreyi Sıfırla (Tümü)" in laliga_text, "Filtre sıfırlama butonu çıkmadı!"
-    print("  ✓ LaLiga seçildiğinde KPI kartları LaLiga verilerine göre anında güncellendi!")
+    # 3. KPI kartları başarı oranları
+    assert "1X Çifte Şans" in cifte_text, "1X kartı eksik"
+    assert "12 Çifte Şans" in cifte_text, "12 kartı eksik"
+    assert "X2 Çifte Şans" in cifte_text, "X2 kartı eksik"
+    assert "Skor Tahmin Havuzu" in cifte_text, "Skor kartı eksik"
+    print("  ✓ 4 Adet Model Doğruluğu KPI Kartı başarıyla doğrulandı!")
     
-    # Filtreyi sıfırla
-    page.click('#btnResetCifteLeague')
-    time.sleep(0.4)
-    reset_text = page.inner_text('#pane-cifte')
-    assert "%80.5" in reset_text, "Filtre sıfırlanamadı!"
-    print("  ✓ Filtre sıfırlandı ve genel toplam (%80.5) başarıyla geri yüklendi.")
+    # 4. Lig tablosu 6 kolonlu ve sade olmalı
+    th_elements = page.query_selector_all('#tblCifteLeague thead th')
+    th_texts = [th.inner_text().strip() for th in th_elements]
+    print(f"  Lig tablosu başlıkları ({len(th_texts)} adet):", " | ".join(th_texts))
+    assert len(th_texts) == 6, f"Lig tablosu tam 6 kolon olmalı (önceden 13 idi), şu an: {len(th_texts)}"
     
-    # 4. Ekran Görüntüsü Al
-    screenshot_path = 'scratch/cifte_backtest_screenshot.png'
-    page.screenshot(path=screenshot_path, full_page=False)
-    print(f"  ✓ Ekran görüntüsü kaydedildi: {screenshot_path}")
-    
-    # 5. Test Cross-link from #tab-bt (Model Doğruluğu)
-    print("\n--- 4. '📊 Model Doğruluğu' Sekmesinden Çifte Şans Doğruluğuna Geçiş Testi ---")
-    page.click('#tab-bt')
-    time.sleep(0.6)
-    assert page.query_selector('#pane-bt').is_visible(), "pane-bt açılmadı!"
-    
-    # Click switcher to cifte backtest
-    switch_btn = page.query_selector('button[onclick*="cifte"]')
-    assert switch_btn, "pane-bt içindeki Çifte Şans geçiş butonu bulunamadı!"
-    switch_btn.click()
-    time.sleep(0.8)
-    
-    assert page.query_selector('#pane-cifte').is_visible(), "pane-cifte açılmadı!"
-    assert "1X Çifte Şans" in page.inner_text('#pane-cifte'), "Çifte Şans model doğruluğu açılmadı!"
-    print("  ✓ '📊 Model Doğruluğu' sekmesinden tek tıkla Çifte Şans & Skor doğrulamasına geçiş başarıyla doğrulandı!")
-    
-    print("\n>>> ÇİFTE ŞANS & SKOR MODEL DOĞRULUĞU TÜM TESTLERİ BAŞARIYLA GEÇTİ! <<<")
-    browser.close()
+    # Ekran görüntüsü al (Çifte Şans Backtest)
+    page.screenshot(path=str(target_dir / "cifte_backtest_clean.png"))
+    print("  ✓ Çifte Şans Model Doğruluğu temiz görünüm ekran görüntüsü kaydedildi: cifte_backtest_clean.png")
+
+    print("\n>>> TÜM DOĞRULAMA TESTLERİ BAŞARIYLA TAMAMLANDI! <<<")

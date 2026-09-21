@@ -776,7 +776,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
       <button class="chip active" type="button" style="cursor:pointer;font-weight:800;padding:6px 14px;">⚽ Gol Pazarları Doğruluğu (0.5Ü · 1.5Ü · 2.5Ü)</button>
       <button class="chip" type="button" onclick="setTab('cifte');if(window.BETAVUS_CIFTE_UI)BETAVUS_CIFTE_UI.setSubView('bt');" style="cursor:pointer;background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.15);font-weight:700;padding:6px 14px;">
-        🎲 Çifte Şans &amp; Skor Model Doğruluğu (17.003 Maç) →
+        🎲 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç) →
       </button>
     </div>
 
@@ -1173,7 +1173,7 @@ function aggr(rows){                       // seçili lig + gün için istatisti
     const lineHits = rows.filter(r=>r.hits&&r.hits['hit_'+t]).length;
     a['hits_'+t] = lineHits;
     a['acc_'+t] = Math.round(1000*lineHits/n)/10;
-    const hi=rows.filter(r=>(r[key]||0)>=HIMIN[t]);
+    const hi=rows.filter(r=>!isLimitedData(r)&&(r[key]||0)>=HIMIN[t]);
     a['hi_n_'+t] = hi.length;
     if(hi.length){
       const hiHits = hi.filter(r=>r.hits&&r.hits['hit_'+t]).length;
@@ -1190,7 +1190,7 @@ function aggr(rows){                       // seçili lig + gün için istatisti
   if(errs.length)a.lambda_mae=Math.round(100*errs.reduce((s,r)=>s+r.lambda_err,0)/errs.length)/100;
   const val=rows.filter(r=>'value_hit'in r);
   if(val.length)a.value_acc=Math.round(1000*val.filter(r=>r.value_hit).length/val.length)/10;
-  a.hi_unique_n = rows.filter(r=>(r.p_over_0_5||0)>=HIMIN['05'] || (r.p_over_1_5||0)>=HIMIN['15'] || (r.p_over_2_5||0)>=HIMIN['25']).length;
+  a.hi_unique_n = rows.filter(r=>!isLimitedData(r)&&((r.p_over_0_5||0)>=HIMIN['05'] || (r.p_over_1_5||0)>=HIMIN['15'] || (r.p_over_2_5||0)>=HIMIN['25'])).length;
   return a;
 }
 function lineTile(label,acc,hits,total,subLabel){
@@ -1215,22 +1215,25 @@ function lineTile(label,acc,hits,total,subLabel){
 }
 function mark(h){return `<span class="${h?'hit':'miss'}">${h?'✓':'✗'}</span>`;}
 // modelin o çizgideki yönü (Üst/Alt) + tuttu mu — "✓" tek başına "üst geldi" demek değil
-function dirMark(p,h,line){
+function dirMark(p,h,line,m){
   const up=p!=null&&Math.round(p*100)>=50;
   const key=line.replace('.','');
-  const isHi=p!=null&&HIMIN[key]&&Number(p)>=HIMIN[key];
+  const lim=isLimitedData(m);
+  const isHi=!lim&&p!=null&&HIMIN[key]&&Number(p)>=HIMIN[key];
   const hiRing=isHi?' style="box-shadow:0 0 0 1.5px var(--good)"':'';
-  return `<span class="${h?'hit':'miss'}"${hiRing} title="${line} çizgisi — model: ${up?'Üst':'Alt'} · ${h?'tuttu':'tutmadı'}${isHi?' · Vurgulanan (yüksek güven)':''}">${up?'Ü':'A'}${h?'✓':'✗'}</span>`;
+  return `<span class="${h?'hit':'miss'}"${hiRing} title="${line} çizgisi — model: ${up?'Üst':'Alt'} · ${h?'tuttu':'tutmadı'}${isHi?' · Vurgulanan (yüksek güven)':''}${lim?' · Kısıtlı veri (vurgusuz)':''}">${up?'Ü':'A'}${h?'✓':'✗'}</span>`;
 }
 function edgeLabel(m){
+  const lim=isLimitedData(m);
   const p05=m.p_over_0_5, p15=m.p_over_1_5, p25=m.p_over_2_5;
-  const h05=p05!=null&&p05>=HIMIN['05'];
-  const h15=p15!=null&&p15>=HIMIN['15'];
-  const h25=p25!=null&&p25>=HIMIN['25'];
+  const h05=!lim&&p05!=null&&p05>=HIMIN['05'];
+  const h15=!lim&&p15!=null&&p15>=HIMIN['15'];
+  const h25=!lim&&p25!=null&&p25>=HIMIN['25'];
   const s05=h05?`<b style="color:var(--good);background:rgba(102,227,161,0.12);padding:1px 5px;border-radius:4px">0.5Ü ${pctI(p05)} ★</b>`:`0.5Ü ${pctI(p05)}`;
   const s15=h15?`<b style="color:var(--good);background:rgba(102,227,161,0.12);padding:1px 5px;border-radius:4px">1.5Ü ${pctI(p15)} ★</b>`:`1.5Ü ${pctI(p15)}`;
   const s25=h25?`<b style="color:var(--good);background:rgba(102,227,161,0.12);padding:1px 5px;border-radius:4px">2.5Ü ${pctI(p25)} ★</b>`:`2.5Ü ${pctI(p25)}`;
-  return `tahmin: ${s05} · ${s15} · ${s25}`;
+  const limTag=lim?` · <span style="color:#f2994a;font-size:10px;font-weight:800;background:rgba(242,153,74,0.15);padding:1px 5px;border-radius:4px;">⚠️ Kısıtlı Veri (Vurgusuz)</span>`:'';
+  return `tahmin: ${s05} · ${s15} · ${s25}${limTag}`;
 }
 function hiStrip(o){
   const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_hits_'+t]?.toLocaleString('tr-TR')||0} / ${o['hi_n_'+t].toLocaleString('tr-TR')} maç tuttu)</span>`:`${lbl} → <span class="sm">bu grupta maç yok</span>`;
@@ -1238,9 +1241,9 @@ function hiStrip(o){
     ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
 // yüksek güvenle (Tahminler'de yeşil yanan eşik) tahmin edilip tutmayan maçlar —
-// "%95 dedi, 0-0 bitti" gibi sürpriz ıskaları tek başına incelemek için
+// "%95 dedi, 0-0 bitti" gibi sürpriz ıskaları tek başına incelemek için (kısıtlı veri hariç)
 function hiMissRows(ms){
-  return ms.filter(m=>m.hits&&['05','15','25'].some(t=>{
+  return ms.filter(m=>!isLimitedData(m)&&m.hits&&['05','15','25'].some(t=>{
     const v=m['p_over_'+t[0]+'_'+t[1]];
     return v!=null&&Number(v)>=HIMIN[t]&&m.hits['hit_'+t]===0;
   }));
@@ -1356,8 +1359,8 @@ function renderResults(){
     `;
   }
 
-  // Maç tablosu filtreleri (sadece vurgulananlar / sadece ıskalar)
-  const hiMatches = ms.filter(m=>(m.p_over_0_5||0)>=HIMIN['05'] || (m.p_over_1_5||0)>=HIMIN['15'] || (m.p_over_2_5||0)>=HIMIN['25']);
+  // Maç tablosu filtreleri (sadece vurgulananlar / sadece ıskalar — kısıtlı veri hariç)
+  const hiMatches = ms.filter(m=>!isLimitedData(m)&&((m.p_over_0_5||0)>=HIMIN['05'] || (m.p_over_1_5||0)>=HIMIN['15'] || (m.p_over_2_5||0)>=HIMIN['25']));
   const hiMiss = hiMissRows(ms);
 
   const vtb = $('vurguMatchToggle');
@@ -1464,7 +1467,7 @@ function renderResults(){
       <div class="rteam" title="${esc(m.home)} — ${esc(m.away)}"><span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.home)}</span> — <span class="tnclick" data-home="${esc(m.home)}" data-away="${esc(m.away)}" title="Bu iki takım arasındaki maçlar">${esc(m.away)}</span><div class="edge">${edgeLabel(m)}</div></div>
       <div class="rsc">${m.score}</div>
       <div class="${close?'hit':''}" style="font-weight:800">${lam!=null?lam.toFixed(1):'—'}</div>
-      <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5')}${dirMark(m.p_over_1_5,H.hit_15,'1.5')}${dirMark(m.p_over_2_5,H.hit_25,'2.5')}</div>
+      <div class="hitset">${dirMark(m.p_over_0_5,H.hit_05,'0.5',m)}${dirMark(m.p_over_1_5,H.hit_15,'1.5',m)}${dirMark(m.p_over_2_5,H.hit_25,'2.5',m)}</div>
       <div><span class="${gaCls}" style="font-weight:800">${ga==null?'—':'%'+ga}</span><div class="edge">λ ${lam!=null?lam.toFixed(2):'—'} → ${tot} gol</div></div>
     </div>`;
   }).join('');
@@ -1559,7 +1562,7 @@ function renderBacktest(){
   function calcMarketStats(matchList, thr, marketKey){
     const pKey = marketKey==='0.5' ? 'p_over_0_5' : marketKey==='1.5' ? 'p_over_1_5' : 'p_over_2_5';
     const numLine = Number(marketKey);
-    const hiList = matchList.filter(m=>Number(m[pKey]||0)>=thr);
+    const hiList = matchList.filter(m=>!isLimitedData(m)&&Number(m[pKey]||0)>=thr);
     const hiN = hiList.length;
     let hiHits = 0;
     for(let i=0; i<hiList.length; i++){

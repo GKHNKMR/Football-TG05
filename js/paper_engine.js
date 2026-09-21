@@ -327,9 +327,9 @@
 
   function isEligibleMatch(match) {
     if (!match) return false;
-    // league-avg veya partial-form gibi kısıtlı veri dayanakları otomatik öneriye alınmaz
+    if (match.h2h_tier || (match.h2h_matches_used && match.h2h_matches_used >= 2)) return true;
     const b = match.basis || '';
-    if (b === 'league-avg' || b === 'partial-form') return false;
+    if (b === 'league-avg' || b === 'partial-form' || (typeof b === 'string' && (b.startsWith('partial-form') || b.startsWith('league-avg')))) return false;
     return true;
   }
 

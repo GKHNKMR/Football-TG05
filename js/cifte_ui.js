@@ -1,8 +1,9 @@
 /**
  * BETAVUS — Çifte Şans & Skor Tahminleri Kullanıcı Arayüzü (cifte_ui.js)
  * 
- * Hem güncel maç bülteni tahminlerini hem de 5 sezonluk (17.003 maç)
+ * Hem güncel maç bülteni tahminlerini hem de 5 sezonluk (16.478 maç)
  * Çifte Şans ve Skor Model Doğruluğu (Backtest) analizini sunar.
+ * Kısıtlı veriler (partial-form / league-avg) analize ve vurgulara dahil edilmez.
  */
 
 (function (global) {
@@ -28,6 +29,16 @@
 
   function num(val) {
     return (Number(val) || 0).toLocaleString('tr-TR');
+  }
+
+  function isLimitedData(x) {
+    if (typeof window !== 'undefined' && typeof window.isLimitedData === 'function') {
+      return window.isLimitedData(x);
+    }
+    if (!x) return false;
+    if (x.h2h_tier || (x.h2h_matches_used && x.h2h_matches_used >= 2)) return false;
+    const b = typeof x === 'string' ? x : x.basis;
+    return b === 'partial-form' || b === 'league-avg' || (typeof b === 'string' && (b.startsWith('partial-form') || b.startsWith('league-avg')));
   }
 
   function getFlag(league) {
@@ -86,7 +97,7 @@
 
     let displayList = analyzed;
     if (cifteFilter === 'high_conf') {
-      displayList = displayList.filter(a => a.bestDc.pct >= 75.0);
+      displayList = displayList.filter(a => !isLimitedData(a.rawMatch) && a.bestDc.pct >= 75.0);
     } else if (cifteFilter === 'dc_1x') {
       displayList = displayList.filter(a => a.bestDc.pick === '1X');
     } else if (cifteFilter === 'dc_12') {
@@ -105,7 +116,7 @@
     }
 
     const totalCount = analyzed.length;
-    const highConfCount = analyzed.filter(a => a.bestDc.pct >= 75.0).length;
+    const highConfCount = analyzed.filter(a => !isLimitedData(a.rawMatch) && a.bestDc.pct >= 75.0).length;
     const avgBestDc = totalCount > 0 ? (analyzed.reduce((s, a) => s + a.bestDc.pct, 0) / totalCount).toFixed(1) : '0.0';
 
     let html = `
@@ -117,7 +128,7 @@
             ⚽ Güncel Fikstür &amp; Tahminler (${totalCount})
           </button>
           <button class="chip subtab-toggle" data-view="bt" type="button" style="padding:7px 16px;font-size:12.5px;font-weight:800;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.15);">
-            📊 Çifte Şans &amp; Skor Model Doğruluğu (17.003 Maç)
+            📊 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç)
           </button>
         </div>
 
@@ -192,7 +203,8 @@
   }
 
   function renderMatchCardHtml(a) {
-    const isHighConf = a.bestDc.pct >= 75.0;
+    const lim = isLimitedData(a.rawMatch);
+    const isHighConf = !lim && a.bestDc.pct >= 75.0;
     const bestPick = a.bestDc.pick;
     const top4Scores = a.topScores.slice(0, 4);
 
@@ -209,7 +221,7 @@
 
           <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:var(--muted);">Beklenen Gol (λ): <b style="color:var(--text);">${a.expGoals}</b> (${a.lamHome} vs ${a.lamAway})</span>
-            ${isHighConf ? `<span class="cms-badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:10.5px;padding:2px 8px;border-radius:6px;font-weight:800;">⭐ Yüksek Güven</span>` : ''}
+            ${lim ? `<span class="cms-badge" style="background:rgba(242,153,74,0.18);color:#f2994a;border:1px solid rgba(242,153,74,0.3);font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;">⚠️ Kısıtlı Veri (Vurgusuz)</span>` : isHighConf ? `<span class="cms-badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:10.5px;padding:2px 8px;border-radius:6px;font-weight:800;">⭐ Yüksek Güven</span>` : ''}
           </div>
         </div>
 
@@ -241,31 +253,31 @@
 
         <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:14px;">
           
-          <div class="cifte-box ${bestPick === '1X' ? 'is-best' : ''}" style="background:${bestPick === '1X' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === '1X' ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
-            ${bestPick === '1X' ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
+          <div class="cifte-box ${bestPick === '1X' && !lim ? 'is-best' : ''}" style="background:${bestPick === '1X' && !lim ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === '1X' && !lim ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
+            ${bestPick === '1X' && !lim ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <b style="font-size:14px;color:${bestPick === '1X' ? '#10b981' : 'var(--text)'};">1X</b>
-              <span style="font-size:16px;font-weight:900;color:${bestPick === '1X' ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['1X'].pct)}</span>
+              <b style="font-size:14px;color:${bestPick === '1X' && !lim ? '#10b981' : 'var(--text)'};">1X</b>
+              <span style="font-size:16px;font-weight:900;color:${bestPick === '1X' && !lim ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['1X'].pct)}</span>
             </div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">Ev Sahibi veya Beraberlik (1-0)</div>
             ${a.dc['1X'].odds ? `<div style="font-size:10.5px;color:var(--accent);margin-top:4px;">Piyasa Oranı: <b>${a.dc['1X'].odds}</b></div>` : ''}
           </div>
 
-          <div class="cifte-box ${bestPick === '12' ? 'is-best' : ''}" style="background:${bestPick === '12' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === '12' ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
-            ${bestPick === '12' ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
+          <div class="cifte-box ${bestPick === '12' && !lim ? 'is-best' : ''}" style="background:${bestPick === '12' && !lim ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === '12' && !lim ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
+            ${bestPick === '12' && !lim ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <b style="font-size:14px;color:${bestPick === '12' ? '#10b981' : 'var(--text)'};">12</b>
-              <span style="font-size:16px;font-weight:900;color:${bestPick === '12' ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['12'].pct)}</span>
+              <b style="font-size:14px;color:${bestPick === '12' && !lim ? '#10b981' : 'var(--text)'};">12</b>
+              <span style="font-size:16px;font-weight:900;color:${bestPick === '12' && !lim ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['12'].pct)}</span>
             </div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">Ev veya Deplasman (1-2)</div>
             ${a.dc['12'].odds ? `<div style="font-size:10.5px;color:var(--accent);margin-top:4px;">Piyasa Oranı: <b>${a.dc['12'].odds}</b></div>` : ''}
           </div>
 
-          <div class="cifte-box ${bestPick === 'X2' ? 'is-best' : ''}" style="background:${bestPick === 'X2' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === 'X2' ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
-            ${bestPick === 'X2' ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
+          <div class="cifte-box ${bestPick === 'X2' && !lim ? 'is-best' : ''}" style="background:${bestPick === 'X2' && !lim ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.025)'};border:1px solid ${bestPick === 'X2' && !lim ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px 12px;position:relative;">
+            ${bestPick === 'X2' && !lim ? '<span style="position:absolute;top:-8px;right:10px;background:#10b981;color:#0d1219;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:4px;">MODEL TERCİHİ</span>' : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <b style="font-size:14px;color:${bestPick === 'X2' ? '#10b981' : 'var(--text)'};">X2</b>
-              <span style="font-size:16px;font-weight:900;color:${bestPick === 'X2' ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['X2'].pct)}</span>
+              <b style="font-size:14px;color:${bestPick === 'X2' && !lim ? '#10b981' : 'var(--text)'};">X2</b>
+              <span style="font-size:16px;font-weight:900;color:${bestPick === 'X2' && !lim ? '#10b981' : 'var(--text)'};">${fmtPct(a.dc['X2'].pct)}</span>
             </div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">Beraberlik veya Deplasman (0-2)</div>
             ${a.dc['X2'].odds ? `<div style="font-size:10.5px;color:var(--accent);margin-top:4px;">Piyasa Oranı: <b>${a.dc['X2'].odds}</b></div>` : ''}
@@ -315,7 +327,56 @@
       'Serie A', 'Ligue 1', 'Eredivisie', 'Turkish Süper Lig', 'Primeira Liga'
     ];
 
-    const seasonList = ['2021/22', '2022/23', '2023/24', '2024/25', '2025/26', '2026/27'];
+    const seasonList = ['2025/26', '2024/25', '2023/24', '2022/23', '2021/22'];
+
+    // 4 KPI Kart Tanımı (0.5, 1.5, 2.5 Model Doğruluğu ile Birebir Uyumlu!)
+    const kpiCards = [
+      {
+        key: '1X',
+        label: '1X Çifte Şans',
+        desc: 'Ev Sahibi veya Beraberlik (1-0)',
+        emoji: '🛡️',
+        color: '#10b981',
+        threshold: '≥ %75',
+        n: st.dc_1x_n,
+        h: st.dc_1x_h,
+        pct: st.dc_1x_pct
+      },
+      {
+        key: '12',
+        label: '12 Çifte Şans',
+        desc: 'Ev veya Deplasman (1-2)',
+        emoji: '⚡',
+        color: '#3b82f6',
+        threshold: '≥ %75',
+        n: st.dc_12_n,
+        h: st.dc_12_h,
+        pct: st.dc_12_pct
+      },
+      {
+        key: 'X2',
+        label: 'X2 Çifte Şans',
+        desc: 'Beraberlik veya Deplasman (0-2)',
+        emoji: '🚀',
+        color: '#ef4444',
+        threshold: '≥ %75',
+        n: st.dc_x2_n,
+        h: st.dc_x2_h,
+        pct: st.dc_x2_pct
+      },
+      {
+        key: 'score',
+        label: 'Skor Tahmin Havuzu',
+        desc: 'En Olası İlk 3 Skor',
+        emoji: '🎯',
+        color: '#fbbf24',
+        threshold: 'Top-3 Skor',
+        n: st.total,
+        h: st.sc_top3_h,
+        pct: st.sc_top3_pct,
+        subInfo: `Top-1 Birebir Skor: <b>%${st.sc_top1_pct}</b> (${num(st.sc_top1_h)} maç)`
+      }
+    ];
 
     let html = `
       <div class="cifte-container" style="max-width:1100px;margin:0 auto;padding:12px 14px;">
@@ -326,109 +387,133 @@
             ⚽ Güncel Fikstür &amp; Tahminler
           </button>
           <button class="chip active subtab-toggle" data-view="bt" type="button" style="padding:7px 16px;font-size:12.5px;font-weight:800;border-radius:8px;cursor:pointer;">
-            📊 Çifte Şans &amp; Skor Model Doğruluğu (17.003 Maç)
+            📊 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç)
           </button>
         </div>
 
-        <!-- Üst Başlık ve Açıklama -->
+        <!-- Üst Başlık ve Bilgilendirme Kartı -->
         <div class="card" style="margin-bottom:16px;background:var(--panel2);padding:16px 20px;border-radius:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <div>
-              <h2 style="margin:0 0 4px;font-size:17px;font-weight:900;">📊 Çifte Şans &amp; Skor Model Doğruluğu (5 Sezonluk Backtest)</h2>
+              <h2 style="margin:0 0 4px;font-size:16px;font-weight:900;">📊 Çifte Şans &amp; Skor Model Doğruluğu (5 Sezonluk Backtest)</h2>
               <p style="margin:0;font-size:12px;color:var(--muted);line-height:1.5;">
-                5 sezonluk (<b>17.003 maç</b>) sızıntısız walk-forward doğrulama. Her maçın tahmini yalnızca o maçtan önceki verilerle ve Dixon-Coles skor matrisiyle üretilmiştir.
+                5 tamamlanmış sezonluk (<b>16.478 maç</b>) sızıntısız walk-forward doğrulama. Kısıtlı veriler güvenli vurgu sayılmayıp analize dahil edilmemiştir. Aşağıdaki oranlar modelin yüksek güvenli gerçek başarı performansıdır.
               </p>
             </div>
             ${isFiltered ? `
               <button class="chip active" id="btnResetCifteLeague" type="button" style="cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">
-                Filtreyi Sıfırla (Tümü) ✕
+                Filtreyi Sıfırla (${esc(btLeagueFilter)}) ✕
               </button>
             ` : ''}
           </div>
         </div>
 
-        <!-- 4 Büyük KPI Kartı (0.5, 1.5, 2.5 Gibi!) -->
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:16px;">
-          
-          <!-- KPI 1: 1X Çifte Şans -->
-          <div class="card" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:12px;font-weight:800;color:#10b981;margin-bottom:4px;">🛡️ 1X Çifte Şans (≥%75)</div>
-            <div style="font-size:28px;font-weight:900;color:#10b981;margin:4px 0;">%${st.dc_1x_pct}</div>
-            <div style="font-size:11px;color:var(--text);font-weight:600;">${num(st.dc_1x_h)} / ${num(st.dc_1x_n)} Maç Tuttu</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">${num(st.dc_1x_n - st.dc_1x_h)} Iska · Ev Sahibi / Beraberlik</div>
-          </div>
+        <!-- 4 KPI Kartı (Model Doğruluğu Tasarımı ile Birebir — Iska Kutusu Yok!) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;margin-bottom:16px;">
+          ${kpiCards.map(c => `
+            <div class="card" style="border-top:3px solid ${c.color};padding:16px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+                <span style="font-size:18px;">${c.emoji}</span>
+                <span style="font-weight:900;font-size:14px;color:${c.color};">${c.label}</span>
+                ${isFiltered ? `<span style="font-size:11px;color:var(--muted);font-weight:600;">· ${esc(btLeagueFilter)}</span>` : ''}
+                <span style="margin-left:auto;font-size:10.5px;color:var(--muted);background:var(--panel2);padding:2px 7px;border-radius:99px;">${c.threshold}</span>
+              </div>
+              
+              <!-- 3 Sade Metrik Kutusu: Toplam Maç, Sistem Vurguladı, Tahmin Tuttu -->
+              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;margin-bottom:12px;">
+                <div style="background:var(--panel2);border-radius:10px;padding:10px 6px;text-align:center;">
+                  <div style="font-size:19px;font-weight:900;color:var(--text);">${num(st.total)}</div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:3px;">5 Sezonluk Maç</div>
+                </div>
+                <div style="background:var(--panel2);border-radius:10px;padding:10px 6px;text-align:center;">
+                  <div style="font-size:19px;font-weight:900;color:${c.color};">${num(c.n)}</div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:3px;">${c.key === 'score' ? 'Skor Havuzu' : 'Sistem Vurguladı'}</div>
+                </div>
+                <div style="background:var(--panel2);border-radius:10px;padding:10px 6px;text-align:center;">
+                  <div style="font-size:19px;font-weight:900;color:var(--good);">${num(c.h)}</div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:3px;">Tahmin Tuttu ✓</div>
+                </div>
+              </div>
 
-          <!-- KPI 2: 12 Çifte Şans -->
-          <div class="card" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:12px;font-weight:800;color:#3b82f6;margin-bottom:4px;">⚡ 12 Çifte Şans (≥%75)</div>
-            <div style="font-size:28px;font-weight:900;color:#3b82f6;margin:4px 0;">%${st.dc_12_pct}</div>
-            <div style="font-size:11px;color:var(--text);font-weight:600;">${num(st.dc_12_h)} / ${num(st.dc_12_n)} Maç Tuttu</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">${num(st.dc_12_n - st.dc_12_h)} Iska · Berabere Bitmez</div>
-          </div>
-
-          <!-- KPI 3: X2 Çifte Şans -->
-          <div class="card" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:12px;font-weight:800;color:#ef4444;margin-bottom:4px;">🚀 X2 Çifte Şans (≥%75)</div>
-            <div style="font-size:28px;font-weight:900;color:#ef4444;margin:4px 0;">%${st.dc_x2_pct}</div>
-            <div style="font-size:11px;color:var(--text);font-weight:600;">${num(st.dc_x2_h)} / ${num(st.dc_x2_n)} Maç Tuttu</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">${num(st.dc_x2_n - st.dc_x2_h)} Iska · Beraberlik / Deplasman</div>
-          </div>
-
-          <!-- KPI 4: Skor Tahmini -->
-          <div class="card" style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:12px;font-weight:800;color:#fbbf24;margin-bottom:4px;">🎯 Skor Tahmini (Top-3)</div>
-            <div style="font-size:28px;font-weight:900;color:#fbbf24;margin:4px 0;">%${st.sc_top3_pct}</div>
-            <div style="font-size:11px;color:var(--text);font-weight:600;">${num(st.sc_top3_h)} / ${num(st.total)} Skor Havuzu</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Top-1 Birebir Skor: <b>%${st.sc_top1_pct}</b> (${num(st.sc_top1_h)} Maç)</div>
-          </div>
-
+              <!-- Büyük Başarı Oranı Kutusu (Sadece Tutan Vurgusu — Iska Sayısı Yok!) -->
+              <div style="background:${c.color}15;border:1px solid ${c.color}40;border-radius:10px;padding:12px 14px;text-align:center;">
+                <span style="font-size:27px;font-weight:900;color:${c.color};">%${c.pct}</span>
+                <span style="font-size:12px;color:var(--muted);margin-left:8px;">Başarı Oranı</span>
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                  ${c.key === 'score' 
+                    ? `16.478 maçtan <b style="color:var(--good);">${num(c.h)}</b> maçın skoru ilk 3 tahmin içinde tuttu`
+                    : `${num(c.n)} vurgulanan maçtan <b style="color:var(--good);">${num(c.h)}</b> maç tuttu`}
+                </div>
+                ${c.subInfo ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px;">${c.subInfo}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
         </div>
 
-        <!-- 1. Lig Bazında Başarı Tablosu -->
+        <!-- 1. Sade ve Düzenli Lig Bazında Başarı Tablosu -->
         <div class="card" style="margin-bottom:16px;">
           <h2 style="font-size:15px;margin:0 0 6px;">Lig Bazında Çifte Şans &amp; Skor Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
-          <p style="font-size:11.5px;color:var(--muted);margin:0 0 10px;">
-            Lig satırlarına tıklayarak yukarıdaki KPI kartlarını doğrudan seçtiğiniz lige süzebilirsiniz.
+          <p style="font-size:11.5px;color:var(--muted);margin:0 0 12px;">
+            Lig satırına tıklayarak yukarıdaki KPI kartlarını doğrudan seçtiğiniz lige süzebilirsiniz.
           </p>
           <div class="tbl-scroll">
             <table class="bt-table" id="tblCifteLeague">
               <thead>
-                <tr style="font-size:11px;">
-                  <th rowspan="2" style="text-align:left;vertical-align:bottom;padding:6px 8px;">Lig</th>
-                  <th rowspan="2" style="vertical-align:bottom;padding:6px 4px;">Toplam Maç</th>
-                  <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">1X (≥%75)</th>
-                  <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">12 (≥%75)</th>
-                  <th colspan="3" style="border-bottom:2px solid #ef4444;color:#ef4444;padding:4px;">X2 (≥%75)</th>
-                  <th colspan="2" style="border-bottom:2px solid #fbbf24;color:#fbbf24;padding:4px;">Skor İsabeti</th>
-                </tr>
-                <tr style="font-size:10px;color:var(--muted);">
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Top-1 %</th><th>Top-3 %</th>
+                <tr>
+                  <th style="text-align:left;padding:10px 12px;">Lig</th>
+                  <th style="padding:10px 8px;">5 Sezonluk Maç</th>
+                  <th style="color:#10b981;padding:10px 8px;">1X Başarı (≥%75)</th>
+                  <th style="color:#3b82f6;padding:10px 8px;">12 Başarı (≥%75)</th>
+                  <th style="color:#ef4444;padding:10px 8px;">X2 Başarı (≥%75)</th>
+                  <th style="color:#fbbf24;padding:10px 8px;">Skor Havuzu (Top-3)</th>
                 </tr>
               </thead>
               <tbody>
-                <!-- Genel Satır -->
+                <!-- Tüm Ligler (Genel Satır) -->
                 <tr class="clickable bt-cifte-league-row ${btLeagueFilter === 'Tümü' ? 'active-row' : ''}" data-league="Tümü" style="font-weight:800;background:rgba(255,255,255,0.03);">
-                  <td style="text-align:left;padding:6px 8px;">${btLeagueFilter === 'Tümü' ? '👉 ' : ''}⭐ Tüm Ligler (Genel Toplam)</td>
+                  <td style="text-align:left;padding:10px 12px;">${btLeagueFilter === 'Tümü' ? '👉 ' : ''}⭐ Tüm Ligler (Genel Toplam)</td>
                   <td>${num(data.overall.total)}</td>
-                  <td>${num(data.overall.dc_1x_n)}</td><td class="good">${num(data.overall.dc_1x_h)}</td><td class="good"><b>%${data.overall.dc_1x_pct}</b></td>
-                  <td>${num(data.overall.dc_12_n)}</td><td class="good">${num(data.overall.dc_12_h)}</td><td class="good"><b>%${data.overall.dc_12_pct}</b></td>
-                  <td>${num(data.overall.dc_x2_n)}</td><td class="good">${num(data.overall.dc_x2_h)}</td><td class="good"><b>%${data.overall.dc_x2_pct}</b></td>
-                  <td style="color:#fbbf24;">%${data.overall.sc_top1_pct}</td><td style="color:#fbbf24;"><b>%${data.overall.sc_top3_pct}</b></td>
+                  <td>
+                    <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${data.overall.dc_1x_pct}</div>
+                    <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(data.overall.dc_1x_h)} / ${num(data.overall.dc_1x_n)} maç</div>
+                  </td>
+                  <td>
+                    <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${data.overall.dc_12_pct}</div>
+                    <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(data.overall.dc_12_h)} / ${num(data.overall.dc_12_n)} maç</div>
+                  </td>
+                  <td>
+                    <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${data.overall.dc_x2_pct}</div>
+                    <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(data.overall.dc_x2_h)} / ${num(data.overall.dc_x2_n)} maç</div>
+                  </td>
+                  <td>
+                    <div style="font-weight:900;color:#fbbf24;font-size:13.5px;">%${data.overall.sc_top3_pct}</div>
+                    <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(data.overall.sc_top3_h)} / ${num(data.overall.total)} maç</div>
+                  </td>
                 </tr>
+
                 ${leaguesList.map(lg => {
                   const lSt = data.by_league[lg] || emptyStat();
                   const isAct = (btLeagueFilter === lg);
                   return `
                     <tr class="clickable bt-cifte-league-row ${isAct ? 'active-row' : ''}" data-league="${esc(lg)}" style="cursor:pointer;">
-                      <td style="text-align:left;padding:6px 8px;font-weight:${isAct ? '900' : '600'};">${isAct ? '👉 ' : ''}${getFlag(lg)} ${esc(lg)}</td>
+                      <td style="text-align:left;padding:10px 12px;font-weight:${isAct ? '900' : '600'};">${isAct ? '👉 ' : ''}${getFlag(lg)} ${esc(lg)}</td>
                       <td>${num(lSt.total)}</td>
-                      <td>${num(lSt.dc_1x_n)}</td><td>${num(lSt.dc_1x_h)}</td><td class="good"><b>%${lSt.dc_1x_pct}</b></td>
-                      <td>${num(lSt.dc_12_n)}</td><td>${num(lSt.dc_12_h)}</td><td class="good"><b>%${lSt.dc_12_pct}</b></td>
-                      <td>${num(lSt.dc_x2_n)}</td><td>${num(lSt.dc_x2_h)}</td><td class="good"><b>%${lSt.dc_x2_pct}</b></td>
-                      <td style="color:#fbbf24;">%${lSt.sc_top1_pct}</td><td style="color:#fbbf24;"><b>%${lSt.sc_top3_pct}</b></td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${lSt.dc_1x_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(lSt.dc_1x_h)} / ${num(lSt.dc_1x_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${lSt.dc_12_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(lSt.dc_12_h)} / ${num(lSt.dc_12_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${lSt.dc_x2_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(lSt.dc_x2_h)} / ${num(lSt.dc_x2_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:#fbbf24;font-size:13.5px;">%${lSt.sc_top3_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(lSt.sc_top3_h)} / ${num(lSt.total)} maç</div>
+                      </td>
                     </tr>
                   `;
                 }).join('')}
@@ -437,25 +522,19 @@
           </div>
         </div>
 
-        <!-- 2. Sezon Bazında Tablo -->
+        <!-- 2. Sade ve Düzenli Sezon Bazında Tablo (5 Tamamlanmış Sezon) -->
         <div class="card" style="margin-bottom:16px;">
           <h2 style="font-size:15px;margin:0 0 6px;">Sezon Bazında Çifte Şans &amp; Skor Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
           <div class="tbl-scroll">
             <table class="bt-table">
               <thead>
-                <tr style="font-size:11px;">
-                  <th rowspan="2" style="text-align:left;vertical-align:bottom;padding:6px 8px;">Sezon</th>
-                  <th rowspan="2" style="vertical-align:bottom;padding:6px 4px;">Maç</th>
-                  <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">1X (≥%75)</th>
-                  <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">12 (≥%75)</th>
-                  <th colspan="3" style="border-bottom:2px solid #ef4444;color:#ef4444;padding:4px;">X2 (≥%75)</th>
-                  <th colspan="2" style="border-bottom:2px solid #fbbf24;color:#fbbf24;padding:4px;">Skor İsabeti</th>
-                </tr>
-                <tr style="font-size:10px;color:var(--muted);">
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Vurgu</th><th>Tuttu</th><th>%</th>
-                  <th>Top-1 %</th><th>Top-3 %</th>
+                <tr>
+                  <th style="text-align:left;padding:10px 12px;">Sezon</th>
+                  <th style="padding:10px 8px;">Maç</th>
+                  <th style="color:#10b981;padding:10px 8px;">1X Başarı (≥%75)</th>
+                  <th style="color:#3b82f6;padding:10px 8px;">12 Başarı (≥%75)</th>
+                  <th style="color:#ef4444;padding:10px 8px;">X2 Başarı (≥%75)</th>
+                  <th style="color:#fbbf24;padding:10px 8px;">Skor Havuzu (Top-3)</th>
                 </tr>
               </thead>
               <tbody>
@@ -463,15 +542,26 @@
                   let sSt = isFiltered
                     ? ((data.by_season_league[sz] && data.by_season_league[sz][btLeagueFilter]) || emptyStat())
                     : (data.by_season[sz] || emptyStat());
-                  const isCurrent = (sz === '2026/27');
                   return `
-                    <tr style="${isCurrent ? 'background:rgba(255,255,255,0.03);font-weight:800;' : ''}">
-                      <td style="text-align:left;padding:5px 8px;${isCurrent ? 'color:var(--accent);' : ''}">${sz} ${isCurrent ? '(Güncel)' : ''}</td>
+                    <tr>
+                      <td style="text-align:left;padding:9px 12px;font-weight:700;">${sz}</td>
                       <td>${num(sSt.total)}</td>
-                      <td>${num(sSt.dc_1x_n)}</td><td>${num(sSt.dc_1x_h)}</td><td class="good"><b>%${sSt.dc_1x_pct}</b></td>
-                      <td>${num(sSt.dc_12_n)}</td><td>${num(sSt.dc_12_h)}</td><td class="good"><b>%${sSt.dc_12_pct}</b></td>
-                      <td>${num(sSt.dc_x2_n)}</td><td>${num(sSt.dc_x2_h)}</td><td class="good"><b>%${sSt.dc_x2_pct}</b></td>
-                      <td style="color:#fbbf24;">%${sSt.sc_top1_pct}</td><td style="color:#fbbf24;"><b>%${sSt.sc_top3_pct}</b></td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${sSt.dc_1x_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(sSt.dc_1x_h)} / ${num(sSt.dc_1x_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${sSt.dc_12_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(sSt.dc_12_h)} / ${num(sSt.dc_12_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:var(--good);font-size:13.5px;">%${sSt.dc_x2_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(sSt.dc_x2_h)} / ${num(sSt.dc_x2_n)} maç</div>
+                      </td>
+                      <td>
+                        <div style="font-weight:900;color:#fbbf24;font-size:13.5px;">%${sSt.sc_top3_pct}</div>
+                        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${num(sSt.sc_top3_h)} / ${num(sSt.total)} maç</div>
+                      </td>
                     </tr>
                   `;
                 }).join('')}
@@ -484,14 +574,14 @@
         <div class="card" style="margin-bottom:16px;">
           <h2 style="font-size:15px;margin:0 0 6px;">Örnek Maçlar — Çifte Şans &amp; Skor Doğrulama Havuzu</h2>
           <p style="font-size:11.5px;color:var(--muted);margin:0 0 10px;">
-            Geçmiş maç havuzundan düzenli aralıklarla çekilen maçlarda modelin o maç için öngördüğü en güçlü ÇŞ seçimi ve en olası ilk 3 skorunun gerçek sonuçla karşılaştırılması.
+            Test havuzundan seçilen maçlarda modelin en güçlü Çifte Şans tercihi ve en olası ilk 3 skorunun gerçek sonuçla karşılaştırılması.
           </p>
           <div class="tbl-scroll">
             <table class="bt-table">
               <thead>
                 <tr>
                   <th>Tarih</th><th>Lig</th><th>Maç</th><th>Gerçek Skor</th>
-                  <th>Model ÇŞ Tercihi</th><th>ÇŞ İsabeti</th><th>En Olası İlk 3 Skor</th><th>Skor İsabeti</th>
+                  <th>Model ÇŞ Tercihi</th><th>ÇŞ Sonucu</th><th>En Olası İlk 3 Skor</th><th>Skor Sonucu</th>
                 </tr>
               </thead>
               <tbody>
@@ -502,9 +592,9 @@
                     <td style="text-align:left;">${esc(s.home)} — ${esc(s.away)}</td>
                     <td><b style="font-size:13px;">${s.actual_score}</b></td>
                     <td><span class="badge ${s.best_dc === '1X' ? 'b-min' : s.best_dc === '12' ? 'b-med' : 'b-high'}">${s.best_dc} (%${s.best_dc_pct})</span></td>
-                    <td><b class="${s.dc_hit ? 'good' : 'bad'}">${s.dc_hit ? '✓ TUTTU' : '✗ ISKA'}</b></td>
+                    <td>${s.dc_hit ? '<span style="color:var(--good);font-weight:800;">✓ Tuttu</span>' : '<span style="color:var(--muted);">—</span>'}</td>
                     <td style="font-size:11px;color:var(--muted);">${s.top_scores.join(' · ')}</td>
-                    <td><b class="${s.top1_hit ? 'good' : s.top3_hit ? 'warn' : 'bad'}">${s.top1_hit ? '🎯 Tam İsabet' : s.top3_hit ? '⚡ İlk 3 İçinde' : '✗ Iska'}</b></td>
+                    <td>${s.top1_hit ? '<span style="color:var(--good);font-weight:800;">🎯 Tam Skor</span>' : s.top3_hit ? '<span style="color:#fbbf24;font-weight:800;">✓ Havuzda</span>' : '<span style="color:var(--muted);">—</span>'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -522,7 +612,7 @@
             P(1X) = P(Ev Galibiyeti) + P(Beraberlik) = &sum;<sub>x &gt; y</sub> P(x, y) + &sum;<sub>x = y</sub> P(x, y)
           </div>
           <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0;">
-            Modelin <b>≥%75 güven eşiği</b> üstündeki maçları, 5 sezon boyunca sürdürülebilir biçimde %76'nın üzerinde bir isabet yakalamıştır.
+            Modelin <b>≥%75 güven eşiği</b> üstündeki maçları, 5 sezon boyunca sürdürülebilir biçimde %77 - %83 arasında bir isabet yakalamıştır.
           </p>
         </div>
 

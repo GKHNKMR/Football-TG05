@@ -196,11 +196,11 @@
     // Hedef Kasa Kılavuzu
     const targetY = getY(targetBank);
     const targetGuide = `
-      <line x1="${L}" y1="${targetY.toFixed(1)}" x2="${W - R}" y2="${targetY.toFixed(1)}" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.45"/>
-      <text x="${(W - R).toFixed(1)}" y="${(targetY - 6).toFixed(1)}" fill="#f59e0b" font-size="10.5" font-weight="700" text-anchor="end" font-family="inherit">🎯 HEDEF: ${formatCurrency(targetBank, curr)}</text>
+      <line x1="${L}" y1="${targetY.toFixed(1)}" x2="${W - R}" y2="${targetY.toFixed(1)}" stroke="#06b6d4" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.6"/>
+      <text x="${(W - R).toFixed(1)}" y="${(targetY - 6).toFixed(1)}" fill="#06b6d4" font-size="10.5" font-weight="700" text-anchor="end" font-family="inherit">🎯 HEDEF: ${formatCurrency(targetBank, curr)}</text>
     `;
 
-    // 1. Geometrik Hedef Yolu Çizgisi (Altın sarısı kesikli)
+    // 1. Geometrik Hedef Yolu Çizgisi (Canlı Turkuaz kesikli)
     let targetPathD = '';
     let targetAreaD = `M ${L.toFixed(1)},${(T + ph).toFixed(1)} `;
     (trajData && trajData.targetPoints || []).forEach((pt, idx) => {
@@ -217,8 +217,8 @@
     targetAreaD += `L ${(W - R).toFixed(1)},${(T + ph).toFixed(1)} Z`;
 
     const targetCurveSvg = `
-      <path d="${targetAreaD}" fill="url(#targetGrad)" opacity="0.35"/>
-      <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
+      <path d="${targetAreaD}" fill="url(#targetGrad)" opacity="0.25"/>
+      <path d="${targetPathD}" fill="none" stroke="#06b6d4" stroke-width="2.2" stroke-dasharray="6,4"/>
     `;
 
     // 2. Seçili Risk Modeli Çizgisi & P10-P90 Güven Koridoru & Sıfır Kayıp Patikası
@@ -283,10 +283,10 @@
         const ry = getY(val).toFixed(1);
         if (idx === 0) rD += `M ${rx},${ry}`;
         else rD += ` L ${rx},${ry}`;
-        rCircles += `<circle cx="${rx}" cy="${ry}" r="4" fill="#fbbf24" stroke="#0d1219" stroke-width="1.8"/>`;
+        rCircles += `<circle cx="${rx}" cy="${ry}" r="4" fill="#38bdf8" stroke="#0d1219" stroke-width="1.8"/>`;
       });
       realizedSvg = `
-        <path d="${rD}" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linejoin="round"/>
+        <path d="${rD}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round"/>
         ${rCircles}
       `;
     }
@@ -294,8 +294,8 @@
     const defs = `
       <defs>
         <linearGradient id="targetGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.25"/>
-          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+          <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
         </linearGradient>
       </defs>
     `;
@@ -312,7 +312,7 @@
         ${noLossSvg}
         ${realizedSvg}
         <line id="cursorGuide" x1="-10" y1="${T}" x2="-10" y2="${(T + ph).toFixed(1)}" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#06b6d4" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointProf" cx="-10" cy="-10" r="4.5" fill="${c.main}" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointNoLoss" cx="-10" cy="-10" r="4.5" fill="#fbbf24" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
         <rect id="chartInteractiveOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair;"/>
@@ -378,10 +378,10 @@
         </div>
 
         <div class="chart-legend">
-          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Geometrik Hedef Yolu (${formatCurrency(targetBank, curr)})</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#06b6d4;border:1px dashed #06b6d4;"></span> 🎯 Kesikli Turkuaz: Geometrik Hedef Yolu (${formatCurrency(targetBank, curr)})</span>
           <span class="cl-item"><span class="cl-dot" style="background:${cfg.color};"></span> ${esc(cfg.name)} (Medyan)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:1px dashed #fbbf24;"></span> ⭐ Kesikli: Sıfır Kayıp Potansiyeli</span>
-          ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
+          <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:1px dashed #fbbf24;"></span> ⭐ Kesikli Altın: Sıfır Kayıp Potansiyeli</span>
+          ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 🔵 Gerçekleşen Kasa</span>' : ''}
         </div>
 
         <div class="chart-models-summary single-model" style="grid-template-columns:1fr;max-width:650px;margin-top:14px;">
@@ -487,7 +487,7 @@
 
       tracker.innerHTML = `
         <span class="ct-day">📅 <b>${day}. Gün</b></span>
-        <span class="ct-tgt" style="color:#f59e0b;">🎯 Hedef: <b>${formatCurrency(tgtVal, curr)}</b></span>
+        <span class="ct-tgt" style="color:#06b6d4;">🎯 Hedef: <b>${formatCurrency(tgtVal, curr)}</b></span>
         <span class="ct-prof" style="color:var(--text);">📊 Model Medyan: <b>${formatCurrency(profMed, curr)}</b></span>
         <span class="ct-nl" style="color:#fbbf24;">⭐ Sıfır Kayıp: <b>${formatCurrency(nlVal, curr)}</b></span>
       `;

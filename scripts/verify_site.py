@@ -52,6 +52,24 @@ with sync_playwright() as p:
     assert len(foot_text.strip()) > 0, "bt-foot must have text"
     print("  ✓ Model Doğruluğu altındaki tüm tablolar (Lig, Sezon, Örnek Maçlar) eksiksiz dolu ve çalışıyor!")
 
+    # Lig satırına tıklama ve dinamik yüzde/KPI güncelleme testi
+    pl_row = page.query_selector('#btpane-byleague tr[data-league="Premier League"]')
+    assert pl_row is not None, "Premier League row must exist with data-league"
+    pl_row.click()
+    time.sleep(0.4)
+    kpi_pl = page.inner_text('#btpane-kpi')
+    print(f"  Premier League tıklandıktan sonra KPI özeti: {kpi_pl[:90].replace(chr(10), ' ')}...")
+    assert "Premier League" in kpi_pl, "KPI cards must show Premier League"
+    assert "1.900" in kpi_pl, "KPI cards must show 1.900 matches for Premier League"
+    print("  ✓ Lig satırına tıklandığında KPI kartları ve başarı oranları ilgili lige özel anında güncellendi!")
+
+    # Tümü satırına tıklayarak sıfırlama testi
+    page.click('#btpane-byleague tr[data-league="Tümü"]')
+    time.sleep(0.3)
+    kpi_reset = page.inner_text('#btpane-kpi')
+    assert "16.478" in kpi_reset, "KPI cards must reset to 16.478 on Tümü"
+    print("  ✓ Tümü satırına tıklandığında genel toplam (16.478 maç) başarıyla geri yüklendi!")
+
     # -------------------------------------------------------------------------
     # TEST 2: Risk Profili Özelleştirmesi & 1 Haftalık / 1 Aylık Maç Havuzu
     # -------------------------------------------------------------------------

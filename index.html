@@ -211,8 +211,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-res table.bt-table,#pane-bt table{width:100%;border-collapse:collapse;font-size:12.5px}
 #pane-res table.bt-table th,#pane-res table.bt-table td,#pane-bt th,#pane-bt td{text-align:right;padding:8px 9px;border-bottom:1px solid var(--line)}
 #pane-res table.bt-table th:first-child,#pane-res table.bt-table td:first-child,#pane-bt th:first-child,#pane-bt td:first-child{text-align:left}
-#pane-res table.bt-table th,#pane-bt th{color:var(--muted);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
 #pane-res table.bt-table tbody tr:hover,#pane-bt tbody tr:hover{background:var(--panel2)}
+#pane-res table.bt-table tbody tr.clickable,#pane-bt tbody tr.clickable{cursor:pointer;transition:background .15s}
+#pane-res table.bt-table tbody tr.active-row,#pane-bt tbody tr.active-row{background:rgba(59,130,246,0.18)!important;box-shadow:inset 3px 0 0 #3b82f6}
 #pane-res .tbl-scroll,#pane-bt .tbl-scroll{overflow-x:auto}
 #pane-res .btfoot,#pane-bt .btfoot{color:var(--muted);font-size:11px;margin-top:16px;line-height:1.6}
 #pane-res .btfoot code,#pane-bt .btfoot code{background:var(--panel2);padding:1px 5px;border-radius:5px}
@@ -845,7 +846,7 @@ if(tab==='gun') tab='rec';
 // her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
 // Kuponlarım'ı da o lige kilitlemesin - Kuponlarım hep "Tümü" ile başlar)
 let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res',store('league_bt','Tümü')),
-                   cpn:store('league_cpn','Tümü')};
+                   bt:store('league_bt','Tümü'),cpn:store('league_cpn','Tümü')};
 let selected=selectedByTab[tab]||'Tümü';
 let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
@@ -1462,15 +1463,8 @@ function renderBacktest(){
   const pct1=(v)=>v==null?'—':(v*100).toFixed(1)+'%';
   const num=(v)=>v==null?'—':Number(v).toLocaleString('tr-TR');
 
-  // Market definitions with thresholds
-  const MARKETS=[
-    {key:'0.5',label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95',desc:'Model güveni ≥ %95 olan maçlar'},
-    {key:'1.5',label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85',desc:'Model güveni ≥ %85 olan maçlar'},
-    {key:'2.5',label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75',desc:'Model güveni ≥ %75 olan maçlar'},
-  ];
-
   if(!d){
-    const loadHtml='<tbody><tr><td colspan="8" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
+    const loadHtml='<tbody><tr><td colspan="11" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
     const loadSamp='<tbody><tr><td colspan="7" class="loading">Örnek maçlar yükleniyor…</td></tr></tbody>';
     ['bt-byleague','btpane-byleague'].forEach(id=>{const el=$(id);if(el)el.innerHTML=loadHtml;});
     ['bt-byseason','btpane-byseason'].forEach(id=>{const el=$(id);if(el)el.innerHTML=loadHtml;});
@@ -1478,83 +1472,89 @@ function renderBacktest(){
     return;
   }
 
-  // === KPI Cards — 5 sezonluk backtest maçlarından (2026/27 hariç) gerçek vurgulanan & tutanlar ===
+  const allMatches = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
+
+  function getMatchTotal(m){
+    if(m.total!=null) return Number(m.total);
+    const sc=String(m.score||'');
+    if(sc.includes('-')){const p=sc.split('-');return (parseInt(p[0])||0)+(parseInt(p[1])||0);}
+    return 0;
+  }
+  function btMatchSeason(m){
+    const ko=m.kickoff_utc||m.date||'';
+    try{const y=parseInt(ko.slice(0,4)),mo=parseInt(ko.slice(5,7));return mo>=7?`${y}/${String(y+1).slice(2)}`:`${y-1}/${String(y).slice(2)}`;}catch(e){return '';}
+  }
+  function hasResult(m){ return m.total!=null||String(m.score||'').includes('-'); }
+
+  // 5 tamamlanmış sezon (2026/27 hariç) ve sonuçlanan tüm maçlar
+  const allScored = allMatches.filter(hasResult);
+  const bt5Matches = allScored.filter(m=>btMatchSeason(m)!=='2026/27');
+  const btBase = bt5Matches.length > 100 ? bt5Matches : allScored;
+
+  // Seçili lig filtresi kontrolü
+  const isLigFiltered = selected && selected !== 'Tümü';
+  const activeLeagueMatches = isLigFiltered ? btBase.filter(m=>m.league===selected) : btBase;
+  const totalBT = activeLeagueMatches.length;
+
+  // Gerçek maçlardan pazar bazında vurgulanan, tutan ve yüzde hesaplama fonksiyonu
+  function calcMarketStats(matchList, thr, marketKey){
+    const pKey = marketKey==='0.5' ? 'p_over_0_5' : marketKey==='1.5' ? 'p_over_1_5' : 'p_over_2_5';
+    const numLine = Number(marketKey);
+    const hiList = matchList.filter(m=>Number(m[pKey]||0)>=thr);
+    const hiN = hiList.length;
+    let hiHits = 0;
+    for(let i=0; i<hiList.length; i++){
+      if(getMatchTotal(hiList[i]) > numLine) hiHits++;
+    }
+    const rate = hiN > 0 ? (hiHits / hiN) : null;
+    const pct = rate != null ? (rate * 100).toFixed(1) + '%' : '—';
+    const isGood = rate != null ? (rate >= (marketKey==='0.5'?0.95:(marketKey==='1.5'?0.85:0.75))) : false;
+    return { hiN, hiHits, hiMiss: hiN - hiHits, rate, pct, isGood };
+  }
+
+  // === KPI Cards ===
   const kpiEl=$('btpane-kpi');
   if(kpiEl){
-    const allMatches = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
-
-    function getMatchTotal(m){
-      if(m.total!=null) return Number(m.total);
-      const sc=String(m.score||'');
-      if(sc.includes('-')){const p=sc.split('-');return (parseInt(p[0])||0)+(parseInt(p[1])||0);}
-      return 0;
-    }
-    function matchSeason(m){
-      const ko=m.kickoff_utc||m.date||'';
-      try{const y=parseInt(ko.slice(0,4)),mo=parseInt(ko.slice(5,7));return mo>=7?`${y}/${y+1}`:`${y-1}/${y}`;}catch(e){return '';}
-    }
-    function hasResult(m){ return m.total!=null||String(m.score||'').includes('-'); }
-
-    // 5 tamamlanmış sezon = backtest verisi (2026/27 güncel sezon hariç)
-    const btMatches = allMatches.filter(m=>hasResult(m) && matchSeason(m)!=='2026/2027');
-    const cur27     = allMatches.filter(m=>hasResult(m) && matchSeason(m)==='2026/2027');
-    // Eğer seasonOf 2026/27 ile yazılıyorsa farklı kontrol
-    const btM5 = btMatches.length > 100 ? btMatches : allMatches.filter(m=>hasResult(m));
-    const totalBT = btM5.length || d.overall.n_matches;
-
     const mkDefs=[
-      {key:'0.5',rKey:'p_over_0_5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95'},
-      {key:'1.5',rKey:'p_over_1_5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85'},
-      {key:'2.5',rKey:'p_over_2_5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75'},
+      {key:'0.5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95'},
+      {key:'1.5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85'},
+      {key:'2.5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75'},
     ];
 
     kpiEl.innerHTML=mkDefs.map(mk=>{
-      let hiN=0, hiHits=0;
-      const totalM = totalBT;
-
-      if(btM5.length>0){
-        // Gerçek hesap: 5 tamamlanmış sezon (2026/27 hariç)
-        const hiList=btM5.filter(m=>Number(m[mk.rKey]||0)>=mk.thr);
-        hiN=hiList.length;
-        hiHits=hiList.filter(m=>getMatchTotal(m)>Number(mk.key)).length;
-      } else {
-        // Fallback: backtest.json calibration bucket
-        const bm=d.overall.markets[mk.key];
-        if(bm){ hiN=bm.conf_n||0; hiHits=Math.round(hiN*(bm.conf_acc||0)); }
-      }
-
-      const hiPct = hiN>0 ? ((hiHits/hiN)*100).toFixed(1)+'%' : '—';
-      const hiMiss = hiN - hiHits;
+      const st = calcMarketStats(activeLeagueMatches, mk.thr, mk.key);
+      const macLabel = isLigFiltered ? `${esc(selected)} (5 Sezon)` : 'Backtest Maç (5 Sezon)';
 
       return `<div class="card" style="border-top:3px solid ${mk.color};padding:16px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
           <span style="font-size:18px;">${mk.emoji}</span>
           <span style="font-weight:900;font-size:14px;color:${mk.color};">${mk.label}</span>
+          ${isLigFiltered?`<span style="font-size:11px;color:var(--muted);font-weight:600;">· ${esc(selected)}</span>`:''}
           <span style="margin-left:auto;font-size:10.5px;color:var(--muted);background:var(--panel2);padding:2px 7px;border-radius:99px;">${mk.threshold}</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;">
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--text);">${num(totalM)}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Backtest Maç (5 Sezon)</div>
+            <div style="font-size:22px;font-weight:900;color:var(--text);">${num(totalBT)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">${macLabel}</div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:${mk.color};">${num(hiN)}</div>
+            <div style="font-size:22px;font-weight:900;color:${mk.color};">${num(st.hiN)}</div>
             <div style="font-size:10px;color:var(--muted);margin-top:3px;">Sistem Vurguladı <span style="opacity:.65;">(${mk.threshold})</span></div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--good);">${num(hiHits)}</div>
+            <div style="font-size:22px;font-weight:900;color:var(--good);">${num(st.hiHits)}</div>
             <div style="font-size:10px;color:var(--muted);margin-top:3px;">Tahmin Tuttu ✓</div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--bad);">${num(hiMiss)}</div>
+            <div style="font-size:22px;font-weight:900;color:var(--bad);">${num(st.hiMiss)}</div>
             <div style="font-size:10px;color:var(--muted);margin-top:3px;">Tutmadı ✗</div>
           </div>
         </div>
         <div style="background:${mk.color}18;border:1px solid ${mk.color}44;border-radius:10px;padding:10px 14px;text-align:center;">
-          <span style="font-size:28px;font-weight:900;color:${mk.color};">${hiPct}</span>
+          <span style="font-size:28px;font-weight:900;color:${mk.color};">${st.pct}</span>
           <span style="font-size:12px;color:var(--muted);margin-left:8px;">Başarı Oranı</span>
           <div style="font-size:11px;color:var(--muted);margin-top:4px;">
-            ${num(hiN)} vurgulanan maçtan <b style="color:var(--good);">${num(hiHits)}</b> tuttu, <b style="color:var(--bad);">${num(hiMiss)}</b> tutmadı
+            ${num(st.hiN)} vurgulanan maçtan <b style="color:var(--good);">${num(st.hiHits)}</b> tuttu, <b style="color:var(--bad);">${num(st.hiMiss)}</b> tutmadı
           </div>
         </div>
       </div>`;
@@ -1562,76 +1562,96 @@ function renderBacktest(){
   }
 
   // === Lig & Sezon Tabloları ===
-  const s=resSeason&&d.by_season[resSeason]?resSeason:(resSeason==='2026/27'?'2026/27':'');
-
-  // Genişletilmiş tablo başlığı: Maç | 0.5Ü (Vurgulanan / Tutanlar / %) | 1.5Ü (...) | 2.5Ü (...)
   const head=`<thead>
     <tr style="font-size:11px;">
       <th rowspan="2" style="text-align:left;vertical-align:bottom;padding:6px 8px;">Lig / Sezon</th>
       <th rowspan="2" style="vertical-align:bottom;padding:6px 4px;">Maç</th>
-      <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">0.5 Üst</th>
-      <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">1.5 Üst</th>
-      <th colspan="3" style="border-bottom:2px solid #f59e0b;color:#f59e0b;padding:4px;">2.5 Üst</th>
+      <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">0.5 Üst (≥%95)</th>
+      <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">1.5 Üst (≥%85)</th>
+      <th colspan="3" style="border-bottom:2px solid #f59e0b;color:#f59e0b;padding:4px;">2.5 Üst (≥%75)</th>
     </tr>
     <tr style="font-size:10.5px;color:var(--muted);">
-      <th title="Yüksek güven eşiği üstündeki maç sayısı">Vurgulanan</th><th title="Tutanlar">Tuttu</th><th title="İsabet oranı">%</th>
-      <th title="Yüksek güven eşiği üstündeki maç sayısı">Vurgulanan</th><th title="Tutanlar">Tuttu</th><th title="İsabet oranı">%</th>
-      <th title="Yüksek güven eşiği üstündeki maç sayısı">Vurgulanan</th><th title="Tutanlar">Tuttu</th><th title="İsabet oranı">%</th>
+      <th title="Vurgulanan maç sayısı">Vurgu</th><th title="Tutan maç sayısı">Tuttu</th><th title="İsabet oranı">%</th>
+      <th title="Vurgulanan maç sayısı">Vurgu</th><th title="Tutan maç sayısı">Tuttu</th><th title="İsabet oranı">%</th>
+      <th title="Vurgulanan maç sayısı">Vurgu</th><th title="Tutan maç sayısı">Tuttu</th><th title="İsabet oranı">%</th>
     </tr>
   </thead>`;
 
-  function mktCols(x,k){
-    if(!x||!x.markets||!x.markets[k]) return '<td>—</td><td>—</td><td>—</td>';
-    const mk=x.markets[k];
-    const hiN=mk.conf_n||0;
-    const hiPct=mk.conf_acc!=null?pct1(mk.conf_acc):'—';
-    const hiHits=Math.round(hiN*(mk.conf_acc||0));
-    const good=k==='0.5'?(mk.conf_acc>=0.95):(k==='1.5'?(mk.conf_acc>=0.85):(mk.conf_acc>=0.75));
-    const col=k==='0.5'?'#10b981':(k==='1.5'?'#3b82f6':'#f59e0b');
-    return `<td style="color:var(--muted);">${num(hiN)}</td><td>${num(hiHits)}</td><td style="font-weight:800;color:${good?col:'var(--text)'};">${hiPct}</td>`;
+  function renderRowCols(matchSubList){
+    const s05 = calcMarketStats(matchSubList, 0.95, '0.5');
+    const s15 = calcMarketStats(matchSubList, 0.85, '1.5');
+    const s25 = calcMarketStats(matchSubList, 0.75, '2.5');
+    return `<td style="color:var(--muted);">${num(s05.hiN)}</td><td>${num(s05.hiHits)}</td><td style="font-weight:800;color:${s05.isGood?'#10b981':'var(--text)'};">${s05.pct}</td>`+
+           `<td style="color:var(--muted);">${num(s15.hiN)}</td><td>${num(s15.hiHits)}</td><td style="font-weight:800;color:${s15.isGood?'#3b82f6':'var(--text)'};">${s15.pct}</td>`+
+           `<td style="color:var(--muted);">${num(s25.hiN)}</td><td>${num(s25.hiHits)}</td><td style="font-weight:800;color:${s25.isGood?'#f59e0b':'var(--text)'};">${s25.pct}</td>`;
   }
 
-  const row=(name,x,hi)=>x?`<tr${hi?' style="font-weight:800;background:rgba(255,255,255,.03)"':''}><td style="text-align:left;font-size:12px;padding:5px 8px;">${esc(name)}</td><td>${num(x.n_matches)}</td>${mktCols(x,'0.5')}${mktCols(x,'1.5')}${mktCols(x,'2.5')}</tr>`:'';
+  // Lig bazında tablo satırları
+  const ligH = isLigFiltered ? `Lig bazında · ${selected} seçili (tümüne dönmek için tıkla)` : 'Lig bazında · 5 sezon toplamı (lige tıklayarak filtrele)';
+  const ovRow = `<tr class="clickable bt-league-row ${selected==='Tümü'?'active-row':''}" data-league="Tümü"><td style="text-align:left;font-size:12px;padding:6px 8px;font-weight:800;">🌐 Tümü (5 sezon)</td><td style="font-weight:800;">${num(btBase.length)}</td>${renderRowCols(btBase)}</tr>`;
+  
+  const ligRows = BT_ORDER.map(l=>{
+    const lMatches = btBase.filter(m=>m.league===l);
+    if(!lMatches.length) return '';
+    const isAct = (l === selected);
+    return `<tr class="clickable bt-league-row ${isAct?'active-row':''}" data-league="${esc(l)}"><td style="text-align:left;font-size:12px;padding:6px 8px;font-weight:${isAct?'900':'600'};">${isAct?'👉 ':''}${esc(l)}</td><td>${num(lMatches.length)}</td>${renderRowCols(lMatches)}</tr>`;
+  }).join('');
 
-  // Lig bazında
-  const bl=s?(d.by_season_league[s]||{}):d.by_league;
-  const ligH=`Lig bazında · ${s||'5 sezon toplamı'}`;
-  // overall row first
-  const ovRow=s?row('Tümü (sezon)',d.by_season[s]||d.overall,false):row('Tümü (5 sezon)',d.overall,false);
-  const ligHTML=head+`<tbody>${ovRow}`+BT_ORDER.filter(l=>bl&&bl[l]).map(l=>row(l,bl[l],l===selected)).join('')+`</tbody>`;
+  const ligHTML = head + `<tbody>${ovRow}${ligRows}</tbody>`;
   ['bt-byleague-h','btpane-byleague-h'].forEach(id=>{const el=$(id);if(el)el.textContent=ligH;});
   ['bt-byleague','btpane-byleague'].forEach(id=>{const el=$(id);if(el)el.innerHTML=ligHTML;});
 
-  // Sezon bazında
-  const sznH=`Sezon bazında · ${selected==='Tümü'?'tüm ligler':selected}`;
-  let sRows=btSeasonList().map(ss=>row(ss,selected==='Tümü'?d.by_season[ss]:(d.by_season_league[ss]||{})[selected],ss===s));
-  if(RESULTS&&RESULTS.matches){
-    let ms26=RESULTS.matches.filter(m=>seasonOf(m.kickoff_utc)==='2026/27');
-    if(selected!=='Tümü') ms26=ms26.filter(m=>m.league===selected);
-    if(ms26.length){
-      const a=aggr(ms26);
-      const hi05n=a.hi_n_05||0, hi05h=a.hi_hits_05||0, hi05p=hi05n?((hi05h/hi05n)*100).toFixed(1)+'%':'—';
-      const hi15n=a.hi_n_15||0, hi15h=a.hi_hits_15||0, hi15p=hi15n?((hi15h/hi15n)*100).toFixed(1)+'%':'—';
-      const hi25n=a.hi_n_25||0, hi25h=a.hi_hits_25||0, hi25p=hi25n?((hi25h/hi25n)*100).toFixed(1)+'%':'—';
-      sRows.unshift(`<tr${s==='2026/27'?' style="font-weight:800;background:rgba(255,255,255,.03)"':''}><td style="text-align:left;font-size:12px;padding:5px 8px;">2026/27 (Güncel)</td><td>${num(ms26.length)}</td><td style="color:var(--muted);">${num(hi05n)}</td><td>${num(hi05h)}</td><td style="font-weight:800;color:#10b981;">${hi05p}</td><td style="color:var(--muted);">${num(hi15n)}</td><td>${num(hi15h)}</td><td style="font-weight:800;color:#3b82f6;">${hi15p}</td><td style="color:var(--muted);">${num(hi25n)}</td><td>${num(hi25h)}</td><td style="font-weight:800;color:#f59e0b;">${hi25p}</td></tr>`);
-    }
+  // Sezon bazında tablo satırları: seçili lig varsa yalnızca o ligin sezon verileri hesaplanır
+  const sznH = isLigFiltered ? `Sezon bazında · ${selected}` : 'Sezon bazında · tüm ligler';
+  const seasonList = ['2021/22','2022/23','2023/24','2024/25','2025/26'];
+  const sRows = seasonList.map(ss=>{
+    let ms = allScored.filter(m=>btMatchSeason(m)===ss);
+    if(isLigFiltered) ms = ms.filter(m=>m.league===selected);
+    return `<tr><td style="text-align:left;font-size:12px;padding:5px 8px;font-weight:600;">${ss}</td><td>${num(ms.length)}</td>${renderRowCols(ms)}</tr>`;
+  });
+
+  // 2026/27 güncel sezon satırı
+  let ms26 = allScored.filter(m=>btMatchSeason(m)==='2026/27');
+  if(isLigFiltered) ms26 = ms26.filter(m=>m.league===selected);
+  if(ms26.length){
+    sRows.unshift(`<tr style="background:rgba(255,255,255,.03);"><td style="text-align:left;font-size:12px;padding:5px 8px;font-weight:800;color:var(--accent);">2026/27 (Güncel)</td><td style="font-weight:800;">${num(ms26.length)}</td>${renderRowCols(ms26)}</tr>`);
   }
-  const sznHTML=head+`<tbody>`+sRows.join('')+`</tbody>`;
+
+  const sznHTML = head + `<tbody>` + sRows.join('') + `</tbody>`;
   ['bt-byseason-h','btpane-byseason-h'].forEach(id=>{const el=$(id);if(el)el.textContent=sznH;});
   ['bt-byseason','btpane-byseason'].forEach(id=>{const el=$(id);if(el)el.innerHTML=sznHTML;});
 
-  // Örnek maçlar
-  let samp=(d.samples||[]);
-  const scoped=samp.filter(x=>(!s||x.season===s)&&(selected==='Tümü'||x.league===selected));
-  const fellBack=scoped.length<3;
-  samp=fellBack?samp:scoped;
-  const smH=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`; 
-  const smHTML=`<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>Skor</th><th>Gol</th><th title="Ü=model Üst dedi, A=Alt · ✓=tuttu">Model 0.5·1.5·2.5</th></tr></thead><tbody>`+
+  // Örnek maçlar — seçili lige göre süz
+  let samp = (d.samples||[]);
+  const scoped = samp.filter(x=>(!isLigFiltered || x.league===selected));
+  const fellBack = scoped.length < 3;
+  samp = fellBack ? samp : scoped;
+  const smH = `Örnek maçlar — tahmin vs gerçek${isLigFiltered ? ` · ${selected}` : ' · tüm liglerden'}`;
+  const smHTML = `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>Skor</th><th>Gol</th><th title="Ü=model Üst dedi, A=Alt · ✓=tuttu">Model 0.5·1.5·2.5</th></tr></thead><tbody>`+
     samp.map(x=>`<tr><td>${dmy(x.date)}</td><td>${esc(x.league)}</td><td style="text-align:left">${esc(x.home)} — ${esc(x.away)}</td><td>${x.pred_lambda}</td><td>${x.actual_score}</td><td>${x.actual_total}</td><td><span class="btmarks">${dirMark(x.p05,x.hit05,'0.5')}${dirMark(x.p15,x.hit15,'1.5')}${dirMark(x.p25,x.hit25,'2.5')}</span></td></tr>`).join('')+`</tbody>`;
   ['bt-samples-h','btpane-samples-h'].forEach(id=>{const el=$(id);if(el)el.textContent=smH;});
   ['bt-samples','btpane-samples'].forEach(id=>{const el=$(id);if(el)el.innerHTML=smHTML;});
-  const ftHTML=foot_text(d);
+
+  const ftHTML = foot_text(d);
   ['bt-foot','btpane-foot'].forEach(id=>{const el=$(id);if(el)el.innerHTML=ftHTML;});
+
+  // Lig satırlarına tıklama olayı bağlama
+  ['bt-byleague','btpane-byleague'].forEach(tblId=>{
+    const tbl = $(tblId);
+    if(!tbl) return;
+    tbl.querySelectorAll('.bt-league-row').forEach(tr=>{
+      tr.onclick = ()=>{
+        const lg = tr.dataset.league;
+        selected = (selected === lg) ? 'Tümü' : lg;
+        selectedByTab['bt'] = selected;
+        selectedByTab['res'] = selected;
+        save('league_bt', selected);
+        save('league_res', selected);
+        renderFilters();
+        renderBacktest();
+      };
+    });
+  });
 }
 
 function setTab(t){

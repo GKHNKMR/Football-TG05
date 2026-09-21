@@ -772,6 +772,14 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       </p>
     </div>
 
+    <!-- Pazar Seçici Butonları -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="chip active" type="button" style="cursor:pointer;font-weight:800;padding:6px 14px;">⚽ Gol Pazarları Doğruluğu (0.5Ü · 1.5Ü · 2.5Ü)</button>
+      <button class="chip" type="button" onclick="setTab('cifte');if(window.BETAVUS_CIFTE_UI)BETAVUS_CIFTE_UI.setSubView('bt');" style="cursor:pointer;background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.15);font-weight:700;padding:6px 14px;">
+        🎲 Çifte Şans &amp; Skor Model Doğruluğu (17.003 Maç) →
+      </button>
+    </div>
+
     <!-- KPI Tiles: Genel Özet -->
     <div id="btpane-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;"></div>
 
@@ -856,6 +864,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   </div>
 </div>
 <script src="js/backtest_data.js"></script>
+<script src="js/cifte_backtest_data.js"></script>
 <script src="js/paper_engine.js"></script>
 <script src="js/paper_ui.js"></script>
 <script src="js/cifte_engine.js"></script>

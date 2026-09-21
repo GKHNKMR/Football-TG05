@@ -728,27 +728,27 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 
     <!-- VIEW: Lig & Sezon Dağılımı (5 Sezon) -->
     <div class="card">
-      <h2 id="bt-byleague-h">Lig bazında</h2>
-      <div class="tbl-scroll"><table id="bt-byleague" class="bt-table"></table></div>
+      <h2 id="btpane-byleague-h">Lig bazında</h2>
+      <div class="tbl-scroll"><table id="btpane-byleague" class="bt-table"></table></div>
     </div>
     <div class="card">
-      <h2 id="bt-byseason-h">Sezon bazında</h2>
-      <div class="tbl-scroll"><table id="bt-byseason" class="bt-table"></table></div>
+      <h2 id="btpane-byseason-h">Sezon bazında</h2>
+      <div class="tbl-scroll"><table id="btpane-byseason" class="bt-table"></table></div>
     </div>
-    <div class="card" id="bt-samples-card">
-      <h2 id="bt-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
+    <div class="card" id="btpane-samples-card">
+      <h2 id="btpane-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
       <p>Test kümesinden düzenli aralıklarla seçilen maçlar. <b>Tah. λ</b> = modelin tahmin
         ettiği toplam gol · <b>Skor / Gol</b> = gerçekte olan.
         <b>Model 0.5·1.5·2.5</b>: her çizgi için modelin verdiği olasılık %50 ve üstündeyse
         <b>Ü</b> (Üst dedi), altındaysa <b>A</b> (Alt dedi); <b>✓</b> o yön tuttu demek —
         tek başına "üst geldi" demek <b>değil</b>. Örn. 1-0 biten maçta "2.5 A✓", modelin
         doğru bir Alt tahminidir.</p>
-      <div class="tbl-scroll"><table id="bt-samples" class="bt-table"></table></div>
+      <div class="tbl-scroll"><table id="btpane-samples" class="bt-table"></table></div>
     </div>
-    <p class="btfoot" id="bt-foot"></p>
+    <p class="btfoot" id="btpane-foot"></p>
 
     <!-- Model Yöntemi & Formül -->
-    <div class="card" id="bt-method-card" style="margin-top:14px;">
+    <div class="card" id="btpane-method-card" style="margin-top:14px;">
       <h2>Tahmin tabanı — hesap yöntemi</h2>
       <p>Her takımın <b>ev</b> ve <b>deplasman</b> maçlarında attığı ve yediği gol oranları,
         son sezonlar yakın olana daha çok ağırlık verilerek çıkarılır
@@ -1447,11 +1447,27 @@ function btScope(){
 function btLine(x,k){return x&&x.markets&&x.markets[k]?btPc(x.markets[k].pick_acc):'—';}
 function renderBacktest(){
   const d=BACKTEST || window.BACKTEST_DATA;
+  const foot_text=v=>
+    `"Yön isabeti" = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne seçseydin tutma oranın. `+
+    `Üretim: <code>scripts/backtest.py</code> · 5 sezonluk walk-forward sızıntısız doğrulama · ${new Date(v.generated_at).toLocaleString('tr-TR')}.`;
+
   if(!d){
-    const tblL=$('bt-byleague'), tblS=$('bt-byseason'), tblSamp=$('bt-samples');
-    if(tblL) tblL.innerHTML='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
-    if(tblS) tblS.innerHTML='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
-    if(tblSamp) tblSamp.innerHTML='<tbody><tr><td colspan="7" class="loading">Örnek maçlar yükleniyor…</td></tr></tbody>';
+    // Loading placeholders — fill both sets of IDs
+    [['bt-byleague','btpane-byleague']].forEach(([a,b])=>{
+      const el1=$( a),el2=$(b);
+      const html='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
+      if(el1)el1.innerHTML=html; if(el2)el2.innerHTML=html;
+    });
+    [['bt-byseason','btpane-byseason']].forEach(([a,b])=>{
+      const el1=$(a),el2=$(b);
+      const html='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
+      if(el1)el1.innerHTML=html; if(el2)el2.innerHTML=html;
+    });
+    [['bt-samples','btpane-samples']].forEach(([a,b])=>{
+      const el1=$(a),el2=$(b);
+      const html='<tbody><tr><td colspan="7" class="loading">Örnek maçlar yükleniyor…</td></tr></tbody>';
+      if(el1)el1.innerHTML=html; if(el2)el2.innerHTML=html;
+    });
     return;
   }
   const ns=(d.method&&d.method.target_seasons||[]).length;
@@ -1461,15 +1477,12 @@ function renderBacktest(){
   const row=(name,x,hi)=>x?`<tr${hi?' style="font-weight:900"':''}><td>${esc(name)}</td><td>${x.n_matches.toLocaleString('tr-TR')}</td><td>${btLine(x,'0.5')}</td><td>${btLine(x,'1.5')}</td><td>${btLine(x,'2.5')}</td></tr>`:'';
   // lig bazında — seçili sezon (yoksa tüm sezonlar)
   const bl=s?(d.by_season_league[s]||{}):d.by_league;
-  const lEl=$('bt-byleague-h');
-  if(lEl) lEl.textContent=`Lig bazında · ${s||'5 sezon toplamı'}`;
-  const tblL=$('bt-byleague');
-  if(tblL) tblL.innerHTML=head+`<tbody>`+
-    BT_ORDER.filter(l=>bl&&bl[l]).map(l=>row(l,bl[l],l===selected)).join('')+`</tbody>`;
+  const ligH=`Lig bazında · ${s||'5 sezon toplamı'}`;
+  const ligHTML=head+`<tbody>`+BT_ORDER.filter(l=>bl&&bl[l]).map(l=>row(l,bl[l],l===selected)).join('')+`</tbody>`;
+  ['bt-byleague-h','btpane-byleague-h'].forEach(id=>{const el=$(id);if(el)el.textContent=ligH;});
+  ['bt-byleague','btpane-byleague'].forEach(id=>{const el=$(id);if(el)el.innerHTML=ligHTML;});
   // sezon bazında — seçili lig (yoksa tüm ligler)
-  const sEl=$('bt-byseason-h');
-  if(sEl) sEl.textContent=`Sezon bazında · ${selected==='Tümü'?'tüm ligler':selected}`;
-  const tblS=$('bt-byseason');
+  const sznH=`Sezon bazında · ${selected==='Tümü'?'tüm ligler':selected}`;
   let sRows = btSeasonList().map(ss=>row(ss,selected==='Tümü'?d.by_season[ss]:(d.by_season_league[ss]||{})[selected],ss===s));
   if(RESULTS && RESULTS.matches){
     let ms26 = RESULTS.matches.filter(m=>seasonOf(m.kickoff_utc)==='2026/27');
@@ -1479,22 +1492,21 @@ function renderBacktest(){
       sRows.unshift(`<tr${s==='2026/27'?' style="font-weight:900"':''}><td>2026/27 (Güncel)</td><td>${ms26.length.toLocaleString('tr-TR')}</td><td>${a26.acc_05!=null?a26.acc_05+'%':'—'}</td><td>${a26.acc_15!=null?a26.acc_15+'%':'—'}</td><td>${a26.acc_25!=null?a26.acc_25+'%':'—'}</td></tr>`);
     }
   }
-  if(tblS) tblS.innerHTML=head+`<tbody>`+sRows.join('')+`</tbody>`;
+  const sznHTML=head+`<tbody>`+sRows.join('')+`</tbody>`;
+  ['bt-byseason-h','btpane-byseason-h'].forEach(id=>{const el=$(id);if(el)el.textContent=sznH;});
+  ['bt-byseason','btpane-byseason'].forEach(id=>{const el=$(id);if(el)el.innerHTML=sznHTML;});
   // örnek maçlar — seçili lig + sezona göre süz; boş kalırsa tüm örnekler
   let samp=(d.samples||[]);
   const scoped=samp.filter(x=>(!s||x.season===s)&&(selected==='Tümü'||x.league===selected));
   const fellBack=scoped.length<3;
   samp=fellBack?samp:scoped;
-  const smEl=$('bt-samples-h');
-  if(smEl) smEl.textContent=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`;
-  const tblSamp=$('bt-samples');
-  if(tblSamp) tblSamp.innerHTML=
-    `<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>Skor</th><th>Gol</th><th title="Ü=model Üst dedi, A=Alt · ✓=tuttu">Model 0.5·1.5·2.5</th></tr></thead><tbody>`+
+  const smH=`Örnek maçlar — tahmin vs gerçek${fellBack&&(s||selected!=='Tümü')?' · tüm liglerden':(s||selected!=='Tümü')?` · ${[selected!=='Tümü'?selected:'',s].filter(Boolean).join(' · ')}`:''}`; 
+  const smHTML=`<thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Tah. λ</th><th>Skor</th><th>Gol</th><th title="Ü=model Üst dedi, A=Alt · ✓=tuttu">Model 0.5·1.5·2.5</th></tr></thead><tbody>`+
     samp.map(x=>`<tr><td>${dmy(x.date)}</td><td>${esc(x.league)}</td><td style="text-align:left">${esc(x.home)} — ${esc(x.away)}</td><td>${x.pred_lambda}</td><td>${x.actual_score}</td><td>${x.actual_total}</td><td><span class="btmarks">${dirMark(x.p05,x.hit05,'0.5')}${dirMark(x.p15,x.hit15,'1.5')}${dirMark(x.p25,x.hit25,'2.5')}</span></td></tr>`).join('')+`</tbody>`;
-  const ftEl=$('bt-foot');
-  if(ftEl) ftEl.innerHTML=
-    `"Yön isabeti" = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne seçseydin tutma oranın. `+
-    `Üretim: <code>scripts/backtest.py</code> · 5 sezonluk walk-forward sızıntısız doğrulama · ${new Date(d.generated_at).toLocaleString('tr-TR')}.`;
+  ['bt-samples-h','btpane-samples-h'].forEach(id=>{const el=$(id);if(el)el.textContent=smH;});
+  ['bt-samples','btpane-samples'].forEach(id=>{const el=$(id);if(el)el.innerHTML=smHTML;});
+  const ftHTML=foot_text(d);
+  ['bt-foot','btpane-foot'].forEach(id=>{const el=$(id);if(el)el.innerHTML=ftHTML;});
 }
 
 function setTab(t){

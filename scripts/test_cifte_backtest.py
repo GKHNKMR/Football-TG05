@@ -10,6 +10,9 @@ class H(SimpleHTTPRequestHandler):
 PORT = 8946
 server = HTTPServer(('127.0.0.1', PORT), H)
 threading.Thread(target=server.serve_forever, daemon=True).start()
+project_root = Path(__file__).resolve().parents[1]
+target_dir = project_root / 'scratch'
+target_dir.mkdir(exist_ok=True)
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
@@ -70,7 +73,6 @@ with sync_playwright() as p:
     q_res.fill('Schalke')
     page.click('#vurguMatchToggle') # kapat
     time.sleep(0.5)
-    target_dir = Path(r"C:\Users\mtem01\.gemini\antigravity\brain\f33eb80d-72fc-483c-aef4-dc3ca74ebe48")
     page.screenshot(path=str(target_dir / "schalke_limited_data_clean.png"))
     print("  ✓ Schalke maçı temiz görünüm ekran görüntüsü kaydedildi: schalke_limited_data_clean.png")
 
@@ -103,14 +105,66 @@ with sync_playwright() as p:
     assert "Skor Tahmin Havuzu" in cifte_text, "Skor kartı eksik"
     print("  ✓ 4 Adet Model Doğruluğu KPI Kartı başarıyla doğrulandı!")
     
-    # 4. Lig tablosu 6 kolonlu ve sade olmalı
-    th_elements = page.query_selector_all('#tblCifteLeague thead th')
-    th_texts = [th.inner_text().strip() for th in th_elements]
-    print(f"  Lig tablosu başlıkları ({len(th_texts)} adet):", " | ".join(th_texts))
-    assert len(th_texts) == 6, f"Lig tablosu tam 6 kolon olmalı (önceden 13 idi), şu an: {len(th_texts)}"
+    # 4. Lig ve sezon tabloları Model Doğruluğu ile aynı iki katmanlı grup başlığına sahip olmalı
+    league_top_headers = page.query_selector_all('#tblCifteLeague thead tr:first-child th')
+    league_sub_headers = page.query_selector_all('#tblCifteLeague thead tr:nth-child(2) th')
+    league_group_headers = page.query_selector_all('#tblCifteLeague thead .cifte-bt-group-head')
+    league_data_cells = page.query_selector_all('#tblCifteLeague tbody tr:first-child td')
+    assert len(league_top_headers) == 6, f"Lig tablosu üst başlık satırı 6 hücre olmalı, şu an: {len(league_top_headers)}"
+    assert len(league_group_headers) == 4, f"Lig tablosunda 4 pazar grubu olmalı, şu an: {len(league_group_headers)}"
+    assert all(h.get_attribute('colspan') == '3' for h in league_group_headers), "Her pazar grubu 3 alt sütun taşımalı"
+    assert len(league_sub_headers) == 12, f"Lig tablosunda 12 alt başlık olmalı, şu an: {len(league_sub_headers)}"
+    assert len(league_data_cells) == 14, f"Lig tablosu satırı 14 mantıksal sütun olmalı, şu an: {len(league_data_cells)}"
+
+    season_group_headers = page.query_selector_all('#tblCifteSeason thead .cifte-bt-group-head')
+    season_data_cells = page.query_selector_all('#tblCifteSeason tbody tr:first-child td')
+    sample_headers = page.query_selector_all('#tblCifteSamples thead th')
+    assert len(season_group_headers) == 4, f"Sezon tablosunda 4 pazar grubu olmalı, şu an: {len(season_group_headers)}"
+    assert len(season_data_cells) == 14, f"Sezon tablosu satırı 14 mantıksal sütun olmalı, şu an: {len(season_data_cells)}"
+    assert len(sample_headers) == 6, f"Örnek maç tablosu tam 6 kolon olmalı, şu an: {len(sample_headers)}"
+    print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")
+
+    # 5. Masaüstü okunabilirliği: KPI kartları 2 sütun, ana rakamlar ve tablo metni yeterince büyük
+    kpi_cards = page.query_selector_all('.cifte-bt-kpi')
+    assert len(kpi_cards) == 4, f"Tam 4 KPI kartı olmalı, şu an: {len(kpi_cards)}"
+    kpi_columns = page.eval_on_selector(
+        '.cifte-bt-kpi-grid',
+        "el => getComputedStyle(el).gridTemplateColumns.split(' ').length"
+    )
+    metric_font = page.eval_on_selector(
+        '.cifte-bt-metric-value',
+        "el => parseFloat(getComputedStyle(el).fontSize)"
+    )
+    table_font = page.eval_on_selector(
+        '#tblCifteLeague',
+        "el => parseFloat(getComputedStyle(el).fontSize)"
+    )
+    assert kpi_columns == 2, f"Masaüstünde KPI kartları 2 sütun olmalı, şu an: {kpi_columns}"
+    assert metric_font >= 20, f"KPI ana rakamları en az 20px olmalı, şu an: {metric_font}px"
+    assert table_font >= 12.5, f"Tablo metni en az 12.5px olmalı, şu an: {table_font}px"
+    sample_rows = page.query_selector_all('#tblCifteSamples tbody tr')
+    assert len(sample_rows) == 12, f"Örnek maçlar ilk açılışta 12 satır göstermeli, şu an: {len(sample_rows)}"
+    assert page.query_selector('#btnToggleCifteSamples'), "Daha fazla örnek göster düğmesi bulunamadı"
+    print("  ✓ KPI yerleşimi, karakter büyüklükleri ve tablo okunabilirliği doğrulandı.")
     
     # Ekran görüntüsü al (Çifte Şans Backtest)
-    page.screenshot(path=str(target_dir / "cifte_backtest_clean.png"))
-    print("  ✓ Çifte Şans Model Doğruluğu temiz görünüm ekran görüntüsü kaydedildi: cifte_backtest_clean.png")
+    page.screenshot(path=str(target_dir / "cifte_backtest_readability.png"), full_page=True)
+    print("  ✓ Çifte Şans Model Doğruluğu okunabilirlik ekran görüntüsü kaydedildi: cifte_backtest_readability.png")
+
+    # 6. Mobil yerleşim: KPI tek sütun, geniş tablolar kontrollü yatay kaydırma
+    page.set_viewport_size({'width': 390, 'height': 844})
+    time.sleep(0.3)
+    mobile_kpi_columns = page.eval_on_selector(
+        '.cifte-bt-kpi-grid',
+        "el => getComputedStyle(el).gridTemplateColumns.split(' ').length"
+    )
+    table_scrolls = page.eval_on_selector(
+        '#tblCifteLeague',
+        "el => el.parentElement.scrollWidth > el.parentElement.clientWidth"
+    )
+    assert mobile_kpi_columns == 1, f"Mobilde KPI kartları tek sütun olmalı, şu an: {mobile_kpi_columns}"
+    assert table_scrolls, "Mobilde geniş tablo kontrollü yatay kaydırılabilir olmalı"
+    page.screenshot(path=str(target_dir / "cifte_backtest_mobile.png"), full_page=True)
+    print("  ✓ Mobil KPI yerleşimi ve yatay kaydırılabilir tablo davranışı doğrulandı.")
 
     print("\n>>> TÜM DOĞRULAMA TESTLERİ BAŞARIYLA TAMAMLANDI! <<<")

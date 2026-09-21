@@ -44,7 +44,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .hotbtn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
 .hotbtn.on{border-color:var(--good);color:var(--good-ink);background:var(--good)}
 .table{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.head,.row{display:grid;grid-template-columns:minmax(250px,1fr) 88px 88px 88px;gap:8px;align-items:center}
+.head,.row{display:grid;grid-template-columns:minmax(250px,1fr) 78px 78px 78px 132px;gap:8px;align-items:center}
 .head{padding:12px 14px;background:var(--head);color:var(--headtext);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
 .row{padding:13px 14px;border-top:1px solid var(--line)}
 .match{min-width:0}
@@ -60,10 +60,21 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .kick{font-size:11px;color:var(--muted);margin-top:5px}
 .prob{display:flex;justify-content:center}
 .pill{min-width:66px;text-align:center;padding:8px 5px;border-radius:9px;background:var(--panel2);font-weight:900;font-size:14px}
+.dc-prob{min-width:0}
+.dc-pill{width:100%;min-width:112px;text-align:center;padding:7px 8px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);line-height:1.15}
+.dc-pill.is-highlight{background:rgba(102,227,161,.12);border-color:color-mix(in srgb,var(--good) 55%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--good) 22%,transparent)}
+.dc-pill .dc-pick{font-size:14px;font-weight:950;color:var(--good);margin-right:5px}
+.dc-pill .dc-pct{font-size:13px;font-weight:900;color:var(--text)}
+.dc-pill .dc-note{display:block;margin-top:3px;color:var(--good);font-size:9px;font-weight:900;letter-spacing:.02em;text-transform:uppercase}
+.dc-pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
+.dc-pill.hot .dc-pick,.dc-pill.hot .dc-pct,.dc-pill.hot .dc-note{color:inherit}
+.dc-empty{color:var(--muted);font-size:14px;font-weight:800;opacity:.55}
+.row.dc-highlighted{background:linear-gradient(90deg,transparent 0,rgba(102,227,161,.025) 58%,rgba(102,227,161,.08) 100%);box-shadow:inset -3px 0 0 color-mix(in srgb,var(--good) 70%,transparent)}
+.row.dc-highlighted:hover{background:linear-gradient(90deg,var(--panel2) 0,var(--panel2) 58%,rgba(102,227,161,.11) 100%)}
 .p05 .pill{border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
 .pill.hot{animation:pillhot 1.15s ease-in-out infinite;border-color:var(--good)!important}
 @keyframes pillhot{0%,100%{background:var(--panel2);color:var(--good);box-shadow:0 0 0 0 transparent}50%{background:var(--good);color:var(--good-ink);box-shadow:0 0 15px 1px color-mix(in srgb,var(--good) 50%,transparent)}}
-@media(prefers-reduced-motion:reduce){.pill.hot{animation:none;background:var(--good);color:var(--good-ink)}}
+@media(prefers-reduced-motion:reduce){.pill.hot,.dc-pill.hot{animation:none;background:var(--good);color:var(--good-ink)}}
 .pill.limited{border:1px dashed rgba(242,153,74,0.55)!important;color:var(--muted);position:relative}
 .pill.limited .lim-tilde{color:#f2994a;font-size:11px;font-weight:900;vertical-align:super;margin-left:2px}
 .badge{font-size:9px;letter-spacing:1px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 4px;font-weight:900}
@@ -140,6 +151,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .edge{font-size:10px;color:var(--muted);font-weight:600}
 .hint{color:var(--muted);font-size:11px;margin:-4px 0 12px;line-height:1.6}
 .hint .badge{margin:0 1px}
+.dc-bulletin-note{margin:0 0 12px;padding:9px 12px;border:1px solid color-mix(in srgb,var(--good) 28%,var(--line));border-radius:10px;background:rgba(102,227,161,.055);color:var(--muted);font-size:11.5px;line-height:1.55}
+.dc-bulletin-note b{color:var(--good)}
 .rsum{color:var(--muted);font-size:11.5px;margin:2px 2px 8px;line-height:1.6}
 .rsum2{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--good);border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text)}
 .rsum2 b{font-weight:900}
@@ -148,8 +161,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .rdate .yr{display:block;font-size:9.5px;color:var(--muted);font-weight:600;line-height:1.15}
 @media(max-width:650px){
   .wrap{padding:18px 10px 32px}.brand{font-size:27px}
-  .head,.row{grid-template-columns:minmax(0,1fr) 58px 58px 58px;gap:5px}
+  .head,.row{grid-template-columns:minmax(0,1fr) 48px 48px 48px 86px;gap:4px}
   .head{padding:10px 8px;font-size:9px}.row{padding:11px 8px}.teams{font-size:13px}.pill{min-width:52px;padding:7px 2px;font-size:12px}
+  .dc-pill{min-width:78px;padding:6px 3px}.dc-pill .dc-pick{font-size:12px}.dc-pill .dc-pct{font-size:11px}.dc-pill .dc-note{font-size:7.5px}
   .tiles{grid-template-columns:1fr 1fr}
   .rhead,.rrow{grid-template-columns:38px minmax(0,1fr) 34px 30px 74px 40px;gap:5px;font-size:10.5px}
   .hitset span{min-width:17px;font-size:10px}
@@ -738,6 +752,9 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <span class="badge b1">●</span> sınırlı veri ·
       <span class="badge b0">○</span> sadece lig ortalaması
     </div>
+    <div class="dc-bulletin-note">
+      <b>🎲 Çifte Şans yüksek güven filtresi:</b> Yalnızca tam model girdili, kısıtlı verisi ve kritik eksik oyuncu uyarısı olmayan, olasılığı <b>≥%75</b> maçlar yeşil vurgulanır. Vurgu garanti anlamına gelmez.
+    </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
       <span class="srch">
@@ -752,6 +769,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
         <div class="sortcol" data-sort="p_over_0_5">0.5+</div>
         <div class="sortcol" data-sort="p_over_1_5">1.5+</div>
         <div class="sortcol" data-sort="p_over_2_5">2.5+</div>
+        <div class="sortcol" data-sort="dc">Çifte Şans ≥%75</div>
       </div>
       <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
     </div>
@@ -960,9 +978,10 @@ const FALLBACK_DATA=[
 // Vurgu eşikleri — backtest'te her pazarın sürdürülebilir güven bölgesi
 const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
          o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ %85'},
-         o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'}};
-// hlKey: 'off' | 'all' (üçü birden) | HL anahtarı
-function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25]:(HL[hlKey]?[HL[hlKey]]:[]);}
+         o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'},
+         dc:{key:'dc',min:0.75,label:'Çifte Şans ≥ %75'}};
+// hlKey: 'off' | 'all' (tüm vurgular) | HL anahtarı
+function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25,HL.dc]:(HL[hlKey]?[HL[hlKey]]:[]);}
 function isLimitedData(x){
   if(!x)return false;
   if(x.h2h_tier || (x.h2h_matches_used && x.h2h_matches_used >= 2)) return false;
@@ -970,7 +989,10 @@ function isLimitedData(x){
   return b==='partial-form'||b==='league-avg'||(typeof b==='string'&&(b.startsWith('partial-form')||b.startsWith('league-avg')));
 }
 function hlHot(v,lineKey,x){if(isLimitedData(x))return false;return hlActive().some(h=>h.key===lineKey&&v!=null&&Number(v)>=h.min);}
-function hlPass(x){if(isLimitedData(x))return false;return hlActive().some(h=>x[h.key]!=null&&Number(x[h.key])>=h.min);}
+function hlPass(x){
+  if(isLimitedData(x))return false;
+  return hlActive().some(h=>h.key==='dc'?doubleChanceInfo(x).eligible:(x[h.key]!=null&&Number(x[h.key])>=h.min));
+}
 const store=(k,d)=>{try{return localStorage.getItem('betavus.'+k)??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
@@ -1051,7 +1073,7 @@ function renderFilters(){
 }
 function renderHlSel(){
   const s=$('hlSel');
-  s.innerHTML=`<option value="off">Vurgu: kapalı</option><option value="all">Vurgu: açık (0.5·1.5·2.5)</option>`+
+  s.innerHTML=`<option value="off">Vurgu: kapalı</option><option value="all">Vurgu: açık (0.5·1.5·2.5·ÇŞ)</option>`+
     Object.entries(HL).map(([k,v])=>`<option value="${k}">Vurgu: ${v.label}</option>`).join('');
   s.value=hlKey;
 }
@@ -1182,7 +1204,8 @@ function visible(list){
     if(hotOnly&&hlActive().length)r=r.filter(hlPass);
   }
   r=r.slice();
-  if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
+  if(sortLine==='dc')r.sort((a,b)=>(doubleChanceInfo(b).pct||0)-(doubleChanceInfo(a).pct||0));
+  else if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
   else r.sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
   return r;
 }
@@ -1197,6 +1220,39 @@ function missingKeyInfo(x){
   if(am.length)parts.push(`${x.away}: ${am.join(', ')}`);
   return {source:info.source,isConfirmed:info.source==='ESPN starting XI',text:parts.join(' · ')};
 }
+function doubleChanceInfo(x){
+  const fail=reason=>({eligible:false,pick:null,pct:0,reason});
+  if(!x||isLimitedData(x))return fail('Kısıtlı veya yetersiz veri');
+  if(missingKeyInfo(x))return fail('Kritik eksik oyuncu uyarısı');
+
+  // Çifte Şans vurgusu için varsayımsal 2.65 lambda / 55-45 dağılımına izin verme.
+  // Ya doğrudan ev-deplasman lambdaları ya da toplam lambda + eksiksiz 1-X-2 piyasa girdisi gerekir.
+  const lh=Number(x.lam_home??x.base_lam_home), la=Number(x.lam_away??x.base_lam_away);
+  const directLambdas=Number.isFinite(lh)&&lh>0&&Number.isFinite(la)&&la>0;
+  const totalLam=Number(x.pred_lambda??x.exp_goals);
+  const market=x.market||{};
+  const completeMarket=[market.h,market.d,market.a].every(v=>Number.isFinite(Number(v))&&Number(v)>1);
+  const marketBacked=Number.isFinite(totalLam)&&totalLam>0&&completeMarket;
+  if(!directLambdas&&!marketBacked)return fail('Çifte Şans model girdileri eksik');
+
+  const engine=window.BETAVUS_CIFTE;
+  if(!engine||typeof engine.analyzeMatch!=='function')return fail('Çifte Şans motoru hazır değil');
+  try{
+    const analysis=engine.analyzeMatch(x);
+    const pick=analysis&&analysis.bestDc&&analysis.bestDc.pick;
+    const pct=Number(analysis&&analysis.bestDc&&analysis.bestDc.pct);
+    if(!pick||!Number.isFinite(pct))return fail('Çifte Şans sonucu üretilemedi');
+    if(pct<75)return {eligible:false,pick,pct,reason:'Güven eşiğinin altında'};
+    return {eligible:true,pick,pct,reason:'Yüksek güven eşiğini geçti'};
+  }catch(e){return fail('Çifte Şans analizi hesaplanamadı');}
+}
+function doubleChancePill(info){
+  if(!info||!info.eligible)return `<span class="dc-empty" title="${esc((info&&info.reason)||'Vurgulanmadı')}">—</span>`;
+  return `<span class="dc-pill is-highlight hot" title="Model olasılığı %${info.pct.toFixed(1)} · yüksek güven vurgusu, garanti değildir">
+    <span class="dc-pick">${esc(info.pick)}</span><span class="dc-pct">%${info.pct.toFixed(1)}</span>
+    <span class="dc-note">★ Yüksek güven</span>
+  </span>`;
+}
 function renderPred(){
   const src=window.__data||[];
   const winMs=visibleAll(src);
@@ -1210,6 +1266,7 @@ function renderPred(){
   const total=winMs.length;
   const anyHl=hlActive().length, lock=!!dayPred||!!qPred;
   const hlLabel=hlKey==='all'?'Vurgulu':(HL[hlKey]?HL[hlKey].label:'');
+  $('hotToggle').textContent=hlKey==='dc'?'yalnızca ÇŞ vurguları':'sadece bunlar';
   $('hotToggle').classList.toggle('on',hotOnly&&anyHl&&!lock);
   $('hotToggle').disabled=!anyHl||lock;
   $('hotToggle').style.opacity=(anyHl&&!lock)?1:.4;
@@ -1217,6 +1274,7 @@ function renderPred(){
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&anyHl?hlLabel+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&anyHl?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
   rows.innerHTML=list.map(x=>{
     const mk=missingKeyInfo(x);
+    const dc=doubleChanceInfo(x);
     const ms=STATS.matches&&STATS.matches[x.match_id];
     const h2h=ms&&ms.h2h&&ms.h2h.count?ms.h2h:null;
     let h2hChip='';
@@ -1225,7 +1283,7 @@ function renderPred(){
       const title=`Aralarındaki son ${h2h.count} maç${tierTxt?` (${esc(tierTxt)} dahil)`:''}: ${h2h.home_wins}G-${h2h.draws}B-${h2h.away_wins}M · ortalama ${h2h.avg_total} gol · 2.5Ü %${h2h.over25_pct}`;
       h2hChip=`<span class="h2h-chip" title="${title}">⚡ ${tierTxt?esc(tierTxt)+' · ':''}${h2h.count} H2H (ort. ${h2h.avg_total} gol)</span>`;
     }
-    return `<div class="row" data-mid="${esc(x.match_id||'')}">
+    return `<div class="row ${dc.eligible?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
@@ -1234,6 +1292,7 @@ function renderPred(){
     <div class="prob p05">${pillFor(x,'0.5')}</div>
     <div class="prob">${pillFor(x,'1.5')}</div>
     <div class="prob">${pillFor(x,'2.5')}</div>
+    <div class="prob dc-prob">${doubleChancePill(dc)}</div>
   </div>`;
   }).join('');
 }

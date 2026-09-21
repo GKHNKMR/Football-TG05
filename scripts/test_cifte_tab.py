@@ -91,7 +91,42 @@ with sync_playwright() as p:
     pred_rows = page.query_selector_all('#rows .row')
     print(f"  Tahminler bülteni satır sayısı: {len(pred_rows)}")
     assert len(pred_rows) > 0, "Tahminler sekmesi boş kaldı!"
-    print("  ✓ '⚽ Tahminler' sekmesi bozulmadan eksiksiz çalışıyor.")
+    pred_headers = [h.inner_text().strip() for h in page.query_selector_all('#pane-pred .head .sortcol')]
+    assert len(pred_headers) == 5, f"Tahminler tablosu 5 sütunlu olmalı, şu an: {len(pred_headers)}"
+    assert any('ŞANS' in h.upper() for h in pred_headers), "Çifte Şans sütunu bulunamadı!"
+
+    eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
+    assert len(eligible_rows) > 0, "Bültende yüksek güvenli Çifte Şans vurgusu bulunamadı!"
+    assert all(r.query_selector('.dc-pill.is-highlight.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen yeşil vurgu eksik"
+    dc_animation = page.eval_on_selector('.dc-pill.is-highlight.hot', "el => getComputedStyle(el).animationName")
+    assert dc_animation == 'pillhot', f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"
+    print(f"  Çifte Şans yüksek güvenli maç sayısı: {len(eligible_rows)}")
+
+    # Kısıtlı veri ve kritik eksik oyunculu iki sentetik maç asla ÇŞ vurgusu almamalı
+    page.evaluate("""() => {
+      const base = window.__data[0];
+      window.__data.push({...base, match_id:'TEST-DC-LIMITED', home:'Test Limited', basis:'partial-form', h2h_tier:null, h2h_matches_used:0});
+      window.__data.push({...base, match_id:'TEST-DC-CRITICAL', home:'Test Critical', lineup:{source:'ESPN starting XI',home_missing_key:['Kilit Oyuncu'],away_missing_key:[]}});
+      renderPred();
+    }""")
+    limited_row = page.query_selector('#rows .row[data-mid="TEST-DC-LIMITED"]')
+    critical_row = page.query_selector('#rows .row[data-mid="TEST-DC-CRITICAL"]')
+    assert limited_row and limited_row.get_attribute('data-dc-eligible') == '0', "Kısıtlı veri ÇŞ vurgusu almamalı"
+    assert critical_row and critical_row.get_attribute('data-dc-eligible') == '0', "Kritik eksik oyunculu maç ÇŞ vurgusu almamalı"
+
+    # ÇŞ filtresi açılınca yalnızca uygun ve vurgulu maçlar listelenmeli
+    page.select_option('#hlSel', 'dc')
+    page.click('#hotToggle')
+    time.sleep(0.4)
+    filtered_rows = page.query_selector_all('#rows .row')
+    assert len(filtered_rows) > 0, "Çifte Şans vurguları filtresi sonuç vermedi"
+    assert all(r.get_attribute('data-dc-eligible') == '1' for r in filtered_rows), "ÇŞ filtresinde uygunsuz maç listelendi"
+    assert not page.query_selector('#rows .row[data-mid="TEST-DC-LIMITED"]'), "Kısıtlı veri ÇŞ filtresine girdi"
+    assert not page.query_selector('#rows .row[data-mid="TEST-DC-CRITICAL"]'), "Kritik maç ÇŞ filtresine girdi"
+    assert 'ÇŞ' in page.inner_text('#hotToggle'), "ÇŞ filtre düğmesi etiketi güncellenmedi"
+
+    page.screenshot(path='scratch/predictions_double_chance.png', full_page=False)
+    print("  ✓ Tahminler bültenine Çifte Şans sütunu ve sıkı yüksek güven filtresi eklendi.")
     
     print("\n>>> ÇİFTE ŞANS & SKOR TAHMİNLERİ TÜM TESTLERİ BAŞARIYLA GEÇTİ! <<<")
     browser.close()

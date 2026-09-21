@@ -486,16 +486,17 @@ def main():
         # 7 Sekmenin sırası ve varlığı
         tabs = page.query_selector_all(".tabs .tab")
         tab_names = [t.inner_text().strip() for t in tabs]
-        print(f"  Bulunan 7 Sekme: {tab_names}")
-        assert len(tab_names) == 7, f"7 sekme bekleniyordu, bulunan: {len(tab_names)}"
+        print(f"  Bulunan Sekmeler ({len(tab_names)}): {tab_names}")
+        assert len(tab_names) == 8, f"8 sekme bekleniyordu, bulunan: {len(tab_names)}"
         assert "Örnek Kasa Simülasyonu" in tab_names[0]
         assert "Örnek Kuponlarım Simülasyonu" in tab_names[1]
         assert "Gerçek Kasa" in tab_names[2]
         assert "Gerçek Kuponlarım" in tab_names[3]
-        assert "Tahmin vs Gerçekleşen" in tab_names[4]
-        assert "Admin Kuponlarım" in tab_names[5]
-        assert "Maç Bülteni" in tab_names[6]
-        print("  ✓ 7 Sekmeli mimari ve tam sıra (Örnek Kasa -> Örnek Kupon -> Gerçek Kasa -> Gerçek Kupon -> Tahmin vs Gerçekleşen -> Admin -> Bülten) doğrulandı.")
+        assert "Model Doğruluğu" in tab_names[4]
+        assert "Tahmin vs Gerçekleşen" in tab_names[5]
+        assert "Admin Kuponlarım" in tab_names[6]
+        assert "Bülten" in tab_names[7] or "Tahminler" in tab_names[7]
+        print("  ✓ 8 Sekmeli mimari ve tam sıra (Örnek Kasa -> Örnek Kupon -> Gerçek Kasa -> Gerçek Kupon -> Model Doğruluğu -> Tahmin vs Gerçekleşen -> Admin -> Bülten) doğrulandı.")
 
         # Varsayılan iniş sekmesi: Örnek Kasa Simülasyonu (#pane-sim-kasa)
         assert "active" in page.get_attribute("#tab-sim-kasa", "class")

@@ -586,9 +586,10 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <button class="tab" id="tab-sim-kupon" type="button">🎫 Örnek Kuponlarım Simülasyonu</button>
     <button class="tab" id="tab-plan" type="button">💼 Gerçek Kasa</button>
     <button class="tab" id="tab-rec" type="button">⚡ Gerçek Kuponlarım</button>
-    <button class="tab" id="tab-res" type="button">📊 Tahmin vs Gerçekleşen</button>
+    <button class="tab" id="tab-bt" type="button">📊 Model Doğruluğu</button>
+    <button class="tab" id="tab-res" type="button">🎯 Tahmin vs Gerçekleşen</button>
     <button class="tab admin-tab" id="tab-cpn" type="button">🛠️ Admin Kuponlarım</button>
-    <button class="tab" id="tab-pred" type="button">⚽ Maç Bülteni</button>
+    <button class="tab" id="tab-pred" type="button">⚽ Tahminler (Bülten)</button>
   </div>
 
   <nav class="filters" id="filters" hidden></nav>
@@ -714,6 +715,54 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
           <b>Yön isabeti</b> = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne
           seçseydin tutma oranın. Veri: football-data.co.uk · formül canlı tahminlerle birebir aynı.</p>
       </div>
+    </div>
+  </section>
+
+  <section id="pane-bt" hidden>
+    <div class="card" style="margin-bottom:14px;background:var(--panel2);padding:14px 18px;">
+      <h2 style="margin:0 0 4px;font-size:16px;">📊 Model Doğruluğu &amp; 5 Sezonluk Backtest Analizi</h2>
+      <p style="margin:0;font-size:12px;color:var(--muted);line-height:1.5;">
+        5 sezonluk (16.988 maç) sızıntısız walk-forward doğrulama sonuçları, lig ve sezon bazında 0.5Ü, 1.5Ü ve 2.5Ü isabet oranları ve matematiksel Poisson modelleme formülleri.
+      </p>
+    </div>
+
+    <!-- VIEW: Lig & Sezon Dağılımı (5 Sezon) -->
+    <div class="card">
+      <h2 id="bt-byleague-h">Lig bazında</h2>
+      <div class="tbl-scroll"><table id="bt-byleague" class="bt-table"></table></div>
+    </div>
+    <div class="card">
+      <h2 id="bt-byseason-h">Sezon bazında</h2>
+      <div class="tbl-scroll"><table id="bt-byseason" class="bt-table"></table></div>
+    </div>
+    <div class="card" id="bt-samples-card">
+      <h2 id="bt-samples-h">Örnek maçlar — tahmin vs gerçek</h2>
+      <p>Test kümesinden düzenli aralıklarla seçilen maçlar. <b>Tah. λ</b> = modelin tahmin
+        ettiği toplam gol · <b>Skor / Gol</b> = gerçekte olan.
+        <b>Model 0.5·1.5·2.5</b>: her çizgi için modelin verdiği olasılık %50 ve üstündeyse
+        <b>Ü</b> (Üst dedi), altındaysa <b>A</b> (Alt dedi); <b>✓</b> o yön tuttu demek —
+        tek başına "üst geldi" demek <b>değil</b>. Örn. 1-0 biten maçta "2.5 A✓", modelin
+        doğru bir Alt tahminidir.</p>
+      <div class="tbl-scroll"><table id="bt-samples" class="bt-table"></table></div>
+    </div>
+    <p class="btfoot" id="bt-foot"></p>
+
+    <!-- Model Yöntemi & Formül -->
+    <div class="card" id="bt-method-card" style="margin-top:14px;">
+      <h2>Tahmin tabanı — hesap yöntemi</h2>
+      <p>Her takımın <b>ev</b> ve <b>deplasman</b> maçlarında attığı ve yediği gol oranları,
+        son sezonlar yakın olana daha çok ağırlık verilerek çıkarılır
+        (<b>1.0 · 0.7 · 0.45 · 0.30</b>). Ev sahibinin hücumu + deplasmanın savunması ile
+        deplasmanın hücumu + ev sahibinin savunması ortalanıp beklenen toplam gol <b>λ</b> bulunur.</p>
+      <div class="formula">λ = (ev_attığı + dep_yediği) / 2 &nbsp;+&nbsp; (dep_attığı + ev_yediği) / 2</div>
+      <p>İki takım son 5 sezonda <b>2+ kez</b> karşılaşmışsa, o maçların toplam gol ortalaması
+        <b>%28</b> ağırlıkla λ'ya karıştırılır. Ardından λ bir <b>Poisson</b> dağılımına sokulup
+        "en az 1 / 2 / 3 gol" (0.5 / 1.5 / 2.5 Üst) olasılıkları verilir.</p>
+      <div class="formula">P(Üst n) = 1 − Poisson_KDF(n ; λ)</div>
+      <p>Backtest'te bu model, her hedef sezon için <b>yalnızca ondan önceki sezonların</b>
+        verisiyle kuruldu; hedef sezonun sonuçları modele hiç girmedi (sızıntı yok).
+        <b>Yön isabeti</b> = modelin o çizgide eğildiği tarafı (Üst / Alt) körü körüne
+        seçseydin tutma oranın. Veri: football-data.co.uk · formül canlı tahminlerle birebir aynı.</p>
     </div>
   </section>
 
@@ -964,7 +1013,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCal();});
 $('dayBtnPred').onclick=()=>openCal('pred',$('dayBtnPred'));
 $('dayBtnRes').onclick=()=>openCal('res',$('dayBtnRes'));
 function inLeague(x){return selected==='Tümü'||x.league===selected;}
-function visibleAll(list){const[start,end]=weekWindow();return list.filter(inLeague).filter(x=>{const d=new Date(x.kickoff_utc);return d>=start&&d<end});}
+function visibleAll(list){
+  const [start, end] = weekWindow();
+  const inWindow = list.filter(inLeague).filter(x => {
+    const d = new Date(x.kickoff_utc);
+    return d >= start && d < end;
+  });
+  if (!inWindow.length && list.length > 0) {
+    const scoped = list.filter(inLeague);
+    return scoped.length > 0 ? scoped : list;
+  }
+  return inWindow;
+}
 function visible(list){
   let r;
   if(qPred){                         // takım araması → hafta penceresi ve gün filtresi devre dışı, tüm fikstür
@@ -1431,11 +1491,10 @@ function renderBacktest(){
 }
 
 function setTab(t){
-  if(t==='bt') t='res'; // backward compatibility alias
   if(t==='gun') t='rec'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['sim-kasa','sim-kupon','plan','rec','res','cpn','pred'].forEach(k=>{
+  ['sim-kasa','sim-kupon','plan','rec','bt','res','cpn','pred'].forEach(k=>{
     const btn=$('tab-'+k), pane=$('pane-'+k);
     if(btn) btn.classList.toggle('active',t===k);
     if(pane) pane.hidden=t!==k;
@@ -1449,13 +1508,30 @@ async function load(){
   rows.innerHTML='<div class="loading">Fikstürler yükleniyor…</div>';
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){STATS=s;if(tab==='pred')renderPred();}}).catch(()=>{});
   fetch(H2H_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.pairs)H2H=s;}).catch(()=>{});
-  fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;if(tab==='res'){renderResults();renderBacktest();}if(tab==='cpn')renderCoupons();}}).catch(()=>{});
+  fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;if(tab==='res'||tab==='bt'){renderResults();renderBacktest();}if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
-    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='res'){renderResults();renderBacktest();}if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
+    .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='res'||tab==='bt'){renderResults();renderBacktest();}if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
   try{
     const r=await fetch(DATA_URL+'?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('data');
-    const remote=await r.json();
+    let remote=await r.json();
+    if(Array.isArray(remote)&&remote.length < 5){
+      try{
+        const archR=await fetch('data/predictions-archive.json?ts='+Date.now(),{cache:'no-store'});
+        if(archR.ok){
+          const rawArch=await archR.json();
+          const archData=Array.isArray(rawArch)?rawArch:Object.values(rawArch||{});
+          if(archData.length){
+            const existingKeys=new Set(remote.map(m=>m.league+'|'+m.home+'|'+m.away+'|'+m.kickoff_utc));
+            archData.forEach(m=>{
+              if(!existingKeys.has(m.league+'|'+m.home+'|'+m.away+'|'+m.kickoff_utc)){
+                remote.push(m);
+              }
+            });
+          }
+        }
+      }catch(err){}
+    }
     window.__data=(Array.isArray(remote)&&remote.length)?remote:FALLBACK_DATA;
     const upd=remote[0]&&remote[0].updated_at;
     $('updated').innerHTML=`Kaynak: openfootball + football-data.co.uk · Poisson + Dixon-Coles motoru`+
@@ -1724,16 +1800,36 @@ function openH2HSheet(league,home,away,kickoff_utc){
     <div class="s-card"><h3>Aralarındaki maçlar (H2H, son ${yrs} yıl)</h3>${h2hHead}${h2hRows}</div>
   </div>`;
 }
-$('cpnList').addEventListener('click',e=>{
-  const chip=e.target.closest('.chip[data-f]');
-  if(chip){cpnFilter=chip.dataset.f;renderCoupons();return;}
-  const row=e.target.closest('.cpn-row');
-  if(row)openH2HSheet(row.dataset.league,row.dataset.home,row.dataset.away,row.dataset.ko);
+// Document-level event delegation for Kuponlarım / Admin Model 12 elements
+document.addEventListener('click', e => {
+  const tile = e.target.closest('#cpnSummary .tile[data-f]');
+  if (tile) {
+    cpnFilter = tile.dataset.f;
+    renderCoupons();
+    return;
+  }
+  const chip = e.target.closest('#cpnList .chip[data-f]');
+  if (chip) {
+    cpnFilter = chip.dataset.f;
+    renderCoupons();
+    return;
+  }
+  const row = e.target.closest('#cpnList .cpn-row');
+  if (row) {
+    openH2HSheet(row.dataset.league, row.dataset.home, row.dataset.away, row.dataset.ko);
+  }
 });
-$('cpnSummary').addEventListener('click',e=>{
-  const tile=e.target.closest('.tile[data-f]');
-  if(tile){cpnFilter=tile.dataset.f;renderCoupons();}
-});
+
+window.renderCoupons = renderCoupons;
+window.setCouponsFilter = function(f) {
+  cpnFilter = f;
+  renderCoupons();
+};
+window.setCouponsSearch = function(q) {
+  qCpn = q;
+  renderCoupons();
+};
+window.openH2HSheet = openH2HSheet;
 
 // ---- Günün Kuponu — tamamen geçmiş verilere dayalı, gün boyu sabit ----
 function histAcc(league,line){
@@ -1961,6 +2057,7 @@ if($('tab-sim-kasa')) $('tab-sim-kasa').onclick=()=>setTab('sim-kasa');
 if($('tab-sim-kupon')) $('tab-sim-kupon').onclick=()=>setTab('sim-kupon');
 if($('tab-plan')) $('tab-plan').onclick=()=>setTab('plan');
 if($('tab-rec')) $('tab-rec').onclick=()=>setTab('rec');
+if($('tab-bt')) $('tab-bt').onclick=()=>setTab('bt');
 if($('tab-res')) $('tab-res').onclick=()=>setTab('res');
 if($('tab-cpn')) $('tab-cpn').onclick=()=>setTab('cpn');
 if($('tab-pred')) $('tab-pred').onclick=()=>setTab('pred');

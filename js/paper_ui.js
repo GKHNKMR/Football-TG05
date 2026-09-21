@@ -305,10 +305,9 @@
         ${realizedSvg}
         <line id="cursorGuide" x1="-10" y1="${T}" x2="-10" y2="${(T + ph).toFixed(1)}" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6" style="pointer-events:none;display:none;"/>
         <circle id="cursorPointTarget" cx="-10" cy="-10" r="4.5" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointCau" cx="-10" cy="-10" r="4.5" fill="#10b981" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointBal" cx="-10" cy="-10" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#ef4444" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
-        <circle id="cursorPointExcel" cx="-10" cy="-10" r="4.5" fill="#38bdf8" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>
+        ${profilesToDraw.includes('minimum') ? `<circle id="cursorPointCau" cx="-10" cy="-10" r="4.5" fill="#10b981" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
+        ${profilesToDraw.includes('medium') ? `<circle id="cursorPointBal" cx="-10" cy="-10" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
+        ${profilesToDraw.includes('high') ? `<circle id="cursorPointAgg" cx="-10" cy="-10" r="4.5" fill="#ef4444" stroke="#fff" stroke-width="1.5" style="pointer-events:none;display:none;"/>` : ''}
         <rect id="chartInteractiveOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair;"/>
       </svg>
     `;
@@ -347,11 +346,11 @@
         </div>
 
         <div class="chart-tooltip-bar" id="planChartTracker">
-          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve 3 risk modelinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>
+          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve risk modellerinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>
         </div>
 
         <div class="chart-legend">
-          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Hedef Yolu (Geometrik Referans)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Geometrik Hedef Yolu (${formatCurrency(trajData.targetBank, curr)})</span>
           <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (%50 Rezerv · %15 Büyüme · 1.15×)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (%35 Rezerv · %20 Büyüme · 1.20×)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (%25 Rezerv · %25 Büyüme · 1.25×)</span>
@@ -402,7 +401,7 @@
     `;
   }
 
-  function wireChartInteractiveEvents(container, trajData, curr, plan) {
+  function wireChartInteractiveEvents(container, trajData, curr, plan, viewMode = 'all') {
     if (!container || !trajData) return;
     const overlay = container.querySelector('#chartInteractiveOverlay');
     const svg = container.querySelector('#planTrajectorySvg');
@@ -416,6 +415,11 @@
 
     if (!overlay || !svg || !tracker) return;
 
+    const normView = (viewMode === 'all' || !viewMode) ? 'all' : (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : viewMode);
+    const profilesToDraw = normView === 'all'
+      ? ['minimum', 'medium', 'high']
+      : [normView];
+
     const W = 820; const H = 360; const L = 70; const R = 35; const T = 35; const B = 45;
     const pw = W - L - R; const ph = H - T - B;
     const dur = Math.max(1, trajData.durationDays);
@@ -423,12 +427,16 @@
 
     let maxVal = targetBank * 1.15;
     if (trajData.trajectories) {
-      const agg = trajData.trajectories.aggressive;
-      const bal = trajData.trajectories.balanced;
-      const cau = trajData.trajectories.cautious;
-      if (agg && agg.finalP90) maxVal = Math.max(maxVal, agg.finalP90);
-      if (bal && bal.finalP90) maxVal = Math.max(maxVal, bal.finalP90);
-      if (cau && cau.finalP90) maxVal = Math.max(maxVal, cau.finalP90);
+      for (const k of ['minimum', 'medium', 'high', 'multi', 'cautious', 'balanced', 'aggressive']) {
+        const t = trajData.trajectories[k];
+        if (t && t.finalP90) maxVal = Math.max(maxVal, t.finalP90);
+      }
+    }
+    const history = (paperState && paperState.history) || [];
+    if (history.length) {
+      for (const h of history) {
+        if (h.closingBankroll) maxVal = Math.max(maxVal, h.closingBankroll * 1.08);
+      }
     }
     const maxY = Math.ceil(Math.min(targetBank * 2.5, Math.max(targetBank * 1.15, maxVal)) / 25) * 25;
     const getX = (d) => L + (d / dur) * pw;
@@ -460,20 +468,32 @@
         ptTarget.setAttribute('cy', getY(tPt.targetBank));
         ptTarget.style.display = 'block';
       }
-      if (ptCau && minPt) {
-        ptCau.setAttribute('cx', xPos);
-        ptCau.setAttribute('cy', getY(minPt.median));
-        ptCau.style.display = 'block';
+      if (ptCau) {
+        if (profilesToDraw.includes('minimum') && minPt) {
+          ptCau.setAttribute('cx', xPos);
+          ptCau.setAttribute('cy', getY(minPt.median));
+          ptCau.style.display = 'block';
+        } else {
+          ptCau.style.display = 'none';
+        }
       }
-      if (ptBal && medPt) {
-        ptBal.setAttribute('cx', xPos);
-        ptBal.setAttribute('cy', getY(medPt.median));
-        ptBal.style.display = 'block';
+      if (ptBal) {
+        if (profilesToDraw.includes('medium') && medPt) {
+          ptBal.setAttribute('cx', xPos);
+          ptBal.setAttribute('cy', getY(medPt.median));
+          ptBal.style.display = 'block';
+        } else {
+          ptBal.style.display = 'none';
+        }
       }
-      if (ptAgg && highPt) {
-        ptAgg.setAttribute('cx', xPos);
-        ptAgg.setAttribute('cy', getY(highPt.median));
-        ptAgg.style.display = 'block';
+      if (ptAgg) {
+        if (profilesToDraw.includes('high') && highPt) {
+          ptAgg.setAttribute('cx', xPos);
+          ptAgg.setAttribute('cy', getY(highPt.median));
+          ptAgg.style.display = 'block';
+        } else {
+          ptAgg.style.display = 'none';
+        }
       }
       if (ptExcel && emPt) {
         ptExcel.setAttribute('cx', xPos);
@@ -486,13 +506,21 @@
       const medVal = medPt ? formatCurrency(medPt.median, curr) : '-';
       const highVal = highPt ? formatCurrency(highPt.median, curr) : '-';
 
-      tracker.innerHTML = `
+      let trackerHtml = `
         <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
         <span>🎯 Hedef: <b>${tVal}</b></span>
-        <span>🟢 Minimum Risk (%50 Rezerv · %15): <b>${minVal}</b></span>
-        <span>🔵 Orta Risk (%35 Rezerv · %20): <b>${medVal}</b></span>
-        <span>🔴 Yüksek Risk (%25 Rezerv · %25): <b style="color:#ef4444;">${highVal}</b></span>
       `;
+      if (profilesToDraw.includes('minimum')) {
+        trackerHtml += `<span>🟢 Minimum Risk (%50 Rezerv · %15): <b>${minVal}</b></span>`;
+      }
+      if (profilesToDraw.includes('medium')) {
+        trackerHtml += `<span>🔵 Orta Risk (%35 Rezerv · %20): <b>${medVal}</b></span>`;
+      }
+      if (profilesToDraw.includes('high')) {
+        trackerHtml += `<span>🔴 Yüksek Risk (%25 Rezerv · %25): <b style="color:#ef4444;">${highVal}</b></span>`;
+      }
+
+      tracker.innerHTML = trackerHtml;
     }
 
     function handleLeave() {
@@ -521,7 +549,7 @@
         temp.innerHTML = newCardHtml;
         const newCard = temp.firstElementChild;
         container.replaceWith(newCard);
-        wireChartInteractiveEvents(newCard, trajData, curr, plan);
+        wireChartInteractiveEvents(newCard, trajData, curr, plan, currentChartMode);
       };
     });
   }
@@ -807,7 +835,9 @@
       </div>
 
       <!-- 31 Günlük Kasa Muhasebe Çizelgesi -->
-      ${render30DayLedgerTableHtml(simData, sim30ActiveProfile)}
+      <div id="sim30LedgerContainer">
+        ${render30DayLedgerTableHtml(simData, sim30ActiveProfile)}
+      </div>
     `;
   }
 
@@ -1200,22 +1230,36 @@
       }
     });
 
+    let defsSvg = '<defs>';
+    if (profilesToCheck.includes('minimum')) {
+      defsSvg += `
+        <linearGradient id="gradSimMin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+        </linearGradient>
+      `;
+    }
+    if (profilesToCheck.includes('medium')) {
+      defsSvg += `
+        <linearGradient id="gradSimMed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
+        </linearGradient>
+      `;
+    }
+    if (profilesToCheck.includes('high')) {
+      defsSvg += `
+        <linearGradient id="gradSimHigh" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0"/>
+        </linearGradient>
+      `;
+    }
+    defsSvg += '</defs>';
+
     return `
       <svg viewBox="0 0 ${W} ${H}" class="trajectory-svg" id="sim30Svg" style="width:100%;height:auto;display:block;user-select:none;">
-        <defs>
-          <linearGradient id="gradSimMin" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
-          </linearGradient>
-          <linearGradient id="gradSimMed" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
-          </linearGradient>
-          <linearGradient id="gradSimHigh" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0"/>
-          </linearGradient>
-        </defs>
+        ${defsSvg}
 
         <!-- Arka Plan Kılavuz Çizgileri -->
         ${gridLines}
@@ -1241,23 +1285,42 @@
   }
 
   function wireSimKasaEvents(simData) {
+    function updateSimKasaSelection(prof) {
+      if (!prof) return;
+      sim30ActiveProfile = prof;
+      // Update pills active class
+      document.querySelectorAll('#pane-sim-kasa #sim30ChartPills .cmp-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.prof === prof);
+      });
+      // Update KPI cards active class
+      document.querySelectorAll('#pane-sim-kasa .sim30-kpi-card').forEach(c => {
+        c.classList.toggle('active-card', c.dataset.prof === prof);
+      });
+      // Re-render chart SVG smoothly
+      const chartBox = document.getElementById('sim30ChartContainer');
+      if (chartBox) {
+        chartBox.innerHTML = render30DaySimulationSvg(simData, prof);
+        const newSvg = chartBox.querySelector('#sim30Svg');
+        if (newSvg) wire30DaySimulationChartEvents(newSvg);
+      }
+      // Re-render ledger table smoothly
+      const ledgerBox = document.getElementById('sim30LedgerContainer');
+      if (ledgerBox) {
+        ledgerBox.innerHTML = render30DayLedgerTableHtml(simData, prof);
+      }
+    }
+
     document.querySelectorAll('#pane-sim-kasa .sim30-kpi-card').forEach(card => {
       card.onclick = () => {
         const prof = card.dataset.prof;
-        if (prof) {
-          sim30ActiveProfile = prof;
-          renderSimKasaPane();
-        }
+        if (prof) updateSimKasaSelection(prof);
       };
     });
 
     document.querySelectorAll('#pane-sim-kasa #sim30ChartPills .cmp-btn').forEach(btn => {
       btn.onclick = () => {
         const prof = btn.dataset.prof;
-        if (prof) {
-          sim30ActiveProfile = prof;
-          renderSimKasaPane();
-        }
+        if (prof) updateSimKasaSelection(prof);
       };
     });
 
@@ -1733,12 +1796,28 @@
   }
 
   function wirePlanDashboardEvents() {
-    wirePlanNavEvents();
-
     const chartCard = document.getElementById('planChartCard');
-    if (chartCard && cachedTrajData && paperState && paperState.plan) {
-      const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
-      wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan);
+    if (chartCard) {
+      const chipBtns = chartCard.querySelectorAll('#chartViewChips .cchip');
+      chipBtns.forEach(btn => {
+        btn.onclick = () => {
+          const view = btn.dataset.view;
+          if (!view) return;
+          currentChartMode = view;
+          chipBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+          const chartBox = chartCard.querySelector('.chart-svg-box');
+          if (chartBox && cachedTrajData && paperState && paperState.plan) {
+            const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+            chartBox.innerHTML = generateTrajectoryChartSvg(cachedTrajData, paperState.plan, curr, currentChartMode, (paperState && paperState.history) || []);
+            wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan, currentChartMode);
+          }
+        };
+      });
+
+      if (cachedTrajData && paperState && paperState.plan) {
+        const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+        wireChartInteractiveEvents(chartCard, cachedTrajData, curr, paperState.plan, currentChartMode);
+      }
     }
 
     const btnSim = document.getElementById('btnRerunSim');
@@ -2462,17 +2541,16 @@
     const pane = document.getElementById('pane-cpn');
     if (!pane) return;
 
-    if (!paperState) {
-      paperState = PE.createInitialState();
-    }
-
-    const slips = paperState.slips || [];
+    const slips = (paperState && paperState.slips) || [];
     const drafts = slips.filter(s => s.status === 'draft');
     const pending = slips.filter(s => s.status === 'pending');
     const settled = slips.filter(s => s.status === 'won' || s.status === 'lost' || s.status === 'void');
 
-    const curr = paperState.settings.currency || 'EUR';
-    const metrics = PE.getPlanMetrics(paperState);
+    const curr = (paperState && paperState.settings && paperState.settings.currency) || 'EUR';
+    const metrics = (paperState && PE.getPlanMetrics(paperState)) || {
+      winRate: 0, wonCount: 0, settledCount: 0, totalStake: 0, netProfit: 0, roi: 0,
+      longestWinStreak: 0, longestLossStreak: 0, maxDrawdownPct: 0
+    };
 
     pane.innerHTML = `
       <div class="paper-disclaimer">
@@ -2678,6 +2756,76 @@
     `;
   }
 
+  function wireModel12SubtabEvents() {
+    if (typeof root.renderCoupons === 'function') {
+      root.renderCoupons();
+    }
+
+    const sumEl = document.getElementById('cpnSummary');
+    if (sumEl) {
+      sumEl.onclick = (e) => {
+        const tile = e.target.closest('.tile[data-f]');
+        if (tile) {
+          const f = tile.dataset.f;
+          if (typeof root.setCouponsFilter === 'function') {
+            root.setCouponsFilter(f);
+          } else if (typeof root.renderCoupons === 'function') {
+            root.cpnFilter = f;
+            root.renderCoupons();
+          }
+        }
+      };
+    }
+
+    const listEl = document.getElementById('cpnList');
+    if (listEl) {
+      listEl.onclick = (e) => {
+        const chip = e.target.closest('.chip[data-f]');
+        if (chip) {
+          const f = chip.dataset.f;
+          if (typeof root.setCouponsFilter === 'function') {
+            root.setCouponsFilter(f);
+          } else if (typeof root.renderCoupons === 'function') {
+            root.cpnFilter = f;
+            root.renderCoupons();
+          }
+          return;
+        }
+        const row = e.target.closest('.cpn-row');
+        if (row && typeof root.openH2HSheet === 'function') {
+          root.openH2HSheet(row.dataset.league, row.dataset.home, row.dataset.away, row.dataset.ko);
+        }
+      };
+    }
+
+    const qInput = document.getElementById('qCpn');
+    const qClear = document.getElementById('qCpnX');
+    if (qInput) {
+      qInput.oninput = () => {
+        if (typeof root.setCouponsSearch === 'function') {
+          root.setCouponsSearch(qInput.value.trim());
+        } else {
+          root.qCpn = qInput.value.trim();
+          if (typeof root.renderCoupons === 'function') root.renderCoupons();
+        }
+        if (qClear) qClear.hidden = !qInput.value;
+      };
+    }
+    if (qClear && qInput) {
+      qClear.onclick = () => {
+        qInput.value = '';
+        if (typeof root.setCouponsSearch === 'function') {
+          root.setCouponsSearch('');
+        } else {
+          root.qCpn = '';
+          if (typeof root.renderCoupons === 'function') root.renderCoupons();
+        }
+        qClear.hidden = true;
+        qInput.focus();
+      };
+    }
+  }
+
   function wireCouponsEvents() {
     // Alt sekmeler
     ['pending', 'settled', 'drafts', 'model12'].forEach(key => {
@@ -2686,15 +2834,12 @@
         btn.onclick = () => {
           activeCpnSubtab = key;
           renderCouponsPane();
-          if (key === 'model12' && typeof root.renderCoupons === 'function') {
-            root.renderCoupons();
-          }
         };
       }
     });
 
-    if (activeCpnSubtab === 'model12' && typeof root.renderCoupons === 'function') {
-      root.renderCoupons();
+    if (activeCpnSubtab === 'model12') {
+      wireModel12SubtabEvents();
     }
 
     // Filtre çipleri

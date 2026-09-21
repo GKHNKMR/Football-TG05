@@ -9,7 +9,7 @@
 (function (global) {
   'use strict';
 
-  let cifteSubView = 'pred'; // 'pred' (Güncel Tahminler) | 'bt' (Model Doğruluğu)
+  let cifteSubView = 'bt'; // Bu sekme yalnızca Model Doğruluğu görünümünü sunar.
   let cifteFilter = 'all';   // 'all', 'high_conf', 'dc_1x', 'dc_12', 'dc_x2'
   let cifteSearch = '';
   let btLeagueFilter = 'Tümü';
@@ -69,11 +69,7 @@
     const pane = document.getElementById('pane-cifte');
     if (!pane) return;
 
-    if (cifteSubView === 'bt') {
-      renderCifteBacktestView(pane);
-    } else {
-      renderCiftePredictionsView(pane);
-    }
+    renderCifteBacktestView(pane);
   }
 
   // ===========================================================================
@@ -395,16 +391,6 @@
     let html = `
       <div class="cifte-container cifte-backtest">
         
-        <!-- Alt Sekme Geçiş Butonları -->
-        <div class="subtabs-bar cifte-bt-subtabs" aria-label="Çifte Şans görünümü">
-          <button class="chip subtab-toggle" data-view="pred" type="button">
-            ⚽ Güncel Fikstür &amp; Tahminler
-          </button>
-          <button class="chip active subtab-toggle" data-view="bt" type="button" aria-current="page">
-            📊 Çifte Şans &amp; Gol Aralığı Model Doğruluğu (16.478 Maç)
-          </button>
-        </div>
-
         <!-- Üst Başlık ve Bilgilendirme Kartı -->
         <div class="card cifte-bt-hero">
           <div class="cifte-bt-hero-row">
@@ -703,14 +689,6 @@
   function wireCifteBacktestEvents(container) {
     if (!container) return;
 
-    // Alt sekme geçişi
-    container.querySelectorAll('.subtab-toggle').forEach(btn => {
-      btn.onclick = () => {
-        cifteSubView = btn.dataset.view;
-        renderCiftePane();
-      };
-    });
-
     // Filtreyi sıfırla butonu
     const resetBtn = container.querySelector('#btnResetCifteLeague');
     if (resetBtn) {
@@ -742,7 +720,7 @@
 
   global.BETAVUS_CIFTE_UI = {
     renderCiftePane,
-    setSubView: (v) => { cifteSubView = v; renderCiftePane(); },
+    setSubView: () => { cifteSubView = 'bt'; renderCiftePane(); },
     setFilter: (f) => { cifteFilter = f; renderCiftePane(); },
     setSearch: (s) => { cifteSearch = s; renderCiftePane(); }
   };

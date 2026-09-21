@@ -80,10 +80,8 @@ with sync_playwright() as p:
     page.click('#tab-cifte')
     time.sleep(0.6)
     
-    bt_toggle = page.query_selector('.subtab-toggle[data-view="bt"]')
-    assert bt_toggle, "Model Doğruluğu butonu bulunamadı!"
-    bt_toggle.click()
-    time.sleep(0.8)
+    assert not page.query_selector('.subtab-toggle'), "Güncel fikstür / Model Doğruluğu alt sekmeleri kaldırılmalı"
+    assert not page.query_selector('.cifte-match-card'), "Çifte Şans doğrulama sekmesinde güncel maç kartı olmamalı"
     
     cifte_text = page.inner_text('#pane-cifte')
     

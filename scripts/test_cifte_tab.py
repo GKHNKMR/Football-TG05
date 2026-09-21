@@ -25,70 +25,38 @@ with sync_playwright() as p:
     print(f"Mevcut Sekmeler ({len(tabs)}): {tabs}")
     assert '🎲 Çifte Şans & Gol Aralığı' in tabs, "tab-cifte bulunamadı!"
     
-    # 2. Click #tab-cifte
-    print("\n--- 1. '🎲 Çifte Şans & Gol Aralığı' Sekmesine Tıklanıyor ---")
+    # 2. Click #tab-cifte: doğrudan Model Doğruluğu açılmalı
+    print("\n--- 1. '🎲 Çifte Şans & Gol Aralığı' Model Doğruluğu Açılıyor ---")
     page.click('#tab-cifte')
     time.sleep(0.8)
     
     pane = page.query_selector('#pane-cifte')
     assert pane and pane.is_visible(), "pane-cifte görünür değil!"
     
-    # Verify match cards rendered
-    cards = page.query_selector_all('.cifte-match-card')
-    print(f"  Listelenen maç kartı sayısı: {len(cards)}")
-    assert len(cards) > 0, "Maç kartları render edilemedi!"
-    
-    # Check first card content
-    first_card = cards[0]
-    first_text = first_card.inner_text()
-    print("  Örnek maç kartı başlığı:")
-    print("   ", first_text.split('\n')[0], "|", first_text.split('\n')[1] if len(first_text.split('\n')) > 1 else "")
-    assert "1X" in first_text and "12" in first_text and "X2" in first_text, "Çifte şans seçenekleri eksik!"
-    assert "Toplam Gol Aralığı" in first_text, "Toplam gol aralığı tahmini eksik!"
-    assert "2–3 Gol" in first_text and "3–4 Gol" in first_text and "5+ Gol" in first_text, "Gol aralıkları eksik!"
-    range_chips = first_card.query_selector_all('.goal-range-chip')
-    assert len(range_chips) == 3, f"Tam 3 gol aralığı olmalı, şu an: {len(range_chips)}"
-    assert len(first_card.query_selector_all('.goal-range-chip.is-best')) == 1, "Modelin seçtiği gol aralığı işaretlenmedi"
-    assert "En Olası Skorlar" not in first_text, "Kesin skor tahmini artık gösterilmemeli!"
-    print("  ✓ 1X, 12, X2 ve 2–3 / 3–4 / 5+ gol aralıkları kartta başarıyla görüntülendi.")
-    
-    # 3. Test Filters
-    print("\n--- 2. Çifte Şans Filtreleri Test Ediliyor ---")
-    # Click 1X filter
-    page.click('.cifte-chips button[data-cf="dc_1x"]')
-    time.sleep(0.4)
-    cards_1x = page.query_selector_all('.cifte-match-card')
-    print(f"  1X Ağırlıklı maç sayısı: {len(cards_1x)}")
-    assert len(cards_1x) > 0, "1X filtresi sonuç vermedi!"
-    
-    # Click High Confidence filter
-    page.click('.cifte-chips button[data-cf="high_conf"]')
-    time.sleep(0.4)
-    cards_high = page.query_selector_all('.cifte-match-card')
-    print(f"  Yüksek Güven (≥%75) maç sayısı: {len(cards_high)}")
-    assert len(cards_high) > 0, "Yüksek güven filtresi sonuç vermedi!"
-    
-    # Click All
-    page.click('.cifte-chips button[data-cf="all"]')
-    time.sleep(0.4)
-    
-    # 4. Test Search
-    print("\n--- 3. Takım Arama Test Ediliyor ---")
-    page.fill('#qCifte', 'Madrid')
-    time.sleep(0.5)
-    cards_search = page.query_selector_all('.cifte-match-card')
-    print(f"  'Madrid' araması sonucu kart sayısı: {len(cards_search)}")
-    assert len(cards_search) > 0, "Arama sonucu bulunamadı!"
-    page.fill('#qCifte', '')
-    time.sleep(0.4)
-    
-    # 5. Capture full screenshot
+    cifte_text = page.inner_text('#pane-cifte')
+    assert "Çifte Şans & Gol Aralığı Model Doğruluğu" in cifte_text, "Model Doğruluğu doğrudan açılmadı"
+    assert "Güncel Fikstür & Tahminler" not in cifte_text, "Güncel fikstür alt görünümü kaldırılmamış"
+    assert not page.query_selector('.cifte-match-card'), "Güncel maç kartları bu sekmede görünmemeli"
+    assert not page.query_selector('.cifte-chips'), "Güncel tahmin filtreleri bu sekmede görünmemeli"
+    assert not page.query_selector('#qCifte'), "Güncel tahmin araması bu sekmede görünmemeli"
+    assert not page.query_selector('.subtab-toggle'), "Güncel fikstür / doğruluk alt sekmeleri kaldırılmalı"
+
+    # Gol aralığı motoru çalışmaya devam etmeli; güncel gösterim Tahminler bültenindedir.
+    range_result = page.evaluate("""() => {
+      const analysis = window.BETAVUS_CIFTE.analyzeMatch(window.__data[0]);
+      return {keys:Object.keys(analysis.goalRanges), best:analysis.bestGoalRange.pick};
+    }""")
+    assert range_result['keys'] == ['2-3', '3-4', '5+'], f"Gol aralığı motoru eksik: {range_result}"
+    assert range_result['best'] in range_result['keys'], "Model geçerli bir gol aralığı seçmedi"
+    print("  ✓ Güncel fikstür kaldırıldı; sekme doğrudan Model Doğruluğu ekranını açıyor.")
+
+    # 3. Capture screenshot
     screenshot_path = 'scratch/cifte_sans_screenshot.png'
     page.screenshot(path=screenshot_path, full_page=False)
     print(f"  ✓ Ekran görüntüsü kaydedildi: {screenshot_path}")
     
-    # 6. Verify Tahminler (Bülten) tab still works
-    print("\n--- 4. '⚽ Tahminler (Bülten)' Regresyon Doğrulaması ---")
+    # 4. Verify Tahminler (Bülten) tab still works
+    print("\n--- 2. '⚽ Tahminler (Bülten)' Regresyon Doğrulaması ---")
     page.click('#tab-pred')
     time.sleep(0.6)
     pred_pane = page.query_selector('#pane-pred')

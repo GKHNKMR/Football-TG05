@@ -635,7 +635,7 @@
         </div>
 
         <div class="excel-warn-note" style="margin-top:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--muted);">
-          ⚠️ <b>Excel Kasa Modeli Uyarısı:</b> ${esc(m.assumptionNote)}
+          ⚠️ <b>Kasa Büyüme Modeli Uyarısı:</b> ${esc(m.assumptionNote)}
         </div>
       </div>
     `;
@@ -739,7 +739,6 @@
           <div class="sim30-badges">
             <span class="sim30-badge">🇪🇺 Avrupa Gerçek Piyasa Oranları</span>
             <span class="sim30-badge">🛡️ Korumalı Kasa Rezervi</span>
-            <span class="sim30-badge">📊 Excel Modeli Uyumlu</span>
           </div>
         </div>
       </div>
@@ -759,6 +758,11 @@
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${minProf.stats.wonCoupons} / ${minProf.stats.totalCoupons} (%${minProf.stats.winRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b style="color:#10b981;">%${minProf.stats.legErrorRatePct} (İsabet: %${minProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(minProf.stats.reserveBank, 'EUR')} / ${formatCurrency(minProf.stats.activeBank, 'EUR')}</span></div>
+            ${minProf.maxPotential ? `
+            <div class="sim30-kpi-row" style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);">
+              <span style="color:#fbbf24;font-weight:700;">★ Sıfır Kayıp Potansiyeli:</span>
+              <b style="color:#fbbf24;font-size:12.5px;">${formatCurrency(minProf.maxPotential.finalBank, 'EUR')} (+%${minProf.maxPotential.roiPct})</b>
+            </div>` : ''}
           </div>
         </div>
 
@@ -775,6 +779,11 @@
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${medProf.stats.wonCoupons} / ${medProf.stats.totalCoupons} (%${medProf.stats.winRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b>%${medProf.stats.legErrorRatePct} (İsabet: %${medProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(medProf.stats.reserveBank, 'EUR')} / ${formatCurrency(medProf.stats.activeBank, 'EUR')}</span></div>
+            ${medProf.maxPotential ? `
+            <div class="sim30-kpi-row" style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);">
+              <span style="color:#fbbf24;font-weight:700;">★ Sıfır Kayıp Potansiyeli:</span>
+              <b style="color:#fbbf24;font-size:12.5px;">${formatCurrency(medProf.maxPotential.finalBank, 'EUR')} (+%${medProf.maxPotential.roiPct})</b>
+            </div>` : ''}
           </div>
         </div>
 
@@ -791,6 +800,11 @@
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${highProf.stats.wonCoupons} / ${highProf.stats.totalCoupons} (%${highProf.stats.winRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b>%${highProf.stats.legErrorRatePct} (İsabet: %${highProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(highProf.stats.reserveBank, 'EUR')} / ${formatCurrency(highProf.stats.activeBank, 'EUR')}</span></div>
+            ${highProf.maxPotential ? `
+            <div class="sim30-kpi-row" style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);">
+              <span style="color:#fbbf24;font-weight:700;">★ Sıfır Kayıp Potansiyeli:</span>
+              <b style="color:#fbbf24;font-size:12.5px;">${formatCurrency(highProf.maxPotential.finalBank, 'EUR')} (+%${highProf.maxPotential.roiPct})</b>
+            </div>` : ''}
           </div>
         </div>
       </div>
@@ -1159,10 +1173,13 @@
       if (!prof) return;
       (prof.ledger || []).forEach(pt => {
         if (pt.endBank) maxVal = Math.max(maxVal, pt.endBank);
-        if (pt.theoreticalTarget && activeProfile !== 'all') {
-          maxVal = Math.max(maxVal, Math.min(pt.theoreticalTarget, 400));
-        }
       });
+      // Tek profil seçiliyken sıfır kayıp potansiyel kasasını da ölçeklemeye kat
+      if (activeProfile !== 'all' && prof.maxPotential && prof.maxPotential.ledger) {
+        prof.maxPotential.ledger.forEach(pt => {
+          if (pt.endBank) maxVal = Math.max(maxVal, pt.endBank);
+        });
+      }
     });
 
     const maxY = Math.ceil(Math.max(70, maxVal * 1.12) / 10) * 10;
@@ -1201,6 +1218,7 @@
 
     let curvesSvg = '';
     let dotsSvg = '';
+    let legendSvg = '';
 
     profilesToCheck.forEach(profKey => {
       const prof = simData.profiles[profKey];
@@ -1231,16 +1249,35 @@
         <path d="${pathD}" fill="none" stroke="${st.stroke}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       `;
 
-      // Draw theoretical curve if single profile selected
-      if (activeProfile !== 'all') {
-        let theoPathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
-        prof.ledger.forEach(pt => {
+      // Sıfır Kayıp / Maksimum Potansiyel Eğrisi (tek profil modunda)
+      if (activeProfile !== 'all' && prof.maxPotential && prof.maxPotential.ledger) {
+        let noLossPathD = `M ${getX(0).toFixed(1)},${getY(50.0).toFixed(1)}`;
+        prof.maxPotential.ledger.forEach(pt => {
           const px = getX(pt.day).toFixed(1);
-          const py = getY(Math.min(pt.theoreticalTarget, maxY)).toFixed(1);
-          theoPathD += ` L ${px},${py}`;
+          const py = getY(pt.endBank).toFixed(1);
+          noLossPathD += ` L ${px},${py}`;
+
+          dotsSvg += `
+            <circle class="sim30-dot sim30-dot-noloss" cx="${px}" cy="${py}" r="3" fill="#fbbf24" stroke="#0b1120" stroke-width="1.2"
+              data-day="${pt.day}" data-date="${pt.date}" data-prof="Sıfır Kayıp Potansiyeli" data-bank="${pt.endBank}" data-change="${pt.dailyChangePct}" data-status="won"
+              style="cursor:pointer;transition:r .15s;" />
+          `;
         });
+
         curvesSvg += `
-          <path d="${theoPathD}" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="4,4" opacity="0.7"/>
+          <path d="${noLossPathD}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+
+        legendSvg = `
+          <g transform="translate(${L + 10}, ${T - 12})">
+            <line x1="0" y1="0" x2="16" y2="0" stroke="${st.stroke}" stroke-width="2.4"/>
+            <circle cx="8" cy="0" r="3.5" fill="${st.stroke}"/>
+            <text x="22" y="3.5" fill="var(--text)" font-size="11" font-weight="700" font-family="inherit">Gerçekleşen Kasa (${formatCurrency(prof.stats.finalBank, 'EUR')})</text>
+
+            <line x1="190" y1="0" x2="206" y2="0" stroke="#fbbf24" stroke-width="2.2"/>
+            <circle cx="198" cy="0" r="3" fill="#fbbf24"/>
+            <text x="212" y="3.5" fill="#fbbf24" font-size="11" font-weight="700" font-family="inherit">★ Sıfır Kayıp Maksimum Potansiyel (${formatCurrency(prof.maxPotential.finalBank, 'EUR')})</text>
+          </g>
         `;
       }
     });
@@ -1283,6 +1320,9 @@
         <!-- 50 Euro Başlangıç Kılavuzu -->
         <line x1="${L}" y1="${getY(50.0).toFixed(1)}" x2="${W - R}" y2="${getY(50.0).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-dasharray="2,2"/>
         <text x="${(W - R).toFixed(1)}" y="${(getY(50.0) - 5).toFixed(1)}" fill="var(--muted)" font-size="9.5" text-anchor="end" font-family="inherit">Başlangıç: 50,00 €</text>
+
+        <!-- Lejant (Tek profil modunda) -->
+        ${legendSvg}
 
         <!-- Eğriler ve Alanlar -->
         ${curvesSvg}
@@ -1386,7 +1426,7 @@
     const ttSub = svgEl.querySelector('#sim30TtSub');
     if (!tooltip || !ttBg || !ttTitle || !ttVal || !ttSub) return;
 
-    const dots = svgEl.querySelectorAll('.sim30-dot');
+    const dots = svgEl.querySelectorAll('.sim30-dot, .sim30-dot-noloss');
     dots.forEach(dot => {
       dot.onmouseenter = () => {
         const cx = parseFloat(dot.getAttribute('cx'));
@@ -1396,12 +1436,14 @@
         const prof = dot.dataset.prof;
         const bank = formatCurrency(dot.dataset.bank, 'EUR');
         const change = parseFloat(dot.dataset.change);
-        const status = dot.dataset.status === 'won' ? '✅ Kupon Kazandı' : '❌ Kupon Kaybetti';
+        const isNoLoss = dot.classList.contains('sim30-dot-noloss');
+        const status = isNoLoss ? '⭐ Sıfır Kayıp Potansiyeli' : (dot.dataset.status === 'won' ? '✅ Kupon Kazandı' : '❌ Kupon Kaybetti');
 
         dot.setAttribute('r', '6');
 
         ttTitle.textContent = `Gün ${day} · ${date} (${prof})`;
         ttVal.textContent = `Kasa: ${bank}`;
+        ttVal.setAttribute('fill', isNoLoss ? '#fbbf24' : '#38bdf8');
         ttSub.textContent = `${status} (${change >= 0 ? '+' : ''}%${change})`;
 
         let boxX = cx + 12;
@@ -1422,7 +1464,7 @@
       };
 
       dot.onmouseleave = () => {
-        dot.setAttribute('r', '3.5');
+        dot.setAttribute('r', dot.classList.contains('sim30-dot-noloss') ? '3' : '3.5');
         tooltip.setAttribute('opacity', '0');
       };
     });

@@ -1999,6 +1999,48 @@
       const totalReturnPct = round(((bank - startBank) / startBank) * 100, 1);
       const finalTheo = round(startBank * Math.pow(cfg.dailyFactor, sortedDates.length), 2);
 
+      // Maç kaybetmeme (sıfır kayıp / %100 isabet) durumundaki 30 günlük maksimum kazanç iterasyonu
+      let noLossBank = startBank;
+      const noLossLedger = [];
+      sortedDates.forEach((dStr, dIdx) => {
+        const dayNum = dIdx + 1;
+        const dayObj = days[dIdx];
+        const dayOdds = (dayObj && dayObj.odds) ? dayObj.odds : cfg.targetOdds;
+        const bStart = noLossBank;
+        const rBank = round(bStart * cfg.reservePct, 2);
+        const aBank = round(Math.max(0, bStart - rBank), 2);
+        let st = round(aBank * cfg.stakeRateOfActive, 2);
+        if (st < 0.50) st = Math.min(bStart, 0.50);
+        if (st > aBank && aBank > 0) st = aBank;
+
+        const nProfit = round(st * (dayOdds - 1.0), 2);
+        noLossBank = round(bStart + nProfit, 2);
+
+        noLossLedger.push({
+          day: dayNum,
+          date: dStr,
+          startBank: bStart,
+          reserveBank: rBank,
+          activeBank: aBank,
+          stake: st,
+          odds: dayOdds,
+          status: 'won',
+          netProfit: nProfit,
+          endBank: noLossBank,
+          dailyChangePct: bStart > 0 ? round(((noLossBank - bStart) / bStart) * 100, 1) : 0
+        });
+      });
+
+      const maxPotential = {
+        startingBank: startBank,
+        finalBank: noLossBank,
+        totalNetProfit: round(noLossBank - startBank, 2),
+        roiPct: round(((noLossBank - startBank) / startBank) * 100, 1),
+        wonCoupons: sortedDates.length,
+        lostCoupons: 0,
+        ledger: noLossLedger
+      };
+
       models[cfg.key] = {
         profileKey: cfg.key,
         name: cfg.name,
@@ -2018,7 +2060,8 @@
         totalCoupons,
         winRatePct,
         days,
-        trajectoryPoints: trajPoints
+        trajectoryPoints: trajPoints,
+        maxPotential
       };
     });
 
@@ -2101,7 +2144,8 @@
           coupons,
           ledger,
           days: m.days,
-          trajectoryPoints: m.trajectoryPoints
+          trajectoryPoints: m.trajectoryPoints,
+          maxPotential: m.maxPotential
         };
       }
     }

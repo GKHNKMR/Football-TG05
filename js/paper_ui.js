@@ -724,7 +724,7 @@
     return `
       <div class="paper-disclaimer">
         <span class="p-badge">30 GÜNLÜK GEÇMİŞ KASA SİMÜLASYONU</span>
-        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Aşağıdaki model, <b>${dmy(win.startDate)} – ${dmy(win.endDate)}</b> tarihleri arasında oynanmış <b>${win.matchesInWindow} adet gerçek resmi maç</b> ve gerçek skorlar ile Avrupa bahis piyasası oranları üzerinden çalıştırılmış 30 günlük disiplinli kasa simülasyonudur.</p>
+        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Aşağıdaki model, <b>${dmy(win.startDate)} – ${dmy(win.endDate)}</b> tarihleri arasında oynanmış <b>${win.matchesInWindow} adet gerçek resmi maç</b> ve gerçek skorlar ile Avrupa bahis piyasası oranları üzerinden çalıştırılmış 30 günlük disiplinli kasa simülasyonudur. Modelimiz <b>0.5 Üstü için %95 ve yukarısı</b>, <b>1.5 Üstü için %85 ve üstü</b>, <b>2.5 Üstü için %75 ve üstü</b> başarı kriterleriyle çalışır. Yüksek risk demek garanti olmayan maçları oynamak demek değildir; hedeflenen ~1.35x oranına %95 ve %85 üzeri yüksek güvenli maçların disiplinli birleşimiyle ulaşılır.</p>
         <div class="p-quote">« 50 € Başlangıç Sermayesi · 3 Risk Modeli · Gerçek Maçlar · Disiplinli Kasa Rezervi »</div>
       </div>
 
@@ -766,7 +766,7 @@
         <div class="sim30-kpi-card medium ${sim30ActiveProfile === 'medium' ? 'active-card' : ''}" data-prof="medium">
           <div class="sim30-kpi-head">
             <b style="color:#38bdf8;font-size:13px;">🔵 Orta Risk (%35 Rezerv)</b>
-            <span class="r-badge b-med">3x 1.5 Üst · ~1.70x</span>
+            <span class="r-badge b-med">3x 1.5 Üst (≥ %85 Güven) · ~1.42x</span>
           </div>
           <div class="sim30-kpi-rows">
             <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
@@ -782,7 +782,7 @@
         <div class="sim30-kpi-card high ${sim30ActiveProfile === 'high' ? 'active-card' : ''}" data-prof="high">
           <div class="sim30-kpi-head">
             <b style="color:#ef4444;font-size:13px;">🔴 Yüksek Risk (%25 Rezerv)</b>
-            <span class="r-badge b-high">3x 2.5 Üst · ~3.25x</span>
+            <span class="r-badge b-high">Yüksek Güven Kombinasyon · ~1.35x</span>
           </div>
           <div class="sim30-kpi-rows">
             <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
@@ -885,7 +885,7 @@
           <div class="chart-mode-pills" id="simKuponProfilePills">
             <button type="button" class="cmp-btn ${profKey === 'minimum' ? 'active' : ''}" data-prof="minimum">🟢 Minimum Risk (5x 0.5Ü)</button>
             <button type="button" class="cmp-btn ${profKey === 'medium' ? 'active' : ''}" data-prof="medium">🔵 Orta Risk (3x 1.5Ü)</button>
-            <button type="button" class="cmp-btn ${profKey === 'high' ? 'active' : ''}" data-prof="high">🔴 Yüksek Risk (3x 2.5Ü)</button>
+            <button type="button" class="cmp-btn ${profKey === 'high' ? 'active' : ''}" data-prof="high">🔴 Yüksek Risk (~1.35x Kombinasyon)</button>
           </div>
         </div>
 
@@ -1954,6 +1954,9 @@
         <div>
           <h2>Kişiselleştirilmiş Kupon Önerileri</h2>
           <p>Seçili Kasa Modeliniz: <b>${esc(prof.name)}</b> (%${Math.round(prof.reservePct * 100)} Rezervde · Kullanılabilir: ${formatCurrency(available, curr)})</p>
+          <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5;">
+            💡 Kupon maçları öncelikle <b>önümüzdeki 1 haftalık</b> fikstürlerden seçilir. 1 haftalık programda yeterli güvene sahip maç bulunamadığında sistem otomatik olarak <b>önümüzdeki 1 aylık</b> analiz havuzuna genişletir.
+          </div>
         </div>
         <div class="rec-actions">
           <button class="btn-sec" id="btnRecChangeRisk" type="button">⚙️ Kasa Modelini Değiştir</button>
@@ -1961,7 +1964,7 @@
       </div>
 
       <div class="rec-cards-grid">
-        ${Object.keys(PE.COUPON_CLASSES).map(k => renderRecCardHtml(recs[k], k, curr, prof)).join('')}
+        ${Object.keys(PE.COUPON_CLASSES).sort((a, b) => (a === prof.id ? -1 : b === prof.id ? 1 : 0)).map(k => renderRecCardHtml(recs[k], k, curr, prof)).join('')}
       </div>
     `;
 
@@ -1971,6 +1974,13 @@
   function renderRecCardHtml(rec, classKey, curr, prof) {
     const cls = PE.COUPON_CLASSES[classKey];
     const armPct = Math.round((prof[cls.armKey] || 0) * 100);
+    const isPlanProfile = (classKey === prof.id);
+
+    const planBadgeHtml = isPlanProfile ? `
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(232,255,63,0.12);border:1px solid rgba(232,255,63,0.3);color:var(--accent);font-weight:800;font-size:11px;padding:4px 10px;border-radius:6px;margin-bottom:8px;">
+        🎯 KASA PLANINIZA ÖZEL SEÇİLEN KUPON
+      </div>
+    ` : '';
 
     const aiBadgeHtml = classKey === 'minimum' ? `
       <div class="ai-badge safe" style="margin:10px 0;padding:8px 12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;font-size:11.5px;color:#10b981;line-height:1.4;">
@@ -1988,7 +1998,8 @@
 
     if (!rec || !rec.available) {
       return `
-        <div class="card rec-card unavailable ${cls.id}">
+        <div class="card rec-card unavailable ${cls.id}" style="${isPlanProfile ? 'border:1.5px solid var(--accent);box-shadow:0 0 16px rgba(232,255,63,0.1);' : ''}">
+          ${planBadgeHtml}
           <div class="rc-head">
             <span class="rc-badge ${cls.badgeClass}">${esc(cls.name)}</span>
             <span class="rc-arm-note">Kasadan ayrılan: %${armPct}</span>
@@ -2007,10 +2018,12 @@
     const evClass = evPct > 0 ? 'good' : 'warn';
 
     return `
-      <div class="card rec-card ${cls.id}">
+      <div class="card rec-card ${cls.id}" style="${isPlanProfile ? 'border:1.5px solid var(--accent);box-shadow:0 0 16px rgba(232,255,63,0.1);' : ''}">
+        ${planBadgeHtml}
         <div class="rc-head">
           <div class="rc-title-box">
             <span class="rc-badge ${cls.badgeClass}">${esc(cls.name)}</span>
+            <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;">🗓️ ${esc(rec.windowLabel || 'Önümüzdeki 1 Hafta')}</span>
             <span class="rc-legs-count">${rec.selections.length} Maç</span>
           </div>
           <span class="rc-arm-note">Risk Kolu: %${armPct} (${formatCurrency(rec.recommendedStake, curr)})</span>

@@ -801,12 +801,13 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <p id="gateErr" hidden>Kod hatalı.</p>
   </div>
 </div>
+<script src="js/backtest_data.js"></script>
 <script src="js/paper_engine.js"></script>
 <script src="js/paper_ui.js"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
-let STATS={matches:{}},RESULTS=null,BACKTEST=null,H2H={pairs:{}};
+let STATS={matches:{}},RESULTS=null,BACKTEST=(window.BACKTEST_DATA||null),H2H={pairs:{}};
 const FALLBACK_DATA=[
  {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
 ];
@@ -1445,8 +1446,14 @@ function btScope(){
 }
 function btLine(x,k){return x&&x.markets&&x.markets[k]?btPc(x.markets[k].pick_acc):'—';}
 function renderBacktest(){
-  const d=BACKTEST;
-  if(!d)return;
+  const d=BACKTEST || window.BACKTEST_DATA;
+  if(!d){
+    const tblL=$('bt-byleague'), tblS=$('bt-byseason'), tblSamp=$('bt-samples');
+    if(tblL) tblL.innerHTML='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
+    if(tblS) tblS.innerHTML='<tbody><tr><td colspan="5" class="loading">Model doğrulama verileri yükleniyor…</td></tr></tbody>';
+    if(tblSamp) tblSamp.innerHTML='<tbody><tr><td colspan="7" class="loading">Örnek maçlar yükleniyor…</td></tr></tbody>';
+    return;
+  }
   const ns=(d.method&&d.method.target_seasons||[]).length;
   const s=resSeason&&d.by_season[resSeason]?resSeason:(resSeason==='2026/27'?'2026/27':'');
   const o=btScope();

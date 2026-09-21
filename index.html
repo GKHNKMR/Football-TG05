@@ -1478,18 +1478,10 @@ function renderBacktest(){
     return;
   }
 
-  // === KPI Cards — results.json'dan gerçek vurgulanan & tutanlar ===
+  // === KPI Cards — 5 sezonluk backtest maçlarından (2026/27 hariç) gerçek vurgulanan & tutanlar ===
   const kpiEl=$('btpane-kpi');
   if(kpiEl){
-    // results.json maçlarından hesapla: p >= threshold olup gerçekte tutanlar
     const allMatches = (RESULTS && RESULTS.matches) ? RESULTS.matches : [];
-    const totalScored = allMatches.filter(m=>m.total!=null||('-' in (String(m.score||'')))).length || d.overall.n_matches;
-
-    const mkDefs=[
-      {key:'0.5',rKey:'p_over_0_5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95',total_key:'05'},
-      {key:'1.5',rKey:'p_over_1_5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85',total_key:'15'},
-      {key:'2.5',rKey:'p_over_2_5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75',total_key:'25'},
-    ];
 
     function getMatchTotal(m){
       if(m.total!=null) return Number(m.total);
@@ -1497,28 +1489,42 @@ function renderBacktest(){
       if(sc.includes('-')){const p=sc.split('-');return (parseInt(p[0])||0)+(parseInt(p[1])||0);}
       return 0;
     }
+    function matchSeason(m){
+      const ko=m.kickoff_utc||m.date||'';
+      try{const y=parseInt(ko.slice(0,4)),mo=parseInt(ko.slice(5,7));return mo>=7?`${y}/${y+1}`:`${y-1}/${y}`;}catch(e){return '';}
+    }
+    function hasResult(m){ return m.total!=null||String(m.score||'').includes('-'); }
 
-    const ovData=allMatches.length>0 ? allMatches : null;
+    // 5 tamamlanmış sezon = backtest verisi (2026/27 güncel sezon hariç)
+    const btMatches = allMatches.filter(m=>hasResult(m) && matchSeason(m)!=='2026/2027');
+    const cur27     = allMatches.filter(m=>hasResult(m) && matchSeason(m)==='2026/2027');
+    // Eğer seasonOf 2026/27 ile yazılıyorsa farklı kontrol
+    const btM5 = btMatches.length > 100 ? btMatches : allMatches.filter(m=>hasResult(m));
+    const totalBT = btM5.length || d.overall.n_matches;
+
+    const mkDefs=[
+      {key:'0.5',rKey:'p_over_0_5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95'},
+      {key:'1.5',rKey:'p_over_1_5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85'},
+      {key:'2.5',rKey:'p_over_2_5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75'},
+    ];
 
     kpiEl.innerHTML=mkDefs.map(mk=>{
-      let hiN=0, hiHits=0, totalM=totalScored;
+      let hiN=0, hiHits=0;
+      const totalM = totalBT;
 
-      if(ovData){
-        // Gerçek hesap: sonuclanan maçlardan
-        const scored=ovData.filter(m=>m.total!=null||String(m.score||'').includes('-'));
-        totalM=scored.length;
-        const hiList=scored.filter(m=>Number(m[mk.rKey]||0)>=mk.thr);
+      if(btM5.length>0){
+        // Gerçek hesap: 5 tamamlanmış sezon (2026/27 hariç)
+        const hiList=btM5.filter(m=>Number(m[mk.rKey]||0)>=mk.thr);
         hiN=hiList.length;
         hiHits=hiList.filter(m=>getMatchTotal(m)>Number(mk.key)).length;
       } else {
-        // Fallback: backtest.json calibration bucketından tahmin
+        // Fallback: backtest.json calibration bucket
         const bm=d.overall.markets[mk.key];
         if(bm){ hiN=bm.conf_n||0; hiHits=Math.round(hiN*(bm.conf_acc||0)); }
       }
 
       const hiPct = hiN>0 ? ((hiHits/hiN)*100).toFixed(1)+'%' : '—';
       const hiMiss = hiN - hiHits;
-      const goodColor = mk.key==='0.5'?(hiHits/hiN>=0.95):mk.key==='1.5'?(hiHits/hiN>=0.85):(hiHits/hiN>=0.75);
 
       return `<div class="card" style="border-top:3px solid ${mk.color};padding:16px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
@@ -1529,7 +1535,7 @@ function renderBacktest(){
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;">
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
             <div style="font-size:22px;font-weight:900;color:var(--text);">${num(totalM)}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Toplam Sonuçlanan Maç</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">Backtest Maç (5 Sezon)</div>
           </div>
           <div style="background:var(--panel2);border-radius:10px;padding:10px;text-align:center;">
             <div style="font-size:22px;font-weight:900;color:${mk.color};">${num(hiN)}</div>

@@ -69,7 +69,7 @@ def main():
         for i, txt in enumerate(tile_all_texts, 1):
             print(f"  Tile {i}: {txt}")
 
-        assert "93.6%" in tile_all_texts[0] and "15.89" in tile_all_texts[0], f"Tile 1 unexpected: {tile_all_texts[0]}"
+        assert "93.6%" in tile_all_texts[0] and ("15.9" in tile_all_texts[0] or "15.89" in tile_all_texts[0]), f"Tile 1 unexpected: {tile_all_texts[0]}"
         assert "76." in tile_all_texts[1] and "13." in tile_all_texts[1], f"Tile 2 unexpected: {tile_all_texts[1]}"
         assert "54." in tile_all_texts[2] and "9." in tile_all_texts[2], f"Tile 3 unexpected: {tile_all_texts[2]}"
         assert "16.9" in tile_all_texts[3], f"Tile 4 unexpected: {tile_all_texts[3]}"

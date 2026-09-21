@@ -200,21 +200,17 @@
       <path d="${targetPathD}" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6,4"/>
     `;
 
-    // 2. Risk Modelleri Çizgileri (Minimum %30, Orta %15, Yüksek %5)
+    // 2. Risk Modelleri Çizgileri (Minimum %15, Orta %20, Yüksek %25)
     let profilesSvg = '';
-    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : viewMode);
-    const profilesToDraw = normView === 'all'
+    const normView = (viewMode === 'cautious' ? 'minimum' : viewMode === 'balanced' ? 'medium' : viewMode === 'aggressive' ? 'high' : (viewMode === 'multi' || viewMode === 'excel') ? 'minimum' : viewMode);
+    const profilesToDraw = (normView === 'all' || !normView)
       ? ['minimum', 'medium', 'high']
-      : (normView === 'excel' || normView === 'multi' ? [] : [normView]);
+      : [normView];
 
     const profColors = {
-      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (Kol 1: %30 Pay)' },
-      medium: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (Kol 2: %15 Pay)' },
-      high: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (Kol 3: %5 Pay)' },
-      multi: { main: '#38bdf8', fill: 'rgba(56, 189, 248, 0.12)', name: 'Çok Kollu Model' },
-      cautious: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (Kol 1: %30 Pay)' },
-      balanced: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (Kol 2: %15 Pay)' },
-      aggressive: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (Kol 3: %5 Pay)' }
+      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%50 Rezerv · %15 Büyüme)' },
+      medium: { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (%35 Rezerv · %20 Büyüme)' },
+      high: { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (%25 Rezerv · %25 Büyüme)' }
     };
 
     if (trajData && trajData.trajectories) {
@@ -224,7 +220,7 @@
         const c = profColors[pKey] || profColors.minimum;
 
         // Tekil risk modu seçildiyse P10-P90 güven koridorunu çiz
-        if (normView !== 'all' && normView !== 'excel' && normView !== 'multi') {
+        if (normView !== 'all') {
           let p90Path = '';
           let p10Path = '';
           pData.dayPoints.forEach((pt, idx) => {
@@ -259,24 +255,6 @@
         const endX = getX(lastPt.day).toFixed(1);
         const endY = getY(lastPt.median).toFixed(1);
         profilesSvg += `<circle cx="${endX}" cy="${endY}" r="4" fill="${c.main}" stroke="#0d1219" stroke-width="2"/>`;
-      }
-    }
-
-    // 2.1 Excel Çok Kollu Teorik Büyüme Eğrisi (Betavus Kasa Modeli 1: 1.2925x)
-    const em = (trajData && trajData.excelModel) || (PE.calculateExcelGrowthModel && PE.calculateExcelGrowthModel(plan));
-    if (em && em.dayPoints && (normView === 'excel' || normView === 'multi' || normView === 'all')) {
-      let emD = '';
-      em.dayPoints.forEach((pt, idx) => {
-        const px = getX(pt.day).toFixed(1);
-        const py = getY(pt.theoreticalBank).toFixed(1);
-        if (idx === 0) emD += `M ${px},${py}`;
-        else emD += ` L ${px},${py}`;
-      });
-      const isSolo = normView === 'excel' || normView === 'multi';
-      profilesSvg += `<path d="${emD}" fill="none" stroke="#38bdf8" stroke-width="${isSolo ? 3.4 : 2.0}" stroke-dasharray="${isSolo ? 'none' : '4,3'}" opacity="${isSolo ? 1.0 : 0.8}"/>`;
-      const lastEm = em.dayPoints[em.dayPoints.length - 1];
-      if (lastEm) {
-        profilesSvg += `<circle cx="${getX(lastEm.day).toFixed(1)}" cy="${getY(lastEm.theoreticalBank).toFixed(1)}" r="4.5" fill="#38bdf8" stroke="#0d1219" stroke-width="2"/>`;
       }
     }
 
@@ -347,15 +325,14 @@
       <div class="card plan-chart-card" id="planChartCard">
         <div class="chart-head">
           <div>
-            <h3>📈 Hedef Kasa Ulaşma Grafiği · Excel Kasa Modelleri Projeksiyonu</h3>
-            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve Excel çok kollu kasa modeli büyüme patikaları.</p>
+            <h3>📈 Hedef Kasa Ulaşma Grafiği · Günlük Büyüme Projeksiyonu</h3>
+            <p>Hedeflenen <b>${trajData.durationDays} günde</b> ${formatCurrency(trajData.startBank, curr)} ➔ ${formatCurrency(trajData.targetBank, curr)} geometrik hedef yolu ve risk modellerinin bileşik büyüme patikaları.</p>
           </div>
           <div class="chart-view-chips" id="chartViewChips">
-            <button type="button" class="cchip ${viewMode === 'all' ? 'active' : ''}" data-view="all">📊 Tümünü Karşılaştır</button>
-            <button type="button" class="cchip ${viewMode === 'minimum' || viewMode === 'cautious' ? 'active' : ''}" data-view="minimum">🟢 Minimum Risk (%30 Pay · 1.25x)</button>
-            <button type="button" class="cchip ${viewMode === 'medium' || viewMode === 'balanced' ? 'active' : ''}" data-view="medium">🔵 Orta Risk (%15 Pay · 1.70x)</button>
-            <button type="button" class="cchip ${viewMode === 'high' || viewMode === 'aggressive' ? 'active' : ''}" data-view="high">🔴 Yüksek Risk (%5 Pay · 3.25x)</button>
-            <button type="button" class="cchip ${viewMode === 'excel' || viewMode === 'multi' ? 'active' : ''}" data-view="multi">📐 Çok Kollu Model (Bileşik %29.25)</button>
+            <button type="button" class="cchip ${viewMode === 'all' || !viewMode ? 'active' : ''}" data-view="all">📊 Tümünü Karşılaştır</button>
+            <button type="button" class="cchip ${viewMode === 'minimum' || viewMode === 'cautious' ? 'active' : ''}" data-view="minimum">🟢 Minimum Risk (%50 Rezerv · %15)</button>
+            <button type="button" class="cchip ${viewMode === 'medium' || viewMode === 'balanced' ? 'active' : ''}" data-view="medium">🔵 Orta Risk (%35 Rezerv · %20)</button>
+            <button type="button" class="cchip ${viewMode === 'high' || viewMode === 'aggressive' ? 'active' : ''}" data-view="high">🔴 Yüksek Risk (%25 Rezerv · %25)</button>
           </div>
         </div>
 
@@ -364,64 +341,55 @@
         </div>
 
         <div class="chart-tooltip-bar" id="planChartTracker">
-          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, risk modelleri ve Excel teorik projeksiyonunu inceleyebilirsiniz.</span>
+          <span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve 3 risk modelinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>
         </div>
 
         <div class="chart-legend">
           <span class="cl-item"><span class="cl-dot" style="background:#f59e0b;"></span> 🎯 Hedef Yolu (Geometrik Referans)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (Kol 1: %30 Pay · 1.25x · 5 maç 0.5+)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (Kol 2: %15 Pay · 1.70x · 3 maç 1.5+)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (Kol 3: %5 Pay · 3.25x · 3 maç 2.5+)</span>
-          <span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 📐 Çok Kollu Model (%50 Rezerv · ${em ? em.dailyGrowthFactor : '1.2925'}×)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#10b981;"></span> 🟢 Minimum Risk (%50 Rezerv · %15 Büyüme · 1.15×)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#3b82f6;"></span> 🔵 Orta Risk (%35 Rezerv · %20 Büyüme · 1.20×)</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#ef4444;"></span> 🔴 Yüksek Risk (%25 Rezerv · %25 Büyüme · 1.25×)</span>
           ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#fbbf24;"></span> 🟡 Gerçekleşen Kasa</span>' : ''}
         </div>
 
         <div class="chart-models-summary">
           <div class="cms-card minimum ${activeProf === 'minimum' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b>🟢 Minimum Risk (Kol 1)</b>
-              <span class="cms-badge b-min">Pay: %30,0 · 1,25x</span>
+              <b>🟢 Minimum Risk</b>
+              <span class="cms-badge b-min">%50 Rezerv · %15/gün</span>
             </div>
-            <div class="cms-row"><span>Kupon Tipi:</span><b>5 adet 0,5 üstü maç</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${minM.targetHitPct >= 50 ? 'good' : 'warn'}">%${minM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%50 (Dokunulmaz)</b></div>
+            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%50</b></div>
+            <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%15,0 (1.15×)</b></div>
+            <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.15, trajData.durationDays), 2), curr)}</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(minM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(minM.finalP10, curr)} – ${formatCurrency(minM.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%70 Rezerv</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${minM.targetHitPct >= 50 ? 'good' : 'warn'}">%${minM.targetHitPct}</b></div>
           </div>
 
           <div class="cms-card medium ${activeProf === 'medium' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b>🔵 Orta Risk (Kol 2)</b>
-              <span class="cms-badge b-med">Pay: %15,0 · 1,70x</span>
+              <b>🔵 Orta Risk</b>
+              <span class="cms-badge b-med">%35 Rezerv · %20/gün</span>
             </div>
-            <div class="cms-row"><span>Kupon Tipi:</span><b>3 adet 1,5 üstü maç</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${medM.targetHitPct >= 50 ? 'good' : 'warn'}">%${medM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%35 (Dokunulmaz)</b></div>
+            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%65</b></div>
+            <div class="cms-row"><span>Günlük Büyüme:</span><b class="good">+%20,0 (1.20×)</b></div>
+            <div class="cms-row"><span>30. Gün Teorik:</span><b class="good">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.20, trajData.durationDays), 2), curr)}</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b>${formatCurrency(medM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(medM.finalP10, curr)} – ${formatCurrency(medM.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%85 Rezerv</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${medM.targetHitPct >= 50 ? 'good' : 'warn'}">%${medM.targetHitPct}</b></div>
           </div>
 
           <div class="cms-card high aggressive ${activeProf === 'high' ? 'active-profile' : ''}">
             <div class="cms-head">
-              <b style="color:#f87171;">🔴 Yüksek Risk (Kol 3)</b>
-              <span class="cms-badge b-high">Pay: %5,0 · 3,25x</span>
+              <b style="color:#f87171;">🔴 Yüksek Risk</b>
+              <span class="cms-badge b-high">%25 Rezerv · %25/gün</span>
             </div>
-            <div class="cms-row"><span>Kupon Tipi:</span><b>3 adet 2,5 üstü maç</b></div>
-            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${highM.targetHitPct >= 50 ? 'good' : 'warn'}">%${highM.targetHitPct}</b></div>
+            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%25 (Dokunulmaz)</b></div>
+            <div class="cms-row"><span>Aktif Kasa Payı:</span><b>%75</b></div>
+            <div class="cms-row"><span>Günlük Büyüme:</span><b style="color:#f87171;">+%25,0 (1.25×)</b></div>
+            <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#f87171;">${formatCurrency(PE.round(trajData.startBank * Math.pow(1.25, trajData.durationDays), 2), curr)}</b></div>
             <div class="cms-row"><span>Medyan Kasa:</span><b style="color:#f87171;">${formatCurrency(highM.finalMedian, curr)}</b></div>
-            <div class="cms-row"><span>P10 / P90 Aralığı:</span><b>${formatCurrency(highM.finalP10, curr)} – ${formatCurrency(highM.finalP90, curr)}</b></div>
-            <div class="cms-row"><span>Kasa Rezervi:</span><b class="good">%95 Rezerv</b></div>
-          </div>
-
-          <div class="cms-card excel multi ${viewMode === 'excel' || viewMode === 'multi' || activeProf === 'multi' ? 'active-profile' : ''}">
-            <div class="cms-head">
-              <b style="color:#38bdf8;">📐 Çok Kollu Model (Excel)</b>
-              <span class="cms-badge b-excel">${em ? em.dailyGrowthFactor : '1.2925'}×/gün</span>
-            </div>
-            <div class="cms-row"><span>Günlük Kâr Oranı:</span><b style="color:#38bdf8;">+%${em ? em.dailyGrowthRatePct : '29.25'}</b></div>
-            <div class="cms-row"><span>30. Gün Teorik:</span><b style="color:#38bdf8;">${formatCurrency(em ? em.finalTheoreticalBank : 110125.16, curr)}</b></div>
-            <div class="cms-row"><span>Toplam Çarpan:</span><b>${em ? em.totalGrowthMultiplier : '2202.5'}×</b></div>
-            <div class="cms-row"><span>Kasa Dağılımı:</span><b class="good">%50 Rezerv + 3 Kol (OK)</b></div>
+            <div class="cms-row"><span>Hedefe Ulaşma:</span><b class="${highM.targetHitPct >= 50 ? 'good' : 'warn'}">%${highM.targetHitPct}</b></div>
           </div>
         </div>
       </div>
@@ -511,15 +479,13 @@
       const minVal = minPt ? formatCurrency(minPt.median, curr) : '-';
       const medVal = medPt ? formatCurrency(medPt.median, curr) : '-';
       const highVal = highPt ? formatCurrency(highPt.median, curr) : '-';
-      const emVal = emPt ? formatCurrency(emPt.theoreticalBank, curr) : '-';
 
       tracker.innerHTML = `
         <span style="font-weight:900;color:var(--text);">📅 Gün ${day}</span>
         <span>🎯 Hedef: <b>${tVal}</b></span>
-        <span>🟢 Minimum Risk (%30): <b>${minVal}</b></span>
-        <span>🔵 Orta Risk (%15): <b>${medVal}</b></span>
-        <span>🔴 Yüksek Risk (%5): <b style="color:#ef4444;">${highVal}</b></span>
-        <span>📐 Çok Kollu (Excel): <b style="color:#38bdf8;">${emVal}</b></span>
+        <span>🟢 Minimum Risk (%50 Rezerv · %15): <b>${minVal}</b></span>
+        <span>🔵 Orta Risk (%35 Rezerv · %20): <b>${medVal}</b></span>
+        <span>🔴 Yüksek Risk (%25 Rezerv · %25): <b style="color:#ef4444;">${highVal}</b></span>
       `;
     }
 
@@ -530,7 +496,7 @@
       if (ptBal) ptBal.style.display = 'none';
       if (ptAgg) ptAgg.style.display = 'none';
       if (ptExcel) ptExcel.style.display = 'none';
-      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef, risk modelleri ve Excel teorik projeksiyonunu inceleyebilirsiniz.</span>';
+      tracker.innerHTML = '<span class="ct-hint">💡 Grafiğin üzerine gelerek gün bazlı hedef ve 3 risk modelinin büyüme projeksiyonlarını inceleyebilirsiniz.</span>';
     }
 
     overlay.onmousemove = handleMove;
@@ -569,8 +535,8 @@
       <div class="card excel-model-card" id="excelModelCard">
         <div class="excel-model-head">
           <div class="emh-title">
-            <h3>📑 Çok Kollu Bahis Kasası Büyüme Modeli (Betavus Kasa Modeli 1)</h3>
-            <p>Excel çalışma kitabındaki katı kasa rezervi (%${Math.round(m.reservePct * 100)}), 3 bahis kolu ve bileşik teorik/gerçekleşen kasa takip çizelgesi.</p>
+            <h3>📑 Günlük Kasa Büyüme Modeli (${esc(m.profileName)})</h3>
+            <p>Seçilen ${esc(m.profileName)} doğrultusunda kasa rezervi (%${Math.round(m.reservePct * 100)}), günlük büyüme katsayısı (${m.dailyGrowthFactor}×) ve 30 günlük bileşik takip çizelgesi.</p>
           </div>
           <span class="badge b-excel" style="background:rgba(56,189,248,0.15);color:#38bdf8;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;border:1px solid rgba(56,189,248,0.3);">
             Günlük Büyüme: ${m.dailyGrowthFactor}× (+%${m.dailyGrowthRatePct}/gün)
@@ -579,29 +545,29 @@
 
         <div class="excel-params-strip">
           <div class="ep-col">
-            <span class="ep-lbl">Kenarda Kalan (Rezerv)</span>
+            <span class="ep-lbl">Kasa Rezervi</span>
             <span class="ep-val">%${Math.round(m.reservePct * 100)} (${formatCurrency(m.startingBank * m.reservePct, curr)})</span>
-            <span class="ep-note">Kasadan hiç çıkmaz</span>
+            <span class="ep-note">Dokunulmaz rezerv</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Minimum Risk Kolu</span>
-            <span class="ep-val">%${Math.round(m.arms.minimum.pct * 100)} · Oran ${m.arms.minimum.odds}</span>
-            <span class="ep-note">${esc(m.arms.minimum.note)}</span>
+            <span class="ep-lbl">Aktif Kasa Payı</span>
+            <span class="ep-val">%${Math.round((1.0 - m.reservePct) * 100)} (${formatCurrency(m.startingBank * (1.0 - m.reservePct), curr)})</span>
+            <span class="ep-note">Bahislerde kullanılan pay</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Orta Risk Kolu</span>
-            <span class="ep-val">%${Math.round(m.arms.medium.pct * 100)} · Oran ${m.arms.medium.odds}</span>
-            <span class="ep-note">${esc(m.arms.medium.note)}</span>
+            <span class="ep-lbl">Günlük Büyüme Oranı</span>
+            <span class="ep-val good">+%${m.dailyGrowthRatePct} / gün</span>
+            <span class="ep-note">Bileşik katsayı: ${m.dailyGrowthFactor}×</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Yüksek Risk Kolu</span>
-            <span class="ep-val" style="color:#ef4444;">%${Math.round(m.arms.high.pct * 100)} · Oran ${m.arms.high.odds}</span>
-            <span class="ep-note">${esc(m.arms.high.note)}</span>
+            <span class="ep-lbl">30. Gün Teorik Kasa</span>
+            <span class="ep-val good">${formatCurrency(m.finalTheoreticalBank, curr)}</span>
+            <span class="ep-note">Toplam çarpan: ${m.totalGrowthMultiplier}×</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Toplam Kontrol</span>
+            <span class="ep-lbl">Model Durumu</span>
             <span class="ep-val good">%100 · ${m.controlStatus}</span>
-            <span class="ep-note">Rezerv + Kollar = %100</span>
+            <span class="ep-note">Rezerv + Aktif = %100</span>
           </div>
         </div>
 
@@ -858,34 +824,26 @@
               <label class="risk-card active">
                 <input type="radio" name="setupRisk" value="minimum" checked>
                 <div class="r-head">
-                  <b>🟢 Minimum Risk (Kol 1)</b>
-                  <span class="r-badge b-min">Pay: %30,0 · 1,25x</span>
+                  <b>🟢 Minimum Risk</b>
+                  <span class="r-badge b-min">Rezerv: %50 · Günlük %15</span>
                 </div>
-                <p>Toplam kasanın %30'u riske edilir. 1,25x hedef oran (5 adet 0,5 üstü maç). Kasanın %70'i güvence kasasında kalır.</p>
+                <p>Kasanın %50'si dokunulmaz rezerv olarak tutulur. %50 aktif payla günlük %15 büyüme hedeflenir (1.15x/gün).</p>
               </label>
               <label class="risk-card">
                 <input type="radio" name="setupRisk" value="medium">
                 <div class="r-head">
-                  <b>🔵 Orta Risk (Kol 2)</b>
-                  <span class="r-badge b-med">Pay: %15,0 · 1,70x</span>
+                  <b>🔵 Orta Risk</b>
+                  <span class="r-badge b-med">Rezerv: %35 · Günlük %20</span>
                 </div>
-                <p>Toplam kasanın %15'i riske edilir. 1,70x hedef oran (3 adet 1,5 üstü maç). Kasanın %85'i güvence kasasında kalır.</p>
+                <p>Kasanın %35'i dokunulmaz rezerv olarak tutulur. %65 aktif payla günlük %20 büyüme hedeflenir (1.20x/gün).</p>
               </label>
               <label class="risk-card">
                 <input type="radio" name="setupRisk" value="high">
                 <div class="r-head">
-                  <b style="color:#f87171;">🔴 Yüksek Risk (Kol 3)</b>
-                  <span class="r-badge b-high">Pay: %5,0 · 3,25x</span>
+                  <b style="color:#f87171;">🔴 Yüksek Risk</b>
+                  <span class="r-badge b-high">Rezerv: %25 · Günlük %25</span>
                 </div>
-                <p>Toplam kasanın %5'i riske edilir. 3,25x hedef oran (3 adet 2,5 üstü maç). Kasanın %95'i güvence kasasında kalır.</p>
-              </label>
-              <label class="risk-card">
-                <input type="radio" name="setupRisk" value="multi">
-                <div class="r-head">
-                  <b style="color:#38bdf8;">📐 Çok Kollu Model (Excel Standart)</b>
-                  <span class="r-badge b-excel">3 Kol · Günlük +%29.25</span>
-                </div>
-                <p>Betavus Kasa Modeli 1: %50 Rezerv + 3 Bahis Kolu bir arada (%30 Min + %15 Orta + %5 Yüksek). Günlük büyüme katsayısı: 1.2925x.</p>
+                <p>Kasanın %25'i dokunulmaz rezerv olarak tutulur. %75 aktif payla günlük %25 büyüme hedeflenir (1.25x/gün).</p>
               </label>
             </div>
           </div>

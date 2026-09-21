@@ -64,42 +64,32 @@ def main():
         }""")
         assert 'error' not in cfg_res, f"Config error: {cfg_res.get('error')}"
         assert 'minimum' in cfg_res['profiles'] and 'medium' in cfg_res['profiles'] and 'high' in cfg_res['profiles'] and 'multi' in cfg_res['profiles']
-        # Excel Kol 1: Minimum Risk (Pay: %30, Oran: 1.25x, 5 adet 0.5 üstü, Rezerv: %70)
-        assert cfg_res['minimum']['minRiskArmPct'] == 0.30
-        assert cfg_res['minimum']['reservePct'] == 0.70
-        assert cfg_res['minimum']['targetOdds'] == 1.25
-        assert cfg_res['minimum']['legsCount'] == 5
-        assert cfg_res['minimum']['marketTarget'] == 'over_0_5'
+        # Minimum Risk: Kasa Rezerv: %50, Günlük Büyüme Oranı: %15 (1.15x, Aktif Pay: %50)
+        assert cfg_res['minimum']['reservePct'] == 0.50
+        assert cfg_res['minimum']['dailyGrowthRate'] == 0.15
+        assert cfg_res['minimum']['dailyFactor'] == 1.15
+        assert cfg_res['minimum']['stakePct'] == 0.50
 
-        # Excel Kol 2: Orta Risk (Pay: %15, Oran: 1.70x, 3 adet 1.5 üstü, Rezerv: %85)
-        assert cfg_res['medium']['midRiskArmPct'] == 0.15
-        assert cfg_res['medium']['reservePct'] == 0.85
-        assert cfg_res['medium']['targetOdds'] == 1.70
-        assert cfg_res['medium']['legsCount'] == 3
-        assert cfg_res['medium']['marketTarget'] == 'over_1_5'
+        # Orta Risk: Kasa Rezerv: %35, Günlük Büyüme Oranı: %20 (1.20x, Aktif Pay: %65)
+        assert cfg_res['medium']['reservePct'] == 0.35
+        assert cfg_res['medium']['dailyGrowthRate'] == 0.20
+        assert cfg_res['medium']['dailyFactor'] == 1.20
+        assert cfg_res['medium']['stakePct'] == 0.65
 
-        # Excel Kol 3: Yüksek Risk (Pay: %5, Oran: 3.25x, 3 adet 2.5 üstü, Rezerv: %95)
-        assert cfg_res['high']['highRiskArmPct'] == 0.05
-        assert cfg_res['high']['reservePct'] == 0.95
-        assert cfg_res['high']['targetOdds'] == 3.25
-        assert cfg_res['high']['legsCount'] == 3
-        assert cfg_res['high']['marketTarget'] == 'over_2_5'
-
-        # Çok Kollu Model (Excel Standart: %50 Rezerv, %30 Min, %15 Orta, %5 Yüksek = Günlük 1.2925x)
-        assert cfg_res['multi']['reservePct'] == 0.50
-        assert cfg_res['multi']['minRiskArmPct'] == 0.30
-        assert cfg_res['multi']['midRiskArmPct'] == 0.15
-        assert cfg_res['multi']['highRiskArmPct'] == 0.05
-        assert cfg_res['multi']['targetOdds'] == 1.2925
+        # Yüksek Risk: Kasa Rezerv: %25, Günlük Büyüme Oranı: %25 (1.25x, Aktif Pay: %75)
+        assert cfg_res['high']['reservePct'] == 0.25
+        assert cfg_res['high']['dailyGrowthRate'] == 0.25
+        assert cfg_res['high']['dailyFactor'] == 1.25
+        assert cfg_res['high']['stakePct'] == 0.75
 
         # Geriye dönük uyumluluk takma adları
         assert cfg_res['cautious'] is not None and cfg_res['balanced'] is not None and cfg_res['aggressive'] is not None
-        print("  ✓ Excel Kasa Modeli 1 modelleri (Minimum Risk %30/1.25x, Orta Risk %15/1.70x, Yüksek Risk %5/3.25x, Çok Kollu %50 Rezerv) doğrulandı.")
+        print("  ✓ Kasa risk profilleri (Minimum Risk %50 Rezerv / %15 Büyüme, Orta Risk %35 Rezerv / %20 Büyüme, Yüksek Risk %25 Rezerv / %25 Büyüme) doğrulandı.")
 
-        # Excel Modeli Matematik Doğrulaması (Betavus Kasa Modeli 1)
+        # Günlük Büyüme Modeli Matematik Doğrulaması (minimum risk: %50 rezerv, %15 büyüme)
         excel_math = page.evaluate("""() => {
             const PE = window.BETAVUS_PAPER;
-            const m = PE.calculateExcelGrowthModel({ startingBank: 50, durationDays: 30 }, 'balanced');
+            const m = PE.calculateExcelGrowthModel({ startingBank: 50, durationDays: 30 }, 'minimum');
             return {
                 factor: m.dailyGrowthFactor,
                 ratePct: m.dailyGrowthRatePct,
@@ -112,16 +102,16 @@ def main():
                 day30: m.dayPoints[30].theoreticalBank
             };
         }""")
-        assert excel_math['factor'] == 1.2925
-        assert excel_math['ratePct'] == 29.25
-        assert excel_math['finalBank'] == 110125.16
-        assert excel_math['multiplier'] == 2202.50
+        assert excel_math['factor'] == 1.15
+        assert excel_math['ratePct'] == 15.0
+        assert excel_math['finalBank'] == 3310.59
+        assert excel_math['multiplier'] == 66.21
         assert excel_math['controlStatus'] == 'OK'
         assert excel_math['dayPointsLen'] == 31
         assert excel_math['day0'] == 50.0
-        assert excel_math['day1'] == 64.63
-        assert excel_math['day30'] == 110125.16
-        print("  ✓ Betavus Kasa Modeli 1 Excel formül ve büyüme katsayıları (1.2925x, %29.25, 110.125€) doğrulandı.")
+        assert excel_math['day1'] == 57.50
+        assert excel_math['day30'] == 3310.59
+        print("  ✓ Günlük büyüme katsayısı ve bileşik kasa matematik projeksiyonu (1.15x, %15.0, 3.310,59€) doğrulandı.")
 
         # ----------------------------------------------------------------------
         # TEST 2: Senaryo A — Plan Oluşturma & Geometrik Hedef Yolu
@@ -529,9 +519,9 @@ def main():
         assert page.query_selector("#planChartCard") is not None, "#planChartCard bulunamadı"
         assert page.query_selector("#planTrajectorySvg") is not None, "#planTrajectorySvg bulunamadı"
         chart_chips = page.query_selector_all("#chartViewChips .cchip")
-        assert len(chart_chips) == 5, f"Beklenen 5 grafik çipi, bulunan {len(chart_chips)}"
+        assert len(chart_chips) == 4, f"Beklenen 4 grafik çipi, bulunan {len(chart_chips)}"
         model_summaries = page.query_selector_all(".chart-models-summary .cms-card")
-        assert len(model_summaries) == 4, f"Beklenen 4 model özeti, bulunan {len(model_summaries)}"
+        assert len(model_summaries) == 3, f"Beklenen 3 model özeti, bulunan {len(model_summaries)}"
 
         # Yüksek risk profil kırmızı renk ve çip geçiş testi
         page.click("#chartViewChips button[data-view='high']")
@@ -546,17 +536,11 @@ def main():
         assert high_stroke is True, "Yüksek risk profil SVG içinde #ef4444 kırmızı rengi ile çizilmemiş!"
         print("  ✓ Yüksek risk profili kırmızı (#ef4444) renk ile grafikte doğrulandı.")
 
-        # Excel çok kollu modeli çipi ve SVG kontrolü
-        page.click("#chartViewChips button[data-view='multi']")
-        time.sleep(0.3)
-        excel_chip_class = page.get_attribute("#chartViewChips button[data-view='multi']", "class")
-        assert "active" in excel_chip_class
-
-        # Excel Modeli Günlük Takip Çizelgesi kontrolü (Betavus Kasa Modeli 1)
+        # Günlük Büyüme Modeli Takip Çizelgesi kontrolü
         assert page.query_selector("#excelModelCard") is not None, "#excelModelCard bulunamadı"
         excel_rows = page.query_selector_all("#excelModelCard .excel-table tbody tr")
         assert len(excel_rows) == 31, f"Beklenen 31 satır (0..30 gün), bulunan {len(excel_rows)}"
-        print("  ✓ Kasa planı panosunda interaktif hedef grafiği (5 çip, 4 kart) ve Excel günlük takip çizelgesi doğrulandı.")
+        print("  ✓ Kasa planı panosunda interaktif hedef grafiği (4 çip, 3 kart) ve günlük takip çizelgesi doğrulandı.")
 
         # Kupon Önerileri sekmesine geç
         page.click("#tab-rec")

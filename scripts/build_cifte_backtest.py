@@ -26,6 +26,23 @@ def safe_rho(lh, la, rho):
     lo = max(-1.0 / lh, -1.0 / la) + 1e-6
     return min(max(rho, lo), hi)
 
+GOAL_RANGES = {
+    '2-3': {'label': '2–3 Gol', 'hit': lambda total: 2 <= total <= 3},
+    '3-4': {'label': '3–4 Gol', 'hit': lambda total: 3 <= total <= 4},
+    '5+': {'label': '5+ Gol', 'hit': lambda total: total >= 5},
+}
+
+def goal_range_probabilities(grid):
+    """Dixon-Coles skor matrisini istenen toplam gol bantlarına toplar."""
+    totals = {n: 0.0 for n in range(19)}
+    for (home_goals, away_goals), probability in grid.items():
+        totals[home_goals + away_goals] += probability
+    return {
+        '2-3': totals[2] + totals[3],
+        '3-4': totals[3] + totals[4],
+        '5+': sum(totals[n] for n in range(5, 19)),
+    }
+
 def empty_stat():
     return {
         'total': 0,
@@ -33,7 +50,10 @@ def empty_stat():
         'dc_1x_n': 0, 'dc_1x_h': 0,
         'dc_12_n': 0, 'dc_12_h': 0,
         'dc_x2_n': 0, 'dc_x2_h': 0,
-        'sc_top1_h': 0, 'sc_top3_h': 0
+        'gr_n': 0, 'gr_h': 0,
+        'gr_23_n': 0, 'gr_23_h': 0,
+        'gr_34_n': 0, 'gr_34_h': 0,
+        'gr_5p_n': 0, 'gr_5p_h': 0
     }
 
 overall = empty_stat()
@@ -113,11 +133,11 @@ for div, league in DIVISIONS.items():
                 best_pick = 'X2'
                 best_hit = act_x2
 
-            scores_sorted = sorted(grid.items(), key=lambda item: item[1], reverse=True)
-            top1 = scores_sorted[0][0]
-            top3 = [s[0] for s in scores_sorted[:3]]
-            top1_hit = ((act_h, act_a) == top1)
-            top3_hit = ((act_h, act_a) in top3)
+            range_probs = goal_range_probabilities(grid)
+            best_range = max(range_probs, key=range_probs.get)
+            actual_total = act_h + act_a
+            range_hit = GOAL_RANGES[best_range]['hit'](actual_total)
+            range_stat_key = {'2-3': 'gr_23', '3-4': 'gr_34', '5+': 'gr_5p'}[best_range]
 
             def record(target_stat):
                 target_stat['total'] += 1
@@ -135,8 +155,11 @@ for div, league in DIVISIONS.items():
                     if p_x2 >= 0.75:
                         target_stat['dc_x2_n'] += 1
                         if act_x2: target_stat['dc_x2_h'] += 1
-                if top1_hit: target_stat['sc_top1_h'] += 1
-                if top3_hit: target_stat['sc_top3_h'] += 1
+                    target_stat['gr_n'] += 1
+                    target_stat[f'{range_stat_key}_n'] += 1
+                    if range_hit:
+                        target_stat['gr_h'] += 1
+                        target_stat[f'{range_stat_key}_h'] += 1
 
             record(overall)
             record(by_league[league])
@@ -151,6 +174,7 @@ for div, league in DIVISIONS.items():
                 'away': to_pretty(league, m['away']),
                 'pred_lambda': round(lh + la, 2),
                 'actual_score': f"{act_h}-{act_a}",
+                'actual_total': actual_total,
                 'best_dc': best_pick,
                 'best_dc_pct': round(best_p * 100, 1),
                 'dc_hit': bool(best_hit),
@@ -158,11 +182,14 @@ for div, league in DIVISIONS.items():
                 'p_1x': round(p_1x * 100, 1),
                 'p_12': round(p_12 * 100, 1),
                 'p_x2': round(p_x2 * 100, 1),
-                'top_scores': [f"{s[0][0]}-{s[0][1]} (%{s[1]*100:.1f})" for s in scores_sorted[:3]],
-                'top1_hit': bool(top1_hit),
-                'top3_hit': bool(top3_hit)
+                'goal_range': best_range,
+                'goal_range_label': GOAL_RANGES[best_range]['label'],
+                'goal_range_pct': round(range_probs[best_range] * 100, 1),
+                'goal_range_probs': {key: round(value * 100, 1) for key, value in range_probs.items()},
+                'range_hit': bool(range_hit)
             })
 
+all_matches = [match for match in all_matches if not match['is_limited']]
 all_matches.sort(key=lambda x: x['date'], reverse=True)
 # ~250 dengeli örnek maç
 step = max(1, len(all_matches) // 250)
@@ -174,8 +201,9 @@ def finalize_stats(st):
     res['dc_1x_pct'] = round((st['dc_1x_h'] / st['dc_1x_n'] * 100), 1) if st['dc_1x_n'] else 0.0
     res['dc_12_pct'] = round((st['dc_12_h'] / st['dc_12_n'] * 100), 1) if st['dc_12_n'] else 0.0
     res['dc_x2_pct'] = round((st['dc_x2_h'] / st['dc_x2_n'] * 100), 1) if st['dc_x2_n'] else 0.0
-    res['sc_top1_pct'] = round((st['sc_top1_h'] / st['total'] * 100), 1) if st['total'] else 0.0
-    res['sc_top3_pct'] = round((st['sc_top3_h'] / st['total'] * 100), 1) if st['total'] else 0.0
+    res['gr_pct'] = round((st['gr_h'] / st['gr_n'] * 100), 1) if st['gr_n'] else 0.0
+    for key in ('gr_23', 'gr_34', 'gr_5p'):
+        res[f'{key}_pct'] = round((st[f'{key}_h'] / st[f'{key}_n'] * 100), 1) if st[f'{key}_n'] else 0.0
     return res
 
 final_data = {
@@ -196,5 +224,7 @@ print(f"  Total matches: {final_data['overall']['total']}")
 print(f"  1X (>=75%): {final_data['overall']['dc_1x_h']} / {final_data['overall']['dc_1x_n']} (%{final_data['overall']['dc_1x_pct']})")
 print(f"  12 (>=75%): {final_data['overall']['dc_12_h']} / {final_data['overall']['dc_12_n']} (%{final_data['overall']['dc_12_pct']})")
 print(f"  X2 (>=75%): {final_data['overall']['dc_x2_h']} / {final_data['overall']['dc_x2_n']} (%{final_data['overall']['dc_x2_pct']})")
-print(f"  Score Top-1: {final_data['overall']['sc_top1_h']} / {final_data['overall']['total']} (%{final_data['overall']['sc_top1_pct']})")
-print(f"  Score Top-3: {final_data['overall']['sc_top3_h']} / {final_data['overall']['total']} (%{final_data['overall']['sc_top3_pct']})")
+print(f"  Goal range: {final_data['overall']['gr_h']} / {final_data['overall']['gr_n']} (%{final_data['overall']['gr_pct']})")
+print(f"  2-3 goals: {final_data['overall']['gr_23_h']} / {final_data['overall']['gr_23_n']} (%{final_data['overall']['gr_23_pct']})")
+print(f"  3-4 goals: {final_data['overall']['gr_34_h']} / {final_data['overall']['gr_34_n']} (%{final_data['overall']['gr_34_pct']})")
+print(f"  5+ goals: {final_data['overall']['gr_5p_h']} / {final_data['overall']['gr_5p_n']} (%{final_data['overall']['gr_5p_pct']})")

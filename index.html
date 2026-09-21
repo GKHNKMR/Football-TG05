@@ -729,7 +729,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <button class="tab" id="tab-res" type="button">🎯 Tahmin vs Gerçekleşen</button>
     <button class="tab admin-tab" id="tab-cpn" type="button">🛠️ Admin Kuponlarım</button>
     <button class="tab" id="tab-pred" type="button">⚽ Tahminler (Bülten)</button>
-    <button class="tab" id="tab-cifte" type="button">🎲 Çifte Şans &amp; Skor</button>
+    <button class="tab" id="tab-cifte" type="button">🎲 Çifte Şans &amp; Gol Aralığı</button>
   </div>
 
   <nav class="filters" id="filters" hidden></nav>
@@ -875,7 +875,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
       <button class="chip active" type="button" style="cursor:pointer;font-weight:800;padding:6px 14px;">⚽ Gol Pazarları Doğruluğu (0.5Ü · 1.5Ü · 2.5Ü)</button>
       <button class="chip" type="button" onclick="setTab('cifte');if(window.BETAVUS_CIFTE_UI)BETAVUS_CIFTE_UI.setSubView('bt');" style="cursor:pointer;background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.15);font-weight:700;padding:6px 14px;">
-        🎲 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç) →
+        🎲 Çifte Şans &amp; Gol Aralığı Model Doğruluğu (16.478 Maç) →
       </button>
     </div>
 
@@ -967,7 +967,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <script src="js/paper_engine.js"></script>
 <script src="js/paper_ui.js"></script>
 <script src="js/cifte_engine.js"></script>
-<script src="js/cifte_ui.js?v=20260921-grouped-tables"></script>
+<script src="js/cifte_ui.js?v=20260921-goal-ranges"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';

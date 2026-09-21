@@ -76,7 +76,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(target_dir / "schalke_limited_data_clean.png"))
     print("  ✓ Schalke maçı temiz görünüm ekran görüntüsü kaydedildi: schalke_limited_data_clean.png")
 
-    print("\n--- TEST 3: Çifte Şans & Skor Model Doğruluğu (16.478 Maç & Sıfır Iska) ---")
+    print("\n--- TEST 3: Çifte Şans & Gol Aralığı Model Doğruluğu (16.478 Maç & Sıfır Iska) ---")
     page.click('#tab-cifte')
     time.sleep(0.6)
     
@@ -102,7 +102,9 @@ with sync_playwright() as p:
     assert "1X Çifte Şans" in cifte_text, "1X kartı eksik"
     assert "12 Çifte Şans" in cifte_text, "12 kartı eksik"
     assert "X2 Çifte Şans" in cifte_text, "X2 kartı eksik"
-    assert "Skor Tahmin Havuzu" in cifte_text, "Skor kartı eksik"
+    assert "Toplam Gol Aralığı" in cifte_text, "Gol aralığı kartı eksik"
+    assert "2–3" in cifte_text and "3–4" in cifte_text and "5+" in cifte_text, "Gol aralığı seçenekleri eksik"
+    assert "Skor Tahmin Havuzu" not in cifte_text, "Eski skor tahmin havuzu artık görünmemeli"
     print("  ✓ 4 Adet Model Doğruluğu KPI Kartı başarıyla doğrulandı!")
     
     # 4. Lig ve sezon tabloları Model Doğruluğu ile aynı iki katmanlı grup başlığına sahip olmalı
@@ -122,6 +124,14 @@ with sync_playwright() as p:
     assert len(season_group_headers) == 4, f"Sezon tablosunda 4 pazar grubu olmalı, şu an: {len(season_group_headers)}"
     assert len(season_data_cells) == 14, f"Sezon tablosu satırı 14 mantıksal sütun olmalı, şu an: {len(season_data_cells)}"
     assert len(sample_headers) == 6, f"Örnek maç tablosu tam 6 kolon olmalı, şu an: {len(sample_headers)}"
+    assert "TAHMİN EDİLEN GOL ARALIĞI" in page.inner_text('#tblCifteSamples thead').upper(), "Örnek tabloda gol aralığı başlığı eksik"
+    range_stats = page.evaluate("""() => ({
+      n: window.CIFTE_BACKTEST_DATA.overall.gr_n,
+      h: window.CIFTE_BACKTEST_DATA.overall.gr_h,
+      pct: window.CIFTE_BACKTEST_DATA.overall.gr_pct
+    })""")
+    assert 0 < range_stats['h'] <= range_stats['n'] <= 16478, f"Gol aralığı doğrulama sayıları geçersiz: {range_stats}"
+    assert 0 < range_stats['pct'] <= 100, f"Gol aralığı başarı oranı geçersiz: {range_stats['pct']}"
     print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")
 
     # 5. Masaüstü okunabilirliği: KPI kartları 2 sütun, ana rakamlar ve tablo metni yeterince büyük

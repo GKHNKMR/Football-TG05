@@ -1,8 +1,8 @@
 /**
- * BETAVUS — Çifte Şans & Skor Tahminleri Kullanıcı Arayüzü (cifte_ui.js)
+ * BETAVUS — Çifte Şans & Toplam Gol Aralığı Kullanıcı Arayüzü (cifte_ui.js)
  * 
  * Hem güncel maç bülteni tahminlerini hem de 5 sezonluk (16.478 maç)
- * Çifte Şans ve Skor Model Doğruluğu (Backtest) analizini sunar.
+ * Çifte Şans ve Toplam Gol Aralığı Model Doğruluğu (Backtest) analizini sunar.
  * Kısıtlı veriler (partial-form / league-avg) analize ve vurgulara dahil edilmez.
  */
 
@@ -129,7 +129,7 @@
             ⚽ Güncel Fikstür &amp; Tahminler (${totalCount})
           </button>
           <button class="chip subtab-toggle" data-view="bt" type="button" style="padding:7px 16px;font-size:12.5px;font-weight:800;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.15);">
-            📊 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç)
+            📊 Çifte Şans &amp; Gol Aralığı Model Doğruluğu (16.478 Maç)
           </button>
         </div>
 
@@ -138,11 +138,11 @@
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span style="font-size:20px;">🎲</span>
-              <h2 style="margin:0;font-size:18px;font-weight:900;color:var(--text);">Çifte Şans &amp; Skor Tahminleri</h2>
+              <h2 style="margin:0;font-size:18px;font-weight:900;color:var(--text);">Çifte Şans &amp; Toplam Gol Aralığı</h2>
               <span class="cms-badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;">Dixon-Coles Matrisi</span>
             </div>
             <p style="margin:0;font-size:12.5px;color:var(--muted);max-width:650px;line-height:1.45;">
-              Geçmiş takım formları, hücum/savunma parametreleri ve beklenen gollerden (λ) hesaplanan <b>1X (1-0), 12 (1-2), X2 (0-2)</b> çifte şans olasılıkları ve en muhtemel kesin skor projeksiyonları.
+              Geçmiş takım formları, hücum/savunma parametreleri ve beklenen gollerden (λ) hesaplanan <b>1X, 12, X2</b> çifte şans olasılıkları ile <b>2–3, 3–4 ve 5+ gol</b> toplam gol aralıkları.
             </p>
           </div>
 
@@ -207,7 +207,8 @@
     const lim = isLimitedData(a.rawMatch);
     const isHighConf = !lim && a.bestDc.pct >= 75.0;
     const bestPick = a.bestDc.pick;
-    const top4Scores = a.topScores.slice(0, 4);
+    const goalRanges = Object.values(a.goalRanges || {});
+    const bestGoalRange = a.bestGoalRange || goalRanges[0];
 
     return `
       <div class="card cifte-match-card" style="background:rgba(18,24,38,0.75);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;position:relative;transition:border-color .2s;">
@@ -287,13 +288,17 @@
         </div>
 
         <div style="background:rgba(0,0,0,0.22);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:11px;font-weight:700;color:var(--muted);">🎯 En Olası Skorlar:</span>
-            ${top4Scores.map(sc => `
-              <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:2px 8px;border-radius:6px;font-size:11px;">
-                <b style="color:#fbbf24;">${sc.score}</b> <span style="color:var(--muted);font-size:10px;">(%${sc.pct})</span>
-              </span>
-            `).join('')}
+          <div class="goal-range-list" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:700;color:var(--muted);">⚽ Toplam Gol Aralığı:</span>
+            ${goalRanges.map(range => {
+              const selected = !lim && bestGoalRange && range.pick === bestGoalRange.pick;
+              return `
+              <span class="goal-range-chip${selected ? ' is-best' : ''}" data-goal-range="${range.pick}" style="background:${selected ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.06)'};border:1px solid ${selected ? 'rgba(251,191,36,0.55)' : 'rgba(255,255,255,0.1)'};padding:4px 9px;border-radius:7px;font-size:11px;">
+                <b style="color:${selected ? '#fbbf24' : 'var(--text)'};">${range.label}</b>
+                <span style="color:var(--muted);font-size:10px;">(%${range.pct})</span>
+                ${selected ? '<span style="display:block;color:#fbbf24;font-size:8.5px;font-weight:900;margin-top:2px;">MODEL ARALIĞI</span>' : ''}
+              </span>`;
+            }).join('')}
           </div>
 
           <div style="display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted);">
@@ -309,7 +314,7 @@
   }
 
   // ===========================================================================
-  // 2. ÇİFTE ŞANS & SKOR MODEL DOĞRULUĞU (BACKTEST) GÖRÜNÜMÜ
+  // 2. ÇİFTE ŞANS & GOL ARALIĞI MODEL DOĞRULUĞU (BACKTEST) GÖRÜNÜMÜ
   // ===========================================================================
 
   function renderCifteBacktestView(pane) {
@@ -366,16 +371,15 @@
         pct: st.dc_x2_pct
       },
       {
-        key: 'score',
-        label: 'Skor Tahmin Havuzu',
-        desc: 'En Olası İlk 3 Skor',
+        key: 'range',
+        label: 'Toplam Gol Aralığı',
+        desc: '2–3 · 3–4 · 5+ Gol',
         emoji: '🎯',
         color: '#fbbf24',
-        threshold: 'Top-3 Skor',
-        n: st.total,
-        h: st.sc_top3_h,
-        pct: st.sc_top3_pct,
-        subInfo: `Top-1 Birebir Skor: <b>%${st.sc_top1_pct}</b> (${num(st.sc_top1_h)} maç)`
+        threshold: 'En Olası Aralık',
+        n: st.gr_n,
+        h: st.gr_h,
+        pct: st.gr_pct
       }
     ];
 
@@ -397,7 +401,7 @@
             ⚽ Güncel Fikstür &amp; Tahminler
           </button>
           <button class="chip active subtab-toggle" data-view="bt" type="button" aria-current="page">
-            📊 Çifte Şans &amp; Skor Model Doğruluğu (16.478 Maç)
+            📊 Çifte Şans &amp; Gol Aralığı Model Doğruluğu (16.478 Maç)
           </button>
         </div>
 
@@ -405,7 +409,7 @@
         <div class="card cifte-bt-hero">
           <div class="cifte-bt-hero-row">
             <div>
-              <h2>📊 Çifte Şans &amp; Skor Model Doğruluğu</h2>
+              <h2>📊 Çifte Şans &amp; Gol Aralığı Model Doğruluğu</h2>
               <p>
                 Beş tamamlanmış sezondaki <b>16.478 maç</b> ile sızıntısız walk-forward doğrulama. Her tahmin yalnızca maçtan önce bilinen verilerle üretildi; kısıtlı veriler güvenli vurgu hesaplarının dışında tutuldu.
               </p>
@@ -429,19 +433,19 @@
             Tutan tahmin sayısının vurgulanan maç sayısına oranı.
           </div>
           <div class="cifte-bt-guide-item">
-            <b>Skor havuzu nedir?</b>
-            Gerçek skorun modelin en olası ilk üç skorundan biri olması.
+            <b>Gol aralığı nasıl doğrulanır?</b>
+            Modelin seçtiği 2–3, 3–4 veya 5+ gol bandı gerçekleşen toplam golle karşılaştırılır.
           </div>
         </div>
 
         <!-- 4 KPI Kartı (Model Doğruluğu Tasarımı ile Birebir — Iska Kutusu Yok!) -->
         <div class="cifte-bt-kpi-grid">
           ${kpiCards.map(c => {
-            const metrics = c.key === 'score'
+            const metrics = c.key === 'range'
               ? [
-                  { value: st.total, label: 'Değerlendirilen Maç', color: 'var(--text)' },
-                  { value: st.sc_top3_h, label: 'İlk 3 İçinde Tuttu ✓', color: '#fbbf24' },
-                  { value: st.sc_top1_h, label: 'Birebir Skor ✓', color: 'var(--good)' }
+                  { value: st.total, label: '5 Sezonluk Maç', color: 'var(--text)' },
+                  { value: st.gr_n, label: 'Aralık Tahmini', color: '#fbbf24' },
+                  { value: st.gr_h, label: 'Aralık Tuttu ✓', color: 'var(--good)' }
                 ]
               : [
                   { value: st.total, label: '5 Sezonluk Maç', color: 'var(--text)' },
@@ -468,8 +472,8 @@
                   <span class="cifte-bt-success-value">%${c.pct}</span>
                   <span class="cifte-bt-success-label">Başarı Oranı</span>
                   <div class="cifte-bt-success-note">
-                    ${c.key === 'score'
-                      ? `${num(st.total)} maçın <b>${num(c.h)}</b> tanesinde gerçek skor ilk 3 tahmin içinde`
+                    ${c.key === 'range'
+                      ? `${num(c.n)} tahminin <b>${num(c.h)}</b> tanesinde toplam gol seçilen aralıkta · 2–3: <b>%${st.gr_23_pct}</b> · 3–4: <b>%${st.gr_34_pct}</b> · 5+: <b>%${st.gr_5p_pct}</b>`
                       : `${num(c.n)} vurgulanan maçın <b>${num(c.h)}</b> tanesinde tahmin tuttu`}
                   </div>
                 </div>
@@ -480,7 +484,7 @@
 
         <!-- 1. Lig bazında başarı tablosu -->
         <section class="card cifte-bt-section">
-          <h2>Lig Bazında Çifte Şans &amp; Skor Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
+          <h2>Lig Bazında Çifte Şans &amp; Gol Aralığı Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
           <p>Bir lige tıklayarak üstteki dört performans kartını ve sezon tablosunu aynı lig için süzebilirsiniz.</p>
           <div class="cifte-bt-table-wrap">
             <table class="cifte-bt-table" id="tblCifteLeague">
@@ -491,13 +495,13 @@
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#10b981;">1X Çifte Şans (≥%75)</th>
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#3b82f6;">12 Çifte Şans (≥%75)</th>
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#ef4444;">X2 Çifte Şans (≥%75)</th>
-                  <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#fbbf24;">Skor Havuzu (Top-3)</th>
+                  <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#fbbf24;">Toplam Gol Aralığı</th>
                 </tr>
                 <tr class="cifte-bt-subhead-row">
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
-                  <th scope="col">Havuz</th><th scope="col">Tuttu</th><th scope="col">%</th>
+                  <th scope="col">Tahmin</th><th scope="col">Tuttu</th><th scope="col">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -507,7 +511,7 @@
                   ${renderMetricGroup(data.overall.dc_1x_n, data.overall.dc_1x_h, data.overall.dc_1x_pct, '#10b981')}
                   ${renderMetricGroup(data.overall.dc_12_n, data.overall.dc_12_h, data.overall.dc_12_pct, '#3b82f6')}
                   ${renderMetricGroup(data.overall.dc_x2_n, data.overall.dc_x2_h, data.overall.dc_x2_pct, '#ef4444')}
-                  ${renderMetricGroup(data.overall.total, data.overall.sc_top3_h, data.overall.sc_top3_pct, '#fbbf24')}
+                  ${renderMetricGroup(data.overall.gr_n, data.overall.gr_h, data.overall.gr_pct, '#fbbf24')}
                 </tr>
                 ${leaguesList.map(lg => {
                   const lSt = data.by_league[lg] || emptyStat();
@@ -519,7 +523,7 @@
                       ${renderMetricGroup(lSt.dc_1x_n, lSt.dc_1x_h, lSt.dc_1x_pct, '#10b981')}
                       ${renderMetricGroup(lSt.dc_12_n, lSt.dc_12_h, lSt.dc_12_pct, '#3b82f6')}
                       ${renderMetricGroup(lSt.dc_x2_n, lSt.dc_x2_h, lSt.dc_x2_pct, '#ef4444')}
-                      ${renderMetricGroup(lSt.total, lSt.sc_top3_h, lSt.sc_top3_pct, '#fbbf24')}
+                      ${renderMetricGroup(lSt.gr_n, lSt.gr_h, lSt.gr_pct, '#fbbf24')}
                     </tr>
                   `;
                 }).join('')}
@@ -530,7 +534,7 @@
 
         <!-- 2. Sezon bazında tablo (5 tamamlanmış sezon) -->
         <section class="card cifte-bt-section">
-          <h2>Sezon Bazında Çifte Şans &amp; Skor Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
+          <h2>Sezon Bazında Çifte Şans &amp; Gol Aralığı Başarısı ${isFiltered ? `· ${esc(btLeagueFilter)}` : '· Tüm Ligler'}</h2>
           <p>Sezonlar yalnızca tamamlanmış 2021/22–2025/26 dönemini kapsar; devam eden sezon bu doğrulamaya dahil değildir.</p>
           <div class="cifte-bt-table-wrap">
             <table class="cifte-bt-table" id="tblCifteSeason">
@@ -541,13 +545,13 @@
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#10b981;">1X Çifte Şans (≥%75)</th>
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#3b82f6;">12 Çifte Şans (≥%75)</th>
                   <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#ef4444;">X2 Çifte Şans (≥%75)</th>
-                  <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#fbbf24;">Skor Havuzu (Top-3)</th>
+                  <th scope="colgroup" colspan="3" class="cifte-bt-group-head" style="--group-color:#fbbf24;">Toplam Gol Aralığı</th>
                 </tr>
                 <tr class="cifte-bt-subhead-row">
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
                   <th scope="col">Vurgu</th><th scope="col">Tuttu</th><th scope="col">%</th>
-                  <th scope="col">Havuz</th><th scope="col">Tuttu</th><th scope="col">%</th>
+                  <th scope="col">Tahmin</th><th scope="col">Tuttu</th><th scope="col">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -562,7 +566,7 @@
                       ${renderMetricGroup(sSt.dc_1x_n, sSt.dc_1x_h, sSt.dc_1x_pct, '#10b981')}
                       ${renderMetricGroup(sSt.dc_12_n, sSt.dc_12_h, sSt.dc_12_pct, '#3b82f6')}
                       ${renderMetricGroup(sSt.dc_x2_n, sSt.dc_x2_h, sSt.dc_x2_pct, '#ef4444')}
-                      ${renderMetricGroup(sSt.total, sSt.sc_top3_h, sSt.sc_top3_pct, '#fbbf24')}
+                      ${renderMetricGroup(sSt.gr_n, sSt.gr_h, sSt.gr_pct, '#fbbf24')}
                     </tr>
                   `;
                 }).join('')}
@@ -571,20 +575,20 @@
           </div>
         </section>
 
-        <!-- 3. Örnek Maçlar — Tahmin vs Gerçek Skor -->
+        <!-- 3. Örnek Maçlar — Tahmin edilen gol aralığı vs gerçek toplam gol -->
         <section class="card cifte-bt-section">
-          <h2>Örnek Maçlar — Tahmin ile Gerçek Sonuç Karşılaştırması</h2>
-          <p>Her satırda modelin maçtan önce ürettiği en güçlü Çifte Şans seçimi ve ilk üç skor tahmini gerçek sonuçla karşılaştırılır.</p>
+          <h2>Örnek Maçlar — Gol Aralığı ile Gerçek Sonuç Karşılaştırması</h2>
+          <p>Her satırda modelin maçtan önce seçtiği toplam gol aralığı, maçın gerçekleşen toplam golüyle karşılaştırılır.</p>
           <div class="cifte-bt-table-wrap">
             <table class="cifte-bt-table cifte-bt-samples" id="tblCifteSamples">
               <thead>
                 <tr>
                   <th scope="col">Tarih · Lig</th>
                   <th scope="col">Maç</th>
-                  <th scope="col">Gerçek Skor</th>
+                  <th scope="col">Gerçek Skor · Gol</th>
                   <th scope="col">Çifte Şans Tahmini</th>
-                  <th scope="col">En Olası İlk 3 Skor</th>
-                  <th scope="col">Skor Sonucu</th>
+                  <th scope="col">Tahmin Edilen Gol Aralığı</th>
+                  <th scope="col">Aralık Sonucu</th>
                 </tr>
               </thead>
               <tbody>
@@ -595,19 +599,19 @@
                       <div class="sample-meta">${getFlag(s.league)} ${esc(s.league)}</div>
                     </td>
                     <td class="sample-match">${esc(s.home)} — ${esc(s.away)}</td>
-                    <td><b style="font-size:16px;">${s.actual_score}</b></td>
+                    <td><b style="font-size:16px;">${s.actual_score}</b><div class="sample-meta">${s.actual_total} gol</div></td>
                     <td>
                       <span class="cifte-bt-pick">${s.best_dc} · %${s.best_dc_pct}</span>
                       ${s.dc_hit
                         ? '<span class="cifte-bt-result">✓ Tahmin tuttu</span>'
                         : '<span class="cifte-bt-result cifte-bt-muted-result">—</span>'}
                     </td>
-                    <td style="color:var(--muted);font-weight:700;white-space:nowrap;">${s.top_scores.join(' · ')}</td>
-                    <td>${s.top1_hit
-                      ? '<span class="cifte-bt-result">🎯 Birebir skor</span>'
-                      : s.top3_hit
-                        ? '<span class="cifte-bt-result" style="color:#fbbf24;">✓ İlk 3 içinde</span>'
-                        : '<span class="cifte-bt-result cifte-bt-muted-result">—</span>'}</td>
+                    <td>
+                      <span class="cifte-bt-pick" style="border-color:rgba(251,191,36,.45);color:#fbbf24;">${s.goal_range_label} · %${s.goal_range_pct}</span>
+                    </td>
+                    <td>${s.range_hit
+                      ? '<span class="cifte-bt-result" style="color:#fbbf24;">✓ Aralık tuttu</span>'
+                      : '<span class="cifte-bt-result cifte-bt-muted-result">—</span>'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -635,7 +639,7 @@
             P(1X) = P(1) + P(X) &nbsp;·&nbsp; P(12) = P(1) + P(2) &nbsp;·&nbsp; P(X2) = P(X) + P(2)
           </div>
           <p>
-            Çifte Şans kartları yalnızca <b>≥%75 güven eşiğini</b> geçen maçları değerlendirir. Skor kartında ise gerçek sonucun en olası ilk üç skor içinde bulunma oranı gösterilir.
+            Çifte Şans kartları yalnızca <b>≥%75 güven eşiğini</b> geçen maçları değerlendirir. Gol aralığı için P(2–3), P(3–4) ve P(5+) değerleri skor matrisindeki ilgili toplamların olasılıkları toplanarak hesaplanır; en yüksek olasılıklı aralık model tahmini olur.
           </p>
         </div>
 
@@ -653,8 +657,10 @@
       dc_1x_n: 0, dc_1x_h: 0, dc_1x_pct: 0,
       dc_12_n: 0, dc_12_h: 0, dc_12_pct: 0,
       dc_x2_n: 0, dc_x2_h: 0, dc_x2_pct: 0,
-      sc_top1_h: 0, sc_top1_pct: 0,
-      sc_top3_h: 0, sc_top3_pct: 0
+      gr_n: 0, gr_h: 0, gr_pct: 0,
+      gr_23_n: 0, gr_23_h: 0, gr_23_pct: 0,
+      gr_34_n: 0, gr_34_h: 0, gr_34_pct: 0,
+      gr_5p_n: 0, gr_5p_h: 0, gr_5p_pct: 0
     };
   }
 

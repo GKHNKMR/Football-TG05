@@ -23,10 +23,10 @@ with sync_playwright() as p:
     # 1. Verify #tab-cifte exists next to #tab-pred
     tabs = [t.inner_text().strip() for t in page.query_selector_all('.tabs .tab')]
     print(f"Mevcut Sekmeler ({len(tabs)}): {tabs}")
-    assert '🎲 Çifte Şans & Skor' in tabs, "tab-cifte bulunamadı!"
+    assert '🎲 Çifte Şans & Gol Aralığı' in tabs, "tab-cifte bulunamadı!"
     
     # 2. Click #tab-cifte
-    print("\n--- 1. '🎲 Çifte Şans & Skor' Sekmesine Tıklanıyor ---")
+    print("\n--- 1. '🎲 Çifte Şans & Gol Aralığı' Sekmesine Tıklanıyor ---")
     page.click('#tab-cifte')
     time.sleep(0.8)
     
@@ -44,8 +44,13 @@ with sync_playwright() as p:
     print("  Örnek maç kartı başlığı:")
     print("   ", first_text.split('\n')[0], "|", first_text.split('\n')[1] if len(first_text.split('\n')) > 1 else "")
     assert "1X" in first_text and "12" in first_text and "X2" in first_text, "Çifte şans seçenekleri eksik!"
-    assert "En Olası Skorlar" in first_text, "Skor tahminleri eksik!"
-    print("  ✓ 1X, 12, X2 ve En Olası Skorlar kartta başarıyla görüntülendi.")
+    assert "Toplam Gol Aralığı" in first_text, "Toplam gol aralığı tahmini eksik!"
+    assert "2–3 Gol" in first_text and "3–4 Gol" in first_text and "5+ Gol" in first_text, "Gol aralıkları eksik!"
+    range_chips = first_card.query_selector_all('.goal-range-chip')
+    assert len(range_chips) == 3, f"Tam 3 gol aralığı olmalı, şu an: {len(range_chips)}"
+    assert len(first_card.query_selector_all('.goal-range-chip.is-best')) == 1, "Modelin seçtiği gol aralığı işaretlenmedi"
+    assert "En Olası Skorlar" not in first_text, "Kesin skor tahmini artık gösterilmemeli!"
+    print("  ✓ 1X, 12, X2 ve 2–3 / 3–4 / 5+ gol aralıkları kartta başarıyla görüntülendi.")
     
     # 3. Test Filters
     print("\n--- 2. Çifte Şans Filtreleri Test Ediliyor ---")
@@ -139,5 +144,5 @@ with sync_playwright() as p:
     page.screenshot(path='scratch/predictions_double_chance.png', full_page=False)
     print("  ✓ Tahminler bültenine Çifte Şans sütunu ve sıkı yüksek güven filtresi eklendi.")
     
-    print("\n>>> ÇİFTE ŞANS & SKOR TAHMİNLERİ TÜM TESTLERİ BAŞARIYLA GEÇTİ! <<<")
+    print("\n>>> ÇİFTE ŞANS & GOL ARALIĞI TAHMİNLERİ TÜM TESTLERİ BAŞARIYLA GEÇTİ! <<<")
     browser.close()

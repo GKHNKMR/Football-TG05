@@ -1,8 +1,8 @@
 /**
- * BETAVUS — Çifte Şans & Skor Tahminleri Analiz Motoru (cifte_engine.js)
+ * BETAVUS — Çifte Şans & Toplam Gol Aralığı Analiz Motoru (cifte_engine.js)
  * 
  * Bivariate Poisson ve Dixon-Coles düzeltmeli skor olasılıkları matrisi
- * üzerinden 1-X-2 maç sonu, Çifte Şans (1X, 12, X2), kesin skorlar (1-0, 1-1, 2-1 vb.)
+ * üzerinden 1-X-2 maç sonu, Çifte Şans (1X, 12, X2), toplam gol aralıkları
  * ve Karşılıklı Gol (KG Var / Yok) tahminlerini üretir.
  */
 
@@ -124,7 +124,7 @@
     let pO25 = 0.0;
     let pO35 = 0.0;
 
-    const allScores = [];
+    const totalGoalProbs = Array((MAX_G * 2) + 1).fill(0);
 
     for (let x = 0; x <= MAX_G; x++) {
       for (let y = 0; y <= MAX_G; y++) {
@@ -136,18 +136,26 @@
         if (x >= 1 && y >= 1) pBtts += p;
 
         const tot = x + y;
+        totalGoalProbs[tot] += p;
         if (tot > 0) pO05 += p;
         if (tot > 1) pO15 += p;
         if (tot > 2) pO25 += p;
         if (tot > 3) pO35 += p;
 
-        allScores.push({ score: `${x}-${y}`, home: x, away: y, prob: p, pct: (p * 100).toFixed(1) });
       }
     }
 
-    // Skorları olasılığa göre çoktan aza sırala
-    allScores.sort((a, b) => b.prob - a.prob);
-    const topScores = allScores.slice(0, 6);
+    // Kullanıcının seçtiği toplam gol aralıkları. 3 gol, tanım gereği hem
+    // 2-3 hem de 3-4 bandına dahildir; model en yüksek olasılıklı bandı seçer.
+    const pRange23 = (totalGoalProbs[2] || 0) + (totalGoalProbs[3] || 0);
+    const pRange34 = (totalGoalProbs[3] || 0) + (totalGoalProbs[4] || 0);
+    const pRange5Plus = totalGoalProbs.slice(5).reduce((sum, p) => sum + p, 0);
+    const goalRanges = {
+      '2-3': { pick: '2-3', label: '2–3 Gol', prob: pRange23, pct: Number((pRange23 * 100).toFixed(1)), min: 2, max: 3 },
+      '3-4': { pick: '3-4', label: '3–4 Gol', prob: pRange34, pct: Number((pRange34 * 100).toFixed(1)), min: 3, max: 4 },
+      '5+': { pick: '5+', label: '5+ Gol', prob: pRange5Plus, pct: Number((pRange5Plus * 100).toFixed(1)), min: 5, max: null }
+    };
+    const bestGoalRange = Object.values(goalRanges).reduce((best, item) => item.prob > best.prob ? item : best);
 
     // Çifte Şans Olasılıkları
     const p1X = pHome + pDraw;
@@ -209,20 +217,9 @@
         odds: (bestDc === '1X' ? mktOdds1X : (bestDc === '12' ? mktOdds12 : mktOddsX2))
       },
 
-      // Skor Tahminleri (Top 6)
-      topScores: topScores,
-      // Kullanıcının özellikle belirttiği yaygın skorların anlık olasılıkları
-      scoreProbs: {
-        '1-0': Number(((grid['1-0'] || 0) * 100).toFixed(1)),
-        '0-0': Number(((grid['0-0'] || 0) * 100).toFixed(1)),
-        '1-1': Number(((grid['1-1'] || 0) * 100).toFixed(1)),
-        '0-1': Number(((grid['0-1'] || 0) * 100).toFixed(1)),
-        '2-1': Number(((grid['2-1'] || 0) * 100).toFixed(1)),
-        '1-2': Number(((grid['1-2'] || 0) * 100).toFixed(1)),
-        '2-0': Number(((grid['2-0'] || 0) * 100).toFixed(1)),
-        '0-2': Number(((grid['0-2'] || 0) * 100).toFixed(1)),
-        '2-2': Number(((grid['2-2'] || 0) * 100).toFixed(1))
-      },
+      // Toplam gol aralığı tahmini
+      goalRanges,
+      bestGoalRange,
 
       // Gol Çizgileri
       goals: {

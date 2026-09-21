@@ -517,11 +517,36 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .sim30-table th{background:var(--panel2);color:var(--muted);padding:6px 8px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
 .sim30-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.03)}
 .sim30-table tr:hover td{background:rgba(255,255,255,0.02)}
+  .betavus-intro-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:14px}
+  .intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .intro-box{background:var(--panel2);border-radius:8px;padding:12px 14px;border-left:4px solid var(--accent)}
+  .intro-box.is-what{border-left-color:#10b981}
+  .intro-box.is-not{border-left-color:#ef4444}
+  .intro-tag{font-size:10.5px;font-weight:800;letter-spacing:.5px;margin-bottom:4px}
+  .intro-box.is-what .intro-tag{color:#10b981}
+  .intro-box.is-not .intro-tag{color:#f87171}
+  .intro-box h4{margin:0 0 4px;font-size:13px;color:var(--text)}
+  .intro-box p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.45}
+  
+  .tab.admin-tab{background:rgba(168,85,247,0.08);border:1px dashed rgba(168,85,247,0.45);color:#c084fc}
+  .tab.admin-tab:hover{background:rgba(168,85,247,0.16);color:#e9d5ff}
+  .tab.admin-tab.active{background:#7e22ce;border-color:#a855f7;color:#fff;box-shadow:0 0 10px rgba(168,85,247,0.4)}
+
+  .ai-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:700}
+  .ai-badge.safe{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3)}
+  .ai-badge.med{background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.3)}
+  .ai-badge.risky{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
+
+  .sim-analysis-summary-card{background:linear-gradient(135deg,rgba(16,185,129,0.08) 0%,rgba(56,189,248,0.06) 100%);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+  .sim-analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px}
+  .sim-analysis-box{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
+  .sim-analysis-box .sav{font-size:17px;font-weight:800;color:var(--text);margin-bottom:2px}
+  .sim-analysis-box .sal{font-size:10.5px;color:var(--muted)}
+  
+  .admin-notice-banner{background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:#d8b4fe;display:flex;align-items:center;gap:8px}
+
 @media(max-width:768px){
-  .form-row,.risk-cards,.adapt-grid,.editor-body{grid-template-columns:1fr}
-  .plan-tiles,.rc-summary-bar{grid-template-columns:1fr 1fr}
-  .sim-tiles{grid-template-columns:1fr 1fr}
-  .sim30-kpi-grid{grid-template-columns:1fr}
+  .intro-grid{grid-template-columns:1fr}
 }
 </style>
 
@@ -541,22 +566,37 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     </div>
   </header>
 
-  <div class="global-paper-banner">
-    <span class="gpb-badge">PAPER-BETTING PLATFORMU</span>
-    <span class="gpb-text">BETAVUS bahis kabul etmez, ödeme almaz ve kupon oynatmaz. Gösterilen kasa, stake ve getiriler sanaldır. Tahminler olasılıksaldır ve sonuç garantisi vermez.</span>
+  <div class="betavus-intro-card">
+    <div class="intro-grid">
+      <div class="intro-box is-what">
+        <div class="intro-tag">🛡️ BETAVUS NEDİR?</div>
+        <h4>Yapay Zekâ Destekli Paper-Betting &amp; Kasa Yönetimi</h4>
+        <p>Futbol toplam gol pazarları (0.5Ü, 1.5Ü, 2.5Ü) için Poisson ve Dixon-Coles matematiksel olasılık modelleriyle çalışan, <b>risksiz sanal kasa simülasyonu, akıllı kupon planlama ve disiplinli portföy yönetimi</b> platformudur.</p>
+      </div>
+      <div class="intro-box is-not">
+        <div class="intro-tag">🚫 BETAVUS NE DEĞİLDİR?</div>
+        <h4>Bahis Operatörü, Kumarhane veya Ödeme Aracı Değildir!</h4>
+        <p>BETAVUS <b>asla bahis kabul etmez, para yatırma/çekme yapmaz</b> ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve getiriler sanaldır; kesin kazanç vaat etmez. Kullanıcının para kaybetmeden stratejisini ölçmesini sağlar.</p>
+      </div>
+    </div>
   </div>
 
   <div class="tabs" role="tablist">
-    <button class="tab active" id="tab-pred" type="button">Tahminler</button>
-    <button class="tab" id="tab-res" type="button">Tahmin vs Gerçekleşen</button>
-    <button class="tab" id="tab-rec" type="button">Kupon Önerileri</button>
-    <button class="tab" id="tab-cpn" type="button">Kuponlarım</button>
-    <button class="tab" id="tab-plan" type="button">Kasa Planım</button>
+    <button class="tab active" id="tab-sim-kasa" type="button">📈 Örnek Kasa Simülasyonu</button>
+    <button class="tab" id="tab-sim-kupon" type="button">🎫 Örnek Kuponlarım Simülasyonu</button>
+    <button class="tab" id="tab-plan" type="button">💼 Gerçek Kasa</button>
+    <button class="tab" id="tab-rec" type="button">⚡ Gerçek Kuponlarım</button>
+    <button class="tab" id="tab-res" type="button">📊 Tahmin vs Gerçekleşen</button>
+    <button class="tab admin-tab" id="tab-cpn" type="button">🛠️ Admin Kuponlarım</button>
+    <button class="tab" id="tab-pred" type="button">⚽ Maç Bülteni</button>
   </div>
 
-  <nav class="filters" id="filters"></nav>
+  <nav class="filters" id="filters" hidden></nav>
 
-  <section id="pane-pred">
+  <section id="pane-sim-kasa"></section>
+  <section id="pane-sim-kupon" hidden></section>
+
+  <section id="pane-pred" hidden>
     <div class="datebar">
       <span id="window">Pazar–Pazar</span>
       <span class="dbar-right">
@@ -741,8 +781,9 @@ const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
 const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}catch(e){}};
 
-let tab=store('tab','pred');
+let tab=store('tab','sim-kasa');
 if(tab==='bt') tab='res';
+if(tab==='gun') tab='rec';
 // her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
 // Kuponlarım'ı da o lige kilitlemesin - Kuponlarım hep "Tümü" ile başlar)
 let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res',store('league_bt','Tümü')),
@@ -1315,9 +1356,11 @@ function renderAll(){
   renderBacktest();
   if(window.BETAVUS_PAPER_UI){
     BETAVUS_PAPER_UI.triggerSettlementCheck();
+    if(tab==='sim-kasa') BETAVUS_PAPER_UI.renderSimKasaPane();
+    if(tab==='sim-kupon') BETAVUS_PAPER_UI.renderSimKuponPane();
+    if(tab==='plan') BETAVUS_PAPER_UI.renderPlanPane();
     if(tab==='rec') BETAVUS_PAPER_UI.renderRecPane();
     if(tab==='cpn') BETAVUS_PAPER_UI.renderCouponsPane();
-    if(tab==='plan') BETAVUS_PAPER_UI.renderPlanPane();
   } else {
     if(tab==='cpn') renderCoupons();
     if(tab==='gun') renderGun();
@@ -1392,12 +1435,12 @@ function setTab(t){
   if(t==='gun') t='rec'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['pred','res','rec','cpn','plan','gun'].forEach(k=>{
+  ['sim-kasa','sim-kupon','plan','rec','res','cpn','pred'].forEach(k=>{
     const btn=$('tab-'+k), pane=$('pane-'+k);
     if(btn) btn.classList.toggle('active',t===k);
     if(pane) pane.hidden=t!==k;
   });
-  $('filters').hidden=['rec','plan','gun'].includes(t);
+  $('filters').hidden=['sim-kasa','sim-kupon','plan','rec','cpn'].includes(t);
   renderFilters();
   renderAll();
 }
@@ -1914,11 +1957,13 @@ function openInfo(){
 }
 
 // ---- wire ----
-$('tab-pred').onclick=()=>setTab('pred');
-$('tab-res').onclick=()=>setTab('res');
-if($('tab-rec')) $('tab-rec').onclick=()=>setTab('rec');
-$('tab-cpn').onclick=()=>setTab('cpn');
+if($('tab-sim-kasa')) $('tab-sim-kasa').onclick=()=>setTab('sim-kasa');
+if($('tab-sim-kupon')) $('tab-sim-kupon').onclick=()=>setTab('sim-kupon');
 if($('tab-plan')) $('tab-plan').onclick=()=>setTab('plan');
+if($('tab-rec')) $('tab-rec').onclick=()=>setTab('rec');
+if($('tab-res')) $('tab-res').onclick=()=>setTab('res');
+if($('tab-cpn')) $('tab-cpn').onclick=()=>setTab('cpn');
+if($('tab-pred')) $('tab-pred').onclick=()=>setTab('pred');
 if($('tab-gun')) $('tab-gun').onclick=()=>setTab('rec');
 document.querySelectorAll('.subtab[data-view]').forEach(b=>{
   b.onclick=()=>setResSubView(b.dataset.view);

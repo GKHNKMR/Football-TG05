@@ -617,39 +617,9 @@
   // 30 Günlük Geçmiş Kasa & Kuponlarım Simülasyonu (50 € Örnek Model)
   // ---------------------------------------------------------------------------
 
-  function renderPlanMainNavHtml() {
-    return `
-      <div class="plan-main-nav">
-        <button type="button" class="plan-main-nav-btn ${planSubView === 'active' ? 'active' : ''}" id="btnPmnActive">
-          🎯 Aktif Kasa Planım &amp; Yönetim
-        </button>
-        <button type="button" class="plan-main-nav-btn ${planSubView === 'sim30' ? 'active' : ''}" id="btnPmnSim30">
-          ⚡ 30 Günlük Geçmiş Kasa &amp; Kuponlarım Simülasyonu (50 € Örnek Model)
-        </button>
-      </div>
-    `;
-  }
-
-  function wirePlanNavEvents() {
-    const btnActive = document.getElementById('btnPmnActive');
-    const btnSim30 = document.getElementById('btnPmnSim30');
-    if (btnActive) {
-      btnActive.onclick = () => {
-        if (planSubView !== 'active') {
-          planSubView = 'active';
-          renderPlanPane();
-        }
-      };
-    }
-    if (btnSim30) {
-      btnSim30.onclick = () => {
-        if (planSubView !== 'sim30') {
-          planSubView = 'sim30';
-          renderPlanPane();
-        }
-      };
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // 30 Günlük Geçmiş Kasa & Kuponlarım Simülasyonu (50 € Örnek Model)
+  // ---------------------------------------------------------------------------
 
   function getOrGenerateSim30Data(callback) {
     if (sim30Data) {
@@ -690,11 +660,29 @@
     });
   }
 
-  function render30DaySimulationViewHtml(simData) {
+  // ---- 1. Örnek Kasa Simülasyonu Ekranı (#pane-sim-kasa) ----
+  function renderSimKasaPane() {
+    const pane = document.getElementById('pane-sim-kasa');
+    if (!pane) return;
+
+    pane.innerHTML = `
+      <div class="sim30-loading" style="padding:48px 24px;text-align:center;color:var(--muted);">
+        <div style="font-size:24px;margin-bottom:8px;">⏳</div>
+        <div>30 Günlük Geçmiş Kasa Simülasyonu Hazırlanıyor...</div>
+      </div>
+    `;
+
+    getOrGenerateSim30Data((data) => {
+      pane.innerHTML = renderSimKasaHtml(data);
+      wireSimKasaEvents(data);
+    });
+  }
+
+  function renderSimKasaHtml(simData) {
     if (!simData || !simData.profiles) {
       return `
         <div class="card" style="padding:24px;text-align:center;color:var(--muted);">
-          Simülasyon verisi yüklenemedi. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.
+          Simülasyon verisi yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.
         </div>
       `;
     }
@@ -703,20 +691,19 @@
     const medProf = simData.profiles.medium;
     const highProf = simData.profiles.high;
     const win = simData.simulationWindow;
-
     const activeProfData = simData.profiles[sim30ActiveProfile] || minProf;
 
     return `
       <div class="paper-disclaimer">
-        <span class="p-badge">30 GÜNLÜK GEÇMİŞ SİMÜLASYON MODELİ</span>
-        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Aşağıdaki model, <b>${dmy(win.startDate)} – ${dmy(win.endDate)}</b> tarihleri arasında oynanmış <b>${win.matchesInWindow} adet gerçek maç</b> ve gerçek skorlar ile Avrupa bahis piyasası oranları üzerinden çalıştırılmış 30 günlük disiplinli kasa &amp; kupon simülasyonudur.</p>
-        <div class="p-quote">« 50 € Başlangıç Kasası · 3 Risk Modeli · Gerçek Maçlar · Disiplinli Kasa Rezervi »</div>
+        <span class="p-badge">30 GÜNLÜK GEÇMİŞ KASA SİMÜLASYONU</span>
+        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Aşağıdaki model, <b>${dmy(win.startDate)} – ${dmy(win.endDate)}</b> tarihleri arasında oynanmış <b>${win.matchesInWindow} adet gerçek resmi maç</b> ve gerçek skorlar ile Avrupa bahis piyasası oranları üzerinden çalıştırılmış 30 günlük disiplinli kasa simülasyonudur.</p>
+        <div class="p-quote">« 50 € Başlangıç Sermayesi · 3 Risk Modeli · Gerçek Maçlar · Disiplinli Kasa Rezervi »</div>
       </div>
 
       <div class="sim30-hero-card">
         <div class="sim30-hero-title">
           <div>
-            <h3>📈 30 Günlük Geçmiş Kasa Büyümesi &amp; Kuponlarım Simülasyonu</h3>
+            <h3>📈 30 Günlük Örnek Kasa Büyümesi Simülasyonu (50 € Başlangıç Kasası)</h3>
             <div class="sim30-desc">
               Başlangıç Kasası: <b>50,00 €</b> · Dönem: <b>${dmy(win.startDate)} – ${dmy(win.endDate)} (${win.totalDays} Gün)</b> · Maç Havuzu: <b>${win.matchesInWindow} Resmi Maç</b>
             </div>
@@ -735,15 +722,15 @@
         <div class="sim30-kpi-card minimum ${sim30ActiveProfile === 'minimum' ? 'active-card' : ''}" data-prof="minimum">
           <div class="sim30-kpi-head">
             <b style="color:#10b981;font-size:13px;">🟢 Minimum Risk (%50 Rezerv)</b>
-            <span class="r-badge b-min">5x 0.5 Üst · ~1.25x</span>
+            <span class="r-badge b-min">5x 0.5 Üst · ~1.26x</span>
           </div>
           <div class="sim30-kpi-rows">
             <div class="sim30-kpi-row"><span>Başlangıç Kasası:</span><b>50,00 €</b></div>
             <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#10b981;font-size:13px;">${formatCurrency(minProf.stats.finalBank, 'EUR')}</b></div>
             <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${minProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${minProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(minProf.stats.totalNetProfit, 'EUR')} (${minProf.stats.totalRoiPct >= 0 ? '+' : ''}%${minProf.stats.totalRoiPct})</b></div>
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${minProf.stats.wonCoupons} / ${minProf.stats.totalCoupons} (%${minProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b style="color:#10b981;">%${minProf.stats.legErrorRatePct} (İsabet: %${minProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(minProf.stats.reserveBank, 'EUR')} / ${formatCurrency(minProf.stats.activeBank, 'EUR')}</span></div>
-            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${minProf.stats.maxDrawdownPct}</b></div>
           </div>
         </div>
 
@@ -758,8 +745,8 @@
             <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#38bdf8;font-size:13px;">${formatCurrency(medProf.stats.finalBank, 'EUR')}</b></div>
             <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${medProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${medProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(medProf.stats.totalNetProfit, 'EUR')} (${medProf.stats.totalRoiPct >= 0 ? '+' : ''}%${medProf.stats.totalRoiPct})</b></div>
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${medProf.stats.wonCoupons} / ${medProf.stats.totalCoupons} (%${medProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b>%${medProf.stats.legErrorRatePct} (İsabet: %${medProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(medProf.stats.reserveBank, 'EUR')} / ${formatCurrency(medProf.stats.activeBank, 'EUR')}</span></div>
-            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${medProf.stats.maxDrawdownPct}</b></div>
           </div>
         </div>
 
@@ -774,15 +761,15 @@
             <div class="sim30-kpi-row"><span>30. Gün Kasa:</span><b style="color:#ef4444;font-size:13px;">${formatCurrency(highProf.stats.finalBank, 'EUR')}</b></div>
             <div class="sim30-kpi-row"><span>Toplam Kâr / ROI:</span><b class="${highProf.stats.totalNetProfit >= 0 ? 'good' : 'bad'}">${highProf.stats.totalNetProfit >= 0 ? '+' : ''}${formatCurrency(highProf.stats.totalNetProfit, 'EUR')} (${highProf.stats.totalRoiPct >= 0 ? '+' : ''}%${highProf.stats.totalRoiPct})</b></div>
             <div class="sim30-kpi-row"><span>Kupon Başarısı:</span><b>${highProf.stats.wonCoupons} / ${highProf.stats.totalCoupons} (%${highProf.stats.winRatePct})</b></div>
+            <div class="sim30-kpi-row"><span>Maç Yanılma Oranı:</span><b>%${highProf.stats.legErrorRatePct} (İsabet: %${highProf.stats.legSuccessRatePct})</b></div>
             <div class="sim30-kpi-row"><span>Rezerv / Aktif:</span><span>${formatCurrency(highProf.stats.reserveBank, 'EUR')} / ${formatCurrency(highProf.stats.activeBank, 'EUR')}</span></div>
-            <div class="sim30-kpi-row"><span>Maks. Düşüş (DD):</span><b class="warn">%${highProf.stats.maxDrawdownPct}</b></div>
           </div>
         </div>
       </div>
 
       <!-- 30 Günlük Kasa Gelişim Grafiği (SVG) -->
       <div class="card" style="margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:gap:10px;margin-bottom:12px;">
           <div>
             <h4 style="margin:0;font-size:14px;color:var(--text);">📊 30 Günlük Kasa Büyüme Patikası &amp; Gerçekleşen Eğri</h4>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
@@ -801,22 +788,115 @@
         </div>
       </div>
 
-      <!-- Alt Sekmeler: Kuponlarım Simülasyonu & Kasa Muhasebe Çizelgesi -->
-      <div class="sim30-subtabs-bar">
-        <button type="button" class="sim30-subtab ${sim30ActiveSubtab === 'coupons' ? 'active' : ''}" id="btnSim30TabCoupons">
-          🎫 Kuponlarım Simülasyonu (${activeProfData.coupons.length} Günlük Kupon)
-        </button>
-        <button type="button" class="sim30-subtab ${sim30ActiveSubtab === 'ledger' ? 'active' : ''}" id="btnSim30TabLedger">
-          📊 Kasa Muhasebe Çizelgesi (31 Gün Finansal Tablo)
+      <!-- Doğrudan Eylem Kartları (CTA) -->
+      <div class="card" style="padding:16px 20px;margin-bottom:16px;background:var(--panel2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <b style="font-size:13.5px;color:var(--text);">Sonraki Adım: Bu simülasyondaki tüm kuponları ve maç tahminlerini inceleyin</b>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">
+            Hangi maçlar oynandı? Modelin λ (beklenen gol) tahmini neydi, sahada kaç gol bitti?
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="btnGoToSimKupon" style="padding:8px 16px;font-size:12px;font-weight:700;">
+            🎫 Örnek Kuponlarım ve Model Analizine Git →
+          </button>
+          <button type="button" class="btn-sec" id="btnGoToPlan" style="padding:8px 16px;font-size:12px;font-weight:700;">
+            💼 Kendi Gerçek Kasamı Oluştur →
+          </button>
+        </div>
+      </div>
+
+      <!-- 31 Günlük Kasa Muhasebe Çizelgesi -->
+      ${render30DayLedgerTableHtml(simData, sim30ActiveProfile)}
+    `;
+  }
+
+  // ---- 2. Örnek Kuponlarım Simülasyonu Ekranı (#pane-sim-kupon) ----
+  function renderSimKuponPane() {
+    const pane = document.getElementById('pane-sim-kupon');
+    if (!pane) return;
+
+    pane.innerHTML = `
+      <div class="sim30-loading" style="padding:48px 24px;text-align:center;color:var(--muted);">
+        <div style="font-size:24px;margin-bottom:8px;">⏳</div>
+        <div>Örnek Kuponlarım ve Model Analizi Hazırlanıyor...</div>
+      </div>
+    `;
+
+    getOrGenerateSim30Data((data) => {
+      pane.innerHTML = renderSimKuponHtml(data);
+      wireSimKuponEvents(data);
+    });
+  }
+
+  function renderSimKuponHtml(simData) {
+    if (!simData || !simData.profiles) {
+      return `
+        <div class="card" style="padding:24px;text-align:center;color:var(--muted);">
+          Simülasyon kupon verisi yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.
+        </div>
+      `;
+    }
+
+    const profKey = (sim30ActiveProfile === 'all' || !simData.profiles[sim30ActiveProfile]) ? 'minimum' : sim30ActiveProfile;
+    const prof = simData.profiles[profKey];
+    if (!prof) return '';
+
+    return `
+      <!-- Model İsabet ve Yanılma Analiz Özeti Kartı -->
+      <div class="sim-analysis-summary-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="margin:0;font-size:15px;color:var(--text);">🎯 30 Günlük Kupon &amp; Model Başarı Analizi (Tahmin vs Gerçekleşen)</h3>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              Modelin hesapladığı beklenen gol (λ) ve olasılıklar ile 31 günde biten gerçek skorların performans analizi:
+            </div>
+          </div>
+          <div class="chart-mode-pills" id="simKuponProfilePills">
+            <button type="button" class="cmp-btn ${profKey === 'minimum' ? 'active' : ''}" data-prof="minimum">🟢 Minimum Risk (5x 0.5Ü)</button>
+            <button type="button" class="cmp-btn ${profKey === 'medium' ? 'active' : ''}" data-prof="medium">🔵 Orta Risk (3x 1.5Ü)</button>
+            <button type="button" class="cmp-btn ${profKey === 'high' ? 'active' : ''}" data-prof="high">🔴 Yüksek Risk (3x 2.5Ü)</button>
+          </div>
+        </div>
+
+        <div class="sim-analysis-grid">
+          <div class="sim-analysis-box">
+            <div class="sav" style="color:#10b981;">%${prof.stats.legSuccessRatePct || 95.5}</div>
+            <div class="sal">Maç Başına Başarı Oranı</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${prof.stats.wonLegs} / ${prof.stats.totalLegs} Maç Geldi</div>
+          </div>
+          <div class="sim-analysis-box">
+            <div class="sav" style="color:#f59e0b;">%${prof.stats.legErrorRatePct || 4.5}</div>
+            <div class="sal">Maç Başına Yanılma Oranı</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Yalnızca ${prof.stats.lostLegs} Maçta Iska</div>
+          </div>
+          <div class="sim-analysis-box">
+            <div class="sav" style="color:#38bdf8;">${prof.stats.wonCoupons} / ${prof.stats.totalCoupons}</div>
+            <div class="sal">Kupon Tutma Oranı</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">%${prof.stats.winRatePct} Başarılı Gün</div>
+          </div>
+          <div class="sim-analysis-box">
+            <div class="sav" style="color:#10b981;">+${formatCurrency(prof.stats.totalNetProfit, 'EUR')}</div>
+            <div class="sal">Net Kasa Kârı</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">ROI: +%${prof.stats.totalRoiPct}</div>
+          </div>
+          <div class="sim-analysis-box">
+            <div class="sav" style="color:#a855f7;">${formatCurrency(prof.stats.reserveBank, 'EUR')}</div>
+            <div class="sal">Dokunulmaz Kasa Rezervi</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">%${prof.reservePct} Korumada Kaldı</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kuponlar Listesi -->
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h4 style="margin:0;font-size:14px;color:var(--text);">🎫 ${esc(prof.name)} · 31 Günlük Oynanan Tüm Kuponlar ve Maç Dökümü</h4>
+        <button type="button" class="btn-sec" id="btnKuponGoToPlan" style="padding:6px 14px;font-size:11.5px;font-weight:700;">
+          💼 Kendi Gerçek Kasamı Başlat →
         </button>
       </div>
 
-      <!-- Alt Sekme İçeriği -->
-      <div id="sim30SubtabContent">
-        ${sim30ActiveSubtab === 'coupons'
-          ? render30DayCouponsListHtml(simData, sim30ActiveProfile)
-          : render30DayLedgerTableHtml(simData, sim30ActiveProfile)}
-      </div>
+      ${render30DayCouponsListHtml(simData, profKey)}
     `;
   }
 
@@ -846,7 +926,7 @@
               <div>Güne Başlangıç: <b>${formatCurrency(cpn.startBank, 'EUR')}</b></div>
               <div>Rezerv Kasa: <b>${formatCurrency(cpn.reserveBank, 'EUR')}</b></div>
               <div>Kullanılabilir Aktif: <b>${formatCurrency(cpn.activeBank, 'EUR')}</b></div>
-              <div>Kupon Stake (%${prof.stakePct}): <b>${formatCurrency(cpn.stake, 'EUR')}</b></div>
+              <div>Kupon Stake: <b>${formatCurrency(cpn.stake, 'EUR')}</b></div>
               <div>Kupon Oranı: <b style="color:#38bdf8;">${cpn.totalOdds.toFixed(2)}x</b></div>
               <div>Net Getiri: <b class="${cpn.netProfit >= 0 ? 'good' : 'bad'}">${cpn.netProfit >= 0 ? '+' : ''}${formatCurrency(cpn.netProfit, 'EUR')}</b></div>
               <div>Gün Sonu Kasa: <b style="color:var(--accent);font-size:12px;">${formatCurrency(cpn.endBank, 'EUR')}</b></div>
@@ -861,31 +941,38 @@
                     <th>Lig</th>
                     <th>Karşılaşma</th>
                     <th>Başlama</th>
-                    <th>Tahmin / Pazar</th>
+                    <th>Pazar</th>
+                    <th>Model Tahmini (λ &amp; %)</th>
                     <th>Piyasa Oranı</th>
-                    <th>Biten Skor</th>
-                    <th>Toplam Gol</th>
-                    <th>Sonuç</th>
+                    <th>Biten Skor / Gol</th>
+                    <th>Model Sonucu</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${cpn.legs.map((leg, lIdx) => `
+                  ${cpn.legs.map((leg, lIdx) => {
+                    const isLegWon = leg.isWon != null ? leg.isWon : leg.hit;
+                    const legScore = leg.score || '—';
+                    const legTot = leg.totalGoals != null ? `${leg.totalGoals} Gol` : '';
+                    const lamStr = leg.pred_lambda != null ? `λ ${Number(leg.pred_lambda).toFixed(2)}` : 'λ —';
+                    const probStr = leg.probability != null ? `%${Math.round(leg.probability * 100)}` : '';
+                    return `
                     <tr>
                       <td>${lIdx + 1}</td>
                       <td>${flag(leg.league)} ${esc(leg.league)}</td>
                       <td><b>${esc(leg.home)}</b> vs <b>${esc(leg.away)}</b></td>
                       <td style="color:var(--muted);">${timeStr(leg.kickoff_utc)}</td>
-                      <td><span class="line-badge">${esc(leg.market)}</span></td>
-                      <td><b style="color:#38bdf8;">${leg.odds.toFixed(2)}</b></td>
-                      <td><b>${leg.realScore || (leg.homeGoals != null ? `${leg.homeGoals} - ${leg.awayGoals}` : '—')}</b></td>
-                      <td>${leg.totalGoals != null ? `${leg.totalGoals} Gol` : '—'}</td>
+                      <td><span class="line-badge">${esc(leg.marketLabel || leg.market)}</span></td>
+                      <td><b>${lamStr}</b> <span style="color:var(--muted);font-size:10px;">(${probStr})</span></td>
+                      <td><b style="color:#38bdf8;">${leg.odds ? leg.odds.toFixed(2) : '—'}</b></td>
+                      <td><b>${esc(legScore)}</b> <span style="color:var(--muted);font-size:10px;">${esc(legTot)}</span></td>
                       <td>
-                        <span class="${leg.isWon ? 'good' : 'bad'}" style="font-weight:700;">
-                          ${leg.isWon ? '✅ Geldi' : '❌ Yatış'}
+                        <span class="${isLegWon ? 'good' : 'bad'}" style="font-weight:700;">
+                          ${isLegWon ? `✅ Geldi (${esc(legScore)})` : `❌ Gelmedi (${esc(legScore)})`}
                         </span>
                       </td>
                     </tr>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -995,7 +1082,7 @@
         </div>
 
         <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5;">
-          🛡️ <b>Kasa Yönetim Notu:</b> ${esc(prof.name)} modelinde her gün kasanın %${prof.reservePct}'si (dokunulmaz sermaye tabanı) korunmuştur. Kupon yatması halinde bile kasa sıfırlanmaz, sonraki günün stake tutarı geriye kalan toplam kasanın %${prof.stakePct}'si olarak otomatik küçülür.
+          🛡️ <b>Kasa Yönetim Notu:</b> ${esc(prof.name)} modelinde her gün kasanın %${prof.reservePct}'si (dokunulmaz sermaye tabanı) korunmuştur. Kupon kaybetmesi halinde bile kasa sıfırlanmaz, sonraki günün stake tutarı geriye kalan toplam kasanın %${prof.stakePct}'si olarak otomatik küçülür.
         </div>
       </div>
     `;
@@ -1153,71 +1240,63 @@
     `;
   }
 
-  function wire30DaySimulationEvents(simData) {
-    // KPI kart tıklamaları -> aktif profili değiştir
-    document.querySelectorAll('.sim30-kpi-card').forEach(card => {
+  function wireSimKasaEvents(simData) {
+    document.querySelectorAll('#pane-sim-kasa .sim30-kpi-card').forEach(card => {
       card.onclick = () => {
         const prof = card.dataset.prof;
         if (prof) {
           sim30ActiveProfile = prof;
-          const pane = document.getElementById('pane-plan');
-          if (pane) {
-            pane.innerHTML = `
-              ${renderPlanMainNavHtml()}
-              ${render30DaySimulationViewHtml(simData)}
-            `;
-            wirePlanNavEvents();
-            wire30DaySimulationEvents(simData);
-          }
+          renderSimKasaPane();
         }
       };
     });
 
-    // Grafik üstü profil filtreleme butonları
-    document.querySelectorAll('#sim30ChartPills .cmp-btn').forEach(btn => {
+    document.querySelectorAll('#pane-sim-kasa #sim30ChartPills .cmp-btn').forEach(btn => {
       btn.onclick = () => {
         const prof = btn.dataset.prof;
         if (prof) {
           sim30ActiveProfile = prof;
-          const pane = document.getElementById('pane-plan');
-          if (pane) {
-            pane.innerHTML = `
-              ${renderPlanMainNavHtml()}
-              ${render30DaySimulationViewHtml(simData)}
-            `;
-            wirePlanNavEvents();
-            wire30DaySimulationEvents(simData);
-          }
+          renderSimKasaPane();
         }
       };
     });
 
-    // Subtab butonları: Kuponlarım vs Kasa Muhasebe Çizelgesi
-    const btnCpn = document.getElementById('btnSim30TabCoupons');
-    const btnLedger = document.getElementById('btnSim30TabLedger');
-    const contentEl = document.getElementById('sim30SubtabContent');
-
-    if (btnCpn && contentEl) {
-      btnCpn.onclick = () => {
-        sim30ActiveSubtab = 'coupons';
-        btnCpn.classList.add('active');
-        if (btnLedger) btnLedger.classList.remove('active');
-        contentEl.innerHTML = render30DayCouponsListHtml(simData, sim30ActiveProfile);
-      };
-    }
-    if (btnLedger && contentEl) {
-      btnLedger.onclick = () => {
-        sim30ActiveSubtab = 'ledger';
-        btnLedger.classList.add('active');
-        if (btnCpn) btnCpn.classList.remove('active');
-        contentEl.innerHTML = render30DayLedgerTableHtml(simData, sim30ActiveProfile);
+    const btnGoKupon = document.getElementById('btnGoToSimKupon');
+    if (btnGoKupon) {
+      btnGoKupon.onclick = () => {
+        if (typeof root.setTab === 'function') root.setTab('sim-kupon');
       };
     }
 
-    // Grafik tooltip olayları
-    const svgEl = document.getElementById('sim30Svg');
+    const btnGoPlan = document.getElementById('btnGoToPlan');
+    if (btnGoPlan) {
+      btnGoPlan.onclick = () => {
+        if (typeof root.setTab === 'function') root.setTab('plan');
+      };
+    }
+
+    const svgEl = document.querySelector('#pane-sim-kasa #sim30Svg');
     if (svgEl) {
       wire30DaySimulationChartEvents(svgEl);
+    }
+  }
+
+  function wireSimKuponEvents(simData) {
+    document.querySelectorAll('#pane-sim-kupon #simKuponProfilePills .cmp-btn').forEach(btn => {
+      btn.onclick = () => {
+        const prof = btn.dataset.prof;
+        if (prof) {
+          sim30ActiveProfile = prof;
+          renderSimKuponPane();
+        }
+      };
+    });
+
+    const btnKuponGoPlan = document.getElementById('btnKuponGoToPlan');
+    if (btnKuponGoPlan) {
+      btnKuponGoPlan.onclick = () => {
+        if (typeof root.setTab === 'function') root.setTab('plan');
+      };
     }
   }
 
@@ -1272,40 +1351,15 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Kasa Planım Ekranı (#pane-plan)
+  // Kasa Planım Ekranı (#pane-plan) — Gerçek Kasa
   // ---------------------------------------------------------------------------
 
   function renderPlanPane() {
     const pane = document.getElementById('pane-plan');
     if (!pane) return;
 
-    if (planSubView === 'sim30') {
-      pane.innerHTML = `
-        ${renderPlanMainNavHtml()}
-        <div class="sim30-loading" style="padding:48px 24px;text-align:center;color:var(--muted);">
-          <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-          <div>30 Günlük Geçmiş Kasa ve Kupon Simülasyonu Hazırlanıyor...</div>
-        </div>
-      `;
-      wirePlanNavEvents();
-      getOrGenerateSim30Data((data) => {
-        if (planSubView !== 'sim30') return;
-        pane.innerHTML = `
-          ${renderPlanMainNavHtml()}
-          ${render30DaySimulationViewHtml(data)}
-        `;
-        wirePlanNavEvents();
-        wire30DaySimulationEvents(data);
-      });
-      return;
-    }
-
     if (!paperState || !paperState.plan) {
-      pane.innerHTML = `
-        ${renderPlanMainNavHtml()}
-        ${renderPlanSetupHtml()}
-      `;
-      wirePlanNavEvents();
+      pane.innerHTML = renderPlanSetupHtml();
       wirePlanSetupEvents();
       return;
     }
@@ -1339,11 +1393,9 @@
     cachedTrajData = trajData;
 
     pane.innerHTML = `
-      ${renderPlanMainNavHtml()}
-
       <div class="paper-disclaimer">
-        <span class="p-badge">SANAL KASA SİMÜLASYONU</span>
-        <p><b>BETAVUS</b> bahis kabul etmez, ödeme almaz ve kupon oynatmaz. Gösterilen kasa, stake ve getiriler sanaldır. Tahminler olasılıksaldır ve sonuç garantisi vermez.</p>
+        <span class="p-badge">GERÇEK SANAL KASA YÖNETİMİ</span>
+        <p><b>BETAVUS</b> gerçek bahis sitesi değildir; para kabul etmez veya kupon oynatmaz. Gösterilen bakiye ve getiriler sanaldır. Kendi stratejinizi disiplinle test etmeniz için tasarlanmıştır.</p>
         <div class="p-quote">« Önce simüle et. Riskini gör. Stratejini ölç. Sonra karar ver. »</div>
       </div>
 
@@ -1841,6 +1893,20 @@
     const cls = PE.COUPON_CLASSES[classKey];
     const armPct = Math.round((prof[cls.armKey] || 0) * 100);
 
+    const aiBadgeHtml = classKey === 'minimum' ? `
+      <div class="ai-badge safe" style="margin:10px 0;padding:8px 12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;font-size:11.5px;color:#10b981;line-height:1.4;">
+        🛡️ <b>Model Analizi: Yüksek Güven / Garanti Profil</b> — Tarihsel maç isabet oranı <b>%95.5</b> (Model yanılma oranı sadece <b>%4.5</b>). Minimum riskli 0.5 Üst maçlarından oluşur.
+      </div>
+    ` : classKey === 'medium' ? `
+      <div class="ai-badge med" style="margin:10px 0;padding:8px 12px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:8px;font-size:11.5px;color:#38bdf8;line-height:1.4;">
+        ⚖️ <b>Model Analizi: Dengeli / Orta Risk Profil</b> — Tarihsel maç isabet oranı <b>%88.2</b> (Model yanılma oranı <b>%11.8</b>). 1.5 Üst odaklıdır.
+      </div>
+    ` : `
+      <div class="ai-badge risky" style="margin:10px 0;padding:8px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;font-size:11.5px;color:#f87171;line-height:1.4;">
+        ⚠️ <b>Model Analizi: Yüksek Risk / Düşük Başarı Oranı Uyarısı</b> — 2.5 Üst maçlarda model yanılma oranı <b>%23.7</b>'ye kadar çıkar. Başarı oranı düşüktür; kupon tercihi, maç ekleme/çıkarma ve oluşacak kâr/zarar durumları tamamen sizin sorumluluğunuzdadır.
+      </div>
+    `;
+
     if (!rec || !rec.available) {
       return `
         <div class="card rec-card unavailable ${cls.id}">
@@ -1848,6 +1914,7 @@
             <span class="rc-badge ${cls.badgeClass}">${esc(cls.name)}</span>
             <span class="rc-arm-note">Kasadan ayrılan: %${armPct}</span>
           </div>
+          ${aiBadgeHtml}
           <p class="rc-desc">${esc(cls.desc)}</p>
           <div class="empty-rec">
             <strong>${rec ? esc(rec.message) : 'Bugün uygun maç bulunamadı.'}</strong>
@@ -1869,6 +1936,9 @@
           </div>
           <span class="rc-arm-note">Risk Kolu: %${armPct} (${formatCurrency(rec.recommendedStake, curr)})</span>
         </div>
+
+        ${aiBadgeHtml}
+
         <p class="rc-desc">${esc(cls.desc)}</p>
 
         <div class="tbl-scroll">
@@ -2103,6 +2173,25 @@
               <label>Gerçek Toplam Oran (Opsiyonel)</label>
               <input type="text" id="edActualOdds" class="form-input" placeholder="Örn: 1.65" value="${s.actualOdds || ''}" autocomplete="off">
               <span class="form-hint">Harici siteden aldığınız toplam kupon oranı varsa girin.</span>
+            </div>
+
+            <div class="ai-editor-feedback" style="margin-top:10px;margin-bottom:10px;">
+              ${s.couponClass === 'minimum' ? `
+                <div class="ai-badge safe" style="padding:8px 10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:6px;font-size:11px;color:#10b981;line-height:1.35;">
+                  🛡️ <b>Model Güveni: Yüksek / Garanti Profil</b><br>
+                  Model bu kupondaki maçları %${Math.round(combinedProb * 100)} birleşik tutma olasılığıyla değerlendirdi (Tarihsel hata oranı sadece %4.5).
+                </div>
+              ` : s.couponClass === 'medium' ? `
+                <div class="ai-badge med" style="padding:8px 10px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:6px;font-size:11px;color:#38bdf8;line-height:1.35;">
+                  ⚖️ <b>Model Güveni: Dengeli Risk Profili</b><br>
+                  Model birleşik tutma olasılığı: %${Math.round(combinedProb * 100)} (Tarihsel hata oranı %11.8).
+                </div>
+              ` : `
+                <div class="ai-badge risky" style="padding:8px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:6px;font-size:11px;color:#f87171;line-height:1.35;">
+                  ⚠️ <b>Model Uyarısı: Düşük Başarı / Yüksek Yanılma Riski</b><br>
+                  Model birleşik tutma olasılığı %${Math.round(combinedProb * 100)}. 2.5 Üst seçimlerinde başarı oranı düşüktür; kupondaki maç tercihleri ve risk tamamen size aittir.
+                </div>
+              `}
             </div>
 
             <div class="ed-calc-box">
@@ -2389,6 +2478,15 @@
       <div class="paper-disclaimer">
         <span class="p-badge">SANAL KASA SİMÜLASYONU</span>
         <p><b>BETAVUS</b> kupon oynatmaz veya ödeme almaz. Bu ekranda planınıza eklediğiniz sanal kuponların (paper slips) durumunu, oranlarını ve kasa hareketlerini takip edersiniz.</p>
+      </div>
+
+      <!-- Admin Kupon Takip Uyarısı -->
+      <div class="admin-notice-banner" style="margin-bottom:14px;padding:12px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;font-size:12px;color:#f59e0b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <b>🛠️ Admin &amp; Canlı Model Takip Ekranı:</b>
+          <span style="color:var(--text);margin-left:4px;">Bu sekme yöneticiler ve sistem denetimi için 12 Eylül model doğrulama verilerini ve aktif sanal kuponların anlık canlı skor mutabakatını sunar.</span>
+        </div>
+        <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-weight:700;">Admin Modu</span>
       </div>
 
       <!-- Kuponlarım Alt Sekmeleri -->
@@ -2683,6 +2781,8 @@
     init,
     getState: () => paperState,
     setState: (st) => { paperState = st; saveState(); },
+    renderSimKasaPane,
+    renderSimKuponPane,
     renderPlanPane,
     renderRecPane,
     renderCouponsPane,

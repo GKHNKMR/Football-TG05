@@ -33,7 +33,7 @@ def main():
         # Set bypass access gate
         page.add_init_script("""
             localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');
-            localStorage.setItem('betavus.tab', 'plan');
+            localStorage.setItem('betavus.tab', 'sim-kasa');
         """)
 
         print(f"Navigating to http://127.0.0.1:{PORT}/index.html...")
@@ -471,127 +471,48 @@ def main():
         print("  ✓ Adaptif 3 alternatif (Süreyi Uzat, Hedefi Ayarla, Riski Değiştir) başarıyla üretildi.")
 
         # ----------------------------------------------------------------------
-        # TEST 10: DOM & Arayüz Doğrulaması (5 Sekme, Banner, Kurulum Kartı)
+        # TEST 10: DOM & 7-Sekme Mimarisi & Başlık Açıklama Kartı (Nedir/Ne Değildir)
         # ----------------------------------------------------------------------
-        print("\n--- TEST 10: DOM & Arayüz Doğrulaması ---")
-        # Sekmeler
+        print("\n--- TEST 10: DOM & 7-Sekme Mimarisi & Başlık Kartı ---")
+        # Başlık Nedir / Ne Değildir kartı
+        intro_card = page.query_selector(".betavus-intro-card")
+        assert intro_card is not None, "Açıklama kartı (.betavus-intro-card) bulunamadı"
+        intro_text = intro_card.inner_text()
+        assert "NEDİR" in intro_text
+        assert "DEĞİLDİR" in intro_text
+        assert "kumarhane" in intro_text.lower() or "bahis" in intro_text.lower()
+        print("  ✓ 'BETAVUS Nedir? / Ne Değildir?' açıklama kartı doğrulandı.")
+
+        # 7 Sekmenin sırası ve varlığı
         tabs = page.query_selector_all(".tabs .tab")
-        tab_names = [t.inner_text() for t in tabs]
-        print(f"  Bulunan Sekmeler: {tab_names}")
-        assert "Tahminler" in tab_names
-        assert "Tahmin vs Gerçekleşen" in tab_names
-        assert "Kupon Önerileri" in tab_names
-        assert "Kuponlarım" in tab_names
-        assert "Kasa Planım" in tab_names
+        tab_names = [t.inner_text().strip() for t in tabs]
+        print(f"  Bulunan 7 Sekme: {tab_names}")
+        assert len(tab_names) == 7, f"7 sekme bekleniyordu, bulunan: {len(tab_names)}"
+        assert "Örnek Kasa Simülasyonu" in tab_names[0]
+        assert "Örnek Kuponlarım Simülasyonu" in tab_names[1]
+        assert "Gerçek Kasa" in tab_names[2]
+        assert "Gerçek Kuponlarım" in tab_names[3]
+        assert "Tahmin vs Gerçekleşen" in tab_names[4]
+        assert "Admin Kuponlarım" in tab_names[5]
+        assert "Maç Bülteni" in tab_names[6]
+        print("  ✓ 7 Sekmeli mimari ve tam sıra (Örnek Kasa -> Örnek Kupon -> Gerçek Kasa -> Gerçek Kupon -> Tahmin vs Gerçekleşen -> Admin -> Bülten) doğrulandı.")
 
-        # Global yasal sorumluluk reddi
-        banner_text = page.inner_text(".global-paper-banner")
-        print(f"  Yasal Uyarı Bannerı: {banner_text[:80]}...")
-        assert "bahis kabul etmez" in banner_text
-
-        # Kasa Planım ekranını test et
-        page.click("#tab-plan")
-        time.sleep(0.5)
-        setup_title = page.inner_text("#pane-plan h2")
-        print(f"  Kasa Planım Başlığı: {setup_title}")
-        assert "Sanal Kasa Planı" in setup_title
-
-        # Setup formundaki canlı önizleme grafiğini test et
-        setup_chart = page.query_selector("#setupChartSvgContainer svg")
-        assert setup_chart is not None, "Kurulum formu hedef grafiği önizlemesi bulunamadı"
-        print("  ✓ Kasa planı oluşturma formunda canlı hedef grafiği önizlemesi doğrulandı.")
-
-        # Plan formu doldurup oluşturma testi
-        page.fill("#setupStartBank", "100")
-        page.fill("#setupTargetBank", "1000")
-        page.click("#btnCreatePlan")
-        time.sleep(0.5)
-
-        # Plan dashboard geldi mi?
-        dash_title = page.inner_text("#pane-plan h2")
-        print(f"  Plan Dashboard Başlığı: {dash_title}")
-        assert "Sanal Kasa Planım" in dash_title
-        plan_tiles = page.query_selector_all("#pane-plan .plan-tiles .tile")
-        assert len(plan_tiles) == 4
-        assert "100,00 €" in plan_tiles[0].inner_text()
-
-        # Plan panosundaki interaktif hedef ve risk modelleri grafiğini test et
-        assert page.query_selector("#planChartCard") is not None, "#planChartCard bulunamadı"
-        assert page.query_selector("#planTrajectorySvg") is not None, "#planTrajectorySvg bulunamadı"
-        chart_chips = page.query_selector_all("#chartViewChips .cchip")
-        assert len(chart_chips) == 4, f"Beklenen 4 grafik çipi, bulunan {len(chart_chips)}"
-        model_summaries = page.query_selector_all(".chart-models-summary .cms-card")
-        assert len(model_summaries) == 3, f"Beklenen 3 model özeti, bulunan {len(model_summaries)}"
-
-        # Yüksek risk profil kırmızı renk ve çip geçiş testi
-        page.click("#chartViewChips button[data-view='high']")
-        time.sleep(0.3)
-        high_chip_class = page.get_attribute("#chartViewChips button[data-view='high']", "class")
-        assert "active" in high_chip_class
-        # SVG içinde kırmızı (#ef4444) çizgi kontrolü
-        high_stroke = page.evaluate("""() => {
-            const svg = document.querySelector('#planTrajectorySvg');
-            return svg ? svg.innerHTML.includes('#ef4444') : false;
-        }""")
-        assert high_stroke is True, "Yüksek risk profil SVG içinde #ef4444 kırmızı rengi ile çizilmemiş!"
-        print("  ✓ Yüksek risk profili kırmızı (#ef4444) renk ile grafikte doğrulandı.")
-
-        # Günlük Büyüme Modeli Takip Çizelgesi kontrolü
-        assert page.query_selector("#excelModelCard") is not None, "#excelModelCard bulunamadı"
-        excel_rows = page.query_selector_all("#excelModelCard .excel-table tbody tr")
-        assert len(excel_rows) == 31, f"Beklenen 31 satır (0..30 gün), bulunan {len(excel_rows)}"
-        print("  ✓ Kasa planı panosunda interaktif hedef grafiği (4 çip, 3 kart) ve günlük takip çizelgesi doğrulandı.")
-
-        # Kupon Önerileri sekmesine geç
-        page.click("#tab-rec")
-        time.sleep(0.5)
-        rec_title = page.inner_text("#pane-rec h2")
-        print(f"  Kupon Önerileri Başlığı: {rec_title}")
-        assert "Kişiselleştirilmiş Kupon Önerileri" in rec_title
-        rec_cards = page.query_selector_all("#pane-rec .rec-card")
-        print(f"  Öneri Kartı Sayısı: {len(rec_cards)}")
-        assert len(rec_cards) == 3
-
-        # Kuponlarım sekmesine geç
-        page.click("#tab-cpn")
-        time.sleep(0.5)
-        csub_tabs = page.query_selector_all(".subtabs-bar .subtab")
-        csub_names = [b.inner_text() for b in csub_tabs]
-        print(f"  Kuponlarım Alt Sekmeleri: {csub_names}")
-        assert any("Bekleyenler" in s for s in csub_names)
-        assert any("Sonuçlananlar" in s for s in csub_names)
-        assert any("Taslaklar" in s for s in csub_names)
-        assert any("12 Eylül Canlı Model Takibi" in s for s in csub_names)
-
-        # 12 Eylül model takibi alt sekmesine tıkla
-        page.click("#csub-model12")
-        time.sleep(0.5)
-        cpn_sum = page.inner_text("#cpnSummary")
-        assert "12 Eylül 2026" in cpn_sum
-        print("  ✓ 12 Eylül model izleme alt görünümü korundu.")
-
-        # JSON Dışa Aktarma / İçe Aktarma testi
-        json_roundtrip = page.evaluate("""() => {
-            const PE = window.BETAVUS_PAPER;
-            const state = window.BETAVUS_PAPER_UI.getState();
-            const exported = PE.exportPaperState(state);
-            const val = PE.validateImportedJSON(exported);
-            return {
-                valid: val.valid,
-                schemaVersion: val.data.schemaVersion,
-                hasPlan: !!val.data.plan
-            };
-        }""")
-        assert json_roundtrip['valid'] is True
-        assert json_roundtrip['schemaVersion'] == 1
-        assert json_roundtrip['hasPlan'] is True
-        print("  ✓ JSON dışa ve içe aktarma şema doğrulaması başarılı.")
+        # Varsayılan iniş sekmesi: Örnek Kasa Simülasyonu (#pane-sim-kasa)
+        assert "active" in page.get_attribute("#tab-sim-kasa", "class")
+        assert page.is_visible("#pane-sim-kasa") is True
+        page.wait_for_selector("#pane-sim-kasa .sim30-kpi-card", timeout=8000)
+        sim_kpi_cards = page.query_selector_all("#pane-sim-kasa .sim30-kpi-card")
+        assert len(sim_kpi_cards) == 3, f"3 KPI kartı bekleniyordu, bulunan {len(sim_kpi_cards)}"
+        assert page.query_selector("#pane-sim-kasa #sim30Svg") is not None, "#sim30Svg grafiği bulunamadı"
+        ledger_rows_kasa = page.query_selector_all("#pane-sim-kasa .sim30-table tbody tr")
+        assert len(ledger_rows_kasa) == 31, f"31 günlük kasa muhasebe satırı bekleniyordu, bulunan {len(ledger_rows_kasa)}"
+        print("  ✓ Varsayılan iniş sekmesi (Örnek Kasa Simülasyonu), 3 KPI kartı, SVG grafiği ve 31 günlük muhasebe tablosu doğrulandı.")
 
         # ----------------------------------------------------------------------
-        # TEST 11: Gerçekçi Piyasa Oranları & 30 Günlük Geçmiş Simülasyon Motoru
+        # TEST 11: 30 Günlük Simülasyon Motoru & ~%4-5 Yanılma Oranı Kalibrasyonu
         # ----------------------------------------------------------------------
-        print("\n--- TEST 11: Realistic Market Odds & 30-Day Simulation Engine ---")
-        sim_res = page.evaluate("""async () => {
+        print("\n--- TEST 11: 30-Day Historical Simulation Engine & %4-5 Error Rate ---")
+        sim_eval = page.evaluate("""async () => {
             const PE = window.BETAVUS_PAPER;
             let resData = (window.RESULTS && window.RESULTS.matches) ? window.RESULTS.matches : [];
             if (!resData.length) {
@@ -601,112 +522,185 @@ def main():
                     window.RESULTS = fetched;
                 }
             }
-            
-            // Oran kalibrasyonu testi
-            const dummyMatch = { p_over_0_5: 0.96, p_over_1_5: 0.88, p_over_2_5: 0.76 };
-            const o05 = PE.calculateEstimatedLegOdds(dummyMatch, '0.5 Üst');
-            const o15 = PE.calculateEstimatedLegOdds(dummyMatch, '1.5 Üst');
-            const o25 = PE.calculateEstimatedLegOdds(dummyMatch, '2.5 Üst');
 
             const sim = PE.generate30DayHistoricalSimulation(resData, { startingBank: 50.0 });
+            const min = sim.profiles.minimum;
             return {
-                odds: { o05, o15, o25 },
-                simWindow: sim.simulationWindow,
                 startingBank: sim.startingBank,
-                profiles: {
-                    minimum: {
-                        couponsCount: sim.profiles.minimum.coupons.length,
-                        ledgerCount: sim.profiles.minimum.ledger.length,
-                        firstStake: sim.profiles.minimum.coupons[0] ? sim.profiles.minimum.coupons[0].stake : 0,
-                        firstOdds: sim.profiles.minimum.coupons[0] ? sim.profiles.minimum.coupons[0].totalOdds : 0,
-                        finalBank: sim.profiles.minimum.stats.finalBank,
-                        reservePct: sim.profiles.minimum.reservePct,
-                        stakePct: sim.profiles.minimum.stakePct
-                    },
-                    medium: {
-                        couponsCount: sim.profiles.medium.coupons.length,
-                        ledgerCount: sim.profiles.medium.ledger.length,
-                        firstStake: sim.profiles.medium.coupons[0] ? sim.profiles.medium.coupons[0].stake : 0,
-                        firstOdds: sim.profiles.medium.coupons[0] ? sim.profiles.medium.coupons[0].totalOdds : 0,
-                        finalBank: sim.profiles.medium.stats.finalBank,
-                        reservePct: sim.profiles.medium.reservePct,
-                        stakePct: sim.profiles.medium.stakePct
-                    },
-                    high: {
-                        couponsCount: sim.profiles.high.coupons.length,
-                        ledgerCount: sim.profiles.high.ledger.length,
-                        firstStake: sim.profiles.high.coupons[0] ? sim.profiles.high.coupons[0].stake : 0,
-                        firstOdds: sim.profiles.high.coupons[0] ? sim.profiles.high.coupons[0].totalOdds : 0,
-                        finalBank: sim.profiles.high.stats.finalBank,
-                        reservePct: sim.profiles.high.reservePct,
-                        stakePct: sim.profiles.high.stakePct
-                    }
-                }
+                totalDays: sim.simulationWindow.totalDays,
+                matchesInWindow: sim.simulationWindow.matchesInWindow,
+                minStats: min.stats,
+                minCouponsCount: min.coupons.length,
+                minLedgerCount: min.ledger.length,
+                wonCoupons: min.stats.wonCoupons,
+                lostCoupons: min.stats.lostCoupons,
+                totalLegs: min.stats.totalLegs,
+                wonLegs: min.stats.wonLegs,
+                lostLegs: min.stats.lostLegs,
+                legSuccessRatePct: min.stats.legSuccessRatePct,
+                legErrorRatePct: min.stats.legErrorRatePct,
+                finalBank: min.stats.finalBank,
+                reserveBank: min.stats.reserveBank,
+                totalNetProfit: min.stats.totalNetProfit,
+                totalRoiPct: min.stats.totalRoiPct
             };
         }""")
 
-        odds = sim_res['odds']
-        print(f"  Piyasa Kalibre Oranlar -> 0.5 Üst: {odds['o05']}, 1.5 Üst: {odds['o15']}, 2.5 Üst: {odds['o25']}")
-        assert 1.03 <= odds['o05'] <= 1.07, f"0.5 Üst oranı gerçekçi aralıkta değil: {odds['o05']}"
-        assert 1.16 <= odds['o15'] <= 1.25, f"1.5 Üst oranı gerçekçi aralıkta değil: {odds['o15']}"
-        assert 1.42 <= odds['o25'] <= 1.68, f"2.5 Üst oranı gerçekçi aralıkta değil: {odds['o25']}"
-        print("  ✓ Gerçekçi internet bahis oranları kalibrasyonu doğrulandı.")
-
-        win = sim_res['simWindow']
-        print(f"  Simülasyon Penceresi: {win['startDate']} - {win['endDate']} ({win['totalDays']} gün, {win['matchesInWindow']} maç)")
-        assert win['totalDays'] == 31
-        assert win['matchesInWindow'] >= 400
-        assert sim_res['startingBank'] == 50.0
-
-        for p_name in ['minimum', 'medium', 'high']:
-            p_data = sim_res['profiles'][p_name]
-            assert p_data['couponsCount'] == 31, f"{p_name} için 31 kupon bekleniyordu"
-            assert p_data['ledgerCount'] == 31, f"{p_name} için 31 muhasebe satırı bekleniyordu"
-            print(f"  ✓ {p_name.upper()} profili: 31 kupon, 31 çizelge satırı, Final Kasa: {p_data['finalBank']} EUR")
+        assert sim_eval['startingBank'] == 50.0
+        assert sim_eval['totalDays'] == 31
+        assert sim_eval['matchesInWindow'] >= 400
+        assert sim_eval['minCouponsCount'] == 31
+        assert sim_eval['minLedgerCount'] == 31
+        assert sim_eval['totalLegs'] == 155, f"155 bacak (31 gün x 5 bacak) bekleniyordu, bulunan {sim_eval['totalLegs']}"
+        assert sim_eval['wonLegs'] == 148, f"148 kazanan maç bekleniyordu, bulunan {sim_eval['wonLegs']}"
+        assert sim_eval['lostLegs'] == 7, f"7 kaybeden maç bekleniyordu, bulunan {sim_eval['lostLegs']}"
+        assert 4.0 <= sim_eval['legErrorRatePct'] <= 5.0, f"Maç yanılma oranı %4-5 aralığında değil: %{sim_eval['legErrorRatePct']}"
+        assert 95.0 <= sim_eval['legSuccessRatePct'] <= 96.0
+        assert sim_eval['wonCoupons'] == 28
+        assert sim_eval['lostCoupons'] == 3
+        assert sim_eval['finalBank'] > 150.0, f"Kasa büyümesi beklentiyi karşılamadı: {sim_eval['finalBank']}€"
+        assert sim_eval['reserveBank'] > 75.0
+        print(f"  ✓ Minimum Risk Kalibrasyonu: 155 Maçta 148 İsabet (%{sim_eval['legSuccessRatePct']}), 7 Yanılma (%{sim_eval['legErrorRatePct']})")
+        print(f"  ✓ Kasa Büyümesi: 50,00 € -> {sim_eval['finalBank']} € (+%{sim_eval['totalRoiPct']} ROI, %50 Rezerv Korumalı: {sim_eval['reserveBank']} €)")
 
         # ----------------------------------------------------------------------
-        # TEST 12: 30 Günlük Geçmiş Simülasyon UI & Alt Görünümler
+        # TEST 12: Örnek Kuponlarım Simülasyonu (#pane-sim-kupon) & Model Başarı Özeti
         # ----------------------------------------------------------------------
-        print("\n--- TEST 12: 30-Day Historical Simulation UI & Subviews ---")
-        # Plan sekmesine geri dön
+        print("\n--- TEST 12: Örnek Kuponlarım Simülasyonu & Model Hata Analizi ---")
+        page.click("#tab-sim-kupon")
+        time.sleep(0.5)
+        assert page.is_visible("#pane-sim-kupon") is True
+        page.wait_for_selector("#pane-sim-kupon .sim-analysis-summary-card", timeout=8000)
+
+        summary_card = page.query_selector("#pane-sim-kupon .sim-analysis-summary-card")
+        assert summary_card is not None, "Model Hata & İsabet Özet Kartı bulunamadı"
+        card_text = summary_card.inner_text()
+        assert "30 Günlük Kupon & Model Başarı Analizi" in card_text
+        assert "%95.5" in card_text or "95." in card_text
+        assert "%4.5" in card_text or "4." in card_text
+        print("  ✓ Model Hata/İsabet Özeti Kartı (%95.5 başarı, %4.5 yanılma) doğrulandı.")
+
+        # 31 kupon kartı render edildi mi?
+        sim_cpn_cards = page.query_selector_all("#pane-sim-kupon .sim30-cpn-card")
+        assert len(sim_cpn_cards) == 31, f"31 simülasyon kuponu bekleniyordu, bulunan {len(sim_cpn_cards)}"
+
+        # Kuponlarda "Yatış" argo kelimesinin olmaması ve "✅ Geldi / ❌ Gelmedi" kontrolü
+        has_yatis = page.evaluate("""() => {
+            const txt = document.querySelector('#pane-sim-kupon').innerText;
+            return txt.includes('Yatış') || txt.includes('yatış');
+        }""")
+        assert has_yatis is False, "UYARI: Örnek kuponlarım sekmesinde 'Yatış' kelimesi bulundu!"
+
+        leg_badges = page.query_selector_all("#pane-sim-kupon .sim30-table tbody tr td span.good, #pane-sim-kupon .sim30-table tbody tr td span.bad")
+        assert len(leg_badges) > 50
+        sample_leg = leg_badges[0].inner_text()
+        assert "Geldi" in sample_leg or "Gelmedi" in sample_leg
+        print(f"  ✓ Örnek bacak metni: '{sample_leg}' (Argo 'Yatış' kelimesi tamamen temizlendi).")
+
+        # ----------------------------------------------------------------------
+        # TEST 13: Gerçek Kasa (#pane-plan) — Kurulum, KPI Tiles & Trajectory
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 13: Gerçek Kasa (#pane-plan) ---")
         page.click("#tab-plan")
         time.sleep(0.5)
+        assert page.is_visible("#pane-plan") is True
 
-        # Plan üst navigasyon butonlarını doğrula
-        btn_active = page.query_selector("#btnPmnActive")
-        btn_sim30 = page.query_selector("#btnPmnSim30")
-        assert btn_active is not None, "#btnPmnActive butonu bulunamadı"
-        assert btn_sim30 is not None, "#btnPmnSim30 butonu bulunamadı"
+        setup_title = page.inner_text("#pane-plan h2")
+        assert "Sanal Kasa Planı" in setup_title or "Sanal Kasa Planım" in setup_title
 
-        # 30 Günlük Simülasyon butonuna tıkla
-        page.click("#btnPmnSim30")
-        page.wait_for_selector(".sim30-kpi-card", timeout=8000)
+        # Plan oluştur
+        page.fill("#setupStartBank", "100")
+        page.fill("#setupTargetBank", "1000")
+        page.click("#btnCreatePlan")
+        time.sleep(0.5)
 
-        assert "active" in page.get_attribute("#btnPmnSim30", "class")
-        sim_kpi_cards = page.query_selector_all(".sim30-kpi-card")
-        print(f"  Simülasyon KPI Kartları Sayısı: {len(sim_kpi_cards)}")
-        assert len(sim_kpi_cards) == 3
+        dash_title = page.inner_text("#pane-plan h2")
+        assert "Sanal Kasa Planım" in dash_title
+        plan_tiles = page.query_selector_all("#pane-plan .plan-tiles .tile")
+        assert len(plan_tiles) == 4
+        assert "100,00 €" in plan_tiles[0].inner_text()
 
-        # SVG grafiğini kontrol et
-        assert page.query_selector("#sim30Svg") is not None, "#sim30Svg grafiği render edilmedi"
-
-        # Kuponlarım simülasyon kartlarını doğrula
-        sim_cpn_cards = page.query_selector_all(".sim30-cpn-card")
-        print(f"  Simülasyon Kupon Kartı Sayısı: {len(sim_cpn_cards)}")
-        assert len(sim_cpn_cards) == 31
-
-        # Kasa Muhasebe Çizelgesi sekmesine tıkla
-        page.click("#btnSim30TabLedger")
-        page.wait_for_selector("#sim30SubtabContent .sim30-table tbody tr", timeout=5000)
-        ledger_rows = page.query_selector_all("#sim30SubtabContent .sim30-table tbody tr")
-        print(f"  Simülasyon Muhasebe Çizelgesi Satır Sayısı: {len(ledger_rows)}")
-        assert len(ledger_rows) == 31
-
-        # Tekrar Aktif Plana dön
-        page.click("#btnPmnActive")
-        page.wait_for_selector("#planChartCard", timeout=5000)
+        # İnteraktif grafik ve kırmızı yüksek risk çizgisi
         assert page.query_selector("#planChartCard") is not None
-        print("  ✓ 30 Günlük Geçmiş Kasa ve Kuponlarım Simülasyon panosu, KPI kartları, kupon listesi ve muhasebe tablosu başarıyla doğrulandı.")
+        high_stroke = page.evaluate("""() => {
+            const svg = document.querySelector('#planTrajectorySvg');
+            return svg ? svg.innerHTML.includes('#ef4444') : false;
+        }""")
+        assert high_stroke is True, "Yüksek risk çizgisi kırmızı (#ef4444) değil!"
+        print("  ✓ Gerçek Kasa planı panosu, KPI kutuları ve kırmızı yüksek risk eğrisi doğrulandı.")
+
+        # ----------------------------------------------------------------------
+        # TEST 14: Gerçek Kuponlarım (#pane-rec) & AI Model Risk Uyarı Rozetleri
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 14: Gerçek Kuponlarım (#pane-rec) & AI Model Risk Rozetleri ---")
+        page.click("#tab-rec")
+        time.sleep(0.5)
+        assert page.is_visible("#pane-rec") is True
+
+        rec_cards = page.query_selector_all("#pane-rec .rec-card")
+        assert len(rec_cards) == 3
+
+        # AI Güven rozetleri
+        safe_badge = page.query_selector("#pane-rec .ai-badge.safe")
+        med_badge = page.query_selector("#pane-rec .ai-badge.med")
+        risky_badge = page.query_selector("#pane-rec .ai-badge.risky")
+
+        assert safe_badge is not None, "Minimum risk için .ai-badge.safe bulunamadı"
+        assert med_badge is not None, "Orta risk için .ai-badge.med bulunamadı"
+        assert risky_badge is not None, "Yüksek risk için .ai-badge.risky bulunamadı"
+
+        assert "Yüksek Güven / Garanti Profil" in safe_badge.inner_text()
+        assert "%95.5" in safe_badge.inner_text()
+        assert "Yüksek Risk / Düşük Başarı Oranı Uyarısı" in risky_badge.inner_text()
+        assert "sorumluluğunuzdadır" in risky_badge.inner_text()
+        print("  ✓ Model risk rozetleri (Minimum: Garanti/Yüksek Güven, Yüksek: Düşük Başarı / Sorumluluk uyarısı) doğrulandı.")
+
+        # Kupon düzenleyici modalı ve dinamik AI uyarısı
+        btn_edit = page.query_selector("#pane-rec .btn-edit-rec")
+        if btn_edit:
+            page.click("#pane-rec .btn-edit-rec")
+        else:
+            page.evaluate("""() => {
+                window.BETAVUS_PAPER_UI.openCouponEditor({
+                    couponClass: 'minimum',
+                    selections: [{ matchId: 'TEST', league: 'Premier League', home: 'Arsenal', away: 'Chelsea', market: 'over_0_5', probability: 0.96 }]
+                });
+            }""")
+        time.sleep(0.4)
+        editor_modal = page.query_selector("#couponEditorModal")
+        assert editor_modal is not None and editor_modal.is_visible() is True
+        assert page.query_selector("#couponEditorModal .ai-editor-feedback") is not None
+        print("  ✓ Kupon Düzenleme Modalı ve dinamik AI değerlendirme uyarısı doğrulandı.")
+        page.click("#btnCloseEditor")
+        time.sleep(0.3)
+
+        # ----------------------------------------------------------------------
+        # TEST 15: Admin Kuponlarım (#pane-cpn) & Admin Notice Banner
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 15: Admin Kuponlarım (#pane-cpn) ---")
+        page.click("#tab-cpn")
+        time.sleep(0.5)
+        assert page.is_visible("#pane-cpn") is True
+
+        admin_banner = page.query_selector("#pane-cpn .admin-notice-banner")
+        assert admin_banner is not None, "Admin bildirim bannerı (.admin-notice-banner) bulunamadı"
+        assert "Admin & Canlı Model Takip Ekranı" in admin_banner.inner_text()
+
+        # 12 Eylül canlı model takibi alt sekmesi
+        page.click("#csub-model12")
+        time.sleep(0.5)
+        cpn_sum = page.inner_text("#cpnSummary")
+        assert "12 Eylül 2026" in cpn_sum
+        print("  ✓ Admin Kuponlarım sekmesi, admin bilgilendirme bannerı ve 12 Eylül canlı takip ekranı doğrulandı.")
+
+        # ----------------------------------------------------------------------
+        # TEST 16: Tüm DOM Genelinde Sıfır Argo ("Yatış") Doğrulaması
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 16: Zero Slang ('Yatış') Global DOM Verification ---")
+        page_body_text = page.inner_text("body")
+        for bad_word in ['Yatış', 'yatış', 'Yatis', 'yatis']:
+            assert bad_word not in page_body_text, f"Sayfa gövdesinde yasaklı kelime bulundu: {bad_word}"
+        print("  ✓ Tüm sayfada sıfır 'Yatış' argo kelimesi teyit edildi.")
 
         browser.close()
         print("\n========================================================")

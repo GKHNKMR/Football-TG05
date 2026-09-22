@@ -68,6 +68,22 @@ with sync_playwright() as p:
     assert len(pred_headers) == 5, f"Tahminler tablosu 5 sütunlu olmalı, şu an: {len(pred_headers)}"
     assert any('ŞANS' in h.upper() for h in pred_headers), "Çifte Şans sütunu bulunamadı!"
 
+    # Seçili ligde maç yoksa başka ligden maç geri gelmemeli (eski fallback hatası)
+    page.evaluate("""() => {
+      window.__leagueFilterOriginal = window.__data;
+      window.__data = [{...window.__data[0], match_id:'TEST-ONLY-PRIMEIRA', league:'Primeira Liga'}];
+      renderPred();
+    }""")
+    page.click('#filters .chip[data-league="Premier League"]')
+    time.sleep(0.2)
+    assert page.query_selector('#filters .chip[data-league="Premier League"].active'), "Premier League filtresi aktif olmadı"
+    assert not page.query_selector('#rows .row'), "Premier League seçiliyken Primeira Liga maçı görünmemeli"
+    assert "TEST-ONLY-PRIMEIRA" not in page.inner_text('#rows'), "Seçili lig dışında maç listelendi"
+    page.evaluate("""() => { window.__data = window.__leagueFilterOriginal; delete window.__leagueFilterOriginal; }""")
+    page.click('#filters .chip[data-league="Tümü"]')
+    time.sleep(0.2)
+    print("  ✓ Lig filtresi, seçili ligde maç yokken başka ligleri göstermiyor.")
+
     eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
     assert len(eligible_rows) > 0, "Bültende yüksek güvenli Çifte Şans vurgusu bulunamadı!"
 

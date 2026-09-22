@@ -387,6 +387,8 @@
 
     const filteredSamples = (data.samples || []).filter(x => !isFiltered || x.league === btLeagueFilter);
     const visibleSamples = filteredSamples.slice(0, btSampleExpanded ? 50 : 12);
+    const visibleRangeHits = visibleSamples.filter(x => x.range_hit).length;
+    const visibleRangePct = visibleSamples.length ? (visibleRangeHits / visibleSamples.length * 100).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0';
 
     let html = `
       <div class="cifte-container cifte-backtest">
@@ -602,6 +604,11 @@
                 `).join('')}
               </tbody>
             </table>
+          </div>
+          <div class="cifte-bt-sample-scope">
+            Gösterilen ${num(visibleSamples.length)} örnekte <b>${num(visibleRangeHits)}</b> gol aralığı tahmini tuttu (<b>%${visibleRangePct}</b>).
+            Bu, yalnızca ekrandaki örneklerin oranıdır; ana başarı oranı ${num(st.gr_n)} doğrulama maçının tamamından hesaplanır:
+            <b>%${st.gr_pct} (${num(st.gr_h)} / ${num(st.gr_n)})</b>.
           </div>
           ${filteredSamples.length > 12 ? `
             <div class="cifte-bt-sample-actions">

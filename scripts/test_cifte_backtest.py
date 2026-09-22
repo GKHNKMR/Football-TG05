@@ -130,6 +130,13 @@ with sync_playwright() as p:
     })""")
     assert 0 < range_stats['h'] <= range_stats['n'] <= 16478, f"Gol aralığı doğrulama sayıları geçersiz: {range_stats}"
     assert 0 < range_stats['pct'] <= 100, f"Gol aralığı başarı oranı geçersiz: {range_stats['pct']}"
+    invalid_three_goal_hits = page.evaluate("""() => window.CIFTE_BACKTEST_DATA.samples.filter(
+      x => x.goal_range === '2-3' && x.actual_total === 3 && !x.range_hit
+    ).length""")
+    assert invalid_three_goal_hits == 0, "2-3 gol tahmini ve 3 gerçek gol olan bir maç hatalı biçimde başarısız sayıldı"
+    sample_scope_text = page.inner_text('.cifte-bt-sample-scope')
+    assert "13.828" in sample_scope_text and "6.377 / 13.828" in sample_scope_text, "Örnek/genel başarı kapsamı açıklaması eksik"
+    assert "%46.1" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
     print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")
 
     # 5. Masaüstü okunabilirliği: KPI kartları 2 sütun, ana rakamlar ve tablo metni yeterince büyük

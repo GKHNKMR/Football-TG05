@@ -295,6 +295,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 #pane-cifte .cifte-bt-muted-result{color:var(--muted)}
 #pane-cifte .cifte-bt-sample-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11.5px;margin-top:12px}
 #pane-cifte .cifte-bt-sample-actions .chip{padding:7px 11px;font-size:11.5px}
+#pane-cifte .cifte-bt-sample-scope{margin-top:12px;padding:10px 12px;border-radius:9px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.22);color:var(--muted);font-size:11.5px;line-height:1.55}
+#pane-cifte .cifte-bt-sample-scope b{color:#fbbf24}
 #pane-cifte .cifte-bt-method{background:var(--panel2)!important;padding:18px 20px}
 #pane-cifte .cifte-bt-method h3{margin:0 0 9px;font-size:16px;color:var(--accent)}
 #pane-cifte .cifte-bt-method p{font-size:12.5px;color:var(--muted);line-height:1.65;margin:0 0 9px}
@@ -967,7 +969,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <script src="js/paper_engine.js"></script>
 <script src="js/paper_ui.js"></script>
 <script src="js/cifte_engine.js"></script>
-<script src="js/cifte_ui.js?v=20260921-validation-only"></script>
+<script src="js/cifte_ui.js?v=20260921-sample-scope"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
@@ -1190,7 +1192,9 @@ function visibleAll(list){
   });
   if (!inWindow.length && list.length > 0) {
     const scoped = list.filter(inLeague);
-    return scoped.length > 0 ? scoped : list;
+    // Seçili ligde maç yoksa başka ligleri geri getirme. "Tümü" seçiliyken
+    // scoped zaten listenin tamamıdır ve eski genişletilmiş görünüm korunur.
+    return scoped;
   }
   return inWindow;
 }
@@ -1287,7 +1291,7 @@ function renderPred(){
       const title=`Aralarındaki son ${h2h.count} maç${tierTxt?` (${esc(tierTxt)} dahil)`:''}: ${h2h.home_wins}G-${h2h.draws}B-${h2h.away_wins}M · ortalama ${h2h.avg_total} gol · 2.5Ü %${h2h.over25_pct}`;
       h2hChip=`<span class="h2h-chip" title="${title}">⚡ ${tierTxt?esc(tierTxt)+' · ':''}${h2h.count} H2H (ort. ${h2h.avg_total} gol)</span>`;
     }
-    return `<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
+    return `<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-league="${esc(x.league||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>

@@ -138,6 +138,12 @@ with sync_playwright() as p:
     assert "13.828" in sample_scope_text and "6.377 / 13.828" in sample_scope_text, "Örnek/genel başarı kapsamı açıklaması eksik"
     assert "%46.1" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
     assert "Model Güveni:" in page.inner_text('#tblCifteSamples'), "Gol aralığı yüzdesi Model Güveni olarak etiketlenmiyor"
+    dc_cells_text = " ".join(page.locator('#tblCifteSamples tbody td:nth-child(4)').all_inner_texts())
+    assert "12 (Beraberlik Yok)" in dc_cells_text, "12 çifte şans kodunun anlamı açıklanmıyor"
+    assert "1X (Ev/Beraberlik)" in dc_cells_text, "1X çifte şans kodunun anlamı açıklanmıyor"
+    assert "X2 (Beraberlik/Deplasman)" in dc_cells_text, "X2 çifte şans kodunun anlamı açıklanmıyor"
+    assert "Model Güveni:" in dc_cells_text, "Çifte şans yüzdesi Model Güveni olarak etiketlenmiyor"
+    assert "Çifte şans tuttu" in dc_cells_text, "Çifte şans başarı sonucu açık biçimde gösterilmiyor"
     print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")
 
     # 5. Masaüstü okunabilirliği: KPI kartları 2 sütun, ana rakamlar ve tablo metni yeterince büyük

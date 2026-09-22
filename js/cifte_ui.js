@@ -32,6 +32,18 @@
     return (Number(val) || 0).toLocaleString('tr-TR');
   }
 
+  function dcMeaning(pick) {
+    return ({
+      '1X': 'Ev/Beraberlik',
+      '12': 'Beraberlik Yok',
+      'X2': 'Beraberlik/Deplasman'
+    })[pick] || '';
+  }
+
+  function pctValue(val) {
+    return (Number(val) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+
   function isLimitedData(x) {
     if (typeof window !== 'undefined' && typeof window.isLimitedData === 'function') {
       return window.isLimitedData(x);
@@ -589,13 +601,13 @@
                     <td class="sample-match">${esc(s.home)} — ${esc(s.away)}</td>
                     <td><b style="font-size:16px;">${s.actual_score}</b><div class="sample-meta">${s.actual_total} gol</div></td>
                     <td>
-                      <span class="cifte-bt-pick">${s.best_dc} · %${s.best_dc_pct}</span>
+                      <span class="cifte-bt-pick">${s.best_dc} (${dcMeaning(s.best_dc)}) · Model Güveni: %${pctValue(s.best_dc_pct)}</span>
                       ${s.dc_hit
-                        ? '<span class="cifte-bt-result">✓ Tahmin tuttu</span>'
+                        ? '<span class="cifte-bt-result">✓ Çifte şans tuttu</span>'
                         : '<span class="cifte-bt-result cifte-bt-muted-result">—</span>'}
                     </td>
                     <td>
-                      <span class="cifte-bt-pick" style="border-color:rgba(251,191,36,.45);color:#fbbf24;">${s.goal_range_label} · Model Güveni: %${s.goal_range_pct}</span>
+                      <span class="cifte-bt-pick" style="border-color:rgba(251,191,36,.45);color:#fbbf24;">${s.goal_range_label} · Model Güveni: %${pctValue(s.goal_range_pct)}</span>
                     </td>
                     <td>${s.range_hit
                       ? '<span class="cifte-bt-result" style="color:#fbbf24;">✓ Aralık tuttu</span>'

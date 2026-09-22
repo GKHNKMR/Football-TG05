@@ -595,7 +595,7 @@
                         : '<span class="cifte-bt-result cifte-bt-muted-result">—</span>'}
                     </td>
                     <td>
-                      <span class="cifte-bt-pick" style="border-color:rgba(251,191,36,.45);color:#fbbf24;">${s.goal_range_label} · %${s.goal_range_pct}</span>
+                      <span class="cifte-bt-pick" style="border-color:rgba(251,191,36,.45);color:#fbbf24;">${s.goal_range_label} · Model Güveni: %${s.goal_range_pct}</span>
                     </td>
                     <td>${s.range_hit
                       ? '<span class="cifte-bt-result" style="color:#fbbf24;">✓ Aralık tuttu</span>'

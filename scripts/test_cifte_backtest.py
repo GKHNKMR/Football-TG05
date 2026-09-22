@@ -137,6 +137,7 @@ with sync_playwright() as p:
     sample_scope_text = page.inner_text('.cifte-bt-sample-scope')
     assert "13.828" in sample_scope_text and "6.377 / 13.828" in sample_scope_text, "Örnek/genel başarı kapsamı açıklaması eksik"
     assert "%46.1" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
+    assert "Model Güveni:" in page.inner_text('#tblCifteSamples'), "Gol aralığı yüzdesi Model Güveni olarak etiketlenmiyor"
     print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")
 
     # 5. Masaüstü okunabilirliği: KPI kartları 2 sütun, ana rakamlar ve tablo metni yeterince büyük

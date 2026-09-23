@@ -1044,14 +1044,21 @@
   }
 
   // Excel "Kasa Gelisim Grafigi": çizgi grafik, 1-30. gün, Gerçek Kasa (€) ve Teorik Hedef Kasa (€),
-  // işaretçisiz 2,25 pt çizgiler, boş günler boşluk, açıklama altta, dikey eksen 500'lük adımlar
+  // işaretçisiz 2,25 pt çizgiler, boş günler boşluk, açıklama altta
+  // Eksen adımı 1-2-2,5-5 × 10^n dizisinden seçilir; değer ne kadar büyük olursa olsun 5-8 etiket kalır
+  function niceAxisStep(rough) {
+    const mag = Math.pow(10, Math.floor(Math.log10(Math.max(rough, 1e-9))));
+    const f = rough / mag;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  }
+
   function renderKasaChartSvg(sim, curr) {
     const W = 820, H = 330, L = 64, R = 18, T = 18, B = 34;
     const pw = W - L - R, ph = H - T - B;
     const rows = sim.rows.slice(0, KASA_CHART_DAYS);
     const n = rows.length;
     const peak = Math.max(1, ...rows.map(r => r.targetBank), ...rows.map(r => r.actualBank || 0));
-    const step = 500;
+    const step = niceAxisStep(peak / 6);
     const maxY = Math.ceil(peak / step) * step;
     const x = i => L + (i + 0.5) * (pw / n);
     const y = v => T + ph - (Math.max(0, v) / maxY) * ph;

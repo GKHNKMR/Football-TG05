@@ -1030,7 +1030,9 @@
     return (!plan.name || / Risk Kasası$/.test(plan.name)) ? `Kasa ${idx + 1}` : plan.name;
   }
 
-  // Kasa yoksa Excel dosyasındaki örnek kasa ile başlar (50 € → 1000 €, Medium, 1-12. gün gerçek kasa)
+  // Kasa yoksa Excel dosyasındaki örnek kasa ile başlar (50 € → 1000 €, Medium, 1-12. gün gerçek kasa).
+  // Kişi bir değer değiştirene kadar kaydedilmez: yeni bir cihaz hesaba bağlandığında bu örnek kasa
+  // buluttaki kasalarla birleşip fazladan bir "Kasa 1" oluşturmasın.
   function ensureDefaultKasa() {
     if (paperState) PE.ensurePlansArray(paperState);
     if (paperState && paperState.plans && paperState.plans.length) return;
@@ -1040,7 +1042,6 @@
     } else {
       paperState = PE.createInitialState({ currency: 'EUR', riskProfile: example.riskProfile }, example);
     }
-    saveState();
   }
 
   // Excel "Kasa Gelisim Grafigi": çizgi grafik, 1-30. gün, Gerçek Kasa (€) ve Teorik Hedef Kasa (€),

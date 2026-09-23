@@ -21,6 +21,14 @@ npm-debug.log*
 Thumbs.db
 desktop.ini
 
+# Gizli bilgiler (Supabase secret/service_role anahtarı, veritabanı ve hesap şifreleri,
+# Google Client Secret) - yalnızca yerelde tutulur, asla GitHub'a gönderilmez.
+# Not: js/auth_config.js içindeki proje adresi + sb_publishable_ anahtarı herkese açık
+# olmak üzere tasarlanmıştır ve sitenin çalışması için commit'lenir.
+.secrets/
+.env
+.env.*
+
 # Local build/scratch
 *.log
 /tmp/

@@ -264,7 +264,7 @@ def kickoff_utc(day, clock, tz_name):
     return naive.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-FORECAST_DAYS = 10  # publish the next 10 days of fixtures (today + 10)
+FORECAST_DAYS = 30  # publish the next month of fixtures (today + 30) — Bülten shows one month ahead
 
 
 def sunday_to_sunday(today):

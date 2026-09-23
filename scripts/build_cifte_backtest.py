@@ -178,6 +178,7 @@ for div, league in DIVISIONS.items():
                 permille(pred['p_over_0_5']), permille(pred['p_over_1_5']), permille(pred['p_over_2_5']),
                 permille(p_1x), permille(p_12), permille(p_x2),
                 1 if is_limited else 0,
+                round(float(pred['lam_home']) + float(pred['lam_away']), 2),
             ])
 
             all_matches.append({
@@ -234,8 +235,8 @@ stats_rows.sort(key=lambda r: (r[0], r[1], r[2]))
 stats_payload = {
     'generated_at': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
     'seasons': [season_label(sz) for sz in TARGET_SEASONS],
-    'fields': ['date', 'league', 'home', 'away', 'hg', 'ag', 'p05', 'p15', 'p25', 'p1x', 'p12', 'px2', 'limited'],
-    'thresholds': {'p05': 950, 'p15': 850, 'p25': 750, 'dc': 750},
+    'fields': ['date', 'league', 'home', 'away', 'hg', 'ag', 'p05', 'p15', 'p25', 'p1x', 'p12', 'px2', 'limited', 'lambda'],
+    'thresholds': {'p05': 950, 'p15': 850, 'p25': 800, 'dc': 800},
     'rows': stats_rows,
 }
 with open('data/stats-5season.json', 'w', encoding='utf-8') as f:
@@ -243,14 +244,14 @@ with open('data/stats-5season.json', 'w', encoding='utf-8') as f:
 print(f"Wrote data/stats-5season.json with {len(stats_rows)} matches.")
 
 # Ana sayfa (Bülten) şeridi: yalnızca vurgulanan tahminlerin başarısı.
-# Kısıtlı veri hariç; her pazar kendi eşiğiyle (0.5≥%95, 1.5≥%85, 2.5≥%75, 1X/12/X2≥%75).
+# Kısıtlı veri hariç; her pazar kendi eşiğiyle (0.5≥%95, 1.5≥%85, 2.5≥%80, 1X/12/X2≥%80).
 HL_MARKETS = [
     ('0.5+', 6, 950, lambda hg, ag: hg + ag >= 1),
     ('1.5+', 7, 850, lambda hg, ag: hg + ag >= 2),
-    ('2.5+', 8, 750, lambda hg, ag: hg + ag >= 3),
-    ('1X', 9, 750, lambda hg, ag: hg >= ag),
-    ('12', 10, 750, lambda hg, ag: hg != ag),
-    ('X2', 11, 750, lambda hg, ag: ag >= hg),
+    ('2.5+', 8, 800, lambda hg, ag: hg + ag >= 3),
+    ('1X', 9, 800, lambda hg, ag: hg >= ag),
+    ('12', 10, 800, lambda hg, ag: hg != ag),
+    ('X2', 11, 800, lambda hg, ag: ag >= hg),
 ]
 hl_markets = {name: {'n': 0, 'h': 0} for name, *_ in HL_MARKETS}
 hl_match_n = hl_match_h = 0

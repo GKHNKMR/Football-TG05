@@ -24,7 +24,7 @@ with sync_playwright() as p:
     # Menüde yalnızca 3 ana sekme görünür; Çifte Şans sekmesi gizli ama kodu duruyor
     tabs = [t.inner_text().strip() for t in page.query_selector_all('.tabs .tab:not([hidden])')]
     print(f"Mevcut Sekmeler ({len(tabs)}): {tabs}")
-    assert [t.upper() for t in tabs] == ['BÜLTEN', 'İSTATİSTİKLER', 'SANAL KASA'], f"Ana sekmeler hatalı: {tabs}"
+    assert [t.upper() for t in tabs] == ['BÜLTEN', 'İSTATİSTİKLER', 'SANAL KASA', 'FAQ'], f"Ana sekmeler hatalı: {tabs}"
     assert page.query_selector('#tab-cifte'), "tab-cifte DOM'da bulunamadı!"
     
     # 2. Click #tab-cifte: doğrudan Model Doğruluğu açılmalı
@@ -77,16 +77,24 @@ with sync_playwright() as p:
       window.__data = [{...window.__data[0], match_id:'TEST-ONLY-PRIMEIRA', league:'Primeira Liga'}];
       renderPred();
     }""")
-    page.click('#filters .chip[data-league="Premier League"]')
+    page.select_option('#lgPred', 'Premier League')
     time.sleep(0.2)
-    assert page.query_selector('#filters .chip[data-league="Premier League"].active'), "Premier League filtresi aktif olmadı"
+    assert page.eval_on_selector('#lgPred', 'e=>e.value') == 'Premier League', "Premier League filtresi aktif olmadı"
     assert not page.query_selector('#rows .row'), "Premier League seçiliyken Primeira Liga maçı görünmemeli"
     assert "TEST-ONLY-PRIMEIRA" not in page.inner_text('#rows'), "Seçili lig dışında maç listelendi"
     page.evaluate("""() => { window.__data = window.__leagueFilterOriginal; delete window.__leagueFilterOriginal; }""")
-    page.click('#filters .chip[data-league="Tümü"]')
+    page.select_option('#lgPred', 'Tümü')
     time.sleep(0.2)
     print("  ✓ Lig filtresi, seçili ligde maç yokken başka ligleri göstermiyor.")
 
+    # Veriden bağımsız: pencere içinde ev sahibinin açık favori olduğu sentetik, tam verili bir maç ekle
+    page.evaluate("""() => {
+      const ko = new Date(Date.now() + 2*86400000).toISOString().slice(0,19) + 'Z';
+      window.__data.push({match_id:'TEST-DC-STRONG', league:'Premier League', home:'Test Güçlü', away:'Test Zayıf', kickoff_utc:ko,
+        basis:'form+h2h', h2h_matches_used:6, lam_home:2.3, lam_away:0.5, exp_goals:2.8, rho:0.02,
+        p_over_0_5:0.94, p_over_1_5:0.77, p_over_2_5:0.53});
+      renderPred();
+    }""")
     eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
     assert len(eligible_rows) > 0, "Bültende yüksek güvenli Çifte Şans vurgusu bulunamadı!"
 
@@ -103,14 +111,14 @@ with sync_playwright() as p:
     assert all(r.query_selector('.dcp .pill.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen vurgu eksik"
     dc_animation = page.eval_on_selector('.dcp .pill.hot', "el => getComputedStyle(el).animationName")
     assert dc_animation in ('pillhot', 'pillhot2'), f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"
-    for r in eligible_rows:   # vurgulanan her ÇŞ hücresi gerçekten ≥%75
+    for r in eligible_rows:   # vurgulanan her ÇŞ hücresi gerçekten ≥%80
         for v in r.eval_on_selector_all('.dcp .pill.hot', "e=>e.map(x=>parseFloat(x.textContent))"):
-            assert v >= 75, f"%75 altı ÇŞ vurgulandı: {v}"
+            assert v >= 80, f"%80 altı ÇŞ vurgulandı: {v}"
     print(f"  Çifte Şans yüksek güvenli maç sayısı: {len(eligible_rows)}")
 
     # Kısıtlı veri ve kritik eksik oyunculu iki sentetik maç asla ÇŞ vurgusu almamalı
     page.evaluate("""() => {
-      const base = window.__data[0];
+      const base = window.__data.find(m => m.match_id === 'TEST-DC-STRONG');
       window.__data.push({...base, match_id:'TEST-DC-LIMITED', home:'Test Limited', basis:'partial-form', h2h_tier:null, h2h_matches_used:0});
       window.__data.push({...base, match_id:'TEST-DC-CRITICAL', home:'Test Critical', lineup:{source:'ESPN starting XI',home_missing_key:['Kilit Oyuncu'],away_missing_key:[]}});
       renderPred();

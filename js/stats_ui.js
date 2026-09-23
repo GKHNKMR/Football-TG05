@@ -13,18 +13,18 @@
   const MARKETS = [
     ['0.5+', 6, 950, (h, a) => h + a >= 1],
     ['1.5+', 7, 850, (h, a) => h + a >= 2],
-    ['2.5+', 8, 750, (h, a) => h + a >= 3],
-    ['1X', 9, 750, (h, a) => h >= a],
-    ['12', 10, 750, (h, a) => h !== a],
-    ['X2', 11, 750, (h, a) => a >= h],
+    ['2.5+', 8, 800, (h, a) => h + a >= 3],
+    ['1X', 9, 800, (h, a) => h >= a],
+    ['12', 10, 800, (h, a) => h !== a],
+    ['X2', 11, 800, (h, a) => a >= h],
   ];
   const BUCKETS = [[500, 600], [600, 700], [700, 800], [800, 900], [900, 1001]];
 
   let DATA = null, loading = null;
-  const st = { season: '', hlOnly: false, q: '', order: 'asc', page: 0 };
+  const st = { season: '', res: 'all', q: '', order: 'desc', page: 0 };   // res: all | won | lost (vurgulu maçlar)
   try {
     st.season = localStorage.getItem('betavus.stats_season') || '';
-    st.order = localStorage.getItem('betavus.stats_order') || 'asc';
+    st.order = localStorage.getItem('betavus.stats_order2') || 'desc';   // varsayılan: yeniden eskiye
   } catch (e) {}
 
   const escH = s => String(s).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
@@ -42,7 +42,7 @@
         if (!r.ok) throw new Error('stats ' + r.status);
         return r.json();
       }).then(d => {
-        d.rows.forEach(r => { r.push(seasonOfRow(r[0])); });   // r[13] = sezon
+        d.rows.forEach(r => { r[14] = seasonOfRow(r[0]); });   // r[13] = tahmini toplam gol (λ), r[14] = sezon
         DATA = d; return d;
       }).catch(e => { loading = null; throw e; });
     }
@@ -61,7 +61,7 @@
     const q = st.q.toLocaleLowerCase('tr-TR').split(/\s+/).filter(Boolean);
     return DATA.rows.filter(r =>
       (lg === 'Tümü' || r[1] === lg) &&
-      (!st.season || r[13] === st.season) &&
+      (!st.season || r[14] === st.season) &&
       (!q.length || q.every(w => (r[2] + ' ' + r[3]).toLocaleLowerCase('tr-TR').includes(w))));
   }
 
@@ -98,7 +98,7 @@
   }
 
   function marketTable(a) {
-    const thrTxt = { '0.5+': '≥%95', '1.5+': '≥%85', '2.5+': '≥%75', '1X': '≥%75', '12': '≥%75', 'X2': '≥%75' };
+    const thrTxt = { '0.5+': '≥%95', '1.5+': '≥%85', '2.5+': '≥%80', '1X': '≥%80', '12': '≥%80', 'X2': '≥%80' };
     return `<div class="card st-card"><h2>Pazar bazında doğruluk</h2>
       <p class="st-note"><b>Vurgulanan</b>: modelin güven eşiğini geçtiği tahminler. <b>Genel yön isabeti</b>: tüm maçlarda modelin eğildiği taraf (olur / olmaz) doğru mu? <b>Ort. model olasılığı</b> ile <b>gerçekleşme</b> birbirine yakınsa model iyi kalibre demektir.</p>
       <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr>
@@ -125,7 +125,7 @@
     if (curLeague() !== 'Tümü') return '';
     const by = {};
     for (const r of DATA.rows) {
-      if (st.season && r[13] !== st.season) continue;
+      if (st.season && r[14] !== st.season) continue;
       (by[r[1]] = by[r[1]] || []).push(r);
     }
     const order = (typeof BT_ORDER !== 'undefined' ? BT_ORDER : Object.keys(by)).filter(l => by[l]);
@@ -140,23 +140,37 @@
 
   function cell(r, i, thr, hit) {
     const p = r[i], ok = hit(r[4], r[5]), hl = !r[12] && p >= thr;
-    return `<td class="st-p${hl ? ' hl' : ''}${ok ? ' ok' : ''}" title="Model %${(p / 10).toFixed(1)}${hl ? ' · vurgulandı' : ''}${ok ? ' · gerçekleşti' : ''}">${(p / 10).toFixed(1)}%${ok ? '<i>✓</i>' : ''}</td>`;
+    const cls = hl ? (ok ? ' hl win' : ' hl lose') : (ok ? ' ok' : '');
+    return `<td class="st-p${cls}" title="Model %${(p / 10).toFixed(1)}${hl ? ' · vurgulandı · ' + (ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? ' · gerçekleşti' : ''}">${(p / 10).toFixed(1)}%${!hl && ok ? '<i>✓</i>' : ''}</td>`;
+  }
+
+  function hlRows(rows) {          // yalnızca vurgulu maçlar + tutan / kaybeden filtresi
+    const out = { all: [], won: [], lost: [] };
+    for (const r of rows) {
+      const o = hlOutcomes(r);
+      if (!o.length) continue;
+      out.all.push(r);
+      (o.every(Boolean) ? out.won : out.lost).push(r);
+    }
+    return out;
   }
 
   function matchList(rows) {
-    let list = st.hlOnly ? rows.filter(r => hlOutcomes(r).length) : rows;
+    const groups = hlRows(rows);
+    let list = groups[st.res] || groups.all;
     if (st.order === 'desc') list = list.slice().reverse();
     const pages = Math.max(1, Math.ceil(list.length / PAGE));
     if (st.page >= pages) st.page = pages - 1;
     const slice = list.slice(st.page * PAGE, st.page * PAGE + PAGE);
     const body = slice.map(r => {
-      const outs = hlOutcomes(r), h = outs.filter(Boolean).length;
-      return `<tr${outs.length ? ' class="st-hlrow"' : ''}>
+      const outs = hlOutcomes(r), h = outs.filter(Boolean).length, won = h === outs.length;
+      return `<tr>
         <td class="st-d">${dmyS(r[0])}</td>
-        <td class="st-m"><span class="st-lgs">${flagOf(r[1], 10)} ${escH(r[1])}</span>${escH(r[2])} — ${escH(r[3])}${r[12] ? ' <span class="badge b-lim" title="Kısıtlı veri — vurgulanmaz">⚠️ Kısıtlı</span>' : ''}</td>
+        <td class="st-m"><span class="st-lgs">${flagOf(r[1], 10)} ${escH(r[1])}</span>${escH(r[2])} — ${escH(r[3])}
+          <span class="st-lam" title="Modelin maç öncesi tahmin ettiği toplam gol (λ)">Tahmini toplam gol: <b>${r[13] != null ? Number(r[13]).toFixed(2).replace('.', ',') : '—'}</b></span></td>
         <td class="st-s">${r[4]}-${r[5]}</td>
         ${MARKETS.map(([, i, thr, hit]) => cell(r, i, thr, hit)).join('')}
-        <td class="st-v">${outs.length ? `<b>${h}/${outs.length}</b>` : '<span class="st-mut">—</span>'}</td></tr>`;
+        <td class="st-v"><span class="st-res ${won ? 'won' : 'lost'}">${won ? 'Tuttu' : 'Kaybetti'}</span><small>${h}/${outs.length}</small></td></tr>`;
     }).join('');
     const pager = `<div class="st-pager">
       <button class="hotbtn" data-pg="first" ${st.page ? '' : 'disabled'}>«</button>
@@ -164,20 +178,26 @@
       <span>Sayfa ${st.page + 1} / ${pages} · ${fmtN(list.length)} maç</span>
       <button class="hotbtn" data-pg="next" ${st.page < pages - 1 ? '' : 'disabled'}>Sonraki ›</button>
       <button class="hotbtn" data-pg="last" ${st.page < pages - 1 ? '' : 'disabled'}>»</button></div>`;
-    return `<div class="card st-card st-list"><h2>Maç listesi — tahmin vs gerçekleşen</h2>
-      <p class="st-note">Her hücre maç öncesi model olasılığıdır. <span class="st-legend hl">çerçeveli</span> = vurgulanan tahmin, <b>✓</b> = olay gerçekleşti. Son sütun: o maçta tutan vurgu / toplam vurgu.</p>
+    const fbtn = (k, label, n) => `<button class="hotbtn st-rf${st.res === k ? ' on' : ''} st-rf-${k}" type="button" data-res="${k}">${label} <b>${fmtN(n)}</b></button>`;
+    return `<div class="card st-card st-list"><h2>Vurgulanan maçlar — tahmin vs gerçekleşen</h2>
+      <div class="st-rfs">${fbtn('all', 'Tüm vurgulular', groups.all.length)}${fbtn('won', '✓ Kazanan vurgulular', groups.won.length)}${fbtn('lost', '✗ Kaybeden vurgulular', groups.lost.length)}</div>
+      <p class="st-note">Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Tarih başlığına tıklayarak sıralamayı değiştir.</p>
       ${pager}
-      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>Vurgu</th></tr></thead>
+      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="Tıkla: ${st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye'} sırala">Tarih ${st.order === 'desc' ? '▼' : '▲'}</th><th>Maç</th><th>Skor</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>Vurgu</th></tr></thead>
       <tbody>${body || `<tr><td colspan="10" class="st-mut" style="text-align:center;padding:24px">Bu filtrede maç yok</td></tr>`}</tbody></table></div>
       ${pager}</div>`;
+  }
+
+  function leagueSelect() {
+    const lgs = (typeof leagues !== 'undefined' ? leagues : ['Tümü']);
+    return `<select class="sel" id="stLeague" title="Lig filtresi">${lgs.map(l => `<option value="${escH(l)}"${l === curLeague() ? ' selected' : ''}>${l === 'Tümü' ? 'Tüm ligler' : escH(l)}</option>`).join('')}</select>`;
   }
 
   function controls() {
     const seasons = DATA.seasons || [];
     return `<div class="st-ctl">
+      ${leagueSelect()}
       <select class="sel" id="stSeason"><option value="">Tüm sezonlar (5 sezon)</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
-      <button class="hotbtn${st.hlOnly ? ' on' : ''}" id="stHl" type="button">⚡ sadece vurgulanan maçlar</button>
-      <button class="hotbtn" id="stOrder" type="button">${st.order === 'asc' ? '📅 Eskiden yeniye' : '📅 Yeniden eskiye'}</button>
       <span class="srch"><input id="stQ" type="search" placeholder="Takım ara…" value="${escH(st.q)}" autocomplete="off" spellcheck="false"></span>
     </div>`;
   }
@@ -198,13 +218,14 @@
       ${controls()}${kpis(a)}${marketTable(a)}${confTable(a)}${leagueTable()}${matchList(rows)}`;
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
-    $('stHl').onclick = () => { st.hlOnly = !st.hlOnly; st.page = 0; render(); };
-    $('stOrder').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order', st.order); } catch (x) {} render(); };
+    $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };
+    $('stLeague').onchange = e => { if (typeof setLeague === 'function') setLeague(e.target.value); st.page = 0; render(); };
+    host.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { st.res = b.dataset.res; st.page = 0; render(); });
     let t = null;
     $('stQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); st.page = 0; render(); }, 250); };
     if (focusQ) { const q = $('stQ'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
     host.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => {
-      const pages = Math.max(1, Math.ceil((st.hlOnly ? rows.filter(r => hlOutcomes(r).length) : rows).length / PAGE));
+      const pages = Math.max(1, Math.ceil((hlRows(rows)[st.res] || []).length / PAGE));
       st.page = { first: 0, prev: st.page - 1, next: st.page + 1, last: pages - 1 }[b.dataset.pg];
       render();
       const lst = host.querySelector('.st-list'); if (lst) lst.scrollIntoView({ block: 'start' });
@@ -223,7 +244,7 @@
           <div class="hlb-t"><b>Vurguladığımız tahminlerin başarı oranı</b>
             <span>Son 5 sezon (${s.seasons[0]} – ${s.seasons[s.seasons.length - 1]}) · ${fmtN(s.picks.h)} / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
         </div>
-        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} / ${fmtN(v.n)}"><b>${k}</b> %${String(v.pct).replace('.', ',')}</span>`).join('')}
+        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} tahmin tuttu / ${fmtN(v.n)} vurgulu tahmin"><b>${k}</b> %${String(v.pct).replace('.', ',')} <em>${fmtN(v.h)}/${fmtN(v.n)} maç</em></span>`).join('')}
           <a href="#" class="hlb-link" onclick="setTab('stats');return false">Tüm istatistikler →</a></div>`;
       el.hidden = false;
     }).catch(() => { el.hidden = true; });

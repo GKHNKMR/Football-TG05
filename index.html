@@ -876,6 +876,35 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
   .form-row{grid-template-columns:1fr}
   .st-card{padding:12px 10px}
 }
+
+/* --- 2026-09-23 3. tur: vurgulu liste renkleri, FAQ, lig açılır listesi --- */
+.st-p.hl.win{background:rgba(22,163,74,.16);box-shadow:inset 0 0 0 2px #16a34a;color:var(--text)}
+.st-p.hl.lose{background:rgba(220,38,38,.14);box-shadow:inset 0 0 0 2px #dc2626;color:var(--text)}
+.st-legend.win{background:rgba(22,163,74,.16);box-shadow:inset 0 0 0 2px #16a34a;border-radius:5px;padding:0 5px;font-weight:800;color:var(--text)}
+.st-legend.lose{background:rgba(220,38,38,.14);box-shadow:inset 0 0 0 2px #dc2626;border-radius:5px;padding:0 5px;font-weight:800;color:var(--text)}
+.st-res{display:inline-block;font-weight:900;font-size:12.5px;border-radius:6px;padding:3px 8px}
+.st-res.won{background:#16a34a;color:#fff}
+.st-res.lost{background:#dc2626;color:#fff}
+.st-v small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.st-lam{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:1px}
+.st-lam b{color:var(--text)}
+.st-sort{cursor:pointer;user-select:none;text-decoration:underline dotted}
+.st-sort:hover{color:#2ed3c3}
+.st-rfs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.st-rf.on{background:var(--good);border-color:var(--good);color:#fff}
+.st-rf-won.on{background:#16a34a;border-color:#16a34a}
+.st-rf-lost.on{background:#dc2626;border-color:#dc2626}
+.hlb-chip em{font-style:normal;color:var(--muted);font-size:11.5px;margin-left:3px}
+.lgsel{font-size:12.5px;padding:8px 12px;border-radius:11px}
+.faq-intro{margin:6px 0 16px}
+.faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+.faq summary{cursor:pointer;padding:14px 18px;font-weight:900;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--good);font-size:20px;line-height:1}
+.faq details[open] summary::after{content:"−"}
+.faq details p{margin:0;padding:0 18px 16px;color:var(--muted);font-size:14.5px;line-height:1.6}
+.faq details p b{color:var(--text)}
+@media(max-width:650px){.faq-intro{grid-template-columns:1fr}}
 </style>
 
 </head>
@@ -888,6 +917,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
         <button class="tab" id="tab-pred" type="button">Bülten</button>
         <button class="tab" id="tab-stats" type="button">İstatistikler</button>
         <button class="tab" id="tab-plan" type="button">Sanal Kasa</button>
+        <button class="tab" id="tab-faq" type="button">FAQ</button>
         <!-- Gizli sekmeler: kodları korunuyor, menüde görünmüyor -->
         <button class="tab tab-hidden" id="tab-sim-kasa" type="button" hidden>Örnek Kasa Simülasyonu</button>
         <button class="tab tab-hidden" id="tab-sim-kupon" type="button" hidden>Örnek Kuponlarım Simülasyonu</button>
@@ -898,7 +928,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
         <button class="tab tab-hidden" id="tab-cifte" type="button" hidden>Çifte Şans &amp; Gol Aralığı</button>
       </div>
       <div class="topbtns">
-        <button class="iconbtn" id="infoBtn" type="button" title="Nasıl hesaplanıyor?">?</button>
         <button class="iconbtn" id="themeBtn" type="button" title="Tema">🌙</button>
         <button class="iconbtn" id="refresh" type="button" title="Yenile">↻</button>
         <button class="acctbtn" id="acctBtn" type="button">Giriş / Kayıt Ol</button>
@@ -907,7 +936,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
   </header>
   <div class="hero">
     <div class="hero-t">Betting Analysis, Variance &amp; Uncertainty System</div>
-    <div class="hero-s">Poisson + Dixon-Coles tabanlı futbol olasılık motoru · 9 lig</div>
+    <div class="hero-s">AI-powered football goal probability engine for risk-free paper-betting simulation</div>
   </div>
   <nav class="filters" id="filters" hidden></nav>
 
@@ -932,7 +961,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
       <span class="badge b0">○</span> sadece lig ortalaması
     </div>
     <div class="dc-bulletin-note">
-      <b>Vurgu eşikleri:</b> 0.5+ ≥%95 · 1.5+ ≥%85 · 2.5+ ≥%75 · 1X / 12 / X2 ≥%75. Kısıtlı veri veya kritik eksik oyuncu uyarısı olan maçlar vurgulanmaz. Vurgu garanti anlamına gelmez.
+      <b>Vurgu eşikleri:</b> 0.5+ ≥%95 · 1.5+ ≥%85 · 2.5+ ≥%80 · 1X / 12 / X2 ≥%80. Kısıtlı veri veya kritik eksik oyuncu uyarısı olan maçlar vurgulanmaz. Vurgu garanti anlamına gelmez.
     </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
@@ -941,6 +970,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
         <input id="qPred" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
         <button class="sx" id="qPredX" type="button" hidden aria-label="Temizle">×</button>
       </span>
+      <select class="sel lgsel" id="lgPred" title="Lig filtresi"></select>
     </div>
     <div class="table">
       <div class="head">
@@ -956,6 +986,43 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     </div>
   </section>
   <section id="pane-cifte" hidden></section>
+  <section id="pane-faq" hidden>
+    <h1 class="st-h1">Sık Sorulan Sorular</h1>
+    <div class="intro-grid faq-intro">
+      <div class="intro-box is-what">
+        <div class="intro-tag">🛡️ BETAVUS NEDİR?</div>
+        <h4>Yapay Zekâ Destekli Paper-Betting &amp; Kasa Yönetimi</h4>
+        <p>Futbol toplam gol (0.5Ü, 1.5Ü, 2.5Ü) ve çifte şans (1X, 12, X2) pazarları için Poisson ve Dixon-Coles matematiksel olasılık modelleriyle çalışan, <b>risksiz sanal kasa simülasyonu, akıllı kupon planlama ve disiplinli portföy yönetimi</b> platformudur.</p>
+      </div>
+      <div class="intro-box is-not">
+        <div class="intro-tag">🚫 BETAVUS NE DEĞİLDİR?</div>
+        <h4>Bahis Operatörü, Kumarhane veya Ödeme Aracı Değildir!</h4>
+        <p>BETAVUS <b>asla bahis kabul etmez, para yatırma/çekme yapmaz</b> ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve getiriler sanaldır; kesin kazanç vaat etmez. Kullanıcının para kaybetmeden stratejisini ölçmesini sağlar.</p>
+      </div>
+    </div>
+    <div class="faq">
+      <details open><summary>Olasılıklar nasıl hesaplanıyor?</summary>
+        <p>Her takımın <b>ev / deplasman</b> maçlarında attığı ve yediği gol oranları, son 4 sezondan yakın sezona daha çok ağırlık verilerek (1.0 / 0.7 / 0.45 / 0.30) çıkarılır; yakın tarihli maçlar ayrıca daha ağır sayılır. İki taraf birleştirilip ev ve deplasmanın beklenen golleri (λ) bulunur. İki takım 2+ kez karşılaşmışsa son karşılaşmaların gol ortalaması %28 ağırlıkla karıştırılır. Bu λ değerleri düşük skorlar için Dixon-Coles düzeltmesiyle bir skor matrisine dönüştürülür; 0.5+ / 1.5+ / 2.5+ ve 1X / 12 / X2 olasılıklarının hepsi bu matristen gelir.</p></details>
+      <details><summary>"Tahmini toplam gol" nedir?</summary>
+        <p>Modelin maçtan önce beklediği toplam gol sayısıdır (ev λ + deplasman λ). Örneğin 2,74 demek, bu maçın uzun vadede ortalama 2,74 gol üretmesinin beklendiği anlamına gelir; kesin skor tahmini değildir.</p></details>
+      <details><summary>Vurgu eşikleri nelerdir?</summary>
+        <p>Bir tahmin şu eşiği geçerse vurgulanır: <b>0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %80 · 1X / 12 / X2 ≥ %80</b>. Vurgu, modelin en emin olduğu tahminlerdir; garanti değildir.</p></details>
+      <details><summary>Hangi maçlar vurgulanmaz?</summary>
+        <p><span class="badge b-lim">⚠️ Kısıtlı Veri</span> etiketli maçlar (yeni yükselen takım, çok az maç geçmişi, yalnızca lig ortalamasına dayanan tahmin) ve kilit bir oyuncusunun eksik olduğu doğrulanan maçlar, olasılığı eşiği geçse bile vurgulanmaz; başarı oranlarına da dahil edilmez.</p></details>
+      <details><summary>Rozetler ne anlama geliyor?</summary>
+        <p><span class="badge b3">●●●</span> H2H + form verisine dayanıyor (en sağlam) · <span class="badge b2">●●</span> forma dayanıyor · <span class="badge b-lim">⚠️ Kısıtlı Veri</span> tek takım / yetersiz maç geçmişi.</p></details>
+      <details><summary>Kilit oyuncu eksikse ne oluyor?</summary>
+        <p>Opta xG ve xA verileriyle takımların hücum yükünü çeken kilit oyuncular belirlenir. Maç günü ilk 11'de (ESPN) veya sakatlık / ceza listelerinde (Transfermarkt) kilit isimlerin olmadığı doğrulanırsa o takımın gol beklentisi otomatik olarak düşürülür.</p></details>
+      <details><summary>Başarı oranları nasıl hesaplanıyor?</summary>
+        <p>Son 5 tamamlanmış sezonun (2021/22 – 2025/26) 16.478 maçı, canlı sitedeki modelle <b>yalnızca o maçtan önceki verilerle</b> tahmin edildi ve gerçek skorlarla karşılaştırıldı; model hiçbir zaman tahmin ettiği sezonun sonuçlarını görmedi. Ana sayfadaki oran, bu maçlarda eşiği geçen vurgulu tahminlerin kaçının tuttuğudur. Tüm liste <a href="#" onclick="setTab('stats');return false">İstatistikler</a> sayfasında.</p></details>
+      <details><summary>Model ne kadar güvenilir?</summary>
+        <p>Model <b>kalibre</b>dir: "%60" dediğinde uzun vadede yaklaşık %60 gerçekleşir. Tüm tahminlere bakıldığında tek maç ayrıştırma gücü piyasanın çok az üstündedir; ama yüksek güven eşiğini geçen daha az sayıda tahmin belirgin biçimde daha iyi tutar. Kayıp garantisi yoktur.</p></details>
+      <details><summary>Bülten'de hangi maçlar var?</summary>
+        <p>9 ligin (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga) önümüzdeki 1 aydaki maçları. Veriler saatte bir güncellenir; milli aralarda liste kısalabilir.</p></details>
+      <details><summary>Sanal Kasa verilerim nerede saklanıyor?</summary>
+        <p>Giriş yapmadan kullanırsan veriler yalnızca bu tarayıcıda durur. Üye olup giriş yaparsan Sanal Kasa ve tercihlerin hesabına kaydedilir; başka bir cihazda giriş yaptığında aynı veriler orada da görünür.</p></details>
+    </div>
+  </section>
   <section id="pane-stats" hidden><div id="statsBody"><div class="loading">İstatistikler yükleniyor…</div></div></section>
 
   <section id="pane-res" hidden>
@@ -1128,21 +1195,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <div id="gunBody"></div>
   </section>
 
-  <div class="betavus-intro-card intro-bottom">
-    <div class="intro-grid">
-      <div class="intro-box is-what">
-        <div class="intro-tag">🛡️ BETAVUS NEDİR?</div>
-        <h4>Yapay Zekâ Destekli Paper-Betting &amp; Kasa Yönetimi</h4>
-        <p>Futbol toplam gol pazarları (0.5Ü, 1.5Ü, 2.5Ü) için Poisson ve Dixon-Coles matematiksel olasılık modelleriyle çalışan, <b>risksiz sanal kasa simülasyonu, akıllı kupon planlama ve disiplinli portföy yönetimi</b> platformudur.</p>
-      </div>
-      <div class="intro-box is-not">
-        <div class="intro-tag">🚫 BETAVUS NE DEĞİLDİR?</div>
-        <h4>Bahis Operatörü, Kumarhane veya Ödeme Aracı Değildir!</h4>
-        <p>BETAVUS <b>asla bahis kabul etmez, para yatırma/çekme yapmaz</b> ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve getiriler sanaldır; kesin kazanç vaat etmez. Kullanıcının para kaybetmeden stratejisini ölçmesini sağlar.</p>
-      </div>
-    </div>
-  </div>
-
   <div class="foot" id="updated">Analizler hazırlanıyor</div>
 </div>
 
@@ -1164,7 +1216,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 <script src="js/paper_ui.js"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
-<script src="js/stats_ui.js?v=20260923-stats"></script>
+<script src="js/stats_ui.js?v=20260923-r3"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/auth_config.js?v=20260923-auth"></script>
 <script src="js/auth_sync.js?v=20260923-auth"></script>
@@ -1179,8 +1231,8 @@ const FALLBACK_DATA=[
 // Vurgu eşikleri — backtest'te her pazarın sürdürülebilir güven bölgesi
 const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ %95'},
          o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ %85'},
-         o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ %75'},
-         dc:{key:'dc',min:0.75,label:'Çifte Şans ≥ %75'}};
+         o25:{key:'p_over_2_5',min:0.80,label:'2.5+ ≥ %80'},
+         dc:{key:'dc',min:0.80,label:'Çifte Şans ≥ %80'}};
 // hlKey: 'off' | 'all' (tüm vurgular) | HL anahtarı
 function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25,HL.dc]:(HL[hlKey]?[HL[hlKey]]:[]);}
 function isLimitedData(x){
@@ -1199,7 +1251,7 @@ const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
 const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}catch(e){}};
 
-const MAIN_TABS=['pred','stats','plan'];   // menüde görünen sekmeler: Bülten · İstatistikler · Sanal Kasa
+const MAIN_TABS=['pred','stats','plan','faq'];   // menüde görünen sekmeler: Bülten · İstatistikler · Sanal Kasa · FAQ
 let tab=store('tab','pred');
 if(!MAIN_TABS.includes(tab)) tab='pred';
 // her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
@@ -1268,7 +1320,14 @@ function basisBadge(x){
 }
 const LIVE_STATUS_LABEL={'1H':'İlk yarı','HT':'Devre arası','2H':'İkinci yarı','ET':'Uzatma','BT':'Mola','P':'Penaltılar','SUSP':'Askıda','INT':'Yarıda kaldı'};
 function liveStatusLabel(s){return LIVE_STATUS_LABEL[s]||s||'';}
+function setLeague(l){selected=l;selectedByTab[tab]=l;save('league_'+tab,l);renderFilters();renderAll();}
+function renderLeagueSel(){
+  const s=$('lgPred');if(!s)return;
+  s.innerHTML=leagues.map(l=>`<option value="${esc(l)}">${l==='Tümü'?'Tüm ligler':esc(l)}</option>`).join('');
+  s.value=selectedByTab.pred||'Tümü';
+}
 function renderFilters(){
+  renderLeagueSel();
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;selectedByTab[tab]=selected;save('league_'+tab,selected);renderFilters();renderAll();});
 }
@@ -1281,7 +1340,7 @@ function renderHlSel(){
 
 function weekWindow(){
   const s=new Date();s.setHours(0,0,0,0);          // bugün (delta 0)
-  const e=new Date(s);e.setDate(e.getDate()+10);   // + 10 gün
+  const e=new Date(s);e.setDate(e.getDate()+30);   // + 1 ay
   return[s,e];
 }
 function fmtDay(d){return new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d);}
@@ -1423,7 +1482,7 @@ function missingKeyInfo(x){
   if(am.length)parts.push(`${x.away}: ${am.join(', ')}`);
   return {source:info.source,isConfirmed:info.source==='ESPN starting XI',text:parts.join(' · ')};
 }
-const DC_MIN=75;
+const DC_MIN=80;
 // 1X / 12 / X2 olasılıklarının üçü birden (yüzde). ok=false ise vurgu yok, değerler yine gösterilebilir.
 function dcAll(x){
   const out={ok:false,reason:'',v:null};
@@ -2083,12 +2142,13 @@ function setTab(t){
   if(t==='gun') t='rec'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['sim-kasa','sim-kupon','plan','rec','bt','res','cpn','pred','cifte','stats'].forEach(k=>{
+  ['sim-kasa','sim-kupon','plan','rec','bt','res','cpn','pred','cifte','stats','faq'].forEach(k=>{
     const btn=$('tab-'+k), pane=$('pane-'+k);
     if(btn) btn.classList.toggle('active',t===k);
     if(pane) pane.hidden=t!==k;
   });
-  $('filters').hidden=['sim-kasa','sim-kupon','plan','rec','cpn'].includes(t);
+  // Bülten ve İstatistikler lig filtresini kendi arama satırlarında (açılır liste) gösterir
+  $('filters').hidden=['sim-kasa','sim-kupon','plan','rec','cpn','pred','stats','faq'].includes(t);
   renderFilters();
   renderAll();
 }
@@ -2652,13 +2712,15 @@ if($('tab-cpn')) $('tab-cpn').onclick=()=>setTab('cpn');
 if($('tab-pred')) $('tab-pred').onclick=()=>setTab('pred');
 if($('tab-cifte')) $('tab-cifte').onclick=()=>setTab('cifte');
 if($('tab-stats')) $('tab-stats').onclick=()=>setTab('stats');
+if($('tab-faq')) $('tab-faq').onclick=()=>setTab('faq');
+if($('lgPred')) $('lgPred').onchange=e=>setLeague(e.target.value);
 if($('tab-gun')) $('tab-gun').onclick=()=>setTab('rec');
 document.querySelectorAll('.subtab[data-view]').forEach(b=>{
   b.onclick=()=>setResSubView(b.dataset.view);
 });
 setResSubView(resSubView);
 $('refresh').onclick=load;
-$('infoBtn').onclick=openInfo;
+if($('infoBtn'))$('infoBtn').onclick=openInfo;
 $('hlSel').onchange=e=>{hlKey=e.target.value;save('hl2',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!hlActive().length)return;hotOnly=!hotOnly;renderPred();};
 function wireSearch(inpId,xId,apply){

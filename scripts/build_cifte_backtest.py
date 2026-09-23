@@ -65,10 +65,17 @@ by_league = {league: empty_stat() for league in DIVISIONS.values()}
 by_season = {season_label(sz): empty_stat() for sz in TARGET_SEASONS}
 by_season_league = {season_label(sz): {league: empty_stat() for league in DIVISIONS.values()} for sz in TARGET_SEASONS}
 all_matches = []
-# İstatistikler sekmesi: 5 sezonun TÜM maçları (kısıtlı olanlar dahil, bayraklı)
+# İstatistikler sekmesi: 5 sezonun + güncel sezonun oynanmış TÜM maçları (kısıtlı olanlar dahil, bayraklı)
 stats_rows = []
 
-divisions = {d: load_division(d) for d in DIVISIONS}
+# Güncel sezon yalnızca İstatistikler listesine / ana sayfa şeridine girer; Çifte Şans
+# backtest'i (by_season, samples) 5 tamamlanmış sezonda sabit kalır. Güncel sezon da
+# walk-forward: model yalnızca önceki sezonlarla kurulur, o sezonun sonuçlarını görmez.
+CURRENT_SEASON = "2627"
+SEASON_CHAIN = ALL_SEASONS + [CURRENT_SEASON]
+STATS_SEASONS = TARGET_SEASONS + [CURRENT_SEASON]
+
+divisions = {d: load_division(d, SEASON_CHAIN) for d in DIVISIONS}
 
 for div, league in DIVISIONS.items():
     rows = divisions[div]
@@ -76,9 +83,10 @@ for div, league in DIVISIONS.items():
     for m in rows:
         by_code.setdefault(m["season"], []).append(m)
 
-    for target in TARGET_SEASONS:
-        ti = ALL_SEASONS.index(target)
-        priors = ALL_SEASONS[max(0, ti - 4):ti][::-1]
+    for target in STATS_SEASONS:
+        in_backtest = target in TARGET_SEASONS
+        ti = SEASON_CHAIN.index(target)
+        priors = SEASON_CHAIN[max(0, ti - 4):ti][::-1]
         if len(priors) < 2:
             continue
 
@@ -167,11 +175,6 @@ for div, league in DIVISIONS.items():
                         target_stat['gr_h'] += 1
                         target_stat[f'{range_stat_key}_h'] += 1
 
-            record(overall)
-            record(by_league[league])
-            record(by_season[szn_name])
-            record(by_season_league[szn_name][league])
-
             stats_rows.append([
                 m.get('date', ''), league, to_pretty(league, m['home']), to_pretty(league, m['away']),
                 act_h, act_a,
@@ -180,6 +183,14 @@ for div, league in DIVISIONS.items():
                 1 if is_limited else 0,
                 round(float(pred['lam_home']) + float(pred['lam_away']), 2),
             ])
+
+            if not in_backtest:
+                continue
+
+            record(overall)
+            record(by_league[league])
+            record(by_season[szn_name])
+            record(by_season_league[szn_name][league])
 
             all_matches.append({
                 'date': m.get('date', ''),
@@ -234,7 +245,7 @@ final_data = {
 stats_rows.sort(key=lambda r: (r[0], r[1], r[2]))
 stats_payload = {
     'generated_at': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
-    'seasons': [season_label(sz) for sz in TARGET_SEASONS],
+    'seasons': [season_label(sz) for sz in STATS_SEASONS],
     'fields': ['date', 'league', 'home', 'away', 'hg', 'ag', 'p05', 'p15', 'p25', 'p1x', 'p12', 'px2', 'limited', 'lambda'],
     'thresholds': {'p05': 950, 'p15': 850, 'p25': 800, 'dc': 800},
     'rows': stats_rows,

@@ -51,9 +51,9 @@ def season_label(code):
     return f"20{code[:2]}/{code[2:]}"
 
 
-def load_division(div):
+def load_division(div, seasons=None):
     rows = []
-    for season in ALL_SEASONS:
+    for season in (seasons or ALL_SEASONS):
         path = CSV_DIR / div / f"{season}.csv"
         if not path.exists():
             continue

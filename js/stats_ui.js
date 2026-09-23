@@ -1,5 +1,5 @@
 // İstatistikler sekmesi (#pane-stats)
-// Son 5 tamamlanmış sezonun (walk-forward, sızıntısız) TÜM maçları: her maç için
+// Son 5 tamamlanmış sezonun + güncel sezonun oynanmış (walk-forward, sızıntısız) TÜM maçları: her maç için
 // 0.5+ / 1.5+ / 2.5+ / 1X / 12 / X2 model olasılığı ve gerçekleşen skor.
 // Veri: data/stats-5season.json (scripts/build_cifte_backtest.py üretir).
 // Ana sayfa şeridi: data/stats-summary.json (yalnızca vurgulanan tahminler).
@@ -38,7 +38,7 @@
   function load() {
     if (DATA) return Promise.resolve(DATA);
     if (!loading) {
-      loading = fetch(DATA_URL, { cache: 'force-cache' }).then(r => {
+      loading = fetch(DATA_URL, { cache: 'no-cache' }).then(r => {
         if (!r.ok) throw new Error('stats ' + r.status);
         return r.json();
       }).then(d => {
@@ -197,7 +197,7 @@
     const seasons = DATA.seasons || [];
     return `<div class="st-ctl">
       ${leagueSelect()}
-      <select class="sel" id="stSeason"><option value="">Tüm sezonlar (5 sezon)</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
+      <select class="sel" id="stSeason"><option value="">Tüm sezonlar</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
       <span class="srch"><input id="stQ" type="search" placeholder="Takım ara…" value="${escH(st.q)}" autocomplete="off" spellcheck="false"></span>
     </div>`;
   }
@@ -206,7 +206,7 @@
     const host = document.getElementById('statsBody');
     if (!host) return;
     if (!DATA) {
-      host.innerHTML = '<div class="loading">5 sezonluk maç verisi yükleniyor…</div>';
+      host.innerHTML = '<div class="loading">Maç verisi yükleniyor…</div>';
       load().then(render).catch(() => { host.innerHTML = '<div class="empty"><strong>İstatistik verisi yüklenemedi</strong>Sayfayı yenilemeyi dene.</div>'; });
       return;
     }
@@ -246,7 +246,7 @@
           <div class="hlb-num"><div class="hlb-v">%${fmtP(pct)}</div><div class="hlb-cap">isabet oranı</div></div>
           <div class="hlb-t"><span class="hlb-badge">Doğrulanmış geçmiş performans</span>
             <b>Vurguladığımız tahminlerin başarı oranı</b>
-            <span class="hlb-sub">Son 5 sezon (${s.seasons[0]} – ${s.seasons[s.seasons.length - 1]}) · <strong>${fmtN(s.picks.h)}</strong> / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
+            <span class="hlb-sub">${s.seasons[0]} sezonundan bugüne · <strong>${fmtN(s.picks.h)}</strong> / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
         </div>
         <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} tahmin tuttu / ${fmtN(v.n)} vurgulu tahmin"><span class="hlb-ct"><b>${k}</b><i>%${fmtP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${fmtN(v.h)}/${fmtN(v.n)} maç</em></span>`).join('')}
           <a href="#" class="hlb-link" onclick="setTab('stats');return false">Tüm istatistikler →</a></div>`;

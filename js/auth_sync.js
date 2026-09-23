@@ -205,8 +205,11 @@
     $('aOk').onclick = close;
   }
 
-  function googleBtn() { return `<button class="a-google" type="button" id="aGoogle">${GOOGLE_SVG} Google ile devam et</button><div class="a-or">veya</div>`; }
+  // Google ile giriş, Supabase'de Google sağlayıcısı açılana kadar gizli (auth_config.js → googleEnabled)
+  const GOOGLE_ENABLED = cfg.googleEnabled === true;
+  function googleBtn() { return GOOGLE_ENABLED ? `<button class="a-google" type="button" id="aGoogle">${GOOGLE_SVG} Google ile devam et</button><div class="a-or">veya</div>` : ''; }
   function wireGoogle() {
+    if (!$('aGoogle')) return;
     $('aGoogle').onclick = async () => {
       busy($('aGoogle'), true);
       const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
@@ -324,7 +327,8 @@
         const { data, error } = await client.auth.signUp({ email, password: pw, options: { data: p, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw new Error(/registered|exists/i.test(error.message) ? 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı dene.' : error.message);
         if (!data.session) {
-          $('aForm').hidden = true; bg.querySelector('.a-google').hidden = true; bg.querySelector('.a-or').hidden = true;
+          $('aForm').hidden = true;
+          bg.querySelectorAll('.a-google, .a-or').forEach(el => { el.hidden = true; });
           msg('Kayıt alındı! ' + email + ' adresine bir doğrulama bağlantısı gönderdik. Bağlantıya tıkladıktan sonra giriş yapabilirsin.', 'ok');
         } else close();
       } catch (err) { msg(err.message); busy(btn, false, 'Kayıt Ol'); }

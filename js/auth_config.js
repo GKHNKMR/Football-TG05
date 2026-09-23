@@ -7,5 +7,6 @@
 // üyeliğin henüz etkin olmadığını söyler.
 window.BETAVUS_AUTH_CONFIG = {
   supabaseUrl: 'https://ttitipsmexqjsdcnpkwo.supabase.co',
-  supabaseAnonKey: 'sb_publishable_M0aqu_AHhdHMuIcPYAS0_w_VJ_ftKGY'   // publishable (herkese açık) anahtar
+  supabaseAnonKey: 'sb_publishable_M0aqu_AHhdHMuIcPYAS0_w_VJ_ftKGY',  // publishable (herkese açık) anahtar
+  googleEnabled: false    // Supabase → Authentication → Providers → Google açılınca true yap
 };

@@ -180,7 +180,7 @@
       <button class="hotbtn" data-pg="last" ${st.page < pages - 1 ? '' : 'disabled'}>»</button></div>`;
     const fbtn = (k, label, n) => `<button class="hotbtn st-rf${st.res === k ? ' on' : ''} st-rf-${k}" type="button" data-res="${k}">${label} <b>${fmtN(n)}</b></button>`;
     return `<div class="card st-card st-list"><h2>Vurgulanan maçlar — tahmin vs gerçekleşen</h2>
-      <div class="st-rfs">${fbtn('all', 'Tüm vurgulular', groups.all.length)}${fbtn('won', '✓ Kazanan vurgulular', groups.won.length)}${fbtn('lost', '✗ Kaybeden vurgulular', groups.lost.length)}</div>
+      <div class="st-rfs">${fbtn('all', 'Tüm vurgulular', groups.all.length)}${fbtn('won', '✓ Kazanan', groups.won.length)}${fbtn('lost', '✗ Kaybeden', groups.lost.length)}</div>
       <p class="st-note">Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Tarih başlığına tıklayarak sıralamayı değiştir.</p>
       ${pager}
       <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="Tıkla: ${st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye'} sırala">Tarih ${st.order === 'desc' ? '▼' : '▲'}</th><th>Maç</th><th>Skor</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>Vurgu</th></tr></thead>

@@ -18,7 +18,6 @@
     ['12', 10, 800, (h, a) => h !== a],
     ['X2', 11, 800, (h, a) => a >= h],
   ];
-  const BUCKETS = [[500, 600], [600, 700], [700, 800], [800, 900], [900, 1001]];
 
   let DATA = null, loading = null;
   const st = { season: '', res: 'all', q: '', order: 'desc', page: 0 };   // res: all | won | lost (vurgulu maçlar)
@@ -67,7 +66,6 @@
 
   function aggregate(rows) {
     const m = {}; MARKETS.forEach(([k]) => { m[k] = { hn: 0, hh: 0, dn: 0, dh: 0, psum: 0, occ: 0 }; });
-    const buckets = BUCKETS.map(() => ({ n: 0, h: 0, psum: 0 }));
     let hlMatchN = 0, hlMatchH = 0, limited = 0;
     for (const r of rows) {
       if (r[12]) limited++;
@@ -78,15 +76,12 @@
         const saysYes = p >= 500, right = saysYes ? ok : !ok;
         a.dn++; if (right) a.dh++;
         a.psum += p; if (ok) a.occ++;
-        const conf = saysYes ? p : 1000 - p;          // modelin eğildiği tarafın güveni
-        const bi = BUCKETS.findIndex(([lo, hi]) => conf >= lo && conf < hi);
-        if (bi >= 0) { const b = buckets[bi]; b.n++; b.psum += conf; if (right) b.h++; }
         if (!r[12] && p >= thr) { a.hn++; if (ok) a.hh++; outs.push(ok); }
       }
       if (outs.length) { hlMatchN++; if (outs.every(Boolean)) hlMatchH++; }
     }
     const pickN = MARKETS.reduce((s, [k]) => s + m[k].hn, 0), pickH = MARKETS.reduce((s, [k]) => s + m[k].hh, 0);
-    return { m, buckets, hlMatchN, hlMatchH, pickN, pickH, limited, total: rows.length };
+    return { m, hlMatchN, hlMatchH, pickN, pickH, limited, total: rows.length };
   }
 
   function kpis(a) {
@@ -107,17 +102,6 @@
         const x = a.m[k];
         return `<tr><td><b>${k}</b></td><td>${thrTxt[k]}</td><td class="st-strong">${pc(x.hh, x.hn)}</td><td>${fmtN(x.hh)} / ${fmtN(x.hn)}</td>
           <td>${pc(x.dh, x.dn)}</td><td>${x.dn ? (x.psum / x.dn / 10).toFixed(1) + '%' : '—'}</td><td>${pc(x.occ, x.dn)}</td></tr>`;
-      }).join('')}</tbody></table></div></div>`;
-  }
-
-  function confTable(a) {
-    return `<div class="card st-card"><h2>Güven analizi</h2>
-      <p class="st-note">Altı pazardaki tüm tahminler, modelin eğildiği tarafa verdiği olasılığa göre gruplandı. İyi bir modelde "ortalama güven" ile "gerçek isabet" birbirine yakın olur.</p>
-      <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr><th>Model güveni</th><th>Tahmin</th><th>Ortalama güven</th><th>Gerçek isabet</th><th></th></tr></thead><tbody>
-      ${a.buckets.map((b, i) => {
-        const [lo, hi] = BUCKETS[i], acc = b.n ? b.h / b.n * 100 : 0;
-        return `<tr><td>%${lo / 10}–${hi > 1000 ? 100 : hi / 10}</td><td>${fmtN(b.n)}</td><td>${b.n ? (b.psum / b.n / 10).toFixed(1) + '%' : '—'}</td>
-          <td class="st-strong">${b.n ? acc.toFixed(1) + '%' : '—'}</td><td class="st-barc"><span class="st-bar" style="width:${acc.toFixed(0)}%"></span></td></tr>`;
       }).join('')}</tbody></table></div></div>`;
   }
 
@@ -215,7 +199,7 @@
     const lg = curLeague();
     host.innerHTML = `<div class="st-intro"><h1 class="st-h1">İstatistikler</h1>
         <p>${(DATA.seasons || []).join(', ')} sezonlarının ${fmtN(DATA.rows.length)} maçı, canlı sitedeki modelle <b>yalnızca maçtan önceki verilerle</b> tahmin edildi ve gerçek skorlarla karşılaştırıldı.${lg !== 'Tümü' ? ` Filtre: <b>${escH(lg)}</b>.` : ''}</p></div>
-      ${controls()}${kpis(a)}${marketTable(a)}${confTable(a)}${leagueTable()}${matchList(rows)}`;
+      ${controls()}${kpis(a)}${marketTable(a)}${leagueTable()}${matchList(rows)}`;
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
     $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };

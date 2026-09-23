@@ -1106,6 +1106,9 @@
   function updatePlanInputs(state, inputs = {}) {
     if (!state || !state.plan) return false;
     const plan = { ...state.plan };
+    if (typeof inputs.name === 'string') {
+      plan.name = inputs.name.trim().slice(0, 40);
+    }
     if (inputs.startingBank != null && Number(inputs.startingBank) > 0) {
       const newStart = round(Number(inputs.startingBank), 2);
       // Başlangıç kasası değişirse kullanılabilir bakiye aynı farkla kayar

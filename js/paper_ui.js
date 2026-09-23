@@ -1140,6 +1140,8 @@
           <div class="ks-left">
             <div class="ks-block">
               <div class="ks-block-h">KULLANICI GİRİŞLERİ</div>
+              <label class="ks-row"><span>Kasa Adı</span>
+                <input type="text" id="ksName" class="ks-input ks-name" maxlength="40" value="${esc(kasaDisplayName(plan, paperState.plans.findIndex(pl => pl.id === plan.id)))}" placeholder="Örn: Hafta sonu kasam"></label>
               <label class="ks-row"><span>Başlangıç Kasası (${sym})</span>
                 <input type="text" inputmode="decimal" id="ksStart" class="ks-input" value="${formatAmount(p.startingBank)}"></label>
               <label class="ks-row"><span>Hedef Kasa (${sym})</span>
@@ -1258,8 +1260,11 @@
     const btnNewBank = document.getElementById('btnAddNewPlan');
     if (btnNewBank) {
       btnNewBank.onclick = () => {
+        const defaultName = `Kasa ${paperState.plans.length + 1}`;
+        const entered = prompt('Yeni kasanın adı:', defaultName);
+        if (entered === null) return; // Vazgeç
         PE.createNewPlan(paperState, {
-          name: `Kasa ${paperState.plans.length + 1}`,
+          name: entered.trim().slice(0, 40) || defaultName,
           startingBank: PE.KASA_V01_EXAMPLE.startingBank,
           targetBank: PE.KASA_V01_EXAMPLE.targetBank,
           riskProfile: PE.KASA_V01_EXAMPLE.riskProfile
@@ -1281,6 +1286,15 @@
     }
 
     // KULLANICI GİRİŞLERİ
+    const nameInp = document.getElementById('ksName');
+    if (nameInp) {
+      nameInp.onchange = () => {
+        // Boş bırakılırsa "Kasa N" varsayılan adına döner
+        PE.updatePlanInputs(paperState, { name: nameInp.value });
+        rerenderAllPanes();
+      };
+    }
+
     const bindAmount = (id, key, label) => {
       const el = document.getElementById(id);
       if (!el) return;

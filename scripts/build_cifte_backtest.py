@@ -243,9 +243,19 @@ final_data = {
 # İstatistikler sekmesi için kompakt maç listesi (eskiden yeniye).
 # Olasılıklar binde birlik tamsayı: p05, p15, p25, p1x, p12, px2.
 stats_rows.sort(key=lambda r: (r[0], r[1], r[2]))
+stats_seasons = [season_label(sz) for sz in STATS_SEASONS]
+generated_at = __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+# Workflow saatlik çalışır: yeni maç yoksa eski zaman damgasını koru ki dosyalar değişmesin, gereksiz commit olmasın
+try:
+    with open('data/stats-5season.json', encoding='utf-8') as f:
+        prev = json.load(f)
+    if prev.get('rows') == stats_rows and prev.get('seasons') == stats_seasons:
+        generated_at = prev.get('generated_at', generated_at)
+except (OSError, ValueError):
+    pass
 stats_payload = {
-    'generated_at': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
-    'seasons': [season_label(sz) for sz in STATS_SEASONS],
+    'generated_at': generated_at,
+    'seasons': stats_seasons,
     'fields': ['date', 'league', 'home', 'away', 'hg', 'ag', 'p05', 'p15', 'p25', 'p1x', 'p12', 'px2', 'limited', 'lambda'],
     'thresholds': {'p05': 950, 'p15': 850, 'p25': 800, 'dc': 800},
     'rows': stats_rows,

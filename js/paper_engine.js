@@ -28,19 +28,19 @@
       kol: 'Minimum Risk',
       badgeClass: 'b-min',
       color: '#10b981',
-      reservePct: 0.50,          // Kasa Rezerv: 50%
-      dailyGrowthRate: 0.15,     // Günlük Büyüme Oranı: 15%
-      dailyFactor: 1.15,         // 1.15x
-      stakePct: 0.50,            // Aktif oynanabilir kasa payı: %50
+      reservePct: 0.75,          // Kasa Rezerv: 75% (Paper_Betting_Kasa_Simulasyonu v01)
+      dailyGrowthRate: 0.10,     // Günlük Büyüme Oranı: 10%
+      dailyFactor: 1.10,         // 1.10x
+      stakePct: 0.25,            // Aktif oynanabilir kasa payı: %25
       targetOdds: 1.28,
       legsCount: 5,
       marketTarget: 'over_0_5',
       note: '5 adet 0,5 ustu mac (≥ %95 model güveni)',
       marketLabel: '0.5 Üst',
-      minRiskArmPct: 0.50,
+      minRiskArmPct: 0.25,
       midRiskArmPct: 0.00,
       highRiskArmPct: 0.00,
-      desc: 'Kasa Rezervi: %50 · Günlük Büyüme: %15 (1.15x/gün) · 0.5 Üstü ≥ %95 başarı & model güveni.'
+      desc: 'Kasa Rezervi: %75 · Günlük Büyüme: %10 (1.10x/gün) · 0.5 Üstü ≥ %95 başarı & model güveni.'
     },
     medium: {
       id: 'medium',
@@ -48,19 +48,19 @@
       kol: 'Orta Risk',
       badgeClass: 'b-med',
       color: '#3b82f6',
-      reservePct: 0.35,          // Kasa Rezerv: 35%
-      dailyGrowthRate: 0.20,     // Günlük Büyüme Oranı: 20%
-      dailyFactor: 1.20,         // 1.20x
-      stakePct: 0.65,            // Aktif oynanabilir kasa payı: %65
+      reservePct: 0.50,          // Kasa Rezerv: 50% (Paper_Betting_Kasa_Simulasyonu v01)
+      dailyGrowthRate: 0.15,     // Günlük Büyüme Oranı: 15%
+      dailyFactor: 1.15,         // 1.15x
+      stakePct: 0.50,            // Aktif oynanabilir kasa payı: %50
       targetOdds: 1.42,
       legsCount: 3,
       marketTarget: 'over_1_5',
       note: '3 adet 1,5 ustu mac (≥ %85 model güveni)',
       marketLabel: '1.5 Üst',
       minRiskArmPct: 0.00,
-      midRiskArmPct: 0.65,
+      midRiskArmPct: 0.50,
       highRiskArmPct: 0.00,
-      desc: 'Kasa Rezervi: %35 · Günlük Büyüme: %20 (1.20x/gün) · 1.5 Üstü ≥ %85 başarı & model güveni.'
+      desc: 'Kasa Rezervi: %50 · Günlük Büyüme: %15 (1.15x/gün) · 1.5 Üstü ≥ %85 başarı & model güveni.'
     },
     high: {
       id: 'high',
@@ -68,10 +68,10 @@
       kol: 'Yuksek Risk',
       badgeClass: 'b-high',
       color: '#ef4444',
-      reservePct: 0.25,          // Kasa Rezerv: 25%
+      reservePct: 0.50,          // Kasa Rezerv: 50% (Paper_Betting_Kasa_Simulasyonu v01)
       dailyGrowthRate: 0.25,     // Günlük Büyüme Oranı: 25%
       dailyFactor: 1.25,         // 1.25x
-      stakePct: 0.75,            // Aktif oynanabilir kasa payı: %75
+      stakePct: 0.50,            // Aktif oynanabilir kasa payı: %50
       targetOdds: 1.35,          // Hedeflenen kupon oranı: 1.35x
       legsCount: 5,
       marketTarget: 'combo_high',
@@ -79,8 +79,8 @@
       marketLabel: 'Yüksek Güven Kombinasyon (~1.35x)',
       minRiskArmPct: 0.00,
       midRiskArmPct: 0.00,
-      highRiskArmPct: 0.75,
-      desc: 'Kasa Rezervi: %25 · Günlük Büyüme: %25 (1.25x/gün) · Hedef ~1.35x için ≥ %95 ve ≥ %85 güvenli maçların disiplinli kombinasyonu.'
+      highRiskArmPct: 0.50,
+      desc: 'Kasa Rezervi: %50 · Günlük Büyüme: %25 (1.25x/gün) · Hedef ~1.35x için ≥ %95 ve ≥ %85 güvenli maçların disiplinli kombinasyonu.'
     }
   };
 
@@ -97,7 +97,7 @@
       badgeClass: 'b-min',
       color: '#10b981',
       armKey: 'minRiskArmPct',
-      stakePct: 0.50,
+      stakePct: 0.25,
       targetOdds: 1.28,
       note: '5 adet 0,5 ustu mac',
       market: 'over_0_5',
@@ -108,7 +108,7 @@
       minLegs: 2,
       maxLegs: 5,
       fallbackOdds: 1.28,
-      desc: '5 adet 0,5 üstü maç (≥ %95 model güveni, %50 kasa rezervi, %15 günlük büyüme hedefi, ~1.28x)'
+      desc: '5 adet 0,5 üstü maç (≥ %95 model güveni, %75 kasa rezervi, %10 günlük büyüme hedefi, ~1.28x)'
     },
     medium: {
       id: 'medium',
@@ -116,7 +116,7 @@
       badgeClass: 'b-med',
       color: '#3b82f6',
       armKey: 'midRiskArmPct',
-      stakePct: 0.65,
+      stakePct: 0.50,
       targetOdds: 1.42,
       note: '3 adet 1,5 ustu mac',
       market: 'over_1_5',
@@ -127,7 +127,7 @@
       minLegs: 2,
       maxLegs: 3,
       fallbackOdds: 1.42,
-      desc: '3 adet 1,5 üstü maç (≥ %85 model güveni, %35 kasa rezervi, %20 günlük büyüme hedefi, ~1.42x)'
+      desc: '3 adet 1,5 üstü maç (≥ %85 model güveni, %50 kasa rezervi, %15 günlük büyüme hedefi, ~1.42x)'
     },
     high: {
       id: 'high',
@@ -135,7 +135,7 @@
       badgeClass: 'b-high',
       color: '#ef4444',
       armKey: 'highRiskArmPct',
-      stakePct: 0.75,
+      stakePct: 0.50,
       targetOdds: 1.35,
       note: 'Hedef ~1.35x için ≥ %95 seçenekler kombinasyonu',
       market: 'combo_high',
@@ -146,7 +146,7 @@
       minLegs: 3,
       maxLegs: 5,
       fallbackOdds: 1.35,
-      desc: 'Yüksek güvenli seçeneklerin kombinasyonu (≥ %95 ve ≥ %85 model güvenli maçlarla hedeflenen ~1.35x oran, %25 kasa rezervi, %25 büyüme hedefi)'
+      desc: 'Yüksek güvenli seçeneklerin kombinasyonu (≥ %95 ve ≥ %85 model güvenli maçlarla hedeflenen ~1.35x oran, %50 kasa rezervi, %25 büyüme hedefi)'
     }
   };
 
@@ -814,7 +814,11 @@
     let settledCount = 0;
     const newSlips = [];
     const newLedger = [...(state.ledger || [])];
-    let availableBalance = Number(state.plan.availableBalance) || 0;
+    // Her kupon kendi kasasının (planId) bakiyesine işlenir; planId'siz eski kuponlar aktif kasaya
+    const activeId = state.plan ? state.plan.id : null;
+    const balances = new Map();
+    (Array.isArray(state.plans) ? state.plans : []).forEach(p => balances.set(p.id, Number(p.availableBalance) || 0));
+    balances.set(activeId, Number(state.plan && state.plan.availableBalance) || 0);
 
     for (const slip of state.slips) {
       if (slip.status !== 'pending') {
@@ -827,6 +831,8 @@
         changed = true;
         settledCount++;
         const s = res.slip;
+        const ownerId = s.planId && balances.has(s.planId) ? s.planId : activeId;
+        let availableBalance = balances.get(ownerId);
         s.bankBefore = round(availableBalance, 2);
 
         if (s.status === 'won') {
@@ -867,6 +873,7 @@
         }
 
         s.bankAfter = round(availableBalance, 2);
+        balances.set(ownerId, availableBalance);
         newSlips.push(s);
       } else if (res.changed) {
         changed = true;
@@ -877,17 +884,18 @@
     }
 
     if (changed) {
-      const updatedPlan = {
-        ...state.plan,
-        availableBalance: round(availableBalance, 2)
+      const withBalance = p => ({ ...p, availableBalance: round(balances.get(p.id), 2) });
+      const newState = {
+        ...state,
+        plan: state.plan ? withBalance(state.plan) : state.plan,
+        slips: newSlips,
+        ledger: newLedger
       };
+      if (Array.isArray(state.plans)) {
+        newState.plans = state.plans.map(p => (p.id === activeId ? newState.plan : withBalance(p)));
+      }
       return {
-        state: {
-          ...state,
-          plan: updatedPlan,
-          slips: newSlips,
-          ledger: newLedger
-        },
+        state: newState,
         settledCount,
         changed: true
       };
@@ -900,18 +908,203 @@
   // 6. Kasa Planı & Geometrik Hedef Yolu (Şartname Bölüm 5)
   // ---------------------------------------------------------------------------
 
+  // Paper_Betting_Kasa_Simulasyonu v01 (Excel) modeli:
+  //   Günlük Büyüme Oranı / Kasa Rezerv Oranı risk faktöründen gelir,
+  //   Hedefe Ulaşma Günü = ROUNDUP(LN(Hedef / Başlangıç) / LN(1 + büyüme))
+  //   Teorik Hedef Kasa(gün) = Başlangıç * (1 + büyüme)^gün
+
+  function normalizeProfileKey(key) {
+    if (key === 'cautious' || key === 'multi') return 'minimum';
+    if (key === 'balanced') return 'medium';
+    if (key === 'aggressive') return 'high';
+    return key || 'minimum';
+  }
+
+  function resolvePlanRisk(plan, profileKey) {
+    const key = normalizeProfileKey(profileKey || (plan && plan.riskProfile) || 'minimum');
+    if (key === 'custom') {
+      const cr = (plan && plan.customRisk) || {};
+      let rPct = cr.reservePct != null ? Number(cr.reservePct) : 0.40;
+      if (rPct > 1) rPct /= 100;
+      let sRate = cr.stakeRate != null ? Number(cr.stakeRate) : 0.50;
+      if (sRate > 1) sRate /= 100;
+      const tOdds = Number(cr.targetOdds) || 1.30;
+      const dFactor = round(1 + (1.0 - rPct) * sRate * (tOdds - 1.0), 4);
+      return { id: 'custom', name: cr.name || 'Özel Risk', reservePct: rPct, dailyGrowthRate: round(dFactor - 1.0, 4) };
+    }
+    const prof = RISK_PROFILES[key] || RISK_PROFILES.minimum;
+    return { id: prof.id, name: prof.name, reservePct: prof.reservePct, dailyGrowthRate: prof.dailyGrowthRate };
+  }
+
+  function calculateDaysToTarget(startingBank, targetBank, dailyGrowthRate) {
+    const S = Number(startingBank);
+    const T = Number(targetBank);
+    const g = Number(dailyGrowthRate);
+    if (!(S > 0) || !(T > S) || !(g > 0)) return null;
+    // Kayan nokta hatası tam sayıyı bir üst güne taşımasın
+    return Math.ceil(Math.log(T / S) / Math.log(1 + g) - 1e-9);
+  }
+
+  function calculateKasaParams(plan, profileKey) {
+    const risk = resolvePlanRisk(plan, profileKey);
+    const S = Number(plan && plan.startingBank) || 0;
+    const T = Number(plan && plan.targetBank) || 0;
+    const daysToTarget = calculateDaysToTarget(S, T, risk.dailyGrowthRate);
+    return {
+      startingBank: S,
+      targetBank: T,
+      riskProfile: risk.id,
+      riskName: risk.name,
+      dailyGrowthRate: risk.dailyGrowthRate,
+      reservePct: risk.reservePct,
+      daysToTarget,
+      theoreticalAtTargetDay: daysToTarget != null ? theoreticalBank(S, risk.dailyGrowthRate, daysToTarget) : null
+    };
+  }
+
+  // Başlangıç * (1 + büyüme)^gün; 12 anlamlı basamağa indirgenir ki 66.12499999… Excel'deki gibi 66.13 olsun
+  function theoreticalBank(startingBank, dailyGrowthRate, day) {
+    return round(Number((startingBank * Math.pow(1 + dailyGrowthRate, day)).toPrecision(12)), 2);
+  }
+
+  function getPlanDurationDays(plan) {
+    const days = calculateKasaParams(plan).daysToTarget;
+    return days || Math.max(1, Number(plan && plan.durationDays) || 30);
+  }
+
   function calculateTargetPath(plan, day) {
     if (!plan) return 0;
     const S = Number(plan.startingBank) || 0;
-    const T = Number(plan.targetBank) || 0;
-    const D = Math.max(1, Number(plan.durationDays) || 1);
-    if (S <= 0 || T <= 0) return 0;
+    if (S <= 0) return 0;
+    const g = resolvePlanRisk(plan).dailyGrowthRate;
+    return theoreticalBank(S, g, Math.max(0, Number(day) || 0));
+  }
 
-    const currentDay = Math.max(0, Math.min(D, Number(day) || 0));
-    // hedef_yolu(gun) = S * (T / S)^(gun / D)
-    const ratio = T / S;
-    const targetVal = S * Math.pow(ratio, currentDay / D);
-    return round(targetVal, 2);
+  // Plan başlangıç tarihini yerel gece yarısı olarak yorumlar (YYYY-MM-DD)
+  function planStartTs(plan) {
+    const s = String((plan && (plan.startDate || plan.createdAt)) || '').slice(0, 10);
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+    return Date.now();
+  }
+
+  function localDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function addDaysTs(ts, days) {
+    const d = new Date(ts);
+    d.setDate(d.getDate() + days);
+    return d.getTime();
+  }
+
+  function getElapsedPlanDays(plan, now = new Date()) {
+    const start = planStartTs(plan);
+    let n = 0;
+    while (addDaysTs(start, n + 1) <= now.getTime()) n++;
+    return n;
+  }
+
+  function slipBelongsToPlan(slip, plan) {
+    if (slip.planId) return slip.planId === plan.id;
+    return !plan.createdAt || !slip.createdAt || slip.createdAt >= plan.createdAt;
+  }
+
+  function slipNetResult(slip) {
+    const stake = Number(slip.stake) || 0;
+    if (slip.status === 'won') return round(stake * (Number(slip.oddsUsed) || 1), 2) - stake;
+    if (slip.status === 'lost') return -stake;
+    return 0;
+  }
+
+  // Excel "Kasa Simülasyonu" sayfası: GERÇEK (Gün, Gerçek Kasa, Günlük Değişim, Günlük Büyüme)
+  // ve HEDEF (Gün, Teorik Hedef Kasa, Günlük Kazanç, Hedefe Ulaşma) tabloları.
+  // Gerçek kasa kuponlardan otomatik hesaplanır; plan.dailyBanks[gün] elle girilen değerle ezer.
+  function buildKasaSimulation(plan, state, now = new Date()) {
+    const params = calculateKasaParams(plan);
+    const S = params.startingBank;
+    const T = params.targetBank;
+    const g = params.dailyGrowthRate;
+    const startTs = planStartTs(plan);
+    const todayDay = getElapsedPlanDays(plan, now) + 1;
+    const totalDays = Math.max(params.daysToTarget || 30, todayDay);
+
+    const settled = ((state && state.slips) || [])
+      .filter(s => s.settledAt && (s.status === 'won' || s.status === 'lost') && slipBelongsToPlan(s, plan))
+      .map(s => ({ ts: new Date(s.settledAt).getTime(), net: slipNetResult(s) }));
+    const manual = (plan && plan.dailyBanks) || {};
+
+    const rows = [];
+    let prevActual = S;
+    let prevTarget = S;
+    for (let d = 1; d <= totalDays; d++) {
+      const dayEnd = addDaysTs(startTs, d);
+      let actualBank = null;
+      let isManual = false;
+      if (d <= todayDay) {
+        const m = manual[d];
+        if (m != null && !isNaN(Number(m))) {
+          actualBank = round(Number(m), 2);
+          isManual = true;
+        } else {
+          actualBank = round(S + settled.filter(x => x.ts < dayEnd).reduce((sum, x) => sum + x.net, 0), 2);
+        }
+      }
+
+      const targetBank = theoreticalBank(S, g, d);
+      const row = {
+        day: d,
+        date: localDateStr(new Date(addDaysTs(startTs, d - 1))),
+        isToday: d === todayDay,
+        actualBank,
+        isManual,
+        dailyChange: null,
+        dailyGrowthPct: null,
+        targetBank,
+        targetDailyGain: round(targetBank - prevTarget, 2),
+        targetReachPct: T > 0 ? round(Math.min(100, (targetBank / T) * 100), 1) : null,
+        belowTarget: actualBank != null && actualBank < targetBank
+      };
+      if (actualBank != null && prevActual != null) {
+        row.dailyChange = round(actualBank - prevActual, 2);
+        row.dailyGrowthPct = prevActual > 0 ? round((actualBank / prevActual - 1) * 100, 2) : null;
+      }
+      rows.push(row);
+      prevActual = actualBank;
+      prevTarget = targetBank;
+    }
+
+    const lastActual = rows.filter(r => r.actualBank != null).pop() || null;
+    return {
+      params,
+      todayDay,
+      totalDays,
+      rows,
+      currentBank: lastActual ? lastActual.actualBank : S,
+      currentReachPct: T > 0 ? round(Math.min(100, ((lastActual ? lastActual.actualBank : S) / T) * 100), 1) : null
+    };
+  }
+
+  function setPlanDailyBank(state, day, value) {
+    if (!state || !state.plan) return false;
+    const d = Math.floor(Number(day));
+    if (!(d >= 1)) return false;
+    const banks = Object.assign({}, state.plan.dailyBanks || {});
+    if (value == null || value === '' || isNaN(Number(value))) {
+      delete banks[d];
+    } else {
+      banks[d] = round(Number(value), 2);
+    }
+    state.plan = { ...state.plan, dailyBanks: banks };
+    syncActivePlan(state);
+    return true;
+  }
+
+  // state.plan değiştiğinde plans[] içindeki kopyayı da günceller
+  function syncActivePlan(state) {
+    if (!state || !state.plan || !Array.isArray(state.plans)) return state;
+    state.plans = state.plans.map(p => (p.id === state.plan.id ? state.plan : p));
+    return state;
   }
 
   function calculateRequiredDailyRate(startingBank, targetBank, durationDays) {
@@ -942,7 +1135,7 @@
   function getPlanMetrics(state, now = new Date()) {
     if (!state || !state.plan) return null;
     const plan = state.plan;
-    const slips = state.slips || [];
+    const slips = (state.slips || []).filter(s => slipBelongsToPlan(s, plan));
 
     const available = Number(plan.availableBalance) || 0;
     const pendingSlips = slips.filter(s => s.status === 'pending');
@@ -951,10 +1144,10 @@
 
     const startBank = Number(plan.startingBank) || 0;
     const targetBank = Number(plan.targetBank) || 0;
-    const duration = Number(plan.durationDays) || 30;
+    const kasaParams = calculateKasaParams(plan);
+    const duration = getPlanDurationDays(plan);
 
-    const startDate = new Date(plan.startDate || plan.createdAt);
-    const elapsedDays = Math.max(0, Math.floor((now.getTime() - startDate.getTime()) / (86400 * 1000)));
+    const elapsedDays = getElapsedPlanDays(plan, now);
     const remainingDays = Math.max(0, duration - elapsedDays);
 
     const targetToday = calculateTargetPath(plan, elapsedDays);
@@ -968,7 +1161,7 @@
       ? round(((totalBank - startBank) / startBank) * 100, 1)
       : 0;
 
-    const dailyReqRate = calculateRequiredDailyRate(startBank, targetBank, duration);
+    const dailyReqRate = round(kasaParams.dailyGrowthRate * 100, 2);
 
     // Kupon istatistikleri
     const settledSlips = slips.filter(s => s.status === 'won' || s.status === 'lost' || s.status === 'void');
@@ -1016,6 +1209,8 @@
       progressPct,
       totalGrowthPct,
       dailyReqRate,
+      reservePct: kasaParams.reservePct,
+      theoreticalAtTargetDay: kasaParams.theoreticalAtTargetDay,
       settledCount: settledSlips.length,
       wonCount: wonSlips.length,
       lostCount: lostSlips.length,
@@ -1169,7 +1364,7 @@
   function calculatePlanTrajectories(plan, couponInputs, options = {}) {
     const startBank = Math.max(1, Number(plan.startingBank) || 50);
     const targetBank = Math.max(startBank, Number(plan.targetBank) || 500);
-    const durationDays = Math.max(1, Number(plan.durationDays || 30));
+    const durationDays = getPlanDurationDays(plan);
     const iters = options.iterations || 1000;
     const seed = options.seed != null ? options.seed : 42;
 
@@ -1308,13 +1503,13 @@
     trajectories.excel = excelModel;
     trajectories.excelModel = excelModel;
 
+    // Excel "Teorik Hedef Kasa" = Başlangıç * (1 + günlük büyüme)^gün
     const targetPoints = [];
-    const dailyRate = (targetBank / startBank) ** (1 / durationDays) - 1;
+    const dailyRate = resolvePlanRisk(plan).dailyGrowthRate;
     for (let day = 0; day <= durationDays; day++) {
-      const val = startBank * (targetBank / startBank) ** (day / durationDays);
       targetPoints.push({
         day,
-        targetBank: round(val, 2)
+        targetBank: theoreticalBank(startBank, dailyRate, day)
       });
     }
 
@@ -1354,7 +1549,7 @@
       };
     }
     const S = Math.max(1, Number(plan && plan.startingBank) || 50);
-    const D = Math.max(1, Number(plan && plan.durationDays) || 30);
+    const D = getPlanDurationDays(plan || {});
 
     const dailyGrowthFactor = prof.dailyFactor || 1.15;
     const dailyGrowthRatePct = round((dailyGrowthFactor - 1.0) * 100, 2);
@@ -1398,12 +1593,12 @@
   function calculateNoLossIteration(plan, profileKey = 'minimum') {
     const profKey = (profileKey === 'cautious' ? 'minimum' : (profileKey === 'balanced') ? 'medium' : (profileKey === 'aggressive') ? 'high' : profileKey);
     const S = Math.max(1, Number(plan && plan.startingBank) || 50);
-    const D = Math.max(1, Number(plan && plan.durationDays) || 30);
+    const D = getPlanDurationDays(plan || {});
 
     const cfgMap = {
-      minimum: { name: 'Minimum Risk', resPct: 0.50, stakeRate: 0.60, targetOdds: 1.28, color: '#10b981' },
-      medium:  { name: 'Orta Risk',    resPct: 0.35, stakeRate: 0.50, targetOdds: 1.42, color: '#38bdf8' },
-      high:    { name: 'Yüksek Risk',  resPct: 0.25, stakeRate: 0.60, targetOdds: 1.36, color: '#ef4444' }
+      minimum: { name: 'Minimum Risk', resPct: RISK_PROFILES.minimum.reservePct, stakeRate: 0.60, targetOdds: 1.28, color: '#10b981' },
+      medium:  { name: 'Orta Risk',    resPct: RISK_PROFILES.medium.reservePct,  stakeRate: 0.50, targetOdds: 1.42, color: '#38bdf8' },
+      high:    { name: 'Yüksek Risk',  resPct: RISK_PROFILES.high.reservePct,    stakeRate: 0.60, targetOdds: 1.36, color: '#ef4444' }
     };
 
     let cfg = cfgMap[profKey] || cfgMap.minimum;
@@ -1470,75 +1665,6 @@
     };
   }
 
-  function generateExcelDailyTable(plan, state, profileKey = 'minimum') {
-    const model = calculateExcelGrowthModel(plan, profileKey);
-    const S = model.startingBank;
-    const D = model.durationDays;
-    const factor = model.dailyGrowthFactor;
-
-    const startDateStr = (plan && plan.startDate) || (plan && plan.createdAt ? plan.createdAt.slice(0, 10) : '2026-09-11');
-    const startTs = new Date(startDateStr).getTime() || Date.now();
-
-    const ledger = (state && state.ledger) || [];
-
-    const dayGroups = new Map();
-    for (const tx of ledger) {
-      if (!tx.timestamp) continue;
-      const txDayIdx = Math.max(0, Math.floor((new Date(tx.timestamp).getTime() - startTs) / 86400000));
-      if (!dayGroups.has(txDayIdx)) dayGroups.set(txDayIdx, []);
-      dayGroups.get(txDayIdx).push(tx);
-    }
-
-    const rows = [];
-    let prevEndBank = S;
-
-    for (let d = 0; d <= D; d++) {
-      const dayDate = new Date(startTs + d * 86400000);
-      const dayDateStr = `${String(dayDate.getDate()).padStart(2, '0')}.${String(dayDate.getMonth() + 1).padStart(2, '0')}.${dayDate.getFullYear()}`;
-      const theoreticalBank = round(S * Math.pow(factor, d), 2);
-
-      let actualStartBank = d === 0 ? S : prevEndBank;
-      let actualEndBank = null;
-      let dailyGrowthPct = null;
-      let totalGrowthPct = null;
-      let isSettled = false;
-
-      const txs = dayGroups.get(d);
-      if (txs && txs.length) {
-        const lastTx = txs[txs.length - 1];
-        if (lastTx.balanceAfter != null) {
-          actualEndBank = round(lastTx.balanceAfter, 2);
-          isSettled = true;
-          prevEndBank = actualEndBank;
-        }
-      } else if (d === 0 && state && state.plan && state.plan.availableBalance != null) {
-        actualEndBank = round(state.plan.availableBalance, 2);
-        prevEndBank = actualEndBank;
-      }
-
-      if (actualEndBank != null && actualStartBank != null && actualStartBank > 0) {
-        dailyGrowthPct = round(((actualEndBank / actualStartBank) - 1.0) * 100, 2);
-        totalGrowthPct = round(((actualEndBank / S) - 1.0) * 100, 2);
-      }
-
-      rows.push({
-        day: d,
-        dateStr: dayDateStr,
-        theoreticalBank,
-        actualStartBank,
-        actualEndBank,
-        dailyGrowthPct,
-        totalGrowthPct,
-        isSettled
-      });
-    }
-
-    return {
-      model,
-      rows
-    };
-  }
-
   // ---------------------------------------------------------------------------
   // 8. Adaptif Plan Önerileri (Şartname Bölüm 12)
   // ---------------------------------------------------------------------------
@@ -1558,18 +1684,13 @@
       };
     }
 
-    const currentProfile = state.settings.riskProfile || 'minimum';
+    const currentProfile = (plan && plan.riskProfile) || state.settings.riskProfile || 'minimum';
     const curBank = metrics.totalBank;
 
-    // 1. Alternatif: Süreyi Uzat (Mevcut risk profili, güncel kasadan hedefe ulaşmak için +%50 gün ekle)
-    const extDays = Math.max(14, Math.round(metrics.remainingDays * 1.6));
-    const simExtend = runPlanSimulation(plan, currentProfile, simulationInputs, {
-      remainingDays: extDays,
-      currentBank: curBank,
-      seed: 101
-    });
+    // Plan süresi Excel modelinde risk faktörünün büyüme oranından türetildiği için
+    // "süreyi uzat" alternatifi yoktur; hedef veya risk faktörü değiştirilir.
 
-    // 2. Alternatif: Hedefi Ayarla (Mevcut sürede %50+ olasılıkla ulaşılabilen revize hedef)
+    // 1. Alternatif: Hedefi Ayarla (Mevcut sürede %50+ olasılıkla ulaşılabilen revize hedef)
     const simCurrent = runPlanSimulation(plan, currentProfile, simulationInputs, {
       remainingDays: metrics.remainingDays,
       currentBank: curBank,
@@ -1578,7 +1699,7 @@
     // Medyan kasa veya başlangıç kasasının mantıklı büyümesi
     const revisedTarget = round(Math.max(curBank * 1.15, simCurrent.medianBank), 0);
 
-    // 3. Alternatif: Risk Modelini Değiştir (Minimum -> Orta veya Orta -> Yüksek)
+    // 2. Alternatif: Risk Modelini Değiştir (Minimum -> Orta veya Orta -> Yüksek)
     let nextProfile = 'medium';
     if (currentProfile === 'minimum' || currentProfile === 'cautious') nextProfile = 'medium';
     else if (currentProfile === 'medium' || currentProfile === 'balanced') nextProfile = 'high';
@@ -1594,24 +1715,6 @@
       showAdaptive: true,
       currentStatus: metrics.status,
       options: [
-        {
-          id: 'extend_duration',
-          title: 'Süreyi Uzat',
-          tag: 'Düşük Risk',
-          desc: 'Risk toleransınızı değiştirmeden plan süresini artırarak hedefe ulaşma şansını koruyun.',
-          changes: {
-            durationDays: metrics.elapsedDays + extDays,
-            addedDays: extDays
-          },
-          metrics: {
-            newTargetProbPct: simExtend.targetHitPct,
-            medianBank: simExtend.medianBank,
-            p10: simExtend.p10,
-            p90: simExtend.p90,
-            halfBankLossPct: simExtend.halfBankLossPct,
-            maxDrawdownPct: simExtend.maxDrawdownPct
-          }
-        },
         {
           id: 'adjust_target',
           title: 'Hedefi Ayarla',
@@ -1678,15 +1781,17 @@
       id: planId,
       name: planName,
       createdAt: nowIso,
-      startDate: nowIso.slice(0, 10),
+      startDate: localDateStr(new Date()),
       durationDays: duration,
       startingBank: round(startBank, 2),
       targetBank: round(targetBank, 2),
       availableBalance: round(startBank, 2),
       riskProfile: prof,
       customRisk,
+      dailyBanks: {},
       status: 'active'
     };
+    initialPlan.durationDays = getPlanDurationDays(initialPlan);
 
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -1740,6 +1845,10 @@
     if (!state.activePlanId && state.plans.length > 0) {
       state.activePlanId = state.plans[0].id;
     }
+    // state.plan'daki (bakiye vb.) güncel değişiklikler plans[] kopyasının üstüne yazılmasın
+    if (state.plan && state.plan.id === state.activePlanId) syncActivePlan(state);
+    // Excel modeli: plan süresi = hedefe ulaşma günü (risk faktörünün büyüme oranından)
+    state.plans.forEach(p => { p.durationDays = getPlanDurationDays(p); });
     state.plan = state.plans.find(p => p.id === state.activePlanId) || state.plans[0] || null;
     return state;
   }
@@ -1772,15 +1881,17 @@
       id: planId,
       name: planName,
       createdAt: nowIso,
-      startDate: nowIso.slice(0, 10),
+      startDate: localDateStr(new Date()),
       durationDays: duration,
       startingBank: round(startBank, 2),
       targetBank: round(targetBank, 2),
       availableBalance: round(startBank, 2),
       riskProfile,
       customRisk,
+      dailyBanks: {},
       status: 'active'
     };
+    newPlan.durationDays = getPlanDurationDays(newPlan);
 
     state.plans.push(newPlan);
     state.activePlanId = planId;
@@ -1847,6 +1958,7 @@
 
     const pendingSlip = {
       ...slip,
+      planId: state.plan.id,
       status: 'pending',
       bankBefore: state.plan.availableBalance,
       createdAt: new Date().toISOString()
@@ -1871,6 +1983,7 @@
       slips: [pendingSlip, ...state.slips],
       ledger: [...state.ledger, newLedgerEntry]
     };
+    syncActivePlan(updatedState);
 
     return {
       success: true,
@@ -2474,12 +2587,17 @@
     settleAllSlips,
     calculateTargetPath,
     calculateRequiredDailyRate,
+    calculateDaysToTarget,
+    calculateKasaParams,
+    getPlanDurationDays,
+    buildKasaSimulation,
+    setPlanDailyBank,
+    syncActivePlan,
     classifyPlanStatus,
     getPlanMetrics,
     runPlanSimulation,
     calculatePlanTrajectories,
     calculateExcelGrowthModel,
-    generateExcelDailyTable,
     calculateNoLossIteration,
     generate30DayHistoricalSimulation,
     buildAdaptiveOptions,

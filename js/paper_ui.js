@@ -119,6 +119,17 @@
     paperState = loadState();
   }
 
+  // Excel "Gerçek Kasa" serisi: 0. gün başlangıç kasası, sonraki günler gün sonu kasası
+  function getRealizedHistory(plan) {
+    if (!plan || !paperState) return [];
+    const sim = PE.buildKasaSimulation(plan, paperState);
+    const pts = [{ dayIndex: 0, closingBankroll: Number(plan.startingBank) || 0 }];
+    sim.rows.forEach(r => {
+      if (r.actualBank != null) pts.push({ dayIndex: r.day, closingBankroll: r.actualBank });
+    });
+    return pts;
+  }
+
   // ---------------------------------------------------------------------------
   // Hedef Kasa Ulaşma Grafiği & Risk Modelleri Projeksiyonları
   // ---------------------------------------------------------------------------
@@ -141,9 +152,9 @@
     const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
 
     const profColors = {
-      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%50 Rezerv · %15 Büyüme)' },
-      medium:  { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (%35 Rezerv · %20 Büyüme)' },
-      high:    { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (%25 Rezerv · %25 Büyüme)' },
+      minimum: { main: '#10b981', fill: 'rgba(16, 185, 129, 0.12)', name: 'Minimum Risk (%75 Rezerv · %10 Büyüme)' },
+      medium:  { main: '#3b82f6', fill: 'rgba(59, 130, 246, 0.12)', name: 'Orta Risk (%50 Rezerv · %15 Büyüme)' },
+      high:    { main: '#ef4444', fill: 'rgba(239, 68, 68, 0.14)', name: 'Yüksek Risk (%50 Rezerv · %25 Büyüme)' },
       custom:  { main: '#a855f7', fill: 'rgba(168, 85, 247, 0.14)', name: (plan && plan.customRisk && plan.customRisk.name) || 'Özel Risk' }
     };
 
@@ -273,10 +284,11 @@
 
     // 3. Gerçekleşen Kasa Çizgisi (varsa)
     let realizedSvg = '';
-    if (history && history.length > 0) {
+    const shownHistory = (history || []).filter(h => h.dayIndex == null || h.dayIndex <= dur);
+    if (shownHistory.length > 0) {
       let rD = '';
       let rCircles = '';
-      history.forEach((h, idx) => {
+      shownHistory.forEach((h, idx) => {
         const d = h.dayIndex != null ? h.dayIndex : idx;
         const val = h.closingBankroll != null ? h.closingBankroll : startBank;
         const rx = getX(d).toFixed(1);
@@ -327,14 +339,15 @@
     const rawProf = (plan && plan.riskProfile) || (paperState && paperState.settings && paperState.settings.riskProfile) || (viewMode && viewMode !== 'all' ? viewMode : 'minimum');
     const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
 
-    const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, activeProf, (paperState && paperState.history) || []);
+    const realized = getRealizedHistory(plan);
+    const svgHtml = generateTrajectoryChartSvg(trajData, plan, curr, activeProf, realized);
     const pData = trajData.trajectories ? (trajData.trajectories[activeProf] || trajData.trajectories.minimum) : null;
     const noLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, activeProf) : null;
 
     const profConfigs = {
-      minimum: { name: '🟢 Minimum Risk', icon: '🟢', resPct: 0.50, stakePct: 0.50, dailyGrowthPct: '15,0', dailyFactor: '1.15', badgeClass: 'b-min', badgeText: '%50 Rezerv · %15/gün', color: '#10b981' },
-      medium:  { name: '🔵 Orta Risk',    icon: '🔵', resPct: 0.35, stakePct: 0.65, dailyGrowthPct: '20,0', dailyFactor: '1.20', badgeClass: 'b-med', badgeText: '%35 Rezerv · %20/gün', color: '#3b82f6' },
-      high:    { name: '🔴 Yüksek Risk',  icon: '🔴', resPct: 0.25, stakePct: 0.75, dailyGrowthPct: '25,0', dailyFactor: '1.25', badgeClass: 'b-high', badgeText: '%25 Rezerv · %25/gün', color: '#ef4444' },
+      minimum: { name: '🟢 Minimum Risk', icon: '🟢', resPct: 0.75, stakePct: 0.25, dailyGrowthPct: '10,0', dailyFactor: '1.10', badgeClass: 'b-min', badgeText: '%75 Rezerv · %10/gün', color: '#10b981' },
+      medium:  { name: '🔵 Orta Risk',    icon: '🔵', resPct: 0.50, stakePct: 0.50, dailyGrowthPct: '15,0', dailyFactor: '1.15', badgeClass: 'b-med', badgeText: '%50 Rezerv · %15/gün', color: '#3b82f6' },
+      high:    { name: '🔴 Yüksek Risk',  icon: '🔴', resPct: 0.50, stakePct: 0.50, dailyGrowthPct: '25,0', dailyFactor: '1.25', badgeClass: 'b-high', badgeText: '%50 Rezerv · %25/gün', color: '#ef4444' },
       custom:  { name: '⚙️ Özel Risk',   icon: '⚙️', resPct: 0.40, stakePct: 0.50, dailyGrowthPct: '9,0', dailyFactor: '1.09', badgeClass: 'b-custom', badgeText: 'Özel Parametreler', color: '#a855f7' }
     };
 
@@ -365,7 +378,7 @@
         <div class="chart-head">
           <div>
             <h3>📈 Hedef Kasa Ulaşma Grafiği · ${esc(cfg.name)}</h3>
-            <p>Hedeflenen <b>${dur} günde</b> ${formatCurrency(startBank, curr)} ➔ ${formatCurrency(targetBank, curr)} geometrik hedef yolu, ${esc(cfg.name)} medyan patikası ve sıfır kayıp projeksiyonu.</p>
+            <p>${formatCurrency(startBank, curr)} ➔ ${formatCurrency(targetBank, curr)} · günlük +%${cfg.dailyGrowthPct} ile hedefe ulaşma günü: <b>${dur}. gün</b>. Teorik hedef kasa, gerçek kasa, ${esc(cfg.name)} medyan patikası ve sıfır kayıp projeksiyonu.</p>
           </div>
         </div>
 
@@ -378,10 +391,10 @@
         </div>
 
         <div class="chart-legend">
-          <span class="cl-item"><span class="cl-dot" style="background:#06b6d4;border:1px dashed #06b6d4;"></span> 🎯 Kesikli Turkuaz: Geometrik Hedef Yolu (${formatCurrency(targetBank, curr)})</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#06b6d4;border:1px dashed #06b6d4;"></span> 🎯 Kesikli Turkuaz: Teorik Hedef Kasa (${formatCurrency(targetBank, curr)})</span>
           <span class="cl-item"><span class="cl-dot" style="background:${cfg.color};"></span> ${esc(cfg.name)} (Medyan)</span>
           <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:1px dashed #fbbf24;"></span> ⭐ Kesikli Altın: Sıfır Kayıp Potansiyeli</span>
-          ${paperState && paperState.history && paperState.history.length ? '<span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 🔵 Gerçekleşen Kasa</span>' : ''}
+          ${realized.length ? '<span class="cl-item"><span class="cl-dot" style="background:#38bdf8;"></span> 🔵 Gerçek Kasa</span>' : ''}
         </div>
 
         <div class="chart-models-summary single-model" style="grid-template-columns:1fr;max-width:650px;margin-top:14px;">
@@ -429,7 +442,7 @@
 
     const pData = trajData && trajData.trajectories && (trajData.trajectories[activeProf] || trajData.trajectories.minimum);
     const noLoss = PE.calculateNoLossIteration ? PE.calculateNoLossIteration(plan, activeProf) : null;
-    const history = (paperState && paperState.history) || [];
+    const history = getRealizedHistory(plan);
 
     const peakCandidates = [(trajData.targetBank || (plan && plan.targetBank) || 500)];
     if (noLoss && noLoss.finalBank) peakCandidates.push(noLoss.finalBank);
@@ -485,9 +498,11 @@
         ptNoLoss.style.display = 'block';
       }
 
+      const realPt = history.find(h => h.dayIndex === day);
       tracker.innerHTML = `
         <span class="ct-day">📅 <b>${day}. Gün</b></span>
         <span class="ct-tgt" style="color:#06b6d4;">🎯 Hedef: <b>${formatCurrency(tgtVal, curr)}</b></span>
+        ${realPt ? `<span class="ct-real" style="color:${realPt.closingBankroll < tgtVal ? 'var(--bad)' : '#38bdf8'};">🔵 Gerçek: <b>${formatCurrency(realPt.closingBankroll, curr)}</b></span>` : ''}
         <span class="ct-prof" style="color:var(--text);">📊 Model Medyan: <b>${formatCurrency(profMed, curr)}</b></span>
         <span class="ct-nl" style="color:#fbbf24;">⭐ Sıfır Kayıp: <b>${formatCurrency(nlVal, curr)}</b></span>
       `;
@@ -508,91 +523,160 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Excel Günlük Kasa Modeli Çizelgesi (Betavus Kasa Modeli 1)
+  // Kasa Simülasyonu Çizelgesi (Paper_Betting_Kasa_Simulasyonu v01)
+  // GERÇEK: Gün · Gerçek Kasa · Günlük Değişim · Günlük Büyüme
+  // HEDEF:  Gün · Teorik Hedef Kasa · Günlük Kazanç · Hedefe Ulaşma
   // ---------------------------------------------------------------------------
 
-  function renderExcelDailyTableCardHtml(plan, state, curr) {
-    if (!PE.generateExcelDailyTable) return '';
-    const rawProf = (plan && plan.riskProfile) || (state && state.settings && state.settings.riskProfile) || 'minimum';
-    const activeProf = (rawProf === 'cautious' ? 'minimum' : rawProf === 'balanced' ? 'medium' : rawProf === 'aggressive' ? 'high' : rawProf);
-    const data = PE.generateExcelDailyTable(plan, state, activeProf);
-    const m = data.model;
-    const rows = data.rows;
+  function signedCurrency(val, curr) {
+    return `${val > 0 ? '+' : ''}${formatCurrency(val, curr)}`;
+  }
+
+  function renderKasaSimulationCardHtml(plan, state, curr) {
+    const sim = PE.buildKasaSimulation(plan, state);
+    const p = sim.params;
+    const riskLabel = p.riskProfile === 'custom' ? p.riskName : ({ minimum: 'Minimum', medium: 'Medium', high: 'High' }[p.riskProfile] || p.riskName);
 
     return `
-      <div class="card excel-model-card" id="excelModelCard">
+      <div class="card excel-model-card" id="kasaSimCard">
         <div class="excel-model-head">
           <div class="emh-title">
-            <h3>📑 Günlük Kasa Büyüme Modeli (${esc(m.profileName)})</h3>
-            <p>Seçilen ${esc(m.profileName)} doğrultusunda kasa rezervi (%${Math.round(m.reservePct * 100)}), günlük büyüme katsayısı (${m.dailyGrowthFactor}×) ve 30 günlük bileşik takip çizelgesi.</p>
+            <h3>📑 Kasa Simülasyonu · Gerçek vs Hedef</h3>
+            <p>Gerçek kasa her gün sonuçlanan kuponlardan otomatik hesaplanır; dilerseniz günün kasasını elle girebilirsiniz (boş bırakınca otomatik değere döner). Hedefin altında kalan günler kırmızı gösterilir.</p>
           </div>
           <span class="badge b-excel" style="background:rgba(56,189,248,0.15);color:#38bdf8;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;border:1px solid rgba(56,189,248,0.3);">
-            Günlük Büyüme: ${m.dailyGrowthFactor}× (+%${m.dailyGrowthRatePct}/gün)
+            Seçilen Risk: ${esc(riskLabel)}
           </span>
         </div>
 
         <div class="excel-params-strip">
           <div class="ep-col">
-            <span class="ep-lbl">Kasa Rezervi</span>
-            <span class="ep-val">%${Math.round(m.reservePct * 100)} (${formatCurrency(m.startingBank * m.reservePct, curr)})</span>
-            <span class="ep-note">Dokunulmaz rezerv</span>
+            <span class="ep-lbl">Başlangıç Kasası</span>
+            <span class="ep-val">${formatCurrency(p.startingBank, curr)}</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Aktif Kasa Payı</span>
-            <span class="ep-val">%${Math.round((1.0 - m.reservePct) * 100)} (${formatCurrency(m.startingBank * (1.0 - m.reservePct), curr)})</span>
-            <span class="ep-note">Bahislerde kullanılan pay</span>
+            <span class="ep-lbl">Hedef Kasa</span>
+            <span class="ep-val">${formatCurrency(p.targetBank, curr)}</span>
           </div>
           <div class="ep-col">
             <span class="ep-lbl">Günlük Büyüme Oranı</span>
-            <span class="ep-val good">+%${m.dailyGrowthRatePct} / gün</span>
-            <span class="ep-note">Bileşik katsayı: ${m.dailyGrowthFactor}×</span>
+            <span class="ep-val good">${formatPct(p.dailyGrowthRate * 100, 0)}</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">30. Gün Teorik Kasa</span>
-            <span class="ep-val good">${formatCurrency(m.finalTheoreticalBank, curr)}</span>
-            <span class="ep-note">Toplam çarpan: ${m.totalGrowthMultiplier}×</span>
+            <span class="ep-lbl">Kasa Rezerv Oranı</span>
+            <span class="ep-val">${formatPct(p.reservePct * 100, 0)}</span>
+            <span class="ep-note">${formatCurrency(sim.currentBank * p.reservePct, curr)} korunur</span>
           </div>
           <div class="ep-col">
-            <span class="ep-lbl">Model Durumu</span>
-            <span class="ep-val good">%100 · ${m.controlStatus}</span>
-            <span class="ep-note">Rezerv + Aktif = %100</span>
+            <span class="ep-lbl">Hedefe Ulaşma Günü</span>
+            <span class="ep-val">${p.daysToTarget != null ? `${p.daysToTarget}. gün` : '—'}</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Hedef Günündeki Teorik Kasa</span>
+            <span class="ep-val good">${p.theoreticalAtTargetDay != null ? formatCurrency(p.theoreticalAtTargetDay, curr) : '—'}</span>
+          </div>
+          <div class="ep-col">
+            <span class="ep-lbl">Gerçek Hedefe Ulaşma</span>
+            <span class="ep-val">${sim.currentReachPct != null ? formatPct(sim.currentReachPct, 1) : '—'}</span>
+            <span class="ep-note">${formatCurrency(sim.currentBank, curr)} / ${formatCurrency(p.targetBank, curr)}</span>
           </div>
         </div>
 
-        <div class="tbl-scroll" style="max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px;">
-          <table class="excel-table">
+        <div class="tbl-scroll" style="max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px;">
+          <table class="excel-table kasa-sim-table">
             <thead>
+              <tr>
+                <th class="grp" colspan="5">GERÇEK</th>
+                <th class="grp col-sep" colspan="3">HEDEF</th>
+              </tr>
               <tr>
                 <th>Gün</th>
                 <th>Tarih</th>
-                <th>Teorik Kasa (${curr})</th>
-                <th>Sanal Kasa (${curr})</th>
-                <th>Gün Sonu Kasa</th>
+                <th>Gerçek Kasa (${curr})</th>
+                <th>Günlük Değişim</th>
                 <th>Günlük Büyüme</th>
-                <th>Total Büyüme</th>
+                <th class="col-sep">Teorik Hedef Kasa</th>
+                <th>Günlük Kazanç</th>
+                <th>Hedefe Ulaşma</th>
               </tr>
             </thead>
             <tbody>
-              ${rows.map(r => `
-                <tr class="${r.isSettled ? 'row-settled' : ''}">
+              ${sim.rows.map(r => {
+                const editable = r.actualBank != null;
+                const realCell = editable
+                  ? `<input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : ''}" data-day="${r.day}" value="${r.actualBank.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" title="${r.isManual ? 'Elle girildi — boş bırakırsanız otomatik değere döner' : 'Kuponlardan otomatik hesaplandı'}" aria-label="${r.day}. gün gerçek kasa">`
+                  : '—';
+                return `
+                <tr class="${r.isToday ? 'row-today' : ''} ${editable ? '' : 'row-future'}">
                   <td><b>${r.day}</b></td>
-                  <td>${r.dateStr}</td>
-                  <td><b style="color:#38bdf8;">${formatCurrency(r.theoreticalBank, curr)}</b></td>
-                  <td>${r.actualStartBank != null ? formatCurrency(r.actualStartBank, curr) : '—'}</td>
-                  <td>${r.actualEndBank != null ? `<b>${formatCurrency(r.actualEndBank, curr)}</b>` : '—'}</td>
-                  <td>${r.dailyGrowthPct != null ? `<span class="${r.dailyGrowthPct >= 0 ? 'good' : 'bad'}">${r.dailyGrowthPct >= 0 ? '+' : ''}%${r.dailyGrowthPct}</span>` : '—'}</td>
-                  <td>${r.totalGrowthPct != null ? `<span class="${r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct >= 0 ? '+' : ''}%${r.totalGrowthPct}</span>` : '—'}</td>
-                </tr>
-              `).join('')}
+                  <td>${dmy(r.date)}</td>
+                  <td class="real ${r.belowTarget ? 'below-target' : ''}">${realCell}</td>
+                  <td>${r.dailyChange != null ? `<span class="${r.dailyChange >= 0 ? 'good' : 'bad'}">${signedCurrency(r.dailyChange, curr)}</span>` : '—'}</td>
+                  <td>${r.dailyGrowthPct != null ? `<span class="${r.dailyGrowthPct >= 0 ? 'good' : 'bad'}">${r.dailyGrowthPct > 0 ? '+' : ''}${formatPct(r.dailyGrowthPct, 1)}</span>` : '—'}</td>
+                  <td class="col-sep"><b style="color:#38bdf8;">${formatCurrency(r.targetBank, curr)}</b></td>
+                  <td>${signedCurrency(r.targetDailyGain, curr)}</td>
+                  <td>${r.targetReachPct != null ? formatPct(r.targetReachPct, 1) : '—'}</td>
+                </tr>`;
+              }).join('')}
             </tbody>
           </table>
         </div>
 
         <div class="excel-warn-note" style="margin-top:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--muted);">
-          ⚠️ <b>Kasa Büyüme Modeli Uyarısı:</b> ${esc(m.assumptionNote)}
+          ⚠️ Teorik hedef kasa, günlük %${PE.round(p.dailyGrowthRate * 100, 2)} büyümenin her gün kesintisiz gerçekleştiği bileşik modeldir (Başlangıç × (1 + büyüme)<sup>gün</sup>); garanti değildir.
         </div>
       </div>
     `;
+  }
+
+  function renderAdaptiveCardHtml(adaptive, curr) {
+    const st = adaptive.currentStatus || {};
+    return `
+      <div class="adaptive-card">
+        <div class="adapt-head">
+          <h3>⚠️ ${esc(st.label || 'Hedefin Gerisinde')}${st.diffPct != null ? ` (${st.diffPct}%)` : ''} — Plan Alternatifleri</h3>
+          <p>Kasa teorik hedef kasanın gerisinde. Aşağıdaki alternatiflerden birini uygulayabilirsiniz (simülasyon sonuçları garanti değildir).</p>
+        </div>
+        <div class="adapt-grid">
+          ${adaptive.options.map(o => `
+            <div class="adapt-col">
+              <span class="col-tag">${esc(o.tag)}</span>
+              <h4>${esc(o.title)}</h4>
+              <p class="desc">${esc(o.desc)}</p>
+              <div class="adapt-metrics">
+                ${o.metrics.revisedTarget != null ? `<div class="am-row"><span>Revize Hedef</span><b>${formatCurrency(o.metrics.revisedTarget, curr)}</b></div>` : ''}
+                <div class="am-row"><span>Hedefe Ulaşma İhtimali</span><b>%${o.metrics.newTargetProbPct}</b></div>
+                <div class="am-row"><span>Medyan Kasa</span><b>${formatCurrency(o.metrics.medianBank, curr)}</b></div>
+                <div class="am-row"><span>Yarı Kasa Kaybı Riski</span><b>%${o.metrics.halfBankLossPct}</b></div>
+              </div>
+              ${o.warning ? `<div class="adapt-warn">${esc(o.warning)}</div>` : ''}
+              <button type="button" class="btn-apply-adapt" data-opt="${esc(o.id)}">Uygula</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function wireKasaSimulationEvents() {
+    document.querySelectorAll('#kasaSimCard .kasa-input').forEach(inp => {
+      inp.onchange = () => {
+        if (!paperState || !paperState.plan) return;
+        // "1.234,56" (tr) ve "68.66" girişlerinin ikisi de kabul edilir
+        let raw = inp.value.trim().replace(/[\s€₺$£]/g, '');
+        if (raw.includes(',')) raw = raw.replace(/\./g, '').replace(',', '.');
+        else if (!/^\d*\.\d{1,2}$/.test(raw)) raw = raw.replace(/\./g, '');
+        const val = raw === '' ? null : parseNumber(raw);
+        if (raw !== '' && (val == null || val < 0)) {
+          alert('Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız otomatik değere döner.');
+          renderPlanPane();
+          return;
+        }
+        PE.setPlanDailyBank(paperState, inp.dataset.day, val);
+        saveState();
+        renderPlanPane();
+      };
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1636,7 +1720,7 @@
         <div class="plan-title-row">
           <div>
             <h2>${esc(currentPlan.name || 'Sanal Kasa Planım')} · ${esc(prof.name || 'Minimum Risk')}</h2>
-            <div class="plan-sub">Başlangıç: ${dmy(currentPlan.startDate)} · ${metrics.durationDays} Günlük Plan (${metrics.elapsedDays}. Gün / ${metrics.remainingDays} Gün Kaldı)</div>
+            <div class="plan-sub">Başlangıç: ${dmy(currentPlan.startDate)} · Hedefe Ulaşma Günü: ${metrics.durationDays}. gün (Bugün ${metrics.elapsedDays + 1}. gün · ${metrics.remainingDays} gün kaldı) · Günlük büyüme %${metrics.dailyReqRate} · Rezerv %${Math.round(metrics.reservePct * 100)}</div>
           </div>
           <div class="plan-status-badge ${metrics.status.code}">
             <span class="dot">●</span> ${metrics.status.label} (${metrics.status.diffPct > 0 ? '+' : ''}${metrics.status.diffPct}%)
@@ -1670,15 +1754,15 @@
         <div class="plan-progress-box">
           <div class="pbar-labels">
             <span>Başlangıç: ${formatCurrency(metrics.startingBank, curr)}</span>
-            <span>Bugünkü Hedef Yolu: <b>${formatCurrency(metrics.targetToday, curr)}</b></span>
+            <span>Bugünkü Teorik Hedef: <b>${formatCurrency(metrics.targetToday, curr)}</b></span>
             <span>Hedef: ${formatCurrency(metrics.targetBank, curr)}</span>
           </div>
           <div class="pbar-track">
             <div class="pbar-fill" style="width: ${Math.min(100, metrics.progressPct)}%"></div>
-            <div class="pbar-target-marker" style="left: ${Math.min(100, Math.max(0, ((metrics.targetToday - metrics.startingBank) / (metrics.targetBank - metrics.startingBank)) * 100))}%" title="Bugünkü Geometrik Hedef Yolu"></div>
+            <div class="pbar-target-marker" style="left: ${Math.min(100, Math.max(0, ((metrics.targetToday - metrics.startingBank) / (metrics.targetBank - metrics.startingBank)) * 100))}%" title="Bugünkü Teorik Hedef Kasa"></div>
           </div>
           <div class="pbar-hint">
-            <span>Hedefe ulaşmak için gereken bileşik günlük oran: <b>%${metrics.dailyReqRate} / gün</b></span>
+            <span>Risk faktörünün günlük büyüme hedefi: <b>%${metrics.dailyReqRate} / gün</b> · ${metrics.durationDays}. gün teorik kasa: <b>${formatCurrency(metrics.theoreticalAtTargetDay, curr)}</b></span>
             <span>Kasa Durumu: <b class="${metrics.status.color}">${metrics.status.label}</b></span>
           </div>
         </div>
@@ -1728,8 +1812,8 @@
         </div>
       </div>
 
-      <!-- Betavus Çok Kollu Kasa Büyüme Modeli -->
-      ${renderExcelDailyTableCardHtml(currentPlan, paperState, curr)}
+      <!-- Kasa Simülasyonu: Gerçek vs Hedef (Paper_Betting_Kasa_Simulasyonu v01) -->
+      ${renderKasaSimulationCardHtml(currentPlan, paperState, curr)}
 
       <!-- Adaptif Öneriler (Gerekirse) -->
       ${adaptive && adaptive.showAdaptive ? renderAdaptiveCardHtml(adaptive, curr) : ''}
@@ -1792,44 +1876,32 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-top:14px;">
-            <label>Plan Süresi (Gün) *</label>
-            <div class="pill-group" id="durationPills">
-              <button type="button" class="pill" data-days="7">7 Gün</button>
-              <button type="button" class="pill" data-days="14">14 Gün</button>
-              <button type="button" class="pill active" data-days="30">30 Gün</button>
-              <button type="button" class="pill" data-days="60">60 Gün</button>
-              <button type="button" class="pill" data-days="90">90 Gün</button>
-            </div>
-            <input type="number" id="setupDuration" class="form-input" value="30" min="1" max="365" style="margin-top:8px;max-width:160px;" placeholder="Özel gün sayısı">
-          </div>
-
           <div class="form-group" style="margin-top:16px;">
-            <label>Kasa Modeli &amp; Risk Toleransı *</label>
+            <label>Risk Faktörü *</label>
             <div class="risk-cards">
               <label class="risk-card active" data-risk="minimum">
                 <input type="radio" name="setupRisk" value="minimum" checked>
                 <div class="r-head">
                   <b>🟢 Minimum Risk</b>
-                  <span class="r-badge b-min">Rezerv: %50 · Günlük %15</span>
+                  <span class="r-badge b-min">Rezerv: %75 · Günlük %10</span>
                 </div>
-                <p>Kasanın %50'si dokunulmaz rezerv olarak tutulur. %50 aktif payla günlük %15 büyüme hedeflenir (1.15x/gün).</p>
+                <p>Kasanın %75'i dokunulmaz rezerv olarak tutulur. %25 aktif payla günlük %10 büyüme hedeflenir (1.10x/gün).</p>
               </label>
               <label class="risk-card" data-risk="medium">
                 <input type="radio" name="setupRisk" value="medium">
                 <div class="r-head">
                   <b>🔵 Orta Risk</b>
-                  <span class="r-badge b-med">Rezerv: %35 · Günlük %20</span>
+                  <span class="r-badge b-med">Rezerv: %50 · Günlük %15</span>
                 </div>
-                <p>Kasanın %35'i dokunulmaz rezerv olarak tutulur. %65 aktif payla günlük %20 büyüme hedeflenir (1.20x/gün).</p>
+                <p>Kasanın %50'si dokunulmaz rezerv olarak tutulur. %50 aktif payla günlük %15 büyüme hedeflenir (1.15x/gün).</p>
               </label>
               <label class="risk-card" data-risk="high">
                 <input type="radio" name="setupRisk" value="high">
                 <div class="r-head">
                   <b style="color:#f87171;">🔴 Yüksek Risk</b>
-                  <span class="r-badge b-high">Rezerv: %25 · Günlük %25</span>
+                  <span class="r-badge b-high">Rezerv: %50 · Günlük %25</span>
                 </div>
-                <p>Kasanın %25'i dokunulmaz rezerv olarak tutulur. %75 aktif payla günlük %25 büyüme hedeflenir (1.25x/gün).</p>
+                <p>Kasanın %50'si dokunulmaz rezerv olarak tutulur. %50 aktif payla günlük %25 büyüme hedeflenir (1.25x/gün).</p>
               </label>
               <label class="risk-card" data-risk="custom">
                 <input type="radio" name="setupRisk" value="custom">
@@ -1870,9 +1942,15 @@
             </div>
           </div>
 
+          <div class="form-group" style="margin-top:16px;">
+            <label>Otomatik Parametreler</label>
+            <div class="kasa-auto-params" id="setupAutoParams"></div>
+            <span class="form-hint">Plan süresi risk faktörünün günlük büyüme oranından hesaplanır: ROUNDUP(LN(Hedef / Başlangıç) / LN(1 + büyüme)).</span>
+          </div>
+
           <div class="setup-chart-preview" id="setupChartPreviewBox">
-            <h4>📈 Hedeflenen Sürede Kasa Ulaşma Grafiği Canlı Önizlemesi</h4>
-            <p>Seçilen başlangıç kasası, hedef kasa, süre ve risk modeline göre büyüme patikası ve sıfır kayıp projeksiyonu.</p>
+            <h4>📈 Hedef Kasa Ulaşma Grafiği Canlı Önizlemesi</h4>
+            <p>Seçilen başlangıç kasası, hedef kasa ve risk faktörüne göre teorik hedef kasa patikası ve sıfır kayıp projeksiyonu.</p>
             <div id="setupChartSvgContainer" class="chart-svg-box"></div>
           </div>
 
@@ -1931,44 +2009,37 @@
 
     function updateSetupChartPreview() {
       const container = document.getElementById('setupChartSvgContainer');
+      const paramsBox = document.getElementById('setupAutoParams');
       if (!container) return;
       const start = parseNumber(document.getElementById('setupStartBank')?.value) || 50;
       const target = parseNumber(document.getElementById('setupTargetBank')?.value) || 500;
-      const duration = parseInt(document.getElementById('setupDuration')?.value, 10) || 30;
       const curr = document.getElementById('setupCurrency')?.value || 'EUR';
       const riskRadio = document.querySelector('input[name="setupRisk"]:checked');
       const risk = riskRadio ? riskRadio.value : 'minimum';
-
-      if (start <= 0 || target <= start || duration <= 0) {
-        container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11.5px;">Geçerli başlangıç kasası, hedef kasa ve süre girildiğinde grafik görüntülenecektir.</div>';
-        return;
-      }
 
       let customRisk = null;
       if (risk === 'custom') {
         customRisk = getCustomRiskParams();
       }
 
-      const dummyPlan = { startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk };
+      const dummyPlan = { startingBank: start, targetBank: target, riskProfile: risk, customRisk };
+      const kp = PE.calculateKasaParams(dummyPlan);
+      if (paramsBox) {
+        paramsBox.innerHTML = `
+          <div class="kap"><span>Günlük Büyüme Oranı</span><b class="good">${formatPct(kp.dailyGrowthRate * 100, kp.dailyGrowthRate * 100 % 1 ? 2 : 0)}</b></div>
+          <div class="kap"><span>Kasa Rezerv Oranı</span><b>${formatPct(kp.reservePct * 100, 0)}</b></div>
+          <div class="kap"><span>Hedefe Ulaşma Günü</span><b>${kp.daysToTarget != null ? `${kp.daysToTarget}. gün` : '—'}</b></div>
+          <div class="kap"><span>Hedef Günündeki Teorik Kasa</span><b class="good">${kp.theoreticalAtTargetDay != null ? formatCurrency(kp.theoreticalAtTargetDay, curr) : '—'}</b></div>
+        `;
+      }
+
+      if (start <= 0 || target <= start || kp.daysToTarget == null) {
+        container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11.5px;">Geçerli başlangıç kasası ve ondan büyük bir hedef kasa girildiğinde grafik görüntülenecektir.</div>';
+        return;
+      }
+
       const previewTraj = PE.calculatePlanTrajectories(dummyPlan, null);
       container.innerHTML = generateTrajectoryChartSvg(previewTraj, dummyPlan, curr, risk, []);
-    }
-
-    const pills = document.querySelectorAll('#durationPills .pill');
-    const durInput = document.getElementById('setupDuration');
-    pills.forEach(p => {
-      p.onclick = () => {
-        pills.forEach(x => x.classList.remove('active'));
-        p.classList.add('active');
-        if (durInput) durInput.value = p.dataset.days;
-        updateSetupChartPreview();
-      };
-    });
-    if (durInput) {
-      durInput.oninput = () => {
-        pills.forEach(x => x.classList.toggle('active', x.dataset.days === durInput.value));
-        updateSetupChartPreview();
-      };
     }
 
     const customPanel = document.getElementById('customRiskControls');
@@ -2021,7 +2092,6 @@
         const planName = (document.getElementById('setupPlanName')?.value || '').trim();
         const start = parseNumber(document.getElementById('setupStartBank')?.value);
         const target = parseNumber(document.getElementById('setupTargetBank')?.value);
-        const duration = parseInt(document.getElementById('setupDuration')?.value, 10);
         const curr = document.getElementById('setupCurrency')?.value || 'EUR';
         const riskRadio = document.querySelector('input[name="setupRisk"]:checked');
         const risk = riskRadio ? riskRadio.value : 'minimum';
@@ -2031,7 +2101,6 @@
         if (start == null || start <= 0) errors.push('Sanal başlangıç kasası 0\'dan büyük olmalıdır.');
         if (target == null || target <= 0) errors.push('Hedef kasa 0\'dan büyük olmalıdır.');
         if (start != null && target != null && target <= start) errors.push('Hedef kasa, başlangıç kasasından büyük olmalıdır.');
-        if (isNaN(duration) || duration <= 0) errors.push('Plan süresi geçerli bir pozitif gün sayısı olmalıdır.');
 
         if (errors.length) {
           if (errEl) {
@@ -2050,13 +2119,13 @@
         if (paperState && paperState.plans && paperState.plans.length > 0) {
           PE.createNewPlan(
             paperState,
-            { name: planName || undefined, startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk },
+            { name: planName || undefined, startingBank: start, targetBank: target, riskProfile: risk, customRisk },
             { currency: curr }
           );
         } else {
           paperState = PE.createInitialState(
             { currency: curr, riskProfile: risk },
-            { name: planName || undefined, startingBank: start, targetBank: target, durationDays: duration, riskProfile: risk, customRisk }
+            { name: planName || undefined, startingBank: start, targetBank: target, riskProfile: risk, customRisk }
           );
         }
 
@@ -2107,6 +2176,8 @@
         }
       };
     }
+
+    wireKasaSimulationEvents();
 
     const chartCard = document.getElementById('planChartCard');
     if (chartCard && cachedTrajData && paperState && paperState.plan) {
@@ -2204,15 +2275,16 @@
         }
 
         if (confirm(confirmMsg)) {
-          if (chosen.changes.durationDays) {
-            paperState.plan.durationDays = chosen.changes.durationDays;
-          }
           if (chosen.changes.targetBank) {
             paperState.plan.targetBank = chosen.changes.targetBank;
           }
           if (chosen.changes.riskProfile) {
+            paperState.plan.riskProfile = chosen.changes.riskProfile;
             paperState.settings.riskProfile = chosen.changes.riskProfile;
           }
+          // Hedef veya risk değişince hedefe ulaşma günü yeniden hesaplanır
+          paperState.plan.durationDays = PE.getPlanDurationDays(paperState.plan);
+          PE.syncActivePlan(paperState);
           saveState();
           renderPlanPane();
           renderRecPane();

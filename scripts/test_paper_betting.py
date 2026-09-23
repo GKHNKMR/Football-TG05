@@ -64,32 +64,33 @@ def main():
         }""")
         assert 'error' not in cfg_res, f"Config error: {cfg_res.get('error')}"
         assert 'minimum' in cfg_res['profiles'] and 'medium' in cfg_res['profiles'] and 'high' in cfg_res['profiles'] and 'multi' in cfg_res['profiles']
-        # Minimum Risk: Kasa Rezerv: %50, Günlük Büyüme Oranı: %15 (1.15x, Aktif Pay: %50)
-        assert cfg_res['minimum']['reservePct'] == 0.50
-        assert cfg_res['minimum']['dailyGrowthRate'] == 0.15
-        assert cfg_res['minimum']['dailyFactor'] == 1.15
-        assert cfg_res['minimum']['stakePct'] == 0.50
+        # Paper_Betting_Kasa_Simulasyonu v01 "Risk Faktörleri" sayfası
+        # Minimum Risk: Kasa Rezerv: %75, Günlük Büyüme Oranı: %10 (1.10x, Aktif Pay: %25)
+        assert cfg_res['minimum']['reservePct'] == 0.75
+        assert cfg_res['minimum']['dailyGrowthRate'] == 0.10
+        assert cfg_res['minimum']['dailyFactor'] == 1.10
+        assert cfg_res['minimum']['stakePct'] == 0.25
 
-        # Orta Risk: Kasa Rezerv: %35, Günlük Büyüme Oranı: %20 (1.20x, Aktif Pay: %65)
-        assert cfg_res['medium']['reservePct'] == 0.35
-        assert cfg_res['medium']['dailyGrowthRate'] == 0.20
-        assert cfg_res['medium']['dailyFactor'] == 1.20
-        assert cfg_res['medium']['stakePct'] == 0.65
+        # Orta Risk (Medium): Kasa Rezerv: %50, Günlük Büyüme Oranı: %15 (1.15x, Aktif Pay: %50)
+        assert cfg_res['medium']['reservePct'] == 0.50
+        assert cfg_res['medium']['dailyGrowthRate'] == 0.15
+        assert cfg_res['medium']['dailyFactor'] == 1.15
+        assert cfg_res['medium']['stakePct'] == 0.50
 
-        # Yüksek Risk: Kasa Rezerv: %25, Günlük Büyüme Oranı: %25 (1.25x, Aktif Pay: %75)
-        assert cfg_res['high']['reservePct'] == 0.25
+        # Yüksek Risk (High): Kasa Rezerv: %50, Günlük Büyüme Oranı: %25 (1.25x, Aktif Pay: %50)
+        assert cfg_res['high']['reservePct'] == 0.50
         assert cfg_res['high']['dailyGrowthRate'] == 0.25
         assert cfg_res['high']['dailyFactor'] == 1.25
-        assert cfg_res['high']['stakePct'] == 0.75
+        assert cfg_res['high']['stakePct'] == 0.50
 
         # Geriye dönük uyumluluk takma adları
         assert cfg_res['cautious'] is not None and cfg_res['balanced'] is not None and cfg_res['aggressive'] is not None
-        print("  ✓ Kasa risk profilleri (Minimum Risk %50 Rezerv / %15 Büyüme, Orta Risk %35 Rezerv / %20 Büyüme, Yüksek Risk %25 Rezerv / %25 Büyüme) doğrulandı.")
+        print("  ✓ Kasa risk profilleri (Minimum %75 Rezerv / %10 Büyüme, Medium %50 Rezerv / %15 Büyüme, High %50 Rezerv / %25 Büyüme) doğrulandı.")
 
-        # Günlük Büyüme Modeli Matematik Doğrulaması (minimum risk: %50 rezerv, %15 büyüme)
+        # Günlük Büyüme Modeli Matematik Doğrulaması (medium risk: %50 rezerv, %15 büyüme)
         excel_math = page.evaluate("""() => {
             const PE = window.BETAVUS_PAPER;
-            const m = PE.calculateExcelGrowthModel({ startingBank: 50, durationDays: 30 }, 'minimum');
+            const m = PE.calculateExcelGrowthModel({ startingBank: 50, durationDays: 30 }, 'medium');
             return {
                 factor: m.dailyGrowthFactor,
                 ratePct: m.dailyGrowthRatePct,
@@ -147,11 +148,12 @@ def main():
 
         assert plan_res['state']['plan']['startingBank'] == 50
         assert plan_res['state']['plan']['targetBank'] == 500
-        assert plan_res['state']['plan']['durationDays'] == 30
+        # Excel: Hedefe Ulaşma Günü = ROUNDUP(LN(500/50)/LN(1.10)) = 25 (Minimum risk %10)
+        assert plan_res['state']['plan']['durationDays'] == 25
         assert plan_res['day0'] == 50.0
-        assert plan_res['day30'] == 500.0
-        # 50 * (10)^(15/30) = 50 * sqrt(10) ~ 158.11
-        assert 155 <= plan_res['day15'] <= 162
+        # Teorik Hedef Kasa = 50 * 1.10^gün
+        assert plan_res['day15'] == 208.86
+        assert plan_res['day30'] == 872.47
         # (10)^(1/30) - 1 ~ 8.0%
         assert 7.8 <= plan_res['dailyRate'] <= 8.2
         assert plan_res['statusOnTrack'] == 'on_track'
@@ -169,7 +171,7 @@ def main():
                 durationDays: traj.durationDays,
                 targetPointsLen: traj.targetPoints.length,
                 target0: traj.targetPoints[0].targetBank,
-                target30: traj.targetPoints[30].targetBank,
+                targetLast: traj.targetPoints[traj.targetPoints.length - 1].targetBank,
                 hasMinimum: !!traj.trajectories.minimum,
                 hasMedium: !!traj.trajectories.medium,
                 hasHigh: !!traj.trajectories.high,
@@ -179,15 +181,69 @@ def main():
                 minHitPct: traj.trajectories.minimum.targetHitPct
             };
         }""")
-        assert traj_test['targetPointsLen'] == 31  # Gün 0'dan 30'a 31 nokta
+        assert traj_test['durationDays'] == 25  # Hedefe ulaşma günü (Minimum %10)
+        assert traj_test['targetPointsLen'] == 26  # Gün 0'dan 25'e 26 nokta
         assert traj_test['target0'] == 50.0
-        assert traj_test['target30'] == 500.0
+        assert traj_test['targetLast'] == 541.74  # 50 * 1.10^25 >= 500 hedef
         assert traj_test['hasMinimum'] and traj_test['hasMedium'] and traj_test['hasHigh'] and traj_test['hasMulti']
-        assert traj_test['minPointsLen'] == 31
+        assert traj_test['minPointsLen'] == 26
         assert traj_test['min0'] == 50.0
         print("  ✓ Hedeflenen sürede kasa ulaşma trajektorisi ve 4 model hesaplama projeksiyonu doğrulandı.")
         print(f"  ✓ Günlük gerekli oran: %{plan_res['dailyRate']}, Gün 0: {plan_res['day0']}€, Gün 15: {plan_res['day15']}€, Gün 30: {plan_res['day30']}€")
-        print("  ✓ Geometrik hedef yolu ve durum sınıflandırması doğrulandı.")
+        print("  ✓ Teorik hedef kasa yolu ve durum sınıflandırması doğrulandı.")
+
+        # Paper_Betting_Kasa_Simulasyonu v01: Otomatik parametreler + GERÇEK/HEDEF tablosu
+        kasa_res = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const params = ['minimum', 'medium', 'high'].map(r =>
+                PE.calculateKasaParams({ startingBank: 50, targetBank: 1000, riskProfile: r }));
+
+            const state = PE.createInitialState({ riskProfile: 'medium' },
+                { startingBank: 50, targetBank: 1000, riskProfile: 'medium' });
+            const d = new Date(); d.setDate(d.getDate() - 2);
+            state.plan.startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            PE.syncActivePlan(state);
+            PE.setPlanDailyBank(state, 1, 68.66);
+            PE.setPlanDailyBank(state, 2, 60);
+            const sim = PE.buildKasaSimulation(state.plan, state);
+            PE.ensurePlansArray(state);
+
+            // Kupon eklenince plans[] kopyası da güncellenmeli (render sonrası bakiye kaybolmasın)
+            const slip = PE.createSlipFromSelections(
+                [{ matchId: 'K1', market: 'over_1_5', line: '1.5', probability: 0.9 }],
+                { id: 'SLIP-K1', stake: 10, actualOdds: 1.5, couponClass: 'medium' });
+            const added = PE.addSlipToPlan(state, slip).state;
+            PE.ensurePlansArray(added);
+            const won = PE.settleAllSlips(added, PE.buildResultsLookup([{ match_id: 'K1', score: '2-0', total: 2 }])).state;
+            PE.ensurePlansArray(won);
+            const simAfter = PE.buildKasaSimulation(won.plan, won);
+            return { params, sim, planDays: state.plan.durationDays, slipPlanId: added.slips[0].planId,
+                     planId: added.plan.id, balAfterAdd: added.plan.availableBalance, balAfterWin: won.plan.availableBalance,
+                     todayAfter: simAfter.rows[simAfter.todayDay - 1] };
+        }""")
+        mn, md, hi = kasa_res['params']
+        assert (mn['dailyGrowthRate'], mn['reservePct'], mn['daysToTarget'], mn['theoreticalAtTargetDay']) == (0.10, 0.75, 32, 1055.69)
+        assert (md['dailyGrowthRate'], md['reservePct'], md['daysToTarget'], md['theoreticalAtTargetDay']) == (0.15, 0.50, 22, 1082.24)
+        assert (hi['dailyGrowthRate'], hi['reservePct'], hi['daysToTarget'], hi['theoreticalAtTargetDay']) == (0.25, 0.50, 14, 1136.87)
+        assert kasa_res['planDays'] == 22
+        rows = kasa_res['sim']['rows']
+        assert kasa_res['sim']['todayDay'] == 3 and len(rows) == 22
+        # Gün 1: Gerçek 68,66 → değişim 18,66 (başlangıca göre), büyüme %37,32; hedef 57,50, kazanç 7,50
+        assert rows[0]['actualBank'] == 68.66 and rows[0]['isManual'] is True
+        assert rows[0]['dailyChange'] == 18.66 and rows[0]['dailyGrowthPct'] == 37.32
+        assert rows[0]['targetBank'] == 57.5 and rows[0]['targetDailyGain'] == 7.5
+        assert rows[0]['belowTarget'] is False
+        # Gün 2: 60 < 66,13 hedef → kırmızı (Excel koşullu biçim)
+        assert rows[1]['targetBank'] == 66.13 and rows[1]['belowTarget'] is True
+        assert rows[1]['dailyChange'] == -8.66
+        # Gün 3 (bugün): elle giriş yok → kuponlardan otomatik (50); gelecek günler boş
+        assert rows[2]['actualBank'] == 50.0 and rows[2]['isManual'] is False
+        assert rows[3]['actualBank'] is None
+        assert rows[21]['targetReachPct'] == 100.0
+        assert kasa_res['slipPlanId'] == kasa_res['planId']
+        assert kasa_res['balAfterAdd'] == 40.0 and kasa_res['balAfterWin'] == 55.0
+        assert kasa_res['todayAfter']['actualBank'] == 55.0  # 50 + 10 * (1.5 - 1)
+        print("  ✓ Kasa Simülasyonu v01: hedef günü (32/22/14), teorik kasa, GERÇEK/HEDEF tablosu ve kırmızı işaretleme doğrulandı.")
 
         # ----------------------------------------------------------------------
         # TEST 3: Senaryo B — Öneriyi Düzenleme (Maç Çıkar/Ekle & Canlı Güncelleme)
@@ -463,12 +519,12 @@ def main():
         }""")
 
         assert adapt_res['show'] is True
-        assert adapt_res['optionsCount'] == 3
+        # Süre Excel modelinde risk faktöründen türetildiği için "Süreyi Uzat" alternatifi yoktur
+        assert adapt_res['optionsCount'] == 2
         ids = [o['id'] for o in adapt_res['options']]
-        assert 'extend_duration' in ids
         assert 'adjust_target' in ids
         assert 'change_risk' in ids
-        print("  ✓ Adaptif 3 alternatif (Süreyi Uzat, Hedefi Ayarla, Riski Değiştir) başarıyla üretildi.")
+        print("  ✓ Adaptif 2 alternatif (Hedefi Ayarla, Riski Değiştir) başarıyla üretildi.")
 
         # ----------------------------------------------------------------------
         # TEST 10: DOM & 7-Sekme Mimarisi & Başlık Açıklama Kartı (Nedir/Ne Değildir)

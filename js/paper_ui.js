@@ -43,17 +43,22 @@
   function formatCurrency(amount, currencyCode = 'EUR') {
     const curr = PE.CURRENCIES[currencyCode] || PE.CURRENCIES.EUR;
     const num = Number(amount) || 0;
-    const formatted = num.toLocaleString('tr-TR', {
+    const I = root.I18N || { lang: 'tr', locale: 'tr-TR' };
+    const formatted = num.toLocaleString(I.locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+    if (I.lang === 'en') return num < 0 ? `-${curr.symbol}${formatted.slice(1)}` : `${curr.symbol}${formatted}`;
+    if (I.lang === 'nl') return `${curr.symbol} ${formatted}`;
     return `${formatted} ${curr.symbol}`;
   }
 
   function formatPct(val, dec = 1) {
     const num = Number(val);
     if (isNaN(num)) return '—';
-    return '%' + num.toLocaleString('tr-TR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    const I = root.I18N || { lang: 'tr', locale: 'tr-TR' };
+    const s = num.toLocaleString(I.locale, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    return I.lang === 'tr' ? '%' + s : s + '%';
   }
 
   function formatOdds(val) {
@@ -1018,16 +1023,16 @@
   }
 
   function formatAmount(val) {
-    return (Number(val) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (Number(val) || 0).toLocaleString((root.I18N && root.I18N.locale) || 'tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // Excel 0.0% biçimi; eksi işareti yüzde simgesinin önünde (-%6,3)
+  // Excel 0.0% biçimi; Türkçede eksi işareti yüzde simgesinin önünde (-%6,3), en/nl'de -6.3% / -6,3%
   function signedPct(val) {
     return (val < 0 ? '-' : '') + formatPct(Math.abs(val), 1);
   }
 
   function kasaDisplayName(plan, idx) {
-    return (!plan.name || / Risk Kasası$/.test(plan.name)) ? `Kasa ${idx + 1}` : plan.name;
+    return (!plan.name || / Risk Kasası$/.test(plan.name)) ? _t('Kasa {n}', { n: idx + 1 }) : plan.name;
   }
 
   // Kasa yoksa Excel dosyasındaki örnek kasa ile başlar (50 € → 1000 €, Medium, 1-12. gün gerçek kasa).
@@ -1036,7 +1041,7 @@
   function ensureDefaultKasa() {
     if (paperState) PE.ensurePlansArray(paperState);
     if (paperState && paperState.plans && paperState.plans.length) return;
-    const example = Object.assign({}, PE.KASA_V01_EXAMPLE, { name: 'Kasa 1' });
+    const example = Object.assign({}, PE.KASA_V01_EXAMPLE, { name: _t('Kasa {n}', { n: 1 }) });
     if (paperState) {
       PE.createNewPlan(paperState, example);
     } else {
@@ -1067,7 +1072,7 @@
     let grid = '';
     for (let v = 0; v <= maxY; v += step) {
       grid += `<line x1="${L}" y1="${y(v).toFixed(1)}" x2="${W - R}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
-        <text x="${L - 8}" y="${(y(v) + 3.5).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="end">${v.toLocaleString('tr-TR')}</text>`;
+        <text x="${L - 8}" y="${(y(v) + 3.5).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="end">${v.toLocaleString((root.I18N && root.I18N.locale) || 'tr-TR')}</text>`;
     }
     let xLabels = '';
     rows.forEach((r, i) => {
@@ -1091,10 +1096,10 @@
       && (i === 0 || rows[i - 1].actualBank == null) && (i === n - 1 || rows[i + 1].actualBank == null))
       ? `<circle cx="${x(i).toFixed(1)}" cy="${y(r.actualBank).toFixed(1)}" r="3" fill="${KASA_COLOR_REAL}"/>` : '').join('');
 
-    const hover = rows.map((r, i) => `<rect x="${(L + i * pw / n).toFixed(1)}" y="${T}" width="${(pw / n).toFixed(1)}" height="${ph}" fill="transparent"><title>${r.day}. gün · Gerçek Kasa: ${r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—'} · Teorik Hedef Kasa: ${formatCurrency(r.targetBank, curr)}</title></rect>`).join('');
+    const hover = rows.map((r, i) => `<rect x="${(L + i * pw / n).toFixed(1)}" y="${T}" width="${(pw / n).toFixed(1)}" height="${ph}" fill="transparent"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}</title></rect>`).join('');
 
     return `
-      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-30. gün" style="display:block">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-30. gün')}" style="display:block">
         ${grid}
         <line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>
         ${xLabels}
@@ -1120,56 +1125,56 @@
     pane.innerHTML = `
       <div class="bankroll-switcher-bar">
         <div class="bankroll-tabs-scroll">
-          <span class="bs-label">KASALARIM:</span>
+          <span class="bs-label">${_t('KASALARIM:')}</span>
           ${paperState.plans.map((pl, idx) => `
             <button type="button" class="bankroll-tab ${pl.id === paperState.activePlanId ? 'active' : ''}" data-plan-id="${pl.id}">
               <span class="bt-name">${esc(kasaDisplayName(pl, idx))}</span>
-              <span class="bt-bank">${esc(KASA_RISK_LABELS[pl.riskProfile] || 'Özel')}</span>
+              <span class="bt-bank">${esc(KASA_RISK_LABELS[pl.riskProfile] || _t('Özel'))}</span>
             </button>
           `).join('')}
         </div>
         <div class="bankroll-actions">
-          <button type="button" class="btn-new-bankroll" id="btnAddNewPlan">➕ Yeni Kasa Aç</button>
-          ${paperState.plans.length > 1 ? '<button type="button" class="btn-delete-bankroll" id="btnDeleteCurrentPlan" title="Aktif Kasayı Sil">🗑️ Kasayı Sil</button>' : ''}
+          <button type="button" class="btn-new-bankroll" id="btnAddNewPlan">${_t('➕ Yeni Kasa Aç')}</button>
+          ${paperState.plans.length > 1 ? `<button type="button" class="btn-delete-bankroll" id="btnDeleteCurrentPlan" title="${_t('Aktif Kasayı Sil')}">${_t('🗑️ Kasayı Sil')}</button>` : ''}
         </div>
       </div>
 
       <div class="card kasa-sheet">
-        <h2 class="ks-title">PAPER BETTING – KASA SİMÜLASYONU</h2>
+        <h2 class="ks-title">${_t('PAPER BETTING – KASA SİMÜLASYONU')}</h2>
         <div class="ks-top">
           <div class="ks-left">
             <div class="ks-block">
-              <div class="ks-block-h">KULLANICI GİRİŞLERİ</div>
-              <label class="ks-row"><span>Kasa Adı</span>
-                <input type="text" id="ksName" class="ks-input ks-name" maxlength="40" value="${esc(kasaDisplayName(plan, paperState.plans.findIndex(pl => pl.id === plan.id)))}" placeholder="Örn: Hafta sonu kasam"></label>
-              <label class="ks-row"><span>Başlangıç Kasası (${sym})</span>
+              <div class="ks-block-h">${_t('KULLANICI GİRİŞLERİ')}</div>
+              <label class="ks-row"><span>${_t('Kasa Adı')}</span>
+                <input type="text" id="ksName" class="ks-input ks-name" maxlength="40" value="${esc(kasaDisplayName(plan, paperState.plans.findIndex(pl => pl.id === plan.id)))}" placeholder="${_t('Örn: Hafta sonu kasam')}"></label>
+              <label class="ks-row"><span>${_t('Başlangıç Kasası ({sym})', { sym })}</span>
                 <input type="text" inputmode="decimal" id="ksStart" class="ks-input" value="${formatAmount(p.startingBank)}"></label>
-              <label class="ks-row"><span>Hedef Kasa (${sym})</span>
+              <label class="ks-row"><span>${_t('Hedef Kasa ({sym})', { sym })}</span>
                 <input type="text" inputmode="decimal" id="ksTarget" class="ks-input" value="${formatAmount(p.targetBank)}"></label>
-              <label class="ks-row"><span>Risk Faktörü</span>
+              <label class="ks-row"><span>${_t('Risk Faktörü')}</span>
                 <select id="ksRisk" class="ks-input">
                   ${riskOptions.map(k => `<option value="${k}" ${k === p.riskProfile ? 'selected' : ''}>${esc(KASA_RISK_LABELS[k] || p.riskName)}</option>`).join('')}
                 </select></label>
             </div>
             <div class="ks-block">
-              <div class="ks-block-h">OTOMATİK PARAMETRELER</div>
-              <div class="ks-row"><span>Günlük Büyüme Oranı</span><b>${formatPct(p.dailyGrowthRate * 100, 0)}</b></div>
-              <div class="ks-row"><span>Kasa Rezerv Oranı</span><b>${formatPct(p.reservePct * 100, 0)}</b></div>
-              <div class="ks-row"><span>Hedefe Ulaşma Günü</span><b>${p.daysToTarget != null ? p.daysToTarget : ''}</b></div>
-              <div class="ks-row"><span>Hedef Günündeki Teorik Kasa</span><b>${p.theoreticalAtTargetDay != null ? formatCurrency(p.theoreticalAtTargetDay, curr) : ''}</b></div>
+              <div class="ks-block-h">${_t('OTOMATİK PARAMETRELER')}</div>
+              <div class="ks-row"><span>${_t('Günlük Büyüme Oranı')}</span><b>${formatPct(p.dailyGrowthRate * 100, 0)}</b></div>
+              <div class="ks-row"><span>${_t('Kasa Rezerv Oranı')}</span><b>${formatPct(p.reservePct * 100, 0)}</b></div>
+              <div class="ks-row"><span>${_t('Hedefe Ulaşma Günü')}</span><b>${p.daysToTarget != null ? p.daysToTarget : ''}</b></div>
+              <div class="ks-row"><span>${_t('Hedef Günündeki Teorik Kasa')}</span><b>${p.theoreticalAtTargetDay != null ? formatCurrency(p.theoreticalAtTargetDay, curr) : ''}</b></div>
             </div>
             <div class="ks-summary">
-              <div><span>SEÇİLEN RİSK</span><b>${esc(kasaRiskLabel(p))}</b></div>
-              <div><span>GÜNLÜK ARTIŞ</span><b>${formatPct(p.dailyGrowthRate * 100, 1)}</b></div>
-              <div><span>REZERV</span><b>${formatPct(p.reservePct * 100, 0)}</b></div>
+              <div><span>${_t('SEÇİLEN RİSK')}</span><b>${esc(kasaRiskLabel(p))}</b></div>
+              <div><span>${_t('GÜNLÜK ARTIŞ')}</span><b>${formatPct(p.dailyGrowthRate * 100, 1)}</b></div>
+              <div><span>${_t('REZERV')}</span><b>${formatPct(p.reservePct * 100, 0)}</b></div>
             </div>
           </div>
           <div class="ks-chart">
-            <div class="ks-chart-title">Kasa Gelişim Grafiği</div>
+            <div class="ks-chart-title">${_t('Kasa Gelişim Grafiği')}</div>
             ${renderKasaChartSvg(sim, curr)}
             <div class="ks-legend">
-              <span><i style="background:${KASA_COLOR_REAL}"></i>Gerçek Kasa (${sym})</span>
-              <span><i style="background:${KASA_COLOR_TARGET}"></i>Teorik Hedef Kasa (${sym})</span>
+              <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Gerçek Kasa ({sym})', { sym })}</span>
+              <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
             </div>
           </div>
         </div>
@@ -1180,25 +1185,25 @@
           <table class="excel-table kasa-sim-table">
             <thead>
               <tr>
-                <th class="grp" colspan="4">GERÇEK</th>
-                <th class="grp col-sep" colspan="4">HEDEF</th>
+                <th class="grp" colspan="4">${_t('GERÇEK')}</th>
+                <th class="grp col-sep" colspan="4">${_t('HEDEF')}</th>
               </tr>
               <tr>
-                <th>Gün</th>
-                <th>Gerçek Kasa (${sym})</th>
-                <th>Günlük Değişim (${sym})</th>
-                <th>Günlük Büyüme (%)</th>
-                <th class="col-sep">Gün</th>
-                <th>Teorik Hedef Kasa (${sym})</th>
-                <th>Günlük Kazanç (${sym})</th>
-                <th>Hedefe Ulaşma (%)</th>
+                <th>${_t('Gün')}</th>
+                <th>${_t('Gerçek Kasa ({sym})', { sym })}</th>
+                <th>${_t('Günlük Değişim ({sym})', { sym })}</th>
+                <th>${_t('Günlük Büyüme (%)')}</th>
+                <th class="col-sep">${_t('Gün')}</th>
+                <th>${_t('Teorik Hedef Kasa ({sym})', { sym })}</th>
+                <th>${_t('Günlük Kazanç ({sym})', { sym })}</th>
+                <th>${_t('Hedefe Ulaşma (%)')}</th>
               </tr>
             </thead>
             <tbody>
               ${sim.rows.map(r => `
                 <tr class="${r.isToday ? 'row-today' : ''}">
                   <td title="${dmy(r.date)}">${r.day}</td>
-                  <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? 'Elle girildi — silerseniz boş/otomatik değere döner' : r.actualBank != null ? 'Sonuçlanan kuponlardan otomatik hesaplandı' : ''}" aria-label="${r.day}. gün gerçek kasa"></td>
+                  <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
                   <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
                   <td>${r.dailyGrowthPct != null ? signedPct(r.dailyGrowthPct) : ''}</td>
                   <td class="col-sep">${r.day}</td>
@@ -1210,18 +1215,18 @@
             </tbody>
           </table>
         </div>
-        <div class="ks-note">Gerçek Kasa sütununa her günün kasasını yazabilirsiniz; yazılmayan geçmiş günler sonuçlanan kuponlardan otomatik dolar. Teorik hedef kasanın altında kalan günler kırmızı gösterilir.</div>
+        <div class="ks-note">${_t('kasa.note')}</div>
       </div>
 
       <div class="plan-actions-card">
         <div class="p-act-left">
-          <button class="btn-sec" id="btnLoadExcelKasa" type="button">📑 Excel Örnek Verisini Yükle</button>
-          <button class="btn-sec" id="btnExportJSON" type="button">📥 Dışa Aktar (JSON)</button>
-          <button class="btn-sec" id="btnImportJSON" type="button">📤 JSON İçe Aktar</button>
+          <button class="btn-sec" id="btnLoadExcelKasa" type="button">${_t('📑 Excel Örnek Verisini Yükle')}</button>
+          <button class="btn-sec" id="btnExportJSON" type="button">${_t('📥 Dışa Aktar (JSON)')}</button>
+          <button class="btn-sec" id="btnImportJSON" type="button">${_t('📤 JSON İçe Aktar')}</button>
           <input type="file" id="jsonFileInput" accept=".json" style="display:none">
         </div>
         <div class="p-act-right">
-          <button class="btn-danger-subtle" id="btnResetPlan" type="button">⚠️ Tüm Kasaları Sıfırla</button>
+          <button class="btn-danger-subtle" id="btnResetPlan" type="button">${_t('⚠️ Tüm Kasaları Sıfırla')}</button>
         </div>
       </div>
     `;
@@ -1229,12 +1234,14 @@
     wirePlanDashboardEvents();
   }
 
-  // "1.234,56" (tr) ve "68.66" girişlerinin ikisi de kabul edilir
+  // Dile göre binlik/ondalık: en "1,234.56" · tr/nl "1.234,56". Tek ayırıcı ve ≤2 hane ("68.66" / "68,66") her dilde ondalıktır.
   function parseKasaAmount(text) {
     let raw = String(text || '').trim().replace(/[\s€₺$£]/g, '');
     if (raw === '') return '';
-    if (raw.includes(',')) raw = raw.replace(/\./g, '').replace(',', '.');
-    else if (!/^\d*\.\d{1,2}$/.test(raw)) raw = raw.replace(/\./g, '');
+    const en = root.I18N && root.I18N.lang === 'en';
+    const [thou, decSep] = en ? [',', '.'] : ['.', ','];
+    if (/^-?\d*[.,]\d{1,2}$/.test(raw)) raw = raw.replace(',', '.');
+    else raw = raw.split(thou).join('').replace(decSep, '.');
     const val = parseNumber(raw);
     return val == null || val < 0 ? null : val;
   }
@@ -1260,8 +1267,8 @@
     const btnNewBank = document.getElementById('btnAddNewPlan');
     if (btnNewBank) {
       btnNewBank.onclick = () => {
-        const defaultName = `Kasa ${paperState.plans.length + 1}`;
-        const entered = prompt('Yeni kasanın adı:', defaultName);
+        const defaultName = _t('Kasa {n}', { n: paperState.plans.length + 1 });
+        const entered = prompt(_t('Yeni kasanın adı:'), defaultName);
         if (entered === null) return; // Vazgeç
         PE.createNewPlan(paperState, {
           name: entered.trim().slice(0, 40) || defaultName,
@@ -1278,7 +1285,7 @@
       btnDelBank.onclick = () => {
         const idx = paperState.plans.findIndex(pl => pl.id === paperState.activePlanId);
         const pName = kasaDisplayName(paperState.plan, idx);
-        if (confirm(`"${pName}" kasasını silmek istediğinize emin misiniz? Diğer kasalarınız korunacaktır.`)) {
+        if (confirm(_t('"{name}" kasasını silmek istediğinize emin misiniz? Diğer kasalarınız korunacaktır.', { name: pName }))) {
           PE.deletePlan(paperState, paperState.activePlanId);
           rerenderAllPanes();
         }
@@ -1301,7 +1308,7 @@
       el.onchange = () => {
         const val = parseKasaAmount(el.value);
         if (val === '' || val == null || val <= 0) {
-          alert(`${label} 0'dan büyük olmalıdır.`);
+          alert(_t("{label} 0'dan büyük olmalıdır.", { label }));
           renderPlanPane();
           return;
         }
@@ -1309,8 +1316,8 @@
         rerenderAllPanes();
       };
     };
-    bindAmount('ksStart', 'startingBank', 'Başlangıç kasası');
-    bindAmount('ksTarget', 'targetBank', 'Hedef kasa');
+    bindAmount('ksStart', 'startingBank', _t('Başlangıç kasası'));
+    bindAmount('ksTarget', 'targetBank', _t('Hedef kasa'));
     const riskSel = document.getElementById('ksRisk');
     if (riskSel) {
       riskSel.onchange = () => {
@@ -1324,7 +1331,7 @@
       inp.onchange = () => {
         const val = parseKasaAmount(inp.value);
         if (val == null) {
-          alert('Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.');
+          alert(_t('Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.'));
           renderPlanPane();
           return;
         }
@@ -1338,7 +1345,7 @@
     if (btnLoadExcel) {
       btnLoadExcel.onclick = () => {
         const ex = PE.KASA_V01_EXAMPLE;
-        if (!confirm(`Aktif kasaya Excel dosyasındaki veriler yüklenecek: Başlangıç ${formatAmount(ex.startingBank)}, Hedef ${formatAmount(ex.targetBank)}, Risk ${KASA_RISK_LABELS[ex.riskProfile]} ve 1-${Object.keys(ex.dailyBanks).length}. gün gerçek kasa değerleri. Bu kasadaki elle girilmiş günlük değerlerin üzerine yazılır. Onaylıyor musunuz?`)) return;
+        if (!confirm(_t('kasa.loadExcelConfirm', { start: formatAmount(ex.startingBank), target: formatAmount(ex.targetBank), risk: KASA_RISK_LABELS[ex.riskProfile], days: Object.keys(ex.dailyBanks).length }))) return;
         PE.updatePlanInputs(paperState, { startingBank: ex.startingBank, targetBank: ex.targetBank, riskProfile: ex.riskProfile });
         paperState.plan = Object.assign({}, paperState.plan, { dailyBanks: Object.assign({}, ex.dailyBanks) });
         PE.syncActivePlan(paperState);
@@ -1349,7 +1356,7 @@
     const btnReset = document.getElementById('btnResetPlan');
     if (btnReset) {
       btnReset.onclick = () => {
-        if (confirm('Tüm sanal kasaları ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+        if (confirm(_t('Tüm sanal kasaları ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.'))) {
           paperState = null;
           try { localStorage.removeItem(PE.STORAGE_KEY); } catch (e) {}
           rerenderAllPanes();
@@ -1383,13 +1390,13 @@
         reader.onload = (evt) => {
           const val = PE.validateImportedJSON(evt.target.result);
           if (!val.valid) {
-            alert('İçe aktarma hatası: ' + val.error);
+            alert(_t('İçe aktarma hatası: ') + val.error);
             return;
           }
-          if (confirm('İçe aktarılan veriler mevcut kasalarınızın ve kuponlarınızın üzerine yazılacaktır. Onaylıyor musunuz?')) {
+          if (confirm(_t('İçe aktarılan veriler mevcut kasalarınızın ve kuponlarınızın üzerine yazılacaktır. Onaylıyor musunuz?'))) {
             paperState = val.data;
             rerenderAllPanes();
-            alert('Veriler başarıyla içe aktarıldı.');
+            alert(_t('Veriler başarıyla içe aktarıldı.'));
           }
         };
         reader.readAsText(file);

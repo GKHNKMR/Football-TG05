@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gizlilik Politikası — BETAVUS</title>
-<meta name="description" content="BETAVUS gizlilik politikası: hangi verilerin toplandığı, nerede saklandığı ve nasıl silinebileceği.">
+<title>Gizlilik Politikası · Privacy Policy · Privacybeleid — BETAVUS</title>
+<meta name="description" content="BETAVUS gizlilik politikası / privacy policy / privacybeleid.">
 <style>
   :root{--bg:#090b0f;--panel:#11151c;--line:#252c36;--text:#f4f6f8;--muted:#8e98a7;--link:#e8ff3f;--b1:#e8ff3f;--b2:#2f6fd6}
   @media (prefers-color-scheme:light){
@@ -12,67 +12,193 @@
   }
   body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
   main{max-width:760px;margin:0 auto;padding:32px 16px 64px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   .brand{font-weight:900;font-size:28px;letter-spacing:-1px;text-decoration:none}
   .brand .b1{color:var(--b1)} .brand .b2{color:var(--b2)}
+  .langs{display:flex;gap:6px}
+  .langs button{font:inherit;font-size:13px;font-weight:800;padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
+  .langs button.on{border-color:var(--link);color:var(--link)}
   h1{font-size:28px;margin:24px 0 4px}
   h2{font-size:19px;margin:30px 0 8px}
   .meta{color:var(--muted);font-size:14px;margin:0 0 20px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
   a{color:var(--link)}
   ul{padding-left:22px} li{margin:4px 0}
+  article[hidden]{display:none}
 </style>
 </head>
 <body>
 <main>
-  <a class="brand" href="/"><span class="b1">BET</span><span class="b2">AVUS</span></a>
-  <h1>Gizlilik Politikası</h1>
-  <p class="meta">Son güncelleme: 23 Eylül 2026</p>
-
-  <div class="card">
-    BETAVUS, futbol maçları için gol olasılığı tahminleri sunan ve kendi stratejini sanal (gerçek parası olmayan) bir kasayla denemeni sağlayan bir sitedir. Bahis oynatmaz, para kabul etmez. Bu sayfa hangi bilgileri neden tuttuğumuzu ve nasıl silebileceğini anlatır.
+  <div class="top">
+    <a class="brand" href="/"><span class="b1">BET</span><span class="b2">AVUS</span></a>
+    <div class="langs" role="group" aria-label="Dil / Language / Taal">
+      <button type="button" data-l="tr">TR</button><button type="button" data-l="en">EN</button><button type="button" data-l="nl">NL</button>
+    </div>
   </div>
 
-  <h2>1. Üye olmadan kullanım</h2>
-  <p>Üye olmadan kullandığında Sanal Kasa verilerin, tercihlerin ve filtrelerin <b>yalnızca kendi tarayıcında</b> (localStorage) saklanır. Bu veriler bize gönderilmez. Tarayıcı verilerini sildiğinde bunlar da silinir.</p>
+  <article data-lang="tr" lang="tr">
+    <h1>Gizlilik Politikası</h1>
+    <p class="meta">Son güncelleme: 23 Eylül 2026</p>
+    <div class="card">BETAVUS, futbol maçları için gol olasılığı tahminleri sunan ve kendi stratejini sanal (gerçek parası olmayan) bir kasayla denemeni sağlayan bir sitedir. Bahis oynatmaz, para kabul etmez. Bu sayfa hangi bilgileri neden tuttuğumuzu ve nasıl silebileceğini anlatır.</div>
 
-  <h2>2. Üye olduğunda topladığımız bilgiler</h2>
-  <ul>
-    <li><b>Hesap bilgileri:</b> kullanıcı adı, e-posta adresi, yaş, cinsiyet ve ülke.</li>
-    <li><b>Şifre:</b> şifren bize düz metin olarak ulaşmaz; kimlik doğrulama hizmetimiz tarafından şifrelenmiş (hash) olarak saklanır.</li>
-    <li><b>Google ile giriş</b> (etkinse): Google'dan yalnızca e-posta adresin, adın ve profil fotoğrafının bağlantısı alınır. Google hesabının şifresine erişimimiz yoktur.</li>
-    <li><b>Uygulama verilerin:</b> Sanal Kasa (kasaların, girdiğin günlük kasa değerleri, sanal kuponların) ve site tercihlerin. Bunlar, aynı hesapla farklı cihazlardan girdiğinde aynı verileri görebilmen için saklanır.</li>
-  </ul>
+    <h2>1. Üye olmadan kullanım</h2>
+    <p>Üye olmadan kullandığında Sanal Kasa verilerin, tercihlerin ve filtrelerin <b>yalnızca kendi tarayıcında</b> (localStorage) saklanır. Bu veriler bize gönderilmez. Tarayıcı verilerini sildiğinde bunlar da silinir.</p>
 
-  <h2>3. Bilgileri ne için kullanırız</h2>
-  <ul>
-    <li>Hesabını oluşturmak, giriş yapmanı sağlamak ve e-posta adresini doğrulamak.</li>
-    <li>Şifreni unuttuğunda sıfırlama bağlantısı göndermek.</li>
-    <li>Sanal Kasa ve tercihlerini cihazların arasında eşitlemek.</li>
-  </ul>
-  <p>Bilgilerini <b>satmayız</b>, reklam amacıyla kullanmayız ve üçüncü kişilerle paylaşmayız. Sitede reklam, analiz veya takip araçları bulunmaz.</p>
+    <h2>2. Üye olduğunda topladığımız bilgiler</h2>
+    <ul>
+      <li><b>Hesap bilgileri:</b> kullanıcı adı, e-posta adresi, yaş, cinsiyet ve ülke.</li>
+      <li><b>Şifre:</b> şifren bize düz metin olarak ulaşmaz; kimlik doğrulama hizmetimiz tarafından şifrelenmiş (hash) olarak saklanır.</li>
+      <li><b>Google ile giriş:</b> Google'dan yalnızca e-posta adresin, adın ve profil fotoğrafının bağlantısı alınır. Google hesabının şifresine erişimimiz yoktur.</li>
+      <li><b>Uygulama verilerin:</b> Sanal Kasa (kasaların, girdiğin günlük kasa değerleri, sanal kuponların), site tercihlerin ve dil seçimin. Bunlar, aynı hesapla farklı cihazlardan girdiğinde aynı verileri görebilmen için saklanır.</li>
+    </ul>
 
-  <h2>4. Kullandığımız hizmetler</h2>
-  <ul>
-    <li><b>Supabase</b>: üyelik, kimlik doğrulama ve üye verilerinin saklandığı veritabanı. Veritabanı kuralları, her üyenin yalnızca kendi verisini okuyup değiştirebilmesini sağlar.</li>
-    <li><b>Vercel</b>: sitenin barındırıldığı hizmet. Sayfa istekleri sırasında IP adresi gibi teknik bilgiler Vercel'in sunucu kayıtlarında kısa süreli tutulabilir.</li>
-    <li><b>Google Fonts</b> ve <b>jsDelivr</b>: yazı tiplerinin ve bir yazılım kütüphanesinin yüklendiği hizmetler. Bu dosyalar yüklenirken tarayıcın bu hizmetlere bağlanır.</li>
-    <li><b>Google</b> (yalnızca "Google ile devam et" kullanılırsa): kimlik doğrulama.</li>
-  </ul>
+    <h2>3. Bilgileri ne için kullanırız</h2>
+    <ul>
+      <li>Hesabını oluşturmak, giriş yapmanı sağlamak ve e-posta adresini doğrulamak.</li>
+      <li>Şifreni unuttuğunda sıfırlama bağlantısı göndermek.</li>
+      <li>Sanal Kasa ve tercihlerini cihazların arasında eşitlemek.</li>
+    </ul>
+    <p>Bilgilerini <b>satmayız</b>, reklam amacıyla kullanmayız ve üçüncü kişilerle paylaşmayız. Sitede reklam, analiz veya takip araçları bulunmaz.</p>
 
-  <h2>5. Çerezler ve tarayıcı depolaması</h2>
-  <p>Takip çerezi kullanmayız. Oturumunun açık kalması ve sitenin tercihlerini hatırlaması için tarayıcının yerel depolaması (localStorage) kullanılır.</p>
+    <h2>4. Kullandığımız hizmetler</h2>
+    <ul>
+      <li><b>Supabase</b>: üyelik, kimlik doğrulama ve üye verilerinin saklandığı veritabanı. Veritabanı kuralları, her üyenin yalnızca kendi verisini okuyup değiştirebilmesini sağlar.</li>
+      <li><b>Vercel</b>: sitenin barındırıldığı hizmet. Sayfa istekleri sırasında IP adresi gibi teknik bilgiler Vercel'in sunucu kayıtlarında kısa süreli tutulabilir.</li>
+      <li><b>Google Fonts</b> ve <b>jsDelivr</b>: yazı tiplerinin ve bir yazılım kütüphanesinin yüklendiği hizmetler. Bu dosyalar yüklenirken tarayıcın bu hizmetlere bağlanır.</li>
+      <li><b>Google</b> (yalnızca "Google ile devam et" kullanılırsa): kimlik doğrulama.</li>
+    </ul>
 
-  <h2>6. Yaş sınırı</h2>
-  <p>Üyelik yalnızca 18 yaşını doldurmuş kişilere açıktır.</p>
+    <h2>5. Çerezler ve tarayıcı depolaması</h2>
+    <p>Takip çerezi kullanmayız. Oturumunun açık kalması ve sitenin tercihlerini hatırlaması için tarayıcının yerel depolaması (localStorage) kullanılır.</p>
 
-  <h2>7. Verilerini silme ve diğer hakların</h2>
-  <p>Hesabının ve buna bağlı tüm verilerin silinmesini, sana ait hangi verileri tuttuğumuzu öğrenmeyi veya bir bilginin düzeltilmesini isteme hakkın vardır. Hesap bilgilerini (kullanıcı adı, yaş, cinsiyet, ülke) giriş yaptıktan sonra hesap menüsünden kendin güncelleyebilirsin; Sanal Kasa verilerini de sayfadaki "Tüm Kasaları Sıfırla" ile silebilirsin.</p>
-  <p>Hesap silme talepleri makul bir süre içinde yerine getirilir; hesabın ve buna bağlı veriler sistemimizden kaldırılır.</p>
+    <h2>6. Yaş sınırı</h2>
+    <p>Üyelik yalnızca 18 yaşını doldurmuş kişilere açıktır.</p>
 
-  <h2>8. Değişiklikler</h2>
-  <p>Bu politikayı güncellersek yeni hâlini bu sayfada yayınlar ve üstteki tarihi değiştiririz.</p>
+    <h2>7. Verilerini silme ve diğer hakların</h2>
+    <p>Hesabının ve buna bağlı tüm verilerin silinmesini, sana ait hangi verileri tuttuğumuzu öğrenmeyi veya bir bilginin düzeltilmesini isteme hakkın vardır. Hesap bilgilerini (kullanıcı adı, yaş, cinsiyet, ülke) giriş yaptıktan sonra hesap menüsünden kendin güncelleyebilirsin; Sanal Kasa verilerini de sayfadaki "Tüm Kasaları Sıfırla" ile silebilirsin.</p>
+    <p>Hesap silme talepleri makul bir süre içinde yerine getirilir; hesabın ve buna bağlı veriler sistemimizden kaldırılır.</p>
 
-  <p style="margin-top:36px"><a href="/">← BETAVUS ana sayfasına dön</a></p>
+    <h2>8. Değişiklikler</h2>
+    <p>Bu politikayı güncellersek yeni hâlini bu sayfada yayınlar ve üstteki tarihi değiştiririz.</p>
+    <p style="margin-top:36px"><a href="/">← BETAVUS ana sayfasına dön</a></p>
+  </article>
+
+  <article data-lang="en" lang="en" hidden>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: 23 September 2026</p>
+    <div class="card">BETAVUS is a site that offers goal-probability predictions for football matches and lets you test your own strategy with a virtual bankroll (no real money). It does not take bets and does not accept money. This page explains which data we keep, why, and how you can delete it.</div>
+
+    <h2>1. Using the site without an account</h2>
+    <p>If you use the site without an account, your Virtual Bankroll data, preferences and filters are stored <b>only in your own browser</b> (localStorage). This data is not sent to us. It is deleted when you clear your browser data.</p>
+
+    <h2>2. Data we collect when you sign up</h2>
+    <ul>
+      <li><b>Account details:</b> username, email address, age, gender and country.</li>
+      <li><b>Password:</b> your password never reaches us in plain text; it is stored in hashed form by our authentication service.</li>
+      <li><b>Sign in with Google:</b> we only receive your email address, your name and a link to your profile picture from Google. We have no access to your Google password.</li>
+      <li><b>App data:</b> your Virtual Bankroll (your bankrolls, the daily values you enter, your virtual bets), your site preferences and your language choice. These are stored so that you see the same data when you log in with the same account on different devices.</li>
+    </ul>
+
+    <h2>3. What we use the data for</h2>
+    <ul>
+      <li>Creating your account, letting you log in and verifying your email address.</li>
+      <li>Sending a reset link when you forget your password.</li>
+      <li>Syncing your Virtual Bankroll and preferences between your devices.</li>
+    </ul>
+    <p>We do <b>not sell</b> your data, do not use it for advertising and do not share it with third parties. The site has no advertising, analytics or tracking tools.</p>
+
+    <h2>4. Services we use</h2>
+    <ul>
+      <li><b>Supabase</b>: accounts, authentication and the database where member data is stored. Database rules ensure that each member can only read and change their own data.</li>
+      <li><b>Vercel</b>: the service that hosts the site. Technical information such as your IP address may be kept briefly in Vercel's server logs when pages are requested.</li>
+      <li><b>Google Fonts</b> and <b>jsDelivr</b>: services from which fonts and a software library are loaded. Your browser connects to these services when loading these files.</li>
+      <li><b>Google</b> (only if you use "Continue with Google"): authentication.</li>
+    </ul>
+
+    <h2>5. Cookies and browser storage</h2>
+    <p>We do not use tracking cookies. The browser's local storage (localStorage) is used to keep you logged in and to remember your site preferences.</p>
+
+    <h2>6. Age limit</h2>
+    <p>Accounts are only available to people aged 18 or over.</p>
+
+    <h2>7. Deleting your data and your other rights</h2>
+    <p>You have the right to ask for your account and all related data to be deleted, to find out which of your data we keep, or to have information corrected. After logging in, you can update your account details (username, age, gender, country) yourself from the account menu, and you can delete your Virtual Bankroll data with "Reset all bankrolls" on the page.</p>
+    <p>Account deletion requests are handled within a reasonable time; your account and the related data are removed from our systems.</p>
+
+    <h2>8. Changes</h2>
+    <p>If we update this policy, we will publish the new version on this page and change the date above.</p>
+    <p style="margin-top:36px"><a href="/">← Back to the BETAVUS home page</a></p>
+  </article>
+
+  <article data-lang="nl" lang="nl" hidden>
+    <h1>Privacybeleid</h1>
+    <p class="meta">Laatst bijgewerkt: 23 september 2026</p>
+    <div class="card">BETAVUS is een site die kansvoorspellingen voor doelpunten in voetbalwedstrijden geeft en waarmee je je eigen strategie kunt testen met een virtuele bankroll (zonder echt geld). De site neemt geen weddenschappen aan en accepteert geen geld. Op deze pagina lees je welke gegevens we bewaren, waarom, en hoe je ze kunt laten verwijderen.</div>
+
+    <h2>1. Gebruik zonder account</h2>
+    <p>Als je de site zonder account gebruikt, worden je Virtuele bankroll-gegevens, voorkeuren en filters <b>alleen in je eigen browser</b> (localStorage) opgeslagen. Deze gegevens worden niet naar ons gestuurd. Ze worden verwijderd als je je browsergegevens wist.</p>
+
+    <h2>2. Gegevens die we verzamelen als je je registreert</h2>
+    <ul>
+      <li><b>Accountgegevens:</b> gebruikersnaam, e-mailadres, leeftijd, geslacht en land.</li>
+      <li><b>Wachtwoord:</b> je wachtwoord komt nooit als leesbare tekst bij ons binnen; het wordt versleuteld (gehasht) opgeslagen door onze authenticatiedienst.</li>
+      <li><b>Inloggen met Google:</b> van Google ontvangen we alleen je e-mailadres, je naam en een link naar je profielfoto. We hebben geen toegang tot je Google-wachtwoord.</li>
+      <li><b>App-gegevens:</b> je Virtuele bankroll (je bankrolls, de dagwaarden die je invoert, je virtuele weddenschappen), je sitevoorkeuren en je taalkeuze. Deze worden bewaard zodat je dezelfde gegevens ziet als je met hetzelfde account op verschillende apparaten inlogt.</li>
+    </ul>
+
+    <h2>3. Waarvoor we de gegevens gebruiken</h2>
+    <ul>
+      <li>Je account aanmaken, je laten inloggen en je e-mailadres bevestigen.</li>
+      <li>Een resetlink sturen als je je wachtwoord bent vergeten.</li>
+      <li>Je Virtuele bankroll en voorkeuren synchroniseren tussen je apparaten.</li>
+    </ul>
+    <p>We <b>verkopen</b> je gegevens <b>niet</b>, gebruiken ze niet voor reclame en delen ze niet met derden. De site bevat geen reclame-, analyse- of trackingtools.</p>
+
+    <h2>4. Diensten die we gebruiken</h2>
+    <ul>
+      <li><b>Supabase</b>: accounts, authenticatie en de database waarin de gegevens van leden worden opgeslagen. Databaseregels zorgen ervoor dat elk lid alleen zijn eigen gegevens kan lezen en wijzigen.</li>
+      <li><b>Vercel</b>: de dienst die de site host. Technische gegevens zoals je IP-adres kunnen bij het opvragen van pagina's kort in de serverlogs van Vercel worden bewaard.</li>
+      <li><b>Google Fonts</b> en <b>jsDelivr</b>: diensten waarvandaan lettertypen en een softwarebibliotheek worden geladen. Je browser maakt verbinding met deze diensten wanneer deze bestanden worden geladen.</li>
+      <li><b>Google</b> (alleen als je "Doorgaan met Google" gebruikt): authenticatie.</li>
+    </ul>
+
+    <h2>5. Cookies en browseropslag</h2>
+    <p>We gebruiken geen trackingcookies. De lokale opslag van de browser (localStorage) wordt gebruikt om je ingelogd te houden en je sitevoorkeuren te onthouden.</p>
+
+    <h2>6. Leeftijdsgrens</h2>
+    <p>Accounts zijn alleen beschikbaar voor personen van 18 jaar of ouder.</p>
+
+    <h2>7. Je gegevens verwijderen en je andere rechten</h2>
+    <p>Je hebt het recht om te vragen je account en alle bijbehorende gegevens te verwijderen, om te weten welke gegevens we van je bewaren, of om informatie te laten corrigeren. Na het inloggen kun je je accountgegevens (gebruikersnaam, leeftijd, geslacht, land) zelf bijwerken via het accountmenu, en je Virtuele bankroll-gegevens verwijderen met "Alle bankrolls resetten" op de pagina.</p>
+    <p>Verzoeken om een account te verwijderen worden binnen een redelijke termijn afgehandeld; je account en de bijbehorende gegevens worden uit onze systemen verwijderd.</p>
+
+    <h2>8. Wijzigingen</h2>
+    <p>Als we dit beleid bijwerken, publiceren we de nieuwe versie op deze pagina en passen we de datum hierboven aan.</p>
+    <p style="margin-top:36px"><a href="/">← Terug naar de BETAVUS-startpagina</a></p>
+  </article>
 </main>
+<script>
+  // Sitede seçilen dil (betavus.lang), yoksa tarayıcı dili; diğer her şey İngilizce
+  (function () {
+    var langs = ['tr', 'en', 'nl'];
+    function pick() {
+      try { var s = localStorage.getItem('betavus.lang'); if (langs.indexOf(s) >= 0) return s; } catch (e) {}
+      var prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+      for (var i = 0; i < prefs.length; i++) { var l = String(prefs[i]).slice(0, 2).toLowerCase(); if (langs.indexOf(l) >= 0) return l; }
+      return 'en';
+    }
+    var titles = { tr: 'Gizlilik Politikası — BETAVUS', en: 'Privacy Policy — BETAVUS', nl: 'Privacybeleid — BETAVUS' };
+    function show(l) {
+      document.querySelectorAll('article[data-lang]').forEach(function (a) { a.hidden = a.dataset.lang !== l; });
+      document.querySelectorAll('.langs button').forEach(function (b) { b.classList.toggle('on', b.dataset.l === l); });
+      document.documentElement.lang = l;
+      document.title = titles[l];
+    }
+    document.querySelectorAll('.langs button').forEach(function (b) {
+      b.onclick = function () { try { localStorage.setItem('betavus.lang', b.dataset.l); } catch (e) {} show(b.dataset.l); };
+    });
+    show(pick());
+  })();
+</script>
 </body>
 </html>

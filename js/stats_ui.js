@@ -27,8 +27,10 @@
   } catch (e) {}
 
   const escH = s => String(s).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
-  const pc = (h, n) => n ? (h / n * 100).toFixed(1) + '%' : '—';
-  const fmtN = n => n.toLocaleString('tr-TR');
+  const T = (k, v) => (root._t ? root._t(k, v) : k);
+  const I = root.I18N || { pct: x => '%' + x, pctS: x => x + '%', dec: x => String(x).replace('.', ','), locale: 'tr-TR' };
+  const pc = (h, n) => n ? I.pctS((h / n * 100).toFixed(1)) : '—';
+  const fmtN = n => n.toLocaleString(I.locale);
   const dmyS = d => d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4);
   const seasonOfRow = d => { let y = +d.slice(0, 4); if (+d.slice(5, 7) < 7) y -= 1; return `${y}/${String(y + 1).slice(2)}`; };
   const curLeague = () => (typeof selected !== 'undefined' ? selected : 'Tümü');
@@ -86,22 +88,22 @@
 
   function kpis(a) {
     return `<div class="st-kpis">
-      <div class="st-kpi main"><div class="v">${pc(a.pickH, a.pickN)}</div><div class="k">Vurgulanan tahmin başarısı</div><div class="n">${fmtN(a.pickH)} / ${fmtN(a.pickN)} tahmin tuttu</div></div>
-      <div class="st-kpi"><div class="v">${pc(a.hlMatchH, a.hlMatchN)}</div><div class="k">Tam isabetli vurgulu maç</div><div class="n">${fmtN(a.hlMatchH)} / ${fmtN(a.hlMatchN)} maçta tüm vurgular tuttu</div></div>
-      <div class="st-kpi"><div class="v">${fmtN(a.total)}</div><div class="k">Analiz edilen maç</div><div class="n">${fmtN(a.limited)} maç kısıtlı veri, vurgu dışı</div></div>
+      <div class="st-kpi main"><div class="v">${pc(a.pickH, a.pickN)}</div><div class="k">${T('Vurgulanan tahmin başarısı')}</div><div class="n">${T('{h} / {n} tahmin tuttu', { h: fmtN(a.pickH), n: fmtN(a.pickN) })}</div></div>
+      <div class="st-kpi"><div class="v">${pc(a.hlMatchH, a.hlMatchN)}</div><div class="k">${T('Tam isabetli vurgulu maç')}</div><div class="n">${T('{h} / {n} maçta tüm vurgular tuttu', { h: fmtN(a.hlMatchH), n: fmtN(a.hlMatchN) })}</div></div>
+      <div class="st-kpi"><div class="v">${fmtN(a.total)}</div><div class="k">${T('Analiz edilen maç')}</div><div class="n">${T('{n} maç kısıtlı veri, vurgu dışı', { n: fmtN(a.limited) })}</div></div>
     </div>`;
   }
 
   function marketTable(a) {
-    const thrTxt = { '0.5+': '≥%95', '1.5+': '≥%85', '2.5+': '≥%80', '1X': '≥%80', '12': '≥%80', 'X2': '≥%80' };
-    return `<div class="card st-card"><h2>Lig bazında doğruluk</h2>
-      <p class="st-note"><b>Vurgulanan</b>: modelin güven eşiğini geçtiği tahminler. <b>Genel yön isabeti</b>: tüm maçlarda modelin eğildiği taraf (olur / olmaz) doğru mu? <b>Ort. model olasılığı</b> ile <b>gerçekleşme</b> birbirine yakınsa model iyi kalibre demektir.</p>
+    const thrTxt = { '0.5+': '≥' + I.pct(95), '1.5+': '≥' + I.pct(85), '2.5+': '≥' + I.pct(80), '1X': '≥' + I.pct(80), '12': '≥' + I.pct(80), 'X2': '≥' + I.pct(80) };
+    return `<div class="card st-card"><h2>${T('Lig bazında doğruluk')}</h2>
+      <p class="st-note">${T('st.note.market')}</p>
       <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr>
-        <th>Lig</th><th>Eşik</th><th>Vurgulanan başarı</th><th>Tuttu / Vurgu</th><th>Genel yön isabeti</th><th>Ort. model olasılığı</th><th>Gerçekleşme</th>
+        <th>${T('st.col.market')}</th><th>${T('Eşik')}</th><th>${T('Vurgulanan başarı')}</th><th>${T('Tuttu / Vurgu')}</th><th>${T('Genel yön isabeti')}</th><th>${T('Ort. model olasılığı')}</th><th>${T('Gerçekleşme')}</th>
       </tr></thead><tbody>${MARKETS.map(([k]) => {
         const x = a.m[k];
         return `<tr><td><b>${k}</b></td><td>${thrTxt[k]}</td><td class="st-strong">${pc(x.hh, x.hn)}</td><td>${fmtN(x.hh)} / ${fmtN(x.hn)}</td>
-          <td>${pc(x.dh, x.dn)}</td><td>${x.dn ? (x.psum / x.dn / 10).toFixed(1) + '%' : '—'}</td><td>${pc(x.occ, x.dn)}</td></tr>`;
+          <td>${pc(x.dh, x.dn)}</td><td>${x.dn ? I.pctS((x.psum / x.dn / 10).toFixed(1)) : '—'}</td><td>${pc(x.occ, x.dn)}</td></tr>`;
       }).join('')}</tbody></table></div></div>`;
   }
 
@@ -113,8 +115,8 @@
       (by[r[1]] = by[r[1]] || []).push(r);
     }
     const order = (typeof BT_ORDER !== 'undefined' ? BT_ORDER : Object.keys(by)).filter(l => by[l]);
-    return `<div class="card st-card"><h2>Lig bazında vurgulanan başarı</h2>
-      <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr><th>Lig</th><th>Maç</th><th>Tümü</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}</tr></thead><tbody>
+    return `<div class="card st-card"><h2>${T('Lig bazında vurgulanan başarı')}</h2>
+      <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr><th>${T('Lig')}</th><th>${T('Maçlar')}</th><th>${T('Tümü')}</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}</tr></thead><tbody>
       ${order.map(l => {
         const a = aggregate(by[l]);
         return `<tr><td class="st-lg">${flagOf(l, 11)} ${escH(l)}</td><td>${fmtN(a.total)}</td><td class="st-strong">${pc(a.pickH, a.pickN)}</td>
@@ -125,7 +127,7 @@
   function cell(r, i, thr, hit) {
     const p = r[i], ok = hit(r[4], r[5]), hl = !r[12] && p >= thr;
     const cls = hl ? (ok ? ' hl win' : ' hl lose') : (ok ? ' ok' : '');
-    return `<td class="st-p${cls}" title="Model %${(p / 10).toFixed(1)}${hl ? ' · vurgulandı · ' + (ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? ' · gerçekleşti' : ''}">${(p / 10).toFixed(1)}%${!hl && ok ? '<i>✓</i>' : ''}</td>`;
+    return `<td class="st-p${cls}" title="${T('Model {p}', { p: I.pct((p / 10).toFixed(1)) })}${hl ? T(' · vurgulandı · ') + T(ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? T(' · gerçekleşti') : ''}">${I.pctS((p / 10).toFixed(1))}${!hl && ok ? '<i>✓</i>' : ''}</td>`;
   }
 
   function hlRows(rows) {          // yalnızca vurgulu maçlar + tutan / kaybeden filtresi
@@ -151,38 +153,38 @@
       return `<tr>
         <td class="st-d">${dmyS(r[0])}</td>
         <td class="st-m"><span class="st-lgs">${flagOf(r[1], 10)} ${escH(r[1])}</span>${escH(r[2])} — ${escH(r[3])}
-          <span class="st-lam" title="Modelin maç öncesi tahmin ettiği toplam gol (λ)">Tahmini toplam gol: <b>${r[13] != null ? Number(r[13]).toFixed(2).replace('.', ',') : '—'}</b></span></td>
+          <span class="st-lam" title="${T('Modelin maç öncesi tahmin ettiği toplam gol (λ)')}">${T('Tahmini toplam gol:')} <b>${r[13] != null ? I.dec(Number(r[13]).toFixed(2)) : '—'}</b></span></td>
         <td class="st-s">${r[4]}-${r[5]}</td>
         ${MARKETS.map(([, i, thr, hit]) => cell(r, i, thr, hit)).join('')}
-        <td class="st-v"><span class="st-res ${won ? 'won' : 'lost'}">${won ? 'Tuttu' : 'Kaybetti'}</span><small>${h}/${outs.length}</small></td></tr>`;
+        <td class="st-v"><span class="st-res ${won ? 'won' : 'lost'}">${T(won ? 'Tuttu' : 'Kaybetti')}</span><small>${h}/${outs.length}</small></td></tr>`;
     }).join('');
     const pager = `<div class="st-pager">
       <button class="hotbtn" data-pg="first" ${st.page ? '' : 'disabled'}>«</button>
-      <button class="hotbtn" data-pg="prev" ${st.page ? '' : 'disabled'}>‹ Önceki</button>
-      <span>Sayfa ${st.page + 1} / ${pages} · ${fmtN(list.length)} maç</span>
-      <button class="hotbtn" data-pg="next" ${st.page < pages - 1 ? '' : 'disabled'}>Sonraki ›</button>
+      <button class="hotbtn" data-pg="prev" ${st.page ? '' : 'disabled'}>${T('‹ Önceki')}</button>
+      <span>${T('Sayfa {p} / {n} · {m} maç', { p: st.page + 1, n: pages, m: fmtN(list.length) })}</span>
+      <button class="hotbtn" data-pg="next" ${st.page < pages - 1 ? '' : 'disabled'}>${T('Sonraki ›')}</button>
       <button class="hotbtn" data-pg="last" ${st.page < pages - 1 ? '' : 'disabled'}>»</button></div>`;
     const fbtn = (k, label, n) => `<button class="hotbtn st-rf${st.res === k ? ' on' : ''} st-rf-${k}" type="button" data-res="${k}">${label} <b>${fmtN(n)}</b></button>`;
-    return `<div class="card st-card st-list"><h2>Vurgulanan maçlar — tahmin vs gerçekleşen</h2>
-      <div class="st-rfs">${fbtn('all', 'Tüm vurgulular', groups.all.length)}${fbtn('won', '✓ Kazanan', groups.won.length)}${fbtn('lost', '✗ Kaybeden', groups.lost.length)}</div>
-      <p class="st-note">Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Tarih başlığına tıklayarak sıralamayı değiştir.</p>
+    return `<div class="card st-card st-list"><h2>${T('Vurgulanan maçlar — tahmin vs gerçekleşen')}</h2>
+      <div class="st-rfs">${fbtn('all', T('Tüm vurgulular'), groups.all.length)}${fbtn('won', T('✓ Kazanan'), groups.won.length)}${fbtn('lost', T('✗ Kaybeden'), groups.lost.length)}</div>
+      <p class="st-note">${T('st.note.list')}</p>
       ${pager}
-      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="Tıkla: ${st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye'} sırala">Tarih ${st.order === 'desc' ? '▼' : '▲'}</th><th>Maç</th><th>Skor</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>Vurgu</th></tr></thead>
-      <tbody>${body || `<tr><td colspan="10" class="st-mut" style="text-align:center;padding:24px">Bu filtrede maç yok</td></tr>`}</tbody></table></div>
+      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="${T('Tıkla: {x} sırala', { x: T(st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye') })}">${T('Tarih')} ${st.order === 'desc' ? '▼' : '▲'}</th><th>${T('Maç')}</th><th>${T('Skor')}</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>${T('Vurgu')}</th></tr></thead>
+      <tbody>${body || `<tr><td colspan="10" class="st-mut" style="text-align:center;padding:24px">${T('Bu filtrede maç yok')}</td></tr>`}</tbody></table></div>
       ${pager}</div>`;
   }
 
   function leagueSelect() {
     const lgs = (typeof leagues !== 'undefined' ? leagues : ['Tümü']);
-    return `<select class="sel" id="stLeague" title="Lig filtresi">${lgs.map(l => `<option value="${escH(l)}"${l === curLeague() ? ' selected' : ''}>${l === 'Tümü' ? 'Tüm ligler' : escH(l)}</option>`).join('')}</select>`;
+    return `<select class="sel" id="stLeague" title="${T('Lig filtresi')}">${lgs.map(l => `<option value="${escH(l)}"${l === curLeague() ? ' selected' : ''}>${l === 'Tümü' ? T('Tüm ligler') : escH(l)}</option>`).join('')}</select>`;
   }
 
   function controls() {
     const seasons = DATA.seasons || [];
     return `<div class="st-ctl">
       ${leagueSelect()}
-      <select class="sel" id="stSeason"><option value="">Tüm sezonlar</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
-      <span class="srch"><input id="stQ" type="search" placeholder="Takım ara…" value="${escH(st.q)}" autocomplete="off" spellcheck="false"></span>
+      <select class="sel" id="stSeason"><option value="">${T('Tüm sezonlar')}</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
+      <span class="srch"><input id="stQ" type="search" placeholder="${T('Takım ara…')}" value="${escH(st.q)}" autocomplete="off" spellcheck="false"></span>
     </div>`;
   }
 
@@ -190,15 +192,15 @@
     const host = document.getElementById('statsBody');
     if (!host) return;
     if (!DATA) {
-      host.innerHTML = '<div class="loading">Maç verisi yükleniyor…</div>';
-      load().then(render).catch(() => { host.innerHTML = '<div class="empty"><strong>İstatistik verisi yüklenemedi</strong>Sayfayı yenilemeyi dene.</div>'; });
+      host.innerHTML = `<div class="loading">${T('Maç verisi yükleniyor…')}</div>`;
+      load().then(render).catch(() => { host.innerHTML = `<div class="empty"><strong>${T('İstatistik verisi yüklenemedi')}</strong>${T('Sayfayı yenilemeyi dene.')}</div>`; });
       return;
     }
     const focusQ = document.activeElement && document.activeElement.id === 'stQ';
     const rows = scoped(), a = aggregate(rows);
     const lg = curLeague();
-    host.innerHTML = `<div class="st-intro"><h1 class="st-h1">İstatistikler</h1>
-        <p>${(DATA.seasons || []).join(', ')} sezonlarının ${fmtN(DATA.rows.length)} maçı, canlı sitedeki modelle <b>yalnızca maçtan önceki verilerle</b> tahmin edildi ve gerçek skorlarla karşılaştırıldı.${lg !== 'Tümü' ? ` Filtre: <b>${escH(lg)}</b>.` : ''}</p></div>
+    host.innerHTML = `<div class="st-intro"><h1 class="st-h1">${T('İstatistikler')}</h1>
+        <p>${T('st.intro', { seasons: (DATA.seasons || []).join(', '), n: fmtN(DATA.rows.length) })}${lg !== 'Tümü' ? T(' Filtre: <b>{lg}</b>.', { lg: escH(lg) }) : ''}</p></div>
       ${controls()}${kpis(a)}${marketTable(a)}${leagueTable()}${matchList(rows)}`;
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
@@ -223,17 +225,17 @@
     fetch(SUMMARY_URL, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => {
       if (!s || !s.picks) { el.hidden = true; return; }
       const mk = s.markets || {};
-      const pct = +s.picks.pct, fmtP = v => String(v).replace('.', ',');
+      const pct = +s.picks.pct, fmtP = v => I.dec(v), pctP = v => (I.lang === 'tr' || !I.lang ? '%' + fmtP(v) : fmtP(v) + '%');
       const R = 34, C = +(2 * Math.PI * R).toFixed(1);
       el.innerHTML = `<div class="hlb-main">
           <div class="hlb-ring" aria-hidden="true"><svg viewBox="0 0 80 80"><circle class="hlb-rbg" cx="40" cy="40" r="${R}"/><circle class="hlb-rfg" cx="40" cy="40" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span>✓</span></div>
-          <div class="hlb-num"><div class="hlb-v">%${fmtP(pct)}</div><div class="hlb-cap">isabet oranı</div></div>
-          <div class="hlb-t"><span class="hlb-badge">Doğrulanmış geçmiş performans</span>
-            <b>Vurguladığımız tahminlerin başarı oranı</b>
-            <span class="hlb-sub">${s.seasons[0]} sezonundan bugüne · <strong>${fmtN(s.picks.h)}</strong> / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
+          <div class="hlb-num"><div class="hlb-v">${pctP(pct)}</div><div class="hlb-cap">${T('isabet oranı')}</div></div>
+          <div class="hlb-t"><span class="hlb-badge">${T('Doğrulanmış geçmiş performans')}</span>
+            <b>${T('Vurguladığımız tahminlerin başarı oranı')}</b>
+            <span class="hlb-sub">${T('{season} sezonundan bugüne · <strong>{h}</strong> / {n} vurgulu tahmin tuttu', { season: s.seasons[0], h: fmtN(s.picks.h), n: fmtN(s.picks.n) })}</span></div>
         </div>
-        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} tahmin tuttu / ${fmtN(v.n)} vurgulu tahmin"><span class="hlb-ct"><b>${k}</b><i>%${fmtP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${fmtN(v.h)}/${fmtN(v.n)} maç</em></span>`).join('')}
-          <a href="#" class="hlb-link" onclick="setTab('stats');return false">Tüm istatistikler →</a></div>`;
+        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${T('{h} tahmin tuttu / {n} vurgulu tahmin', { h: fmtN(v.h), n: fmtN(v.n) })}"><span class="hlb-ct"><b>${k}</b><i>${pctP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${T('{h}/{n} maç', { h: fmtN(v.h), n: fmtN(v.n) })}</em></span>`).join('')}
+          <a href="#" class="hlb-link" onclick="setTab('stats');return false">${T('Tüm istatistikler →')}</a></div>`;
       el.hidden = false;
       // Giriş animasyonu: halka dolar, yüzde sayarak yükselir
       const ring = el.querySelector('.hlb-rfg'), num = el.querySelector('.hlb-v');
@@ -242,7 +244,7 @@
         const t0 = performance.now(), D = 1400;
         const step = now => {
           const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
-          num.textContent = '%' + fmtP(k < 1 ? (pct * e).toFixed(1) : pct);
+          num.textContent = pctP(k < 1 ? (pct * e).toFixed(1) : pct);
           if (k < 1) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);

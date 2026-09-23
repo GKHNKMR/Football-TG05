@@ -239,14 +239,30 @@
     fetch(SUMMARY_URL, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => {
       if (!s || !s.picks) { el.hidden = true; return; }
       const mk = s.markets || {};
+      const pct = +s.picks.pct, fmtP = v => String(v).replace('.', ',');
+      const R = 34, C = +(2 * Math.PI * R).toFixed(1);
       el.innerHTML = `<div class="hlb-main">
-          <div class="hlb-v">%${String(s.picks.pct).replace('.', ',')}</div>
-          <div class="hlb-t"><b>Vurguladığımız tahminlerin başarı oranı</b>
-            <span>Son 5 sezon (${s.seasons[0]} – ${s.seasons[s.seasons.length - 1]}) · ${fmtN(s.picks.h)} / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
+          <div class="hlb-ring" aria-hidden="true"><svg viewBox="0 0 80 80"><circle class="hlb-rbg" cx="40" cy="40" r="${R}"/><circle class="hlb-rfg" cx="40" cy="40" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span>✓</span></div>
+          <div class="hlb-num"><div class="hlb-v">%${fmtP(pct)}</div><div class="hlb-cap">isabet oranı</div></div>
+          <div class="hlb-t"><span class="hlb-badge">Doğrulanmış geçmiş performans</span>
+            <b>Vurguladığımız tahminlerin başarı oranı</b>
+            <span class="hlb-sub">Son 5 sezon (${s.seasons[0]} – ${s.seasons[s.seasons.length - 1]}) · <strong>${fmtN(s.picks.h)}</strong> / ${fmtN(s.picks.n)} vurgulu tahmin tuttu</span></div>
         </div>
-        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} tahmin tuttu / ${fmtN(v.n)} vurgulu tahmin"><b>${k}</b> %${String(v.pct).replace('.', ',')} <em>${fmtN(v.h)}/${fmtN(v.n)} maç</em></span>`).join('')}
+        <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${fmtN(v.h)} tahmin tuttu / ${fmtN(v.n)} vurgulu tahmin"><span class="hlb-ct"><b>${k}</b><i>%${fmtP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${fmtN(v.h)}/${fmtN(v.n)} maç</em></span>`).join('')}
           <a href="#" class="hlb-link" onclick="setTab('stats');return false">Tüm istatistikler →</a></div>`;
       el.hidden = false;
+      // Giriş animasyonu: halka dolar, yüzde sayarak yükselir
+      const ring = el.querySelector('.hlb-rfg'), num = el.querySelector('.hlb-v');
+      requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.strokeDashoffset = (C * (1 - pct / 100)).toFixed(1); }));
+      if (!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        const t0 = performance.now(), D = 1400;
+        const step = now => {
+          const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
+          num.textContent = '%' + fmtP(k < 1 ? (pct * e).toFixed(1) : pct);
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
     }).catch(() => { el.hidden = true; });
   }
 

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BETAVUS İnteraktif Zihin Haritası (Tıklanabilir &amp; Katlanabilir Mimari)</title>
+  <!-- D3.js v7 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090b0f;
+      --card-bg: #11151c;
+      --card-bg-elevated: #171c24;
+      --card-border: #252c36;
+      --text-main: #f4f6f8;
+      --text-muted: #8e98a7;
+      --accent-lime: #e8ff3f;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --accent-gold: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP TOOLBAR */
+    .toolbar {
+      background: rgba(17, 21, 28, 0.95);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .brand-logo .b1 { color: #e8ff3f; }
+    .brand-logo .b2 { color: #38bdf8; }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      border-left: 1px solid var(--card-border);
+      padding-left: 10px;
+      line-height: 1.2;
+    }
+
+    .badge-interactive {
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(232, 255, 63, 0.12);
+      color: #e8ff3f;
+      border: 1px solid rgba(232, 255, 63, 0.3);
+      padding: 3px 9px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 8px 14px 8px 34px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+      width: 230px;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-lime);
+      box-shadow: 0 0 0 3px rgba(232, 255, 63, 0.2);
+      width: 280px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, rgba(232, 255, 63, 0.2), rgba(16, 185, 129, 0.2));
+      border: 1px solid rgba(232, 255, 63, 0.4);
+      color: #e8ff3f;
+    }
+    .btn-accent:hover {
+      background: linear-gradient(135deg, rgba(232, 255, 63, 0.3), rgba(16, 185, 129, 0.3));
+      box-shadow: 0 4px 14px rgba(232, 255, 63, 0.25);
+    }
+
+    /* CANVAS VIEWPORT */
+    .viewport {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: radial-gradient(circle at center, #131822 0%, #090b0f 100%);
+      cursor: grab;
+    }
+
+    .viewport:active {
+      cursor: grabbing;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* TREE EDGES & NODES */
+    .link {
+      fill: none;
+      stroke: #252c36;
+      stroke-width: 2px;
+      transition: stroke 0.3s, stroke-width 0.3s;
+    }
+
+    .node {
+      cursor: pointer;
+    }
+
+    .node rect {
+      transition: all 0.25s ease;
+      rx: 10;
+      ry: 10;
+    }
+
+    .node:hover rect {
+      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.7));
+    }
+
+    .node text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 800;
+      fill: #ffffff;
+      letter-spacing: -0.2px;
+    }
+
+    .node-sub {
+      font-size: 11px;
+      font-weight: 600;
+      fill: #8e98a7;
+    }
+
+    .badge-circle {
+      transition: transform 0.2s;
+    }
+    .node:hover .badge-circle {
+      transform: scale(1.15);
+    }
+
+    /* DETAIL DRAWER (Sağ Panel Detay Açılır Penceresi) */
+    .drawer {
+      position: absolute;
+      top: 65px;
+      right: 24px;
+      width: 380px;
+      max-height: calc(100vh - 90px);
+      background: rgba(17, 21, 28, 0.95);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(20px);
+      z-index: 30;
+      transform: translateX(420px);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 14px;
+    }
+
+    .drawer-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .drawer-tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .drawer-close {
+      background: var(--card-bg-elevated);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .drawer-close:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .drawer-body {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .drawer-body p {
+      margin-bottom: 10px;
+    }
+
+    .drawer-metric-box {
+      background: var(--card-bg-elevated);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0;
+    }
+
+    .drawer-metric-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .drawer-metric-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .drawer-formula {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin: 10px 0;
+      white-space: pre-wrap;
+    }
+
+    /* BOTTOM HINT BAR */
+    .hint-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 21, 28, 0.9);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .hint-bar kbd {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+      font-size: 11px;
+    }
+
+    /* SEARCH PULSE ANIMATION */
+    @keyframes pulse-lime {
+      0% { filter: drop-shadow(0 0 0 rgba(232, 255, 63, 0.8)); }
+      50% { filter: drop-shadow(0 0 18px rgba(232, 255, 63, 1)); }
+      100% { filter: drop-shadow(0 0 0 rgba(232, 255, 63, 0.8)); }
+    }
+
+    .node-highlighted rect {
+      stroke: #e8ff3f !important;
+      stroke-width: 3px !important;
+      animation: pulse-lime 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOOLBAR -->
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <div class="brand">
+        <span style="font-size: 24px;">🧠</span>
+        <div>
+          <div class="brand-logo"><span class="b1">BET</span><span class="b2">AVUS</span> Mindmap</div>
+        </div>
+      </div>
+      <div class="brand-sub">Otonom Futbol Analiz &amp; Kasa Mimarisi</div>
+      <span class="badge-interactive">Dinamik &amp; Tıklanabilir</span>
+    </div>
+
+    <div class="toolbar-actions">
+      <!-- Search Input -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Düğüm ara (Örn: Dixon, 1X, Poisson, Kasa)..." autocomplete="off" spellcheck="false">
+      </div>
+
+      <!-- Action Buttons -->
+      <button class="btn" id="btnExpandAll" title="Tüm dalları aç">
+        ➕ Hepsini Aç
+      </button>
+      <button class="btn" id="btnCollapseAll" title="Sadece ana kolları göster">
+        ➖ Hepsini Daralt
+      </button>
+      <button class="btn" id="btnResetView" title="Görünümü merkeze sığdır">
+        🎯 Merkeze Odakla
+      </button>
+      <button class="btn btn-accent" onclick="window.print()">
+        📄 Yazdır / PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- INTERACTIVE CANVAS -->
+  <main class="viewport" id="viewport">
+    <svg id="mindmap-svg">
+      <g id="canvas-group"></g>
+    </svg>
+
+    <!-- Bottom Hint -->
+    <div class="hint-bar">
+      <span>💡 <b>İpucu:</b> Düğümlere tıklayarak detay panelini açabilir veya alt dalları katlayabilirsiniz. Yakınlaşmak için <kbd>Mouse Tekerleği</kbd>, gezinmek için <kbd>Sürükle</kbd> yapın.</span>
+    </div>
+  </main>
+
+  <!-- DETAIL DRAWER -->
+  <aside class="drawer" id="detailDrawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title" id="drawerTitle">Düğüm Detayı</div>
+        <span class="drawer-tag" id="drawerTag">Kategori</span>
+      </div>
+      <button class="drawer-close" id="drawerClose">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawerDesc">
+      Bir düğüme tıkladığınızda mimari detaylar ve formüller burada açılır.
+    </div>
+  </aside>
+
+  <script>
+    // -------------------------------------------------------------
+    // BETAVUS COMPREHENSIVE MINDMAP DATA HIERARCHY
+    // -------------------------------------------------------------
+    const treeData = {
+      name: "🎯 BETAVUS SİSTEMİ",
+      subtitle: "Yapay Zekâ Destekli Paper-Betting, Olasılık Motoru & Kasa Yönetimi",
+      color: "#e8ff3f",
+      tag: "Platform Çekirdeği",
+      description: "Futbol toplam gol pazarları (0.5Ü, 1.5Ü, 2.5Ü), Çifte Şans (1X, 12, X2) ve kesin skorlar için Poisson & Dixon-Coles matematiksel olasılık modelleriyle çalışan disiplinli sanal kasa simülasyonu ve portföy yönetim ekosistemi.",
+      formula: "P(x, y) = Poisson(x; λ_H) · Poisson(y; λ_A) · τ(x, y, ρ)",
+      metrics: [
+        { label: "Doğrulanmış Maç Havuzu", value: "16.478 Maç (5 Sezon)" },
+        { label: "Takip Edilen Lig Sayısı", value: "9 Avrupa & Türkiye Ligi" },
+        { label: "Yüksek Güven Eşiği", value: "0.5Ü ≥%95 · 1.5Ü ≥%85 · ÇŞ ≥%75" }
+      ],
+      children: [
+        {
+          name: "🛡️ 1. FELSEFE & TEMEL PRENSİPLER",
+          subtitle: "Ne Yapıyor, Ne Yapmıyor?",
+          color: "#10b981",
+          tag: "Temel İlkeler",
+          description: "BETAVUS'un varoluş amacı, kumar veya spekülasyon yerine finansal portföy mantığıyla çalışan matematiksel ve duygusuz bir paper-betting ortamı sunmaktır.",
+          children: [
+            {
+              name: "🚫 BETAVUS Ne Değildir?",
+              subtitle: "Bahis Şirketi veya Ödeme Aracı Değildir",
+              color: "#ef4444",
+              tag: "Sorumluluk Reddi",
+              description: "BETAVUS asla bahis kabul etmez, para yatırma/çekme yapmaz ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve kârlar tamamen sanaldır. Kesin kazanç vaat etmez; kullanıcının sermaye kaybetmeden stratejisini ölçmesini sağlar."
+            },
+            {
+              name: "🛡️ BETAVUS Nedir?",
+              subtitle: "Paper-Betting & Disiplinli Kasa Portföyü",
+              color: "#10b981",
+              tag: "Sanal Kasa",
+              description: "Kullanıcının duygulardan arınmış biçimde, matematiksel üstünlüğü (Edge) olan maçları seçip sanal bütçe ile risk gruplarına (Min, Orta, Yüksek) bölerek disiplinli büyüme simülasyonu yapmasını sağlayan analitik platformdur."
+            },
+            {
+              name: "🔒 Kısıtlı Veri Koruma Kalkanı",
+              subtitle: "Limited Data / Sınırlı Veri İzolasyonu",
+              color: "#f59e0b",
+              tag: "Risk Kalkanı",
+              description: "Takımlardan birinin o ligde yeterli maç geçmişi yoksa (partial-form veya league-avg), model yüksek istatistiksel varyans nedeniyle bu maçı ASLA yüksek güvenli vurgu saymaz; yeşil çerçeve ve ★ yıldız vermez, sayaçlara dahil etmez ve otomatik kuponlara seçmez.",
+              metrics: [
+                { label: "Kısıtlı Veri Kriteri", value: "basis: partial-form / league-avg" },
+                { label: "Vurgu Koruması", value: "Yıldızsız, Halkasız, Vurgusuz İzolasyon" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "🧮 2. MATEMATİKSEL TAHMİN MOTORLARI",
+          subtitle: "Poisson & Dixon-Coles Matris Modeli",
+          color: "#38bdf8",
+          tag: "Analitik Motor",
+          description: "Her maçın gol ve sonuç dağılımını geçmiş 4 sezonluk form, lig ortalaması ve H2H karşılaşmaları üzerinden hesaplayan çok katmanlı matematik mimarisi.",
+          children: [
+            {
+              name: "⚽ Toplam Gol Olasılık Modeli",
+              subtitle: "Beklenen Gol λ & Poisson KDF",
+              color: "#38bdf8",
+              tag: "Gol Motoru",
+              description: "Ev sahibinin hücumu + deplasmanın savunması ile deplasmanın hücumu + ev sahibinin savunması ortalanıp beklenen toplam gol λ bulunur. 2+ H2H maçı varsa %28 ağırlıkla harmanlanır.",
+              formula: "λ = (ev_attığı + dep_yediği)/2 + (dep_attığı + ev_yediği)/2\nP(Üst n) = 1 - Poisson_KDF(n; λ)",
+              metrics: [
+                { label: "0.5+ Üst Eşiği", value: "≥ %95 (Yeşil Vurgu)" },
+                { label: "1.5+ Üst Eşiği", value: "≥ %85 (Mavi Vurgu)" },
+                { label: "2.5+ Üst Eşiği", value: "≥ %75 (Turuncu Vurgu)" }
+              ]
+            },
+            {
+              name: "🎲 Çifte Şans Olasılık Matrisi",
+              subtitle: "1X (1-0), 12 (1-2), X2 (0-2) Türetimi",
+              color: "#38bdf8",
+              tag: "Çifte Şans",
+              description: "Dixon-Coles skor matrisinden ev galibiyeti, beraberlik ve deplasman olasılıkları toplanarak 3 temel çifte şans türetilir.",
+              formula: "P(1X) = P(Ev) + P(Beraberlik) [Ev/Beraberlik]\nP(12) = P(Ev) + P(Deplasman) [Berabere Bitmez]\nP(X2) = P(Beraberlik) + P(Deplasman) [Beraberlik/Dep]",
+              metrics: [
+                { label: "1X Güven Eşiği", value: "≥ %75 (Gerçek Başarı: %83.2)" },
+                { label: "12 Güven Eşiği", value: "≥ %75 (Gerçek Başarı: %77.5)" },
+                { label: "X2 Güven Eşiği", value: "≥ %75 (Gerçek Başarı: %80.7)" }
+              ]
+            },
+            {
+              name: "🎯 Kesin Skor Projeksiyonları",
+              subtitle: "Top-3 Skor Havuzu & Top-1 Birebir",
+              color: "#38bdf8",
+              tag: "Skor Matrisi",
+              description: "10x10 olasılık matrisinde en yüksek yüzdeye sahip ilk 3 skor (Örn: 1-1, 2-1, 1-0) seçilir. 16.478 maçlık backtestte maçların %31.3'ünde gerçek skor bu ilk 3 havuzun içinde gerçekleşmiştir.",
+              metrics: [
+                { label: "Top-3 Skor Havuzu Başarısı", value: "%31.3 (5.165 / 16.478)" },
+                { label: "Top-1 Birebir Tam Skor", value: "%12.2 (2.014 / 16.478)" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "💼 3. KASA YÖNETİMİ & RİSK MİMARİSİ",
+          subtitle: "Çoklu Kasa, 30 Günlük Simülasyon & Sıfır Kayıp",
+          color: "#fbbf24",
+          tag: "Sermaye Yönetimi",
+          description: "Kullanıcının sermayesini koruyarak büyütmesi için tasarlanmış bağımsız risk havuzları ve simülasyon grafikleri.",
+          children: [
+            {
+              name: "🏢 Çoklu Kasa Açma (Multi-Bankroll)",
+              subtitle: "Bağımsız Bütçe & Risk Havuzları",
+              color: "#fbbf24",
+              tag: "Portföy",
+              description: "Kullanıcı 50€, 100€ veya 500€ ile aynı anda Minimum, Orta veya Yüksek risk kasaları açabilir. Kasa seçildikten sonra ekranda karmaşayı önlemek için sadece o kasaya ait veriler ve grafikler listelenir."
+            },
+            {
+              name: "🛡️ Minimum Risk Kasası",
+              subtitle: "Kasa Payı: %30 · 0.5+ Üst (≥%95)",
+              color: "#10b981",
+              tag: "Düşük Risk",
+              description: "Maksimum sermaye koruma stratejisi. Yalnızca 0.5+ Üst (≥%95) ve en güçlü 1X/12 çifte şans seçimlerini içerir. Hedef kupon oranı ~1.08 - 1.15.",
+              metrics: [
+                { label: "Kol Kasa Payı", value: "%30" },
+                { label: "30 Günlük Başarı", value: "%95.5+" },
+                { label: "Maksimum Drawdown", value: "< %5" }
+              ]
+            },
+            {
+              name: "⚖️ Orta Risk Kasası",
+              subtitle: "Kasa Payı: %15 · 1.5+ Üst (≥%85)",
+              color: "#38bdf8",
+              tag: "Dengeli",
+              description: "Dengeli büyüme profili. 1.5+ Üst (≥%85) ve dengeli 1X/12 çifte şans kombinasyonlarını içerir. Hedef kupon oranı ~1.20 - 1.35.",
+              metrics: [
+                { label: "Kol Kasa Payı", value: "%15" },
+                { label: "30 Günlük Başarı", value: "%95.7+" }
+              ]
+            },
+            {
+              name: "🚀 Yüksek Risk Kasası",
+              subtitle: "Kasa Payı: %5 · ~1.35x Çarpan / 2.5Ü",
+              color: "#ef4444",
+              tag: "Agresif",
+              description: "Yüksek getiri odaklı strateji. 2.5+ Üst (≥%75) ve çoklu kombinasyonlar içerir. Kol başına bütçenin sadece %5'i bağlanarak sermaye korunur.",
+              metrics: [
+                { label: "Kol Kasa Payı", value: "%5" },
+                { label: "Hedef Çarpan", value: "~1.35x - 1.50+" }
+              ]
+            },
+            {
+              name: "📈 30 Günlük Geçmiş Kasa Simülasyonu",
+              subtitle: "Gerçekleşen Eğri vs. Sıfır Kayıp Potansiyeli",
+              color: "#fbbf24",
+              tag: "Görsel Grafik",
+              description: "Son 30 günlük bültendeki gerçekleşmiş maçlarla kasa büyümesini modeller. Grafikte gerçek kasa büyümesi çizgisine ek olarak, altın sarısı kesikli çizgi (#fbbf24) ile '★ Sıfır Kayıp Potansiyeli (Hiç Maç Kaybetmeme Durumu)' çizilir.",
+              metrics: [
+                { label: "Gerçekleşen Eğri", value: "Yeşil / Mavi / Kırmızı Düz Çizgi" },
+                { label: "Sıfır Kayıp Eğrisi", value: "Altın Sarısı (#fbbf24) Kesikli Çizgi" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "🎫 4. AKILLI KUPON & BÜLTEN PLANLAMA",
+          subtitle: "Otomatik Öneri Motoru & Fikstür İnceleme",
+          color: "#a855f7",
+          tag: "Kupon Motoru",
+          description: "Güncel bültenden risk profiline en uygun maçların elenmesi, filtrelenmesi ve manuel kupon özelleştirme araçları.",
+          children: [
+            {
+              name: "⚡ Gerçek Kuponlarım (Öneri Motoru)",
+              subtitle: "Plana Özel Filtrelenmiş Kuponlar",
+              color: "#a855f7",
+              tag: "Canlı Öneri",
+              description: "Seçili kasanın risk profiline ve bütçesine göre bültenden en uygun maçları otomatik seçer. 1 Haftalık ve 1 Aylık maç penceresi seçenekleri sunar."
+            },
+            {
+              name: "✏️ Kupon Düzenleme Modalı (Customizer)",
+              subtitle: "Maç Ekle / Çıkar / Pazar Değiştir",
+              color: "#a855f7",
+              tag: "Etkileşim",
+              description: "Kullanıcı önerilen kupondaki bacakları silebilir, arama yaparak yeni maç ekleyebilir veya 0.5Ü yerine 1.5Ü/1X seçip anlık kombine oran ve potansiyel kazancı görebilir."
+            },
+            {
+              name: "⚽ Tahminler (Canlı Bülten)",
+              subtitle: "9 Büyük Lig & Gerçek Zamanlı Olasılıklar",
+              color: "#a855f7",
+              tag: "Fikstür",
+              description: "Premier League, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga ve Championship maçlarını listeler. Canlı skorlar (● CANLI) ve kilit oyuncu eksikleri (⚠️ Eksik) anlık gösterilir."
+            }
+          ]
+        },
+        {
+          name: "📊 5. MODEL DOĞRULUĞU (16.478 MAÇ)",
+          subtitle: "5 Sezonluk Sızıntısız Walk-Forward Backtest",
+          color: "#10b981",
+          tag: "Doğruluk Kanıtı",
+          description: "Modelin 2021/22 - 2025/26 arasındaki 5 tamamlanmış sezonda (16.478 maç) hiçbir sonuç sızıntısı olmadan geçmiş performansı.",
+          children: [
+            {
+              name: "⚽ Gol Pazarları Doğruluğu",
+              subtitle: "0.5Ü (≥%95) · 1.5Ü (≥%85) · 2.5Ü (≥%75)",
+              color: "#10b981",
+              tag: "Gol Doğruluğu",
+              description: "Her çizgi için modelin belirlediği güven eşiği üstündeki maçların gerçekleşme oranları. 16.478 maçta model öngörüleri başarıyla kanıtlanmıştır."
+            },
+            {
+              name: "🎲 Çifte Şans & Skor Doğruluğu",
+              subtitle: "1X: %83.2 · 12: %77.5 · X2: %80.7",
+              color: "#10b981",
+              tag: "ÇŞ Doğruluğu",
+              description: "Kısıtlı veriler hariç tutularak hesaplanan gerçek başarı: 1X (4.156 maçtan 3.459'u tuttu, %83.2), 12 (5.761 maçtan 4.462'si tuttu, %77.5), X2 (748 maçtan 604'ü tuttu, %80.7).",
+              metrics: [
+                { label: "1X Çifte Şans", value: "%83.2 (3.459 / 4.156)" },
+                { label: "12 Çifte Şans", value: "%77.5 (4.462 / 5.761)" },
+                { label: "X2 Çifte Şans", value: "%80.7 (604 / 748)" },
+                { label: "Skor Top-3", value: "%31.3 (5.165 / 16.478)" }
+              ]
+            },
+            {
+              name: "✨ Sade & Iskasız Tasarım Sözleşmesi",
+              subtitle: "Negatif Vurgusuz 6 Sütunlu Ferah Tablolar",
+              color: "#10b981",
+              tag: "Kullanıcı Deneyimi",
+              description: "Kullanıcı talebi doğrultusunda negatif kırmızı 'Iska' kutuları tamamen kaldırılmıştır. Odak: 5 Sezonluk Maç (16.478), Sistem Vurguladı, Tahmin Tuttu ✓ ve Başarı Oranı %'dir. Lig ve sezon tabloları 6 ferah sütunla sunulur."
+            }
+          ]
+        },
+        {
+          name: "🏛️ 6. VERİ & YAZILIM ALTYAPISI",
+          subtitle: "Zero-Dependency Vanilla JS & Python Pipeline",
+          color: "#6366f1",
+          tag: "Teknoloji Yığını",
+          description: "Hızlı, yerel depolama odaklı, tarayıcıda doğrudan çalışan optimize mimari.",
+          children: [
+            {
+              name: "⚡ Ultra Hızlı İstemci (Vanilla JS)",
+              subtitle: "Frameworksüz, <200ms Yükleme",
+              color: "#6366f1",
+              tag: "Frontend",
+              description: "React/Vue gerektirmeyen saf modern JavaScript mimarisi. localStorage tabanlı durum yönetimi (betavus.*) ve dinamik SVG grafik motoru."
+            },
+            {
+              name: "📂 Veritabanı & Arşiv Katmanı",
+              subtitle: "results.json (17.003 Maç) & CSV Arşivi",
+              color: "#6366f1",
+              tag: "Veri Deposu",
+              description: "data/football-data/ altındaki 8 sezonluk resmi lig maçları ve data/results.json dosyasında birleştirilmiş tarihsel sonuç kütüğü."
+            },
+            {
+              name: "🤖 Otomasyon & Test Takımı",
+              subtitle: "Playwright Headless Doğrulama",
+              color: "#6366f1",
+              tag: "Test & CI",
+              description: "scripts/verify_site.py ve scripts/test_cifte_backtest.py betikleriyle arayüzdeki tüm hesaplamalar, kısıtlı veri filtreleri ve simülasyonlar otomatik test edilir."
+            }
+          ]
+        }
+      ]
+    };
+
+    // -------------------------------------------------------------
+    // D3 COLLAPSIBLE TREE VISUALIZATION
+    // -------------------------------------------------------------
+    const svg = d3.select("#mindmap-svg");
+    const gCanvas = d3.select("#canvas-group");
+    const container = document.getElementById("viewport");
+
+    let width = container.clientWidth;
+    let height = container.clientHeight;
+
+    // Zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.25, 2.5])
+      .on("zoom", (event) => {
+        gCanvas.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
+    // Tree Dimensions
+    const nodeWidth = 250;
+    const nodeHeight = 62;
+    const tree = d3.tree().nodeSize([nodeHeight + 28, nodeWidth + 70]);
+
+    let root = d3.hierarchy(treeData);
+    root.x0 = height / 2;
+    root.y0 = 120;
+
+    let nodeIdCounter = 0;
+
+    // Initial render: collapse 3rd level children for optimal overview
+    if (root.children) {
+      root.children.forEach(collapseBranch);
+    }
+
+    function collapseBranch(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapseBranch);
+        d.children = null;
+      }
+    }
+
+    function expandBranch(d) {
+      if (d._children) {
+        d.children = d._children;
+        d._children = null;
+      }
+      if (d.children) {
+        d.children.forEach(expandBranch);
+      }
+    }
+
+    update(root);
+    centerView();
+
+    function update(source) {
+      const treeDataLayout = tree(root);
+      const nodes = treeDataLayout.descendants();
+      const links = treeDataLayout.links();
+
+      // Normalize depth distance
+      nodes.forEach(d => {
+        d.y = d.depth * 320;
+      });
+
+      // -------------------- NODES --------------------
+      const node = gCanvas.selectAll("g.node")
+        .data(nodes, d => d.id || (d.id = ++nodeIdCounter));
+
+      // ENTER
+      const nodeEnter = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${source.y0},${source.x0})`)
+        .on("click", (event, d) => {
+          // Open detail drawer
+          showDetailDrawer(d.data);
+
+          // Toggle children
+          if (d.children) {
+            d._children = d.children;
+            d.children = null;
+          } else {
+            d.children = d._children;
+            d._children = null;
+          }
+          update(d);
+        });
+
+      // Card Background Rect
+      nodeEnter.append("rect")
+        .attr("width", nodeWidth)
+        .attr("height", nodeHeight)
+        .attr("x", 0)
+        .attr("y", -nodeHeight / 2)
+        .attr("rx", 10)
+        .attr("ry", 10)
+        .attr("fill", "#11151c")
+        .attr("stroke", d => d.data.color || "#38bdf8")
+        .attr("stroke-width", d => d.depth === 0 ? "2.5px" : "1.5px")
+        .style("filter", "drop-shadow(0 4px 12px rgba(0,0,0,0.5))");
+
+      // Left Accent Strip
+      nodeEnter.append("rect")
+        .attr("width", 6)
+        .attr("height", nodeHeight)
+        .attr("x", 0)
+        .attr("y", -nodeHeight / 2)
+        .attr("rx", 3)
+        .attr("ry", 3)
+        .attr("fill", d => d.data.color || "#38bdf8");
+
+      // Node Title
+      nodeEnter.append("text")
+        .attr("class", "node-title")
+        .attr("x", 16)
+        .attr("y", -6)
+        .text(d => truncateText(d.data.name, 26));
+
+      // Node Subtitle
+      nodeEnter.append("text")
+        .attr("class", "node-sub")
+        .attr("x", 16)
+        .attr("y", 14)
+        .text(d => truncateText(d.data.subtitle || "", 30));
+
+      // Expand/Collapse Badge
+      const badgeGroup = nodeEnter.append("g")
+        .attr("class", "badge-group")
+        .attr("transform", `translate(${nodeWidth - 14}, 0)`);
+
+      badgeGroup.append("circle")
+        .attr("class", "badge-circle")
+        .attr("r", 9)
+        .attr("fill", "#171c24")
+        .attr("stroke", d => d.data.color || "#38bdf8")
+        .attr("stroke-width", 1.5);
+
+      badgeGroup.append("text")
+        .attr("class", "badge-text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "3.5px")
+        .attr("font-size", "11px")
+        .attr("font-weight", "900")
+        .attr("fill", "#ffffff")
+        .text(d => d._children ? "+" : (d.children ? "−" : ""));
+
+      // UPDATE
+      const nodeUpdate = node.merge(nodeEnter).transition().duration(350)
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+
+      nodeUpdate.select("rect")
+        .attr("stroke", d => d.data.color || "#38bdf8");
+
+      nodeUpdate.select(".badge-group")
+        .style("display", d => (d.children || d._children) ? "block" : "none")
+        .select(".badge-text")
+        .text(d => d._children ? "+" : (d.children ? "−" : ""));
+
+      // EXIT
+      node.exit().transition().duration(350)
+        .attr("transform", d => `translate(${source.y},${source.x})`)
+        .remove();
+
+      // -------------------- LINKS --------------------
+      const link = gCanvas.selectAll("path.link")
+        .data(links, d => d.target.id);
+
+      const linkEnter = link.enter().insert("path", "g")
+        .attr("class", "link")
+        .attr("d", d => {
+          const o = { x: source.x0, y: source.y0 };
+          return diagonal(o, o);
+        })
+        .attr("stroke", d => d.target.data.color || "#252c36")
+        .attr("stroke-opacity", 0.6);
+
+      link.merge(linkEnter).transition().duration(350)
+        .attr("d", d => diagonal(d.source, d.target))
+        .attr("stroke", d => d.target.data.color || "#252c36")
+        .attr("stroke-opacity", 0.65);
+
+      link.exit().transition().duration(350)
+        .attr("d", d => {
+          const o = { x: source.y, y: source.y };
+          return diagonal(o, o);
+        })
+        .remove();
+
+      // Store current positions for smooth transitions
+      nodes.forEach(d => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
+
+    // Smooth horizontal cubic bezier curve
+    function diagonal(s, d) {
+      const sx = s.y + nodeWidth;
+      const sy = s.x;
+      const dx = d.y;
+      const dy = d.x;
+      return `M ${sx} ${sy}
+              C ${(sx + dx) / 2} ${sy},
+                ${(sx + dx) / 2} ${dy},
+                ${dx} ${dy}`;
+    }
+
+    function truncateText(str, max) {
+      if (!str) return "";
+      return str.length > max ? str.substring(0, max - 1) + "…" : str;
+    }
+
+    // -------------------------------------------------------------
+    // DETAIL DRAWER CONTROLLER
+    // -------------------------------------------------------------
+    const drawer = document.getElementById("detailDrawer");
+    const drawerTitle = document.getElementById("drawerTitle");
+    const drawerTag = document.getElementById("drawerTag");
+    const drawerDesc = document.getElementById("drawerDesc");
+    const drawerClose = document.getElementById("drawerClose");
+
+    function showDetailDrawer(data) {
+      drawerTitle.textContent = data.name;
+      drawerTag.textContent = data.tag || "Detay";
+      drawerTag.style.background = `${data.color || '#38bdf8'}22`;
+      drawerTag.style.color = data.color || '#38bdf8';
+      drawerTag.style.border = `1px solid ${data.color || '#38bdf8'}55`;
+
+      let bodyHtml = `<p>${data.description || "Açıklama bulunmuyor."}</p>`;
+
+      if (data.formula) {
+        bodyHtml += `
+          <div class="drawer-metric-title">📐 Matematiksel Formül / Mantık:</div>
+          <div class="drawer-formula">${data.formula}</div>
+        `;
+      }
+
+      if (data.metrics && data.metrics.length > 0) {
+        bodyHtml += `<div class="drawer-metric-title">📊 Temel İstatistik &amp; Doğruluk Değerleri:</div>`;
+        data.metrics.forEach(m => {
+          bodyHtml += `
+            <div class="drawer-metric-box">
+              <div class="drawer-metric-title">${m.label}</div>
+              <div class="drawer-metric-value" style="color:${data.color || '#fff'}">${m.value}</div>
+            </div>
+          `;
+        });
+      }
+
+      drawerDesc.innerHTML = bodyHtml;
+      drawer.classList.add("open");
+    }
+
+    drawerClose.onclick = () => {
+      drawer.classList.remove("open");
+    };
+
+    // -------------------------------------------------------------
+    // TOOLBAR CONTROLS
+    // -------------------------------------------------------------
+    function centerView() {
+      const transform = d3.zoomIdentity.translate(80, height / 2 - 20).scale(0.85);
+      svg.transition().duration(600).call(zoom.transform, transform);
+    }
+
+    document.getElementById("btnResetView").onclick = centerView;
+
+    document.getElementById("btnExpandAll").onclick = () => {
+      expandBranch(root);
+      update(root);
+      setTimeout(centerView, 400);
+    };
+
+    document.getElementById("btnCollapseAll").onclick = () => {
+      if (root.children) {
+        root.children.forEach(collapseBranch);
+      }
+      update(root);
+      setTimeout(centerView, 400);
+    };
+
+    // -------------------------------------------------------------
+    // SEARCH & REALTIME HIGHLIGHTING
+    // -------------------------------------------------------------
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      
+      d3.selectAll("g.node").classed("node-highlighted", false);
+
+      if (!q) return;
+
+      let firstMatch = null;
+
+      d3.selectAll("g.node").each(function(d) {
+        const title = (d.data.name || "").toLowerCase();
+        const sub = (d.data.subtitle || "").toLowerCase();
+        const desc = (d.data.description || "").toLowerCase();
+
+        if (title.includes(q) || sub.includes(q) || desc.includes(q)) {
+          d3.select(this).classed("node-highlighted", true);
+          if (!firstMatch) firstMatch = d;
+        }
+      });
+
+      // If matches found, zoom to the first matching node
+      if (firstMatch) {
+        const x = firstMatch.y;
+        const y = firstMatch.x;
+        const transform = d3.zoomIdentity
+          .translate(width / 2 - x, height / 2 - y)
+          .scale(1.1);
+        svg.transition().duration(500).call(zoom.transform, transform);
+      }
+    });
+
+    // Handle window resize
+    window.addEventListener("resize", () => {
+      width = container.clientWidth;
+      height = container.clientHeight;
+    });
+
+    // Press Escape to close drawer
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        drawer.classList.remove("open");
+      }
+    });
+
+    // Auto open drawer on root node on initial load
+    setTimeout(() => {
+      showDetailDrawer(treeData);
+    }, 600);
+
+  </script>
+</body>
+</html>

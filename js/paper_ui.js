@@ -1079,34 +1079,34 @@
       if (i % 2 === 0) xLabels += `<text x="${x(i).toFixed(1)}" y="${(T + ph + 18).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="middle">${r.day}</text>`;
     });
 
-    // Boş günlerde çizgi kesilir (dispBlanksAs = gap)
-    const pathOf = key => {
-      let d = '';
-      let open = false;
-      rows.forEach((r, i) => {
-        const v = r[key];
-        if (v == null) { open = false; return; }
-        d += `${open ? ' L' : ' M'} ${x(i).toFixed(1)},${y(v).toFixed(1)}`;
-        open = true;
-      });
-      return d.trim();
+    // Kümelenmiş sütunlar: her gün için yan yana Gerçek Kasa + Teorik Hedef Kasa.
+    // Sütunlar tabandan yükselir, üst köşeleri yuvarlaktır; iki sütun arasında 2px boşluk.
+    // Gerçek kasası girilmemiş günde yalnızca hedef sütunu çizilir (dispBlanksAs = gap).
+    const slot = pw / n;
+    const groupW = Math.min(slot * 0.72, 30);
+    const barW = Math.max(1, (groupW - 2) / 2);
+    const base = T + ph;
+    const bar = (bx, v, color) => {
+      if (v == null || !(v > 0)) return '';
+      const top = y(v), h = base - top;
+      const rad = Math.min(4, barW / 2, h);
+      return `<path d="M${bx.toFixed(1)},${base.toFixed(1)} V${(top + rad).toFixed(1)} Q${bx.toFixed(1)},${top.toFixed(1)} ${(bx + rad).toFixed(1)},${top.toFixed(1)} H${(bx + barW - rad).toFixed(1)} Q${(bx + barW).toFixed(1)},${top.toFixed(1)} ${(bx + barW).toFixed(1)},${(top + rad).toFixed(1)} V${base.toFixed(1)} Z" fill="${color}"/>`;
     };
-    // Tek başına kalan gerçek kasa noktaları (komşusu boş) çizgi olmadan görünmez; nokta ile gösterilir
-    const lonePoints = rows.map((r, i) => (r.actualBank != null
-      && (i === 0 || rows[i - 1].actualBank == null) && (i === n - 1 || rows[i + 1].actualBank == null))
-      ? `<circle cx="${x(i).toFixed(1)}" cy="${y(r.actualBank).toFixed(1)}" r="3" fill="${KASA_COLOR_REAL}"/>` : '').join('');
+    const bars = rows.map((r, i) => {
+      const gx = x(i) - groupW / 2;
+      return bar(gx, r.actualBank, KASA_COLOR_REAL) + bar(gx + barW + 2, r.targetBank, KASA_COLOR_TARGET);
+    }).join('');
 
-    const hover = rows.map((r, i) => `<rect x="${(L + i * pw / n).toFixed(1)}" y="${T}" width="${(pw / n).toFixed(1)}" height="${ph}" fill="transparent"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}</title></rect>`).join('');
+    // Üzerine gelince günün iki değeri (sütundan geniş, tüm gün dilimi)
+    const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}</title></rect>`).join('');
 
     return `
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-30. gün')}" style="display:block">
         ${grid}
+        ${hover}
+        <g pointer-events="none">${bars}</g>
         <line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>
         ${xLabels}
-        <path d="${pathOf('targetBank')}" fill="none" stroke="${KASA_COLOR_TARGET}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="${pathOf('actualBank')}" fill="none" stroke="${KASA_COLOR_REAL}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        ${lonePoints}
-        ${hover}
       </svg>`;
   }
 

@@ -962,6 +962,8 @@
     };
   }
 
+  const KASA_SHEET_DAYS = 365; // Excel "Kasa Simülasyonu" sayfasındaki gün satırı sayısı
+
   // Başlangıç * (1 + büyüme)^gün; 12 anlamlı basamağa indirgenir ki 66.12499999… Excel'deki gibi 66.13 olsun
   function theoreticalBank(startingBank, dailyGrowthRate, day) {
     return round(Number((startingBank * Math.pow(1 + dailyGrowthRate, day)).toPrecision(12)), 2);
@@ -1027,7 +1029,7 @@
     const g = params.dailyGrowthRate;
     const startTs = planStartTs(plan);
     const todayDay = getElapsedPlanDays(plan, now) + 1;
-    const totalDays = Math.max(params.daysToTarget || 30, todayDay);
+    const totalDays = Math.max(KASA_SHEET_DAYS, todayDay);
 
     const settled = ((state && state.slips) || [])
       .filter(s => s.settledAt && (s.status === 'won' || s.status === 'lost') && slipBelongsToPlan(s, plan))
@@ -1041,14 +1043,14 @@
       const dayEnd = addDaysTs(startTs, d);
       let actualBank = null;
       let isManual = false;
-      if (d <= todayDay) {
-        const m = manual[d];
-        if (m != null && !isNaN(Number(m))) {
-          actualBank = round(Number(m), 2);
-          isManual = true;
-        } else {
-          actualBank = round(S + settled.filter(x => x.ts < dayEnd).reduce((sum, x) => sum + x.net, 0), 2);
-        }
+      const m = manual[d];
+      if (m != null && m !== '' && !isNaN(Number(m))) {
+        // Excel gibi: elle girilen gerçek kasa her gün için geçerlidir
+        actualBank = round(Number(m), 2);
+        isManual = true;
+      } else if (d <= todayDay && settled.length) {
+        // Girilmemiş geçmiş günler sonuçlanan kuponlardan otomatik hesaplanır
+        actualBank = round(S + settled.filter(x => x.ts < dayEnd).reduce((sum, x) => sum + x.net, 0), 2);
       }
 
       const targetBank = theoreticalBank(S, g, d);
@@ -1099,6 +1101,38 @@
     syncActivePlan(state);
     return true;
   }
+
+  // Excel "KULLANICI GİRİŞLERİ": Başlangıç Kasası, Hedef Kasa, Risk Faktörü sayfadan değiştirilir
+  function updatePlanInputs(state, inputs = {}) {
+    if (!state || !state.plan) return false;
+    const plan = { ...state.plan };
+    if (inputs.startingBank != null && Number(inputs.startingBank) > 0) {
+      const newStart = round(Number(inputs.startingBank), 2);
+      // Başlangıç kasası değişirse kullanılabilir bakiye aynı farkla kayar
+      plan.availableBalance = round((Number(plan.availableBalance) || 0) + newStart - (Number(plan.startingBank) || 0), 2);
+      plan.startingBank = newStart;
+    }
+    if (inputs.targetBank != null && Number(inputs.targetBank) > 0) {
+      plan.targetBank = round(Number(inputs.targetBank), 2);
+    }
+    if (inputs.riskProfile) {
+      plan.riskProfile = normalizeProfileKey(inputs.riskProfile);
+      if (!state.settings) state.settings = {};
+      state.settings.riskProfile = plan.riskProfile;
+    }
+    plan.durationDays = getPlanDurationDays(plan);
+    state.plan = plan;
+    syncActivePlan(state);
+    return true;
+  }
+
+  // Excel dosyasındaki örnek kasa (Başlangıç 50 €, Hedef 1000 €, Medium, 1-12. gün gerçek kasa)
+  const KASA_V01_EXAMPLE = {
+    startingBank: 50,
+    targetBank: 1000,
+    riskProfile: 'medium',
+    dailyBanks: { 1: 68.66, 2: 75, 3: 86, 4: 103.72, 5: 128, 6: 255, 7: 275, 8: 278, 9: 300, 10: 320, 11: 320, 12: 300 }
+  };
 
   // state.plan değiştiğinde plans[] içindeki kopyayı da günceller
   function syncActivePlan(state) {
@@ -1788,7 +1822,7 @@
       availableBalance: round(startBank, 2),
       riskProfile: prof,
       customRisk,
-      dailyBanks: {},
+      dailyBanks: Object.assign({}, planParams.dailyBanks || {}),
       status: 'active'
     };
     initialPlan.durationDays = getPlanDurationDays(initialPlan);
@@ -1888,7 +1922,7 @@
       availableBalance: round(startBank, 2),
       riskProfile,
       customRisk,
-      dailyBanks: {},
+      dailyBanks: Object.assign({}, planParams.dailyBanks || {}),
       status: 'active'
     };
     newPlan.durationDays = getPlanDurationDays(newPlan);
@@ -2592,6 +2626,9 @@
     getPlanDurationDays,
     buildKasaSimulation,
     setPlanDailyBank,
+    updatePlanInputs,
+    KASA_V01_EXAMPLE,
+    KASA_SHEET_DAYS,
     syncActivePlan,
     classifyPlanStatus,
     getPlanMetrics,

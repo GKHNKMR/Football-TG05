@@ -486,17 +486,36 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .excel-table td{padding:7px 10px;border-bottom:1px solid var(--hair)}
 .excel-table tr.row-settled{background:rgba(232,255,63,0.04)}
 .excel-table tr:hover{background:rgba(255,255,255,0.03)}
-.excel-table th.grp{text-align:center;font-size:10.5px;color:var(--text);letter-spacing:.06em}
+.excel-table th.grp{text-align:center;font-size:10.5px;color:#fff;background:#2563EB;letter-spacing:.06em}
 .excel-table .col-sep{border-left:2px solid var(--line)}
 .excel-table td.below-target{background:color-mix(in srgb,var(--bad) 18%,transparent)}
 .excel-table tr.row-today td{font-weight:800}
-.excel-table tr.row-future td.real{color:var(--muted)}
-.kasa-input{width:92px;padding:4px 6px;font:inherit;font-size:11.5px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px}
-.kasa-input.manual{border-color:#38bdf8}
-.kasa-auto-params{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:12px}
-.kasa-auto-params .kap{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.kasa-auto-params .kap span{display:block;font-size:10px;text-transform:uppercase;font-weight:800;color:var(--muted)}
-.kasa-auto-params .kap b{display:block;font-size:14px;font-weight:900;margin-top:3px}
+.kasa-sim-table td,.kasa-sim-table th{text-align:right;white-space:nowrap}
+.kasa-sim-table td.real{padding:3px 6px}
+.kasa-input{width:100%;min-width:84px;max-width:120px;padding:4px 6px;font:inherit;font-size:11.5px;text-align:right;color:var(--text);background:transparent;border:1px solid transparent;border-radius:6px}
+.kasa-input:hover,.kasa-input:focus{border-color:var(--line);background:var(--panel2);outline:none}
+.kasa-input.auto{color:var(--muted);font-style:italic}
+.ks-table-wrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.ks-note{margin-top:10px;font-size:11px;color:var(--muted)}
+.kasa-sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.ks-title{font-size:16px;font-weight:900;letter-spacing:.04em;margin:0 0 14px}
+.ks-top{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:16px;align-items:start}
+.ks-left{display:flex;flex-direction:column;gap:12px}
+.ks-block{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ks-block-h{font-size:10.5px;font-weight:900;letter-spacing:.06em;color:#fff;background:#2563EB;border-radius:6px;padding:4px 8px;margin-bottom:6px}
+.ks-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px}
+.ks-row b{font-weight:900}
+.ks-input{width:120px;padding:5px 8px;font:inherit;font-size:12.5px;font-weight:800;text-align:right;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px}
+select.ks-input{text-align:left}
+.ks-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ks-summary div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.ks-summary span{display:block;font-size:9.5px;font-weight:900;letter-spacing:.05em;color:var(--muted)}
+.ks-summary b{display:block;font-size:14px;font-weight:900;margin-top:2px}
+.ks-chart{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.ks-chart-title{text-align:center;font-size:14px;color:var(--muted);margin-bottom:4px}
+.ks-legend{display:flex;justify-content:center;gap:18px;font-size:11.5px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+.ks-legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+@media (max-width:760px){.ks-top{grid-template-columns:1fr}}
 .adaptive-card{background:color-mix(in srgb,var(--bad) 6%,var(--panel));border:1px solid color-mix(in srgb,var(--bad) 35%,var(--line));border-radius:14px;padding:16px;margin-bottom:14px}
 .adapt-head h3{font-size:14px;font-weight:900;color:var(--text);margin:0 0 4px}
 .adapt-head p{font-size:11.5px;color:var(--muted);margin:0 0 12px}
@@ -1245,8 +1264,8 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 </div>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
-<script src="js/paper_engine.js?v=20260923-kasa-v01"></script>
-<script src="js/paper_ui.js?v=20260923-kasa-v01"></script>
+<script src="js/paper_engine.js?v=20260923-kasa-v01b"></script>
+<script src="js/paper_ui.js?v=20260923-kasa-v01b"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
 <script src="js/stats_ui.js?v=20260923-r6"></script>

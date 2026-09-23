@@ -227,7 +227,7 @@ def main():
         assert (hi['dailyGrowthRate'], hi['reservePct'], hi['daysToTarget'], hi['theoreticalAtTargetDay']) == (0.25, 0.50, 14, 1136.87)
         assert kasa_res['planDays'] == 22
         rows = kasa_res['sim']['rows']
-        assert kasa_res['sim']['todayDay'] == 3 and len(rows) == 22
+        assert kasa_res['sim']['todayDay'] == 3 and len(rows) == 365  # Excel sayfası 365 gün
         # Gün 1: Gerçek 68,66 → değişim 18,66 (başlangıca göre), büyüme %37,32; hedef 57,50, kazanç 7,50
         assert rows[0]['actualBank'] == 68.66 and rows[0]['isManual'] is True
         assert rows[0]['dailyChange'] == 18.66 and rows[0]['dailyGrowthPct'] == 37.32
@@ -236,14 +236,28 @@ def main():
         # Gün 2: 60 < 66,13 hedef → kırmızı (Excel koşullu biçim)
         assert rows[1]['targetBank'] == 66.13 and rows[1]['belowTarget'] is True
         assert rows[1]['dailyChange'] == -8.66
-        # Gün 3 (bugün): elle giriş yok → kuponlardan otomatik (50); gelecek günler boş
-        assert rows[2]['actualBank'] == 50.0 and rows[2]['isManual'] is False
+        # Gün 3 (bugün): elle giriş ve sonuçlanan kupon yok → Excel'deki gibi boş
+        assert rows[2]['actualBank'] is None and rows[2]['dailyChange'] is None
         assert rows[3]['actualBank'] is None
         assert rows[21]['targetReachPct'] == 100.0
         assert kasa_res['slipPlanId'] == kasa_res['planId']
         assert kasa_res['balAfterAdd'] == 40.0 and kasa_res['balAfterWin'] == 55.0
         assert kasa_res['todayAfter']['actualBank'] == 55.0  # 50 + 10 * (1.5 - 1)
-        print("  ✓ Kasa Simülasyonu v01: hedef günü (32/22/14), teorik kasa, GERÇEK/HEDEF tablosu ve kırmızı işaretleme doğrulandı.")
+        # Excel dosyasındaki örnek kasa: 1-12. gün gerçek kasa (gelecek günler de elle girilebilir)
+        ex_res = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const st = PE.createInitialState({ riskProfile: 'medium' }, PE.KASA_V01_EXAMPLE);
+            const sim = PE.buildKasaSimulation(st.plan, st);
+            PE.updatePlanInputs(st, { riskProfile: 'high', targetBank: 2000 });
+            return { real: sim.rows.slice(0, 13).map(r => r.actualBank), below: sim.rows.slice(0, 12).map(r => r.belowTarget),
+                     d12growth: sim.rows[11].dailyGrowthPct, afterDays: st.plan.durationDays, afterPlans: st.plans[0].riskProfile };
+        }""")
+        assert ex_res['real'] == [68.66, 75, 86, 103.72, 128, 255, 275, 278, 300, 320, 320, 300, None]
+        # Excel koşullu biçim: 1-12. günlerin hepsi teorik hedefin üstünde (örn. 12. gün 300 > 267,51) → kırmızı yok
+        assert ex_res['below'] == [False] * 12
+        assert ex_res['d12growth'] == -6.25  # 300 / 320 - 1
+        assert ex_res['afterDays'] == 17 and ex_res['afterPlans'] == 'high'  # ROUNDUP(LN(40)/LN(1.25)) = 17
+        print("  ✓ Kasa Simülasyonu v01: hedef günü (32/22/14), teorik kasa, GERÇEK/HEDEF tablosu, Excel örnek verisi ve kırmızı işaretleme doğrulandı.")
 
         # ----------------------------------------------------------------------
         # TEST 3: Senaryo B — Öneriyi Düzenleme (Maç Çıkar/Ekle & Canlı Güncelleme)

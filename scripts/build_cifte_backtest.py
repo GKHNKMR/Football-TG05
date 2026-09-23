@@ -43,6 +43,10 @@ def goal_range_probabilities(grid):
         '5+': sum(totals[n] for n in range(5, 19)),
     }
 
+def permille(p):
+    # Aşağı yuvarla: %74,96 binde 750'ye yuvarlanıp ≥%75 vurgu eşiğini yanlışlıkla geçmesin
+    return int(float(p) * 1000 + 1e-9)
+
 def empty_stat():
     return {
         'total': 0,
@@ -61,6 +65,8 @@ by_league = {league: empty_stat() for league in DIVISIONS.values()}
 by_season = {season_label(sz): empty_stat() for sz in TARGET_SEASONS}
 by_season_league = {season_label(sz): {league: empty_stat() for league in DIVISIONS.values()} for sz in TARGET_SEASONS}
 all_matches = []
+# İstatistikler sekmesi: 5 sezonun TÜM maçları (kısıtlı olanlar dahil, bayraklı)
+stats_rows = []
 
 divisions = {d: load_division(d) for d in DIVISIONS}
 
@@ -166,6 +172,14 @@ for div, league in DIVISIONS.items():
             record(by_season[szn_name])
             record(by_season_league[szn_name][league])
 
+            stats_rows.append([
+                m.get('date', ''), league, to_pretty(league, m['home']), to_pretty(league, m['away']),
+                act_h, act_a,
+                permille(pred['p_over_0_5']), permille(pred['p_over_1_5']), permille(pred['p_over_2_5']),
+                permille(p_1x), permille(p_12), permille(p_x2),
+                1 if is_limited else 0,
+            ])
+
             all_matches.append({
                 'date': m.get('date', ''),
                 'season': szn_name,
@@ -213,6 +227,59 @@ final_data = {
     'by_season_league': {sz: {lg: finalize_stats(v) for lg, v in lgdict.items()} for sz, lgdict in by_season_league.items()},
     'samples': samples
 }
+
+# İstatistikler sekmesi için kompakt maç listesi (eskiden yeniye).
+# Olasılıklar binde birlik tamsayı: p05, p15, p25, p1x, p12, px2.
+stats_rows.sort(key=lambda r: (r[0], r[1], r[2]))
+stats_payload = {
+    'generated_at': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+    'seasons': [season_label(sz) for sz in TARGET_SEASONS],
+    'fields': ['date', 'league', 'home', 'away', 'hg', 'ag', 'p05', 'p15', 'p25', 'p1x', 'p12', 'px2', 'limited'],
+    'thresholds': {'p05': 950, 'p15': 850, 'p25': 750, 'dc': 750},
+    'rows': stats_rows,
+}
+with open('data/stats-5season.json', 'w', encoding='utf-8') as f:
+    json.dump(stats_payload, f, ensure_ascii=False, separators=(',', ':'))
+print(f"Wrote data/stats-5season.json with {len(stats_rows)} matches.")
+
+# Ana sayfa (Bülten) şeridi: yalnızca vurgulanan tahminlerin başarısı.
+# Kısıtlı veri hariç; her pazar kendi eşiğiyle (0.5≥%95, 1.5≥%85, 2.5≥%75, 1X/12/X2≥%75).
+HL_MARKETS = [
+    ('0.5+', 6, 950, lambda hg, ag: hg + ag >= 1),
+    ('1.5+', 7, 850, lambda hg, ag: hg + ag >= 2),
+    ('2.5+', 8, 750, lambda hg, ag: hg + ag >= 3),
+    ('1X', 9, 750, lambda hg, ag: hg >= ag),
+    ('12', 10, 750, lambda hg, ag: hg != ag),
+    ('X2', 11, 750, lambda hg, ag: ag >= hg),
+]
+hl_markets = {name: {'n': 0, 'h': 0} for name, *_ in HL_MARKETS}
+hl_match_n = hl_match_h = 0
+for r in stats_rows:
+    if r[12]:
+        continue
+    outcomes = []
+    for name, idx, thr, hit in HL_MARKETS:
+        if r[idx] >= thr:
+            ok = hit(r[4], r[5])
+            outcomes.append(ok)
+            hl_markets[name]['n'] += 1
+            hl_markets[name]['h'] += int(ok)
+    if outcomes:
+        hl_match_n += 1
+        hl_match_h += int(all(outcomes))
+pick_n = sum(v['n'] for v in hl_markets.values())
+pick_h = sum(v['h'] for v in hl_markets.values())
+summary = {
+    'generated_at': stats_payload['generated_at'],
+    'seasons': stats_payload['seasons'],
+    'total_matches': len(stats_rows),
+    'picks': {'n': pick_n, 'h': pick_h, 'pct': round(pick_h / pick_n * 100, 1) if pick_n else 0.0},
+    'matches': {'n': hl_match_n, 'h': hl_match_h, 'pct': round(hl_match_h / hl_match_n * 100, 1) if hl_match_n else 0.0},
+    'markets': {k: dict(v, pct=round(v['h'] / v['n'] * 100, 1) if v['n'] else 0.0) for k, v in hl_markets.items()},
+}
+with open('data/stats-summary.json', 'w', encoding='utf-8') as f:
+    json.dump(summary, f, ensure_ascii=False, indent=1)
+print(f"Wrote data/stats-summary.json: highlighted picks {pick_h}/{pick_n}, matches {hl_match_h}/{hl_match_n}")
 
 js_content = f"window.CIFTE_BACKTEST_DATA = {json.dumps(final_data, ensure_ascii=False, indent=2)};\n"
 with open('js/cifte_backtest_data.js', 'w', encoding='utf-8') as f:

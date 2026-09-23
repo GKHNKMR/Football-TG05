@@ -21,13 +21,15 @@ with sync_playwright() as p:
     time.sleep(1.5)
     
     # 1. Verify #tab-cifte exists next to #tab-pred
-    tabs = [t.inner_text().strip() for t in page.query_selector_all('.tabs .tab')]
+    # Menüde yalnızca 3 ana sekme görünür; Çifte Şans sekmesi gizli ama kodu duruyor
+    tabs = [t.inner_text().strip() for t in page.query_selector_all('.tabs .tab:not([hidden])')]
     print(f"Mevcut Sekmeler ({len(tabs)}): {tabs}")
-    assert '🎲 Çifte Şans & Gol Aralığı' in tabs, "tab-cifte bulunamadı!"
+    assert [t.upper() for t in tabs] == ['BÜLTEN', 'İSTATİSTİKLER', 'SANAL KASA'], f"Ana sekmeler hatalı: {tabs}"
+    assert page.query_selector('#tab-cifte'), "tab-cifte DOM'da bulunamadı!"
     
     # 2. Click #tab-cifte: doğrudan Model Doğruluğu açılmalı
     print("\n--- 1. '🎲 Çifte Şans & Gol Aralığı' Model Doğruluğu Açılıyor ---")
-    page.click('#tab-cifte')
+    page.evaluate("setTab('cifte')")
     time.sleep(0.8)
     
     pane = page.query_selector('#pane-cifte')
@@ -65,8 +67,9 @@ with sync_playwright() as p:
     print(f"  Tahminler bülteni satır sayısı: {len(pred_rows)}")
     assert len(pred_rows) > 0, "Tahminler sekmesi boş kaldı!"
     pred_headers = [h.inner_text().strip() for h in page.query_selector_all('#pane-pred .head .sortcol')]
-    assert len(pred_headers) == 5, f"Tahminler tablosu 5 sütunlu olmalı, şu an: {len(pred_headers)}"
-    assert any('ŞANS' in h.upper() for h in pred_headers), "Çifte Şans sütunu bulunamadı!"
+    assert len(pred_headers) == 7, f"Tahminler tablosu 7 sütunlu olmalı, şu an: {len(pred_headers)}"
+    assert pred_headers[1:] == ['0.5+', '1.5+', '2.5+', '1X', '12', 'X2'], f"Bülten sütunları hatalı: {pred_headers}"
+    assert 'Gol' not in page.inner_text('#rows').replace('Gol ', ''), "Bültende gol aralığı olmamalı"
 
     # Seçili ligde maç yoksa başka ligden maç geri gelmemeli (eski fallback hatası)
     page.evaluate("""() => {
@@ -90,16 +93,19 @@ with sync_playwright() as p:
     # Vurgu kapalıyken Çifte Şans dahil hiçbir kutu yanıp sönmemeli
     page.select_option('#hlSel', 'off')
     time.sleep(0.2)
-    assert not page.query_selector('#rows .dc-pill.hot'), "Vurgu kapalıyken Çifte Şans kutusu yanıyor"
+    assert not page.query_selector('#rows .dcp .pill.hot'), "Vurgu kapalıyken Çifte Şans kutusu yanıyor"
     assert not page.query_selector('#rows .row.dc-highlighted'), "Vurgu kapalıyken Çifte Şans satırı vurgulanıyor"
 
     # Tüm vurgular açıldığında uygun Çifte Şans kutuları yeniden yanmalı
     page.select_option('#hlSel', 'all')
     time.sleep(0.2)
     eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
-    assert all(r.query_selector('.dc-pill.is-highlight.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen yeşil vurgu eksik"
-    dc_animation = page.eval_on_selector('.dc-pill.is-highlight.hot', "el => getComputedStyle(el).animationName")
-    assert dc_animation == 'pillhot', f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"
+    assert all(r.query_selector('.dcp .pill.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen vurgu eksik"
+    dc_animation = page.eval_on_selector('.dcp .pill.hot', "el => getComputedStyle(el).animationName")
+    assert dc_animation in ('pillhot', 'pillhot2'), f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"
+    for r in eligible_rows:   # vurgulanan her ÇŞ hücresi gerçekten ≥%75
+        for v in r.eval_on_selector_all('.dcp .pill.hot', "e=>e.map(x=>parseFloat(x.textContent))"):
+            assert v >= 75, f"%75 altı ÇŞ vurgulandı: {v}"
     print(f"  Çifte Şans yüksek güvenli maç sayısı: {len(eligible_rows)}")
 
     # Kısıtlı veri ve kritik eksik oyunculu iki sentetik maç asla ÇŞ vurgusu almamalı

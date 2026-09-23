@@ -28,7 +28,7 @@ with sync_playwright() as p:
     # TEST 1: Model Doğruluğu (#tab-bt -> #pane-bt) Table Content
     # -------------------------------------------------------------------------
     print("\n--- TEST 1: Model Doğruluğu (#pane-bt) Tabloları ---")
-    page.click('#tab-bt')
+    page.evaluate("setTab('bt')")
     time.sleep(0.5)
     assert page.is_visible('#pane-bt') is True, "pane-bt must be visible after clicking tab-bt"
     
@@ -90,7 +90,7 @@ with sync_playwright() as p:
     print("  ✓ Minimum risk kasa planı oluşturuldu.")
 
     # Go to Gerçek Kuponlarım (#pane-rec)
-    page.click('#tab-rec')
+    page.evaluate("setTab('rec')")
     time.sleep(0.5)
     assert page.is_visible('#pane-rec') is True, "pane-rec should be visible"
     
@@ -117,7 +117,7 @@ with sync_playwright() as p:
     # TEST 3: 30 Günlük Kasa & Kuponlarım Simülasyonu Başarı Oranları (≥95%, ≥85%, ~1.35x)
     # -------------------------------------------------------------------------
     print("\n--- TEST 3: 30-Day Historical Simulation & Success Rates ---")
-    page.click('#tab-sim-kasa')
+    page.evaluate("setTab('sim-kasa')")
     time.sleep(0.5)
     assert page.is_visible('#pane-sim-kasa') is True
     
@@ -172,9 +172,10 @@ with sync_playwright() as p:
         ('#tab-bt', '#pane-bt'),
         ('#tab-res', '#pane-res'),
         ('#tab-cpn', '#pane-cpn'),
-        ('#tab-pred', '#pane-pred')
+        ('#tab-pred', '#pane-pred'),
+        ('#tab-stats', '#pane-stats')
     ]:
-        page.click(tab_id)
+        page.evaluate(f"setTab('{tab_id[5:]}')")
         time.sleep(0.3)
         assert page.is_visible(pane_id) is True, f"{pane_id} must be visible when clicking {tab_id}"
         print(f"  ✓ {tab_id} -> {pane_id} başarıyla açıldı ve aktif.")

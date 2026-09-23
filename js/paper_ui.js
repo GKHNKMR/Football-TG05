@@ -566,7 +566,7 @@
                 <th>Gün</th>
                 <th>Tarih</th>
                 <th>Teorik Kasa (${curr})</th>
-                <th>Gerçek Kasa (${curr})</th>
+                <th>Sanal Kasa (${curr})</th>
                 <th>Gün Sonu Kasa</th>
                 <th>Günlük Büyüme</th>
                 <th>Total Büyüme</th>
@@ -797,7 +797,7 @@
             🎫 Örnek Kuponlarım ve Model Analizine Git →
           </button>
           <button type="button" class="btn-sec" id="btnGoToPlan" style="padding:8px 16px;font-size:12px;font-weight:700;">
-            💼 Kendi Gerçek Kasamı Oluştur →
+            💼 Kendi Sanal Kasamı Oluştur →
           </button>
         </div>
       </div>
@@ -945,7 +945,7 @@
       <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <h4 style="margin:0;font-size:14px;color:var(--text);">🎫 ${esc(prof.name)} · 31 Günlük Oynanan Tüm Kuponlar ve Maç Dökümü</h4>
         <button type="button" class="btn-sec" id="btnKuponGoToPlan" style="padding:6px 14px;font-size:11.5px;font-weight:700;">
-          💼 Kendi Gerçek Kasamı Başlat →
+          💼 Kendi Sanal Kasamı Başlat →
         </button>
       </div>
 
@@ -1482,7 +1482,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Kasa Planım Ekranı (#pane-plan) — Gerçek Kasa
+  // Kasa Planım Ekranı (#pane-plan) — Sanal Kasa
   // ---------------------------------------------------------------------------
 
   function renderPlanNoLossCardHtml(plan, profKey, curr) {
@@ -1684,7 +1684,7 @@
         </div>
       </div>
 
-      <!-- Hiç Maç Kaybetmeme Durumu / Sıfır Kayıp Kartı (Gerçek Kasa) -->
+      <!-- Hiç Maç Kaybetmeme Durumu / Sıfır Kayıp Kartı (Sanal Kasa) -->
       ${renderPlanNoLossCardHtml(currentPlan, profKey, curr)}
 
       <!-- Hedeflenen Sürede Kasa Ulaşma Grafiği (Sadece Seçili Risk ve Sıfır Kayıp Eğrisi) -->

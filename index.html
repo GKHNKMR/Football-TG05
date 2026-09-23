@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b0f">
+<meta name="theme-color" content="#203342">
 <title>BETAVUS — Football Goal Probability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Poppins:ital,wght@1,800;1,900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#090b0f;--panel:#11151c;--panel2:#171c24;--line:#252c36;--text:#f4f6f8;
@@ -689,57 +692,230 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 @media(max-width:768px){
   .intro-grid{grid-template-columns:1fr}
 }
+/* ================================================================
+   2026-09 yeniden tasarım — kolay okunur açık tema (varsayılan).
+   Referans: thepunterspage.com — beyaz zemin, lacivert üst menü,
+   turkuaz vurgu, Nunito Sans metin + Poppins başlık.
+   ================================================================ */
+:root[data-theme="light"]{
+  --bg:#f2f4f5;--panel:#ffffff;--panel2:#f3f6f8;--line:#dfe5ea;--text:#203342;
+  --muted:#5b6b79;--accent:#009f93;--accent-ink:#ffffff;--good:#009f93;--good-ink:#ffffff;
+  --head:#203342;--headtext:#ffffff;--hair:rgba(0,0,0,.06);--bad:#c0392b;
+  --navy:#203342;--navy2:#13293d;--shadow:0 2px 10px rgba(19,41,61,.08);
+}
+:root{--navy:#0e1218;--navy2:#0b0d10;--shadow:0 2px 10px rgba(0,0,0,.35)}
+body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+:root[data-theme="light"] body{background:var(--bg)}
+.wrap{padding-top:0}
+
+/* --- üst menü (tam genişlik lacivert bar) --- */
+.top{display:block;margin:0 0 0;background:var(--navy);box-shadow:0 0 0 100vmax var(--navy);clip-path:inset(0 -100vmax)}
+.topbar{display:flex;align-items:center;gap:18px;min-height:60px}
+.top .brand{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:26px;letter-spacing:-.5px;text-decoration:none;flex:none}
+.top .brand .b1,:root[data-theme="light"] .top .brand .b1{color:#2ed3c3}
+.top .brand .b2,:root[data-theme="light"] .top .brand .b2{color:#ffffff}
+.top .tabs{background:transparent;border:0;border-radius:0;padding:0;margin:0;gap:2px;width:auto;flex:1;align-self:stretch;align-items:stretch}
+.top .tab{color:#dbe4ea;border-radius:0;padding:0 18px;font-family:"Nunito Sans",sans-serif;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;border-bottom:3px solid transparent}
+.top .tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+.top .tab.active{background:transparent;color:#fff;border-bottom-color:#2ed3c3}
+.top .tab[hidden]{display:none}
+.top .topbtns{margin-left:auto;align-items:center}
+.top .iconbtn{background:transparent;border-color:rgba(255,255,255,.22);color:#fff;height:34px;min-width:34px;border-radius:8px}
+.top .iconbtn:hover{background:rgba(255,255,255,.1)}
+.acctbtn{height:34px;border:0;border-radius:8px;background:#009f93;color:#fff;font-weight:800;font-size:13px;padding:0 14px;cursor:pointer;white-space:nowrap;font-family:inherit}
+.acctbtn:hover{background:#00b3a5}
+.acctbtn.in{background:rgba(255,255,255,.12)}
+.hero{padding:22px 0 8px}
+.hero-t{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:24px;color:var(--text);line-height:1.2}
+.hero-s{color:var(--muted);font-size:14px;margin-top:4px}
+.st-h1{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:26px;margin:4px 0 6px;color:var(--text)}
+
+/* --- kartlar, tablolar, çipler --- */
+.table,.card,.tile{box-shadow:var(--shadow)}
+.table{border-radius:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card h2{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:18px;margin:0 0 8px}
+.chip{font-size:13px;padding:8px 13px}
+:root[data-theme="light"] .chip{background:#fff;color:var(--text)}
+.hotbtn{font-size:12px;padding:7px 12px}
+.sel{font-size:12px;padding:7px 10px}
+
+/* --- Bülten: 6 olasılık sütunu + gün başlıkları --- */
+.head,.row{grid-template-columns:minmax(230px,1fr) repeat(6,70px);gap:6px}
+.head{font-size:12px;letter-spacing:.04em}
+.head .sortcol{text-align:center}
+.head .sortcol:first-child{text-align:left}
+.teams{font-size:16px}
+.league{font-size:11px}
+.kick{font-size:12.5px}
+.pill{min-width:62px;font-size:14px;padding:7px 4px;border-radius:8px}
+:root[data-theme="light"] .pill{background:#eef3f6;color:var(--text)}
+:root[data-theme="light"] .pill.hot{border:1px solid var(--good)}
+.dayhead{padding:9px 14px;background:var(--panel2);border-top:1px solid var(--line);font-weight:900;font-size:13px;color:var(--text);text-transform:capitalize}
+:root[data-theme="light"] .dayhead{background:#e8eef2}
+.dc-bulletin-note{font-size:13px}
+@keyframes pillhot2{0%,100%{background:var(--panel2);color:var(--good)}50%{background:var(--good);color:var(--good-ink)}}
+:root[data-theme="light"] .pill.hot{animation:pillhot2 1.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){:root[data-theme="light"] .pill.hot{animation:none;background:var(--good);color:var(--good-ink)}}
+
+/* --- Ana sayfa vurgu başarı şeridi --- */
+.hl-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--good);border-radius:12px;padding:14px 18px;margin:6px 0 14px;box-shadow:var(--shadow)}
+.hl-banner[hidden]{display:none}
+.hlb-main{display:flex;align-items:center;gap:14px}
+.hlb-v{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:34px;color:var(--good);line-height:1}
+.hlb-t b{display:block;font-size:15px}
+.hlb-t span{color:var(--muted);font-size:13px}
+.hlb-mk{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hlb-chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:4px 10px;font-size:12.5px;color:var(--muted)}
+.hlb-chip b{color:var(--text);margin-right:3px}
+.hlb-link{font-weight:800;font-size:13px;color:var(--good);margin-left:6px;text-decoration:underline}
+
+/* --- İstatistikler --- */
+.st-intro p{color:var(--muted);margin:0 0 12px;font-size:14px}
+.st-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.st-ctl .srch input{padding-left:12px}
+.st-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.st-kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.st-kpi.main{border-left:5px solid var(--good)}
+.st-kpi .v{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:30px;line-height:1.1}
+.st-kpi.main .v{color:var(--good)}
+.st-kpi .k{font-weight:800;font-size:13px;margin-top:4px}
+.st-kpi .n{color:var(--muted);font-size:12.5px;margin-top:2px}
+.st-note{color:var(--muted);font-size:13px;margin:0 0 10px}
+.st-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.st-table th{background:var(--head);color:var(--headtext);font-size:12px;font-weight:800;text-align:center;padding:8px 8px;white-space:nowrap}
+.st-table td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:center}
+.st-table th:first-child,.st-table td:first-child{text-align:left}
+.st-table tbody tr:hover{background:var(--panel2)}
+.st-strong{font-weight:900;color:var(--good)}
+.st-lg{white-space:nowrap}
+.st-barc{width:30%;min-width:80px}
+.st-bar{display:block;height:8px;border-radius:4px;background:var(--good)}
+.st-matches td{padding:6px 6px}
+.st-matches .st-d{white-space:nowrap;color:var(--muted);font-size:12.5px}
+.st-matches .st-m{text-align:left;min-width:210px;font-weight:700}
+.st-lgs{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.st-matches .st-s{font-weight:900;white-space:nowrap}
+.st-p{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
+.st-p.ok{color:var(--text);font-weight:700}
+.st-p i{font-style:normal;color:var(--good);font-weight:900;margin-left:3px}
+.st-p.hl{box-shadow:inset 0 0 0 2px var(--good);border-radius:6px;font-weight:900;color:var(--text)}
+.st-hlrow{background:color-mix(in srgb,var(--good) 5%,transparent)}
+.st-v{white-space:nowrap}
+.st-mut{color:var(--muted)}
+.st-legend.hl{box-shadow:inset 0 0 0 2px var(--good);border-radius:5px;padding:0 5px;font-weight:800;color:var(--text)}
+.st-pager{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;margin:10px 0;font-size:13px;color:var(--muted)}
+.st-pager .hotbtn:disabled{opacity:.4;cursor:default}
+
+.filters[hidden]{display:none}
+.st-card{min-width:0;overflow:hidden}
+.st-card .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#pane-stats{min-width:0}
+/* --- Alt bilgilendirme (BETAVUS nedir / değildir) --- */
+.intro-bottom{margin-top:26px}
+.intro-bottom .intro-box h4{font-size:15px}
+.intro-bottom .intro-box p{font-size:13.5px}
+
+/* --- Üyelik modalı --- */
+.auth-bg{position:fixed;inset:0;background:rgba(19,41,61,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:80}
+.auth-bg[hidden]{display:none}
+.auth{width:100%;max-width:440px;background:var(--panel);color:var(--text);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.auth-tabs{display:flex;background:var(--navy)}
+.auth-tabs button{flex:1;border:0;background:transparent;color:#dbe4ea;padding:14px;font-weight:800;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}
+.auth-tabs button.on{color:#fff;border-bottom-color:#2ed3c3}
+.auth-x{border:0;background:transparent;color:#fff;font-size:20px;padding:0 14px;cursor:pointer}
+.auth-body{padding:18px 20px 20px}
+.auth-body h3{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:20px;margin:0 0 4px}
+.auth-body p.a-sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.a-field{display:block;margin-bottom:10px}
+.a-field span{display:block;font-size:12.5px;font-weight:800;margin-bottom:4px}
+.a-field input,.a-field select{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:10px 11px;font-size:14px;font-family:inherit}
+.a-field input:focus,.a-field select:focus{outline:2px solid color-mix(in srgb,var(--good) 45%,transparent);border-color:var(--good)}
+.a-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.a-btn{width:100%;border:0;border-radius:8px;background:#009f93;color:#fff;font-weight:900;font-size:15px;padding:11px;cursor:pointer;font-family:inherit}
+.a-btn:disabled{opacity:.6;cursor:default}
+.a-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--line);background:#fff;color:#203342;border-radius:8px;padding:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
+.a-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:14px 0}
+.a-or::before,.a-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.a-msg{font-size:13px;margin:10px 0 0;padding:9px 11px;border-radius:8px;background:var(--panel2)}
+.a-msg.err{background:rgba(192,57,43,.1);color:var(--bad)}
+.a-msg.ok{background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--text)}
+.a-msg[hidden]{display:none}
+.a-link{background:none;border:0;color:var(--good);font-weight:800;cursor:pointer;padding:0;font-size:13px;font-family:inherit}
+.a-prof{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:6px 0 14px}
+.a-prof dt{color:var(--muted);font-weight:700}
+.a-prof dd{margin:0;font-weight:800}
+.sync-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;z-index:90;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;gap:10px;align-items:center}
+.sync-toast[hidden]{display:none}
+.sync-toast button{border:0;background:#009f93;color:#fff;border-radius:6px;padding:5px 10px;font-weight:800;cursor:pointer}
+
+@media(max-width:860px){
+  .topbar{flex-wrap:wrap;gap:6px 12px;padding:8px 0 0}
+  .top .tabs{order:3;flex:1 0 100%;overflow-x:auto;min-height:44px}
+  .top .tab{padding:0 12px;font-size:13px;white-space:nowrap}
+}
+@media(max-width:650px){
+  body{font-size:14px}
+  .wrap{padding:0 12px 32px}
+  .top .brand{font-size:22px}
+  .acctbtn{padding:0 10px;font-size:12px}
+  .top .iconbtn{min-width:30px;height:30px;padding:0 6px}
+  .hero{padding:14px 0 4px}.hero-t{font-size:19px}.hero-s{font-size:13px}
+  /* Bülten: maç bilgisi üstte, 6 olasılık altta etiketli ızgara */
+  .head{display:none}
+  .row{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:11px 10px}
+  .row .match{grid-column:1/-1;margin-bottom:4px}
+  .row .prob{flex-direction:column;align-items:center;gap:2px}
+  .row .prob::before{content:attr(data-l);font-size:10.5px;font-weight:900;color:var(--muted)}
+  .pill{min-width:0;width:100%;font-size:12.5px;padding:6px 1px}
+  .teams{font-size:15px;white-space:normal}
+  .hl-banner{padding:12px 14px}.hlb-v{font-size:28px}
+  .st-kpis{grid-template-columns:1fr}
+  .st-table{font-size:12.5px}
+  .a-row{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .st-card{padding:12px 10px}
+}
 </style>
 
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div>
-      <div class="brand"><span class="b1">BET</span><span class="b2">AVUS</span></div>
-      <div class="sub"><b>B</b>etting <b>A</b>nalysis, <b>V</b>ariance &amp; <b>U</b>ncertainty <b>S</b>ystem</div>
-      <div class="sub2">A Football Goal Probability Engine</div>
-    </div>
-    <div class="topbtns">
-      <button class="iconbtn" id="infoBtn" type="button" title="Nasıl hesaplanıyor?">?</button>
-      <button class="iconbtn" id="themeBtn" type="button" title="Tema">🌙</button>
-      <button class="iconbtn" id="refresh" type="button" title="Yenile">↻</button>
+    <div class="topbar">
+      <a class="brand" href="#" onclick="setTab('pred');return false" aria-label="BETAVUS ana sayfa"><span class="b1">BET</span><span class="b2">AVUS</span></a>
+      <div class="tabs" role="tablist">
+        <button class="tab" id="tab-pred" type="button">Bülten</button>
+        <button class="tab" id="tab-stats" type="button">İstatistikler</button>
+        <button class="tab" id="tab-plan" type="button">Sanal Kasa</button>
+        <!-- Gizli sekmeler: kodları korunuyor, menüde görünmüyor -->
+        <button class="tab tab-hidden" id="tab-sim-kasa" type="button" hidden>Örnek Kasa Simülasyonu</button>
+        <button class="tab tab-hidden" id="tab-sim-kupon" type="button" hidden>Örnek Kuponlarım Simülasyonu</button>
+        <button class="tab tab-hidden" id="tab-rec" type="button" hidden>Gerçek Kuponlarım</button>
+        <button class="tab tab-hidden" id="tab-bt" type="button" hidden>Model Doğruluğu</button>
+        <button class="tab tab-hidden" id="tab-res" type="button" hidden>Tahmin vs Gerçekleşen</button>
+        <button class="tab tab-hidden admin-tab" id="tab-cpn" type="button" hidden>Admin Kuponlarım</button>
+        <button class="tab tab-hidden" id="tab-cifte" type="button" hidden>Çifte Şans &amp; Gol Aralığı</button>
+      </div>
+      <div class="topbtns">
+        <button class="iconbtn" id="infoBtn" type="button" title="Nasıl hesaplanıyor?">?</button>
+        <button class="iconbtn" id="themeBtn" type="button" title="Tema">🌙</button>
+        <button class="iconbtn" id="refresh" type="button" title="Yenile">↻</button>
+        <button class="acctbtn" id="acctBtn" type="button">Giriş / Kayıt Ol</button>
+      </div>
     </div>
   </header>
-
-  <div class="betavus-intro-card">
-    <div class="intro-grid">
-      <div class="intro-box is-what">
-        <div class="intro-tag">🛡️ BETAVUS NEDİR?</div>
-        <h4>Yapay Zekâ Destekli Paper-Betting &amp; Kasa Yönetimi</h4>
-        <p>Futbol toplam gol pazarları (0.5Ü, 1.5Ü, 2.5Ü) için Poisson ve Dixon-Coles matematiksel olasılık modelleriyle çalışan, <b>risksiz sanal kasa simülasyonu, akıllı kupon planlama ve disiplinli portföy yönetimi</b> platformudur.</p>
-      </div>
-      <div class="intro-box is-not">
-        <div class="intro-tag">🚫 BETAVUS NE DEĞİLDİR?</div>
-        <h4>Bahis Operatörü, Kumarhane veya Ödeme Aracı Değildir!</h4>
-        <p>BETAVUS <b>asla bahis kabul etmez, para yatırma/çekme yapmaz</b> ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve getiriler sanaldır; kesin kazanç vaat etmez. Kullanıcının para kaybetmeden stratejisini ölçmesini sağlar.</p>
-      </div>
-    </div>
+  <div class="hero">
+    <div class="hero-t">Betting Analysis, Variance &amp; Uncertainty System</div>
+    <div class="hero-s">Poisson + Dixon-Coles tabanlı futbol olasılık motoru · 9 lig</div>
   </div>
-
-  <div class="tabs" role="tablist">
-    <button class="tab active" id="tab-sim-kasa" type="button">📈 Örnek Kasa Simülasyonu</button>
-    <button class="tab" id="tab-sim-kupon" type="button">🎫 Örnek Kuponlarım Simülasyonu</button>
-    <button class="tab" id="tab-plan" type="button">💼 Gerçek Kasa</button>
-    <button class="tab" id="tab-rec" type="button">⚡ Gerçek Kuponlarım</button>
-    <button class="tab" id="tab-bt" type="button">📊 Model Doğruluğu</button>
-    <button class="tab" id="tab-res" type="button">🎯 Tahmin vs Gerçekleşen</button>
-    <button class="tab admin-tab" id="tab-cpn" type="button">🛠️ Admin Kuponlarım</button>
-    <button class="tab" id="tab-pred" type="button">⚽ Tahminler (Bülten)</button>
-    <button class="tab" id="tab-cifte" type="button">🎲 Çifte Şans &amp; Gol Aralığı</button>
-  </div>
-
   <nav class="filters" id="filters" hidden></nav>
 
   <section id="pane-sim-kasa"></section>
   <section id="pane-sim-kupon" hidden></section>
 
   <section id="pane-pred" hidden>
+    <div id="hlBanner" class="hl-banner"></div>
     <div class="datebar">
       <span id="window">Pazar–Pazar</span>
       <span class="dbar-right">
@@ -756,7 +932,7 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
       <span class="badge b0">○</span> sadece lig ortalaması
     </div>
     <div class="dc-bulletin-note">
-      <b>🎲 Çifte Şans yüksek güven filtresi:</b> Yalnızca tam model girdili, kısıtlı verisi ve kritik eksik oyuncu uyarısı olmayan, olasılığı <b>≥%75</b> maçlar yeşil vurgulanır. Vurgu garanti anlamına gelmez.
+      <b>Vurgu eşikleri:</b> 0.5+ ≥%95 · 1.5+ ≥%85 · 2.5+ ≥%75 · 1X / 12 / X2 ≥%75. Kısıtlı veri veya kritik eksik oyuncu uyarısı olan maçlar vurgulanmaz. Vurgu garanti anlamına gelmez.
     </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
@@ -772,12 +948,15 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
         <div class="sortcol" data-sort="p_over_0_5">0.5+</div>
         <div class="sortcol" data-sort="p_over_1_5">1.5+</div>
         <div class="sortcol" data-sort="p_over_2_5">2.5+</div>
-        <div class="sortcol" data-sort="dc">Çifte Şans ≥%75</div>
+        <div class="sortcol" data-sort="dc_1X" title="Ev sahibi kazanır veya berabere">1X</div>
+        <div class="sortcol" data-sort="dc_12" title="Beraberlik olmaz">12</div>
+        <div class="sortcol" data-sort="dc_X2" title="Deplasman kazanır veya berabere">X2</div>
       </div>
       <div id="rows"><div class="loading">Veriler yükleniyor…</div></div>
     </div>
   </section>
   <section id="pane-cifte" hidden></section>
+  <section id="pane-stats" hidden><div id="statsBody"><div class="loading">İstatistikler yükleniyor…</div></div></section>
 
   <section id="pane-res" hidden>
     <p class="lede" id="res-lede"></p>
@@ -949,6 +1128,21 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
     <div id="gunBody"></div>
   </section>
 
+  <div class="betavus-intro-card intro-bottom">
+    <div class="intro-grid">
+      <div class="intro-box is-what">
+        <div class="intro-tag">🛡️ BETAVUS NEDİR?</div>
+        <h4>Yapay Zekâ Destekli Paper-Betting &amp; Kasa Yönetimi</h4>
+        <p>Futbol toplam gol pazarları (0.5Ü, 1.5Ü, 2.5Ü) için Poisson ve Dixon-Coles matematiksel olasılık modelleriyle çalışan, <b>risksiz sanal kasa simülasyonu, akıllı kupon planlama ve disiplinli portföy yönetimi</b> platformudur.</p>
+      </div>
+      <div class="intro-box is-not">
+        <div class="intro-tag">🚫 BETAVUS NE DEĞİLDİR?</div>
+        <h4>Bahis Operatörü, Kumarhane veya Ödeme Aracı Değildir!</h4>
+        <p>BETAVUS <b>asla bahis kabul etmez, para yatırma/çekme yapmaz</b> ve kullanıcı adına kupon oynatmaz. Gösterilen tüm bakiyeler ve getiriler sanaldır; kesin kazanç vaat etmez. Kullanıcının para kaybetmeden stratejisini ölçmesini sağlar.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="foot" id="updated">Analizler hazırlanıyor</div>
 </div>
 
@@ -970,6 +1164,10 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 <script src="js/paper_ui.js"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
+<script src="js/stats_ui.js?v=20260923-stats"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/auth_config.js?v=20260923-auth"></script>
+<script src="js/auth_sync.js?v=20260923-auth"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
@@ -1001,15 +1199,15 @@ const save=(k,v)=>{try{localStorage.setItem('betavus.'+k,v)}catch(e){}};
 const loadJSON=(k,d)=>{try{const v=localStorage.getItem('betavus.'+k);return v?JSON.parse(v):d}catch(e){return d}};
 const saveJSON=(k,v)=>{try{localStorage.setItem('betavus.'+k,JSON.stringify(v))}catch(e){}};
 
-let tab=store('tab','sim-kasa');
-if(tab==='bt') tab='res';
-if(tab==='gun') tab='rec';
+const MAIN_TABS=['pred','stats','plan'];   // menüde görünen sekmeler: Bülten · İstatistikler · Sanal Kasa
+let tab=store('tab','pred');
+if(!MAIN_TABS.includes(tab)) tab='pred';
 // her sekmenin kendi lig filtresi var (Tahminler'de Primeira Liga seçmek
 // Kuponlarım'ı da o lige kilitlemesin - Kuponlarım hep "Tümü" ile başlar)
 let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res',store('league_bt','Tümü')),
-                   bt:store('league_bt','Tümü'),cpn:store('league_cpn','Tümü'),cifte:store('league_cifte','Tümü')};
+                   bt:store('league_bt','Tümü'),stats:store('league_stats','Tümü'),cpn:store('league_cpn','Tümü'),cifte:store('league_cifte','Tümü')};
 let selected=selectedByTab[tab]||'Tümü';
-let hlKey=store('hl','o05'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
+let hlKey=store('hl2','all'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
 let hotOnly=false;
 let resMode=store('res_mode','vurgu');  // 'vurgu' = vurgulanan tahminler, 'all' = tüm maçlar genel yön isabeti
 let vurguMatchOnly=false; // Detaylı Maç Listesi: sadece vurgulanan maçlar
@@ -1209,7 +1407,7 @@ function visible(list){
     if(hotOnly&&hlActive().length)r=r.filter(hlPass);
   }
   r=r.slice();
-  if(sortLine==='dc')r.sort((a,b)=>(doubleChanceInfo(b).pct||0)-(doubleChanceInfo(a).pct||0));
+  if(sortLine&&sortLine.startsWith('dc_')){const k=sortLine.slice(3);const g=x=>{const d=dcAll(x);return d.v?d.v[k]:-1;};r.sort((a,b)=>g(b)-g(a));}
   else if(sortLine&&sortLine!=='date')r.sort((a,b)=>(b[sortLine]||0)-(a[sortLine]||0));
   else r.sort((a,b)=>new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
   return r;
@@ -1225,31 +1423,41 @@ function missingKeyInfo(x){
   if(am.length)parts.push(`${x.away}: ${am.join(', ')}`);
   return {source:info.source,isConfirmed:info.source==='ESPN starting XI',text:parts.join(' · ')};
 }
-function doubleChanceInfo(x){
-  const fail=reason=>({eligible:false,pick:null,pct:0,reason});
-  if(!x||isLimitedData(x))return fail('Kısıtlı veya yetersiz veri');
-  if(missingKeyInfo(x))return fail('Kritik eksik oyuncu uyarısı');
-
-  // Çifte Şans vurgusu için varsayımsal 2.65 lambda / 55-45 dağılımına izin verme.
-  // Ya doğrudan ev-deplasman lambdaları ya da toplam lambda + eksiksiz 1-X-2 piyasa girdisi gerekir.
+const DC_MIN=75;
+// 1X / 12 / X2 olasılıklarının üçü birden (yüzde). ok=false ise vurgu yok, değerler yine gösterilebilir.
+function dcAll(x){
+  const out={ok:false,reason:'',v:null};
+  if(!x)return Object.assign(out,{reason:'Veri yok'});
   const lh=Number(x.lam_home??x.base_lam_home), la=Number(x.lam_away??x.base_lam_away);
   const directLambdas=Number.isFinite(lh)&&lh>0&&Number.isFinite(la)&&la>0;
   const totalLam=Number(x.pred_lambda??x.exp_goals);
   const market=x.market||{};
   const completeMarket=[market.h,market.d,market.a].every(v=>Number.isFinite(Number(v))&&Number(v)>1);
   const marketBacked=Number.isFinite(totalLam)&&totalLam>0&&completeMarket;
-  if(!directLambdas&&!marketBacked)return fail('Çifte Şans model girdileri eksik');
-
+  // Varsayımsal 2.65 lambda / 55-45 dağılımıyla sahte olasılık gösterme
+  if(!directLambdas&&!marketBacked)return Object.assign(out,{reason:'Çifte Şans model girdileri eksik'});
   const engine=window.BETAVUS_CIFTE;
-  if(!engine||typeof engine.analyzeMatch!=='function')return fail('Çifte Şans motoru hazır değil');
+  if(!engine||typeof engine.analyzeMatch!=='function')return Object.assign(out,{reason:'Çifte Şans motoru hazır değil'});
   try{
-    const analysis=engine.analyzeMatch(x);
-    const pick=analysis&&analysis.bestDc&&analysis.bestDc.pick;
-    const pct=Number(analysis&&analysis.bestDc&&analysis.bestDc.pct);
-    if(!pick||!Number.isFinite(pct))return fail('Çifte Şans sonucu üretilemedi');
-    if(pct<75)return {eligible:false,pick,pct,reason:'Güven eşiğinin altında'};
-    return {eligible:true,pick,pct,reason:'Yüksek güven eşiğini geçti'};
-  }catch(e){return fail('Çifte Şans analizi hesaplanamadı');}
+    const a=engine.analyzeMatch(x);
+    out.v={'1X':Number(a.dc['1X'].pct),'12':Number(a.dc['12'].pct),'X2':Number(a.dc['X2'].pct)};
+  }catch(e){return Object.assign(out,{reason:'Çifte Şans analizi hesaplanamadı'});}
+  if(isLimitedData(x))return Object.assign(out,{reason:'Kısıtlı veya yetersiz veri'});
+  if(missingKeyInfo(x))return Object.assign(out,{reason:'Kritik eksik oyuncu uyarısı'});
+  out.ok=true;return out;
+}
+function doubleChanceInfo(x){
+  const d=dcAll(x);
+  if(!d.v)return {eligible:false,pick:null,pct:0,reason:d.reason};
+  const [pick,pct]=Object.entries(d.v).sort((p,q)=>q[1]-p[1])[0];
+  if(!d.ok)return {eligible:false,pick,pct,reason:d.reason};
+  if(pct<DC_MIN)return {eligible:false,pick,pct,reason:'Güven eşiğinin altında'};
+  return {eligible:true,pick,pct,reason:'Yüksek güven eşiğini geçti'};
+}
+function dcCell(d,k){
+  if(!d.v)return `<span class="dc-empty" title="${esc(d.reason)}">—</span>`;
+  const v=d.v[k], hot=d.ok&&v>=DC_MIN&&doubleChanceHighlightOn();
+  return `<span class="pill${hot?' hot':''}${d.ok?'':' limited'}" title="${k} model olasılığı %${v.toFixed(1)}${d.ok?'':' · '+esc(d.reason)+' (vurgulanmaz)'}">${v.toFixed(1)}%</span>`;
 }
 function doubleChanceHighlightOn(){return hlActive().some(h=>h.key==='dc');}
 function doubleChancePill(info,highlighted){
@@ -1279,10 +1487,12 @@ function renderPred(){
   $('hotToggle').style.opacity=(anyHl&&!lock)?1:.4;
   $('count').textContent=(hotOnly&&anyHl&&!lock)?`${list.length} / ${total} maç`:`${list.length} maç`;
   if(!list.length){rows.innerHTML=`<div class="empty"><strong>${qPred?`«${qPred}» için maç yok`:hotOnly&&anyHl?hlLabel+' tahmin yok':'Bu aralıkta maç bulunamadı'}</strong>${qPred?'Takım adını kontrol et.':hotOnly&&anyHl?'Eşiği gevşetmeyi dene.':'Veri akışı kontrol ediliyor.'}</div>`;return;}
+  let lastDay='';
+  const byDate=!sortLine;
   rows.innerHTML=list.map(x=>{
     const mk=missingKeyInfo(x);
-    const dc=doubleChanceInfo(x);
-    const dcHot=dc.eligible&&doubleChanceHighlightOn();
+    const dca=dcAll(x);
+    const dcHot=dca.ok&&dca.v&&Object.values(dca.v).some(v=>v>=DC_MIN)&&doubleChanceHighlightOn();
     const ms=STATS.matches&&STATS.matches[x.match_id];
     const h2h=ms&&ms.h2h&&ms.h2h.count?ms.h2h:null;
     let h2hChip='';
@@ -1291,16 +1501,21 @@ function renderPred(){
       const title=`Aralarındaki son ${h2h.count} maç${tierTxt?` (${esc(tierTxt)} dahil)`:''}: ${h2h.home_wins}G-${h2h.draws}B-${h2h.away_wins}M · ortalama ${h2h.avg_total} gol · 2.5Ü %${h2h.over25_pct}`;
       h2hChip=`<span class="h2h-chip" title="${title}">⚡ ${tierTxt?esc(tierTxt)+' · ':''}${h2h.count} H2H (ort. ${h2h.avg_total} gol)</span>`;
     }
-    return `<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-league="${esc(x.league||'')}" data-dc-eligible="${dc.eligible?'1':'0'}">
+    const dk=new Date(x.kickoff_utc).toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
+    let dayHead='';
+    if(byDate&&dk!==lastDay){lastDay=dk;dayHead=`<div class="dayhead">${dayLabel(dk)}</div>`;}
+    return dayHead+`<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-league="${esc(x.league||'')}" data-dc-eligible="${dcHot?'1':'0'}">
     <div class="match">
       <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">● CANLI ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="Eksik kilit oyuncu: ${esc(mk.text)} (${esc(mk.source)})">⚠️ Eksik: ${esc(mk.text)}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
     </div>
-    <div class="prob p05">${pillFor(x,'0.5')}</div>
-    <div class="prob">${pillFor(x,'1.5')}</div>
-    <div class="prob">${pillFor(x,'2.5')}</div>
-    <div class="prob dc-prob">${doubleChancePill(dc,dcHot)}</div>
+    <div class="prob p05" data-l="0.5+">${pillFor(x,'0.5')}</div>
+    <div class="prob" data-l="1.5+">${pillFor(x,'1.5')}</div>
+    <div class="prob" data-l="2.5+">${pillFor(x,'2.5')}</div>
+    <div class="prob dcp" data-l="1X">${dcCell(dca,'1X')}</div>
+    <div class="prob dcp" data-l="12">${dcCell(dca,'12')}</div>
+    <div class="prob dcp" data-l="X2">${dcCell(dca,'X2')}</div>
   </div>`;
   }).join('');
 }
@@ -1630,6 +1845,7 @@ function renderAll(){
   renderPred();
   renderResults();
   renderBacktest();
+  if(tab==='stats'&&window.BETAVUS_STATS)BETAVUS_STATS.render();
   if(tab==='cifte' && window.BETAVUS_CIFTE_UI){
     BETAVUS_CIFTE_UI.renderCiftePane();
   }
@@ -1867,7 +2083,7 @@ function setTab(t){
   if(t==='gun') t='rec'; // backward compatibility alias
   tab=t;save('tab',t);
   selected=selectedByTab[t]||'Tümü';   // bu sekmenin kendi lig filtresi
-  ['sim-kasa','sim-kupon','plan','rec','bt','res','cpn','pred','cifte'].forEach(k=>{
+  ['sim-kasa','sim-kupon','plan','rec','bt','res','cpn','pred','cifte','stats'].forEach(k=>{
     const btn=$('tab-'+k), pane=$('pane-'+k);
     if(btn) btn.classList.toggle('active',t===k);
     if(pane) pane.hidden=t!==k;
@@ -1909,10 +2125,10 @@ async function load(){
     const upd=remote[0]&&remote[0].updated_at;
     $('updated').innerHTML=`Kaynak: openfootball + football-data.co.uk · Poisson + Dixon-Coles motoru`+
       (upd?` · güncelleme ${timeAgo(upd)}`:'')+
-      ` · <a href="#" onclick="setTab('res');return false">Tahmin vs Gerçekleşen →</a>`;
+      ` · <a href="#" onclick="setTab('stats');return false">İstatistikler →</a>`;
   }catch(e){
     window.__data=FALLBACK_DATA;
-    $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('res');return false">Tahmin vs Gerçekleşen →</a>`;
+    $('updated').innerHTML=`Canlı veri bekleniyor · Geçici fikstür · <a href="#" onclick="setTab('stats');return false">İstatistikler →</a>`;
   }
   renderAll();
   pollLiveScores();   // sayfa yüklenir yüklenmez canlı skoru tazele - saatlik pipeline'ın bıraktığı eski live durumunu beklemeden
@@ -2435,6 +2651,7 @@ if($('tab-res')) $('tab-res').onclick=()=>setTab('res');
 if($('tab-cpn')) $('tab-cpn').onclick=()=>setTab('cpn');
 if($('tab-pred')) $('tab-pred').onclick=()=>setTab('pred');
 if($('tab-cifte')) $('tab-cifte').onclick=()=>setTab('cifte');
+if($('tab-stats')) $('tab-stats').onclick=()=>setTab('stats');
 if($('tab-gun')) $('tab-gun').onclick=()=>setTab('rec');
 document.querySelectorAll('.subtab[data-view]').forEach(b=>{
   b.onclick=()=>setResSubView(b.dataset.view);
@@ -2442,7 +2659,7 @@ document.querySelectorAll('.subtab[data-view]').forEach(b=>{
 setResSubView(resSubView);
 $('refresh').onclick=load;
 $('infoBtn').onclick=openInfo;
-$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};
+$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl2',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!hlActive().length)return;hotOnly=!hotOnly;renderPred();};
 function wireSearch(inpId,xId,apply){
   const el=$(inpId),xb=$(xId);
@@ -2497,10 +2714,10 @@ const themeBtn=$('themeBtn');
 function applyTheme(t){
   document.documentElement.dataset.theme=t;
   themeBtn.textContent=t==='light'?'☀️':'🌙';
-  document.querySelector('meta[name=theme-color]').setAttribute('content',t==='light'?'#f3f5f9':'#090b0f');
+  document.querySelector('meta[name=theme-color]').setAttribute('content',t==='light'?'#203342':'#090b0f');
 }
-applyTheme(store('theme','dark'));
-themeBtn.onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'dark':'light';save('theme',t);applyTheme(t);};
+applyTheme(store('theme2','light'));
+themeBtn.onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'dark':'light';save('theme2',t);applyTheme(t);};
 
 // ---- erişim kapısı (davet kodu) ----
 // Kodu değiştirmek için: tarayıcı konsoluna yapıştır ->
@@ -2511,7 +2728,9 @@ async function sha256hex(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-function startApp(){renderHlSel();renderFilters();setTab(tab);load();setInterval(pollLiveScores,60000);}
+function startApp(){renderHlSel();renderFilters();setTab(tab);load();setInterval(pollLiveScores,60000);
+  if(window.BETAVUS_STATS)BETAVUS_STATS.renderBanner();
+  if(window.BETAVUS_AUTH)BETAVUS_AUTH.init();}
 async function bootGate(){
   let pass=false;
   try{pass=localStorage.getItem('betavus.access')===ACCESS_HASH;}catch(e){}

@@ -195,3 +195,12 @@ Son doğrulanan durum:
 - Repository veya handover belgelerine erişim anahtarı, token, parola ya da `.env` içeriği yazılmamalıdır.
 - Önceki `HANDOVER.md` sürümünde düz metin bir erişim anahtarı bulunuyordu. Bu güncel dosyadan kaldırıldı; ancak git geçmişinde kalabileceği için ilgili anahtar **iptal edilmeli/döndürülmelidir**.
 - Git geçmişi kullanıcı onayı olmadan yeniden yazılmamalıdır.
+
+## 10. 23 Eylül 2026 — Yeniden tasarım + üyelik (Claude)
+
+- **Menü:** yalnızca 3 ana sekme: `Bülten` (pred, varsayılan) · `İstatistikler` (stats, yeni) · `Sanal Kasa` (plan, eski "Gerçek Kasa"). Diğer sekmeler `hidden` butonlarla DOM'da duruyor, kodları silinmedi; `setTab('res')` vb. ile açılabilir.
+- **Tasarım:** açık tema varsayılan (`betavus.theme2`), thepunterspage.com örnek alındı: lacivert üst bar `#203342`, turkuaz vurgu `#009f93`, Nunito Sans + Poppins. "BETAVUS nedir / ne değildir" kutuları sayfanın en altında.
+- **Bülten:** 0.5+ · 1.5+ · 2.5+ · 1X · 12 · X2 olasılıkları ayrı sütunlar, gün başlıklı liste. Vurgu: 0.5≥%95, 1.5≥%85, 2.5≥%75, 1X/12/X2≥%75 (her ÇŞ pazarı ayrı; kısıtlı veri / kritik eksik oyuncu vurgulanmaz). Gol aralığı gösterilmez. Üstte `data/stats-summary.json`'dan vurgulu tahmin başarı şeridi.
+- **İstatistikler:** `js/stats_ui.js` + `data/stats-5season.json` (16.478 maç, eskiden yeniye, 6 pazar olasılığı + skor). Vurgulanan başarı, genel yön isabeti, kalibrasyon (güven analizi), lig tablosu, sayfalı maç listesi. Her ikisi `scripts/build_cifte_backtest.py` ile üretilir (tamamlanmış sezonlar; workflow'da çalışmaz, gerek yok).
+- **Üyelik:** Supabase (`js/auth_config.js` boşken devre dışı), `js/auth_sync.js`, `supabase/schema.sql`, kurulum: `supabase/KURULUM.md`. Tüm `betavus.*` localStorage anahtarları hesapla senkronlanır; ilk senkronda Sanal Kasa kimliklere göre birleştirilir. Erişim kodu kapısı korunuyor.
+- **Bilinen durum:** 21 Eylül'den beri workflow "Validate predictions" adımında düşüyor çünkü milli ara nedeniyle 10 günlük pencerede fikstür yok (ilk maçlar 9–10 Ekim); bu sırada sonuç notlama commit'leri de atlanıyor.

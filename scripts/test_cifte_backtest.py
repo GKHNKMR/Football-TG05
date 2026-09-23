@@ -25,7 +25,7 @@ with sync_playwright() as p:
     time.sleep(1.5)
     
     print("\n--- TEST 1: Tahmin vs Gerçekleşen'de Kısıtlı Veri Kontrolü (Schalke 04 — Elversberg) ---")
-    page.click('#tab-res')
+    page.evaluate("setTab('res')")
     time.sleep(0.8)
     
     # Arama kutusuna Schalke yazıp maçı bulalım
@@ -77,7 +77,7 @@ with sync_playwright() as p:
     print("  ✓ Schalke maçı temiz görünüm ekran görüntüsü kaydedildi: schalke_limited_data_clean.png")
 
     print("\n--- TEST 3: Çifte Şans & Gol Aralığı Model Doğruluğu (16.478 Maç & Sıfır Iska) ---")
-    page.click('#tab-cifte')
+    page.evaluate("setTab('cifte')")
     time.sleep(0.6)
     
     assert not page.query_selector('.subtab-toggle'), "Güncel fikstür / Model Doğruluğu alt sekmeleri kaldırılmalı"

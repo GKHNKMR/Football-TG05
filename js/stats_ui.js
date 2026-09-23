@@ -99,10 +99,10 @@
 
   function marketTable(a) {
     const thrTxt = { '0.5+': '≥%95', '1.5+': '≥%85', '2.5+': '≥%80', '1X': '≥%80', '12': '≥%80', 'X2': '≥%80' };
-    return `<div class="card st-card"><h2>Pazar bazında doğruluk</h2>
+    return `<div class="card st-card"><h2>Lig bazında doğruluk</h2>
       <p class="st-note"><b>Vurgulanan</b>: modelin güven eşiğini geçtiği tahminler. <b>Genel yön isabeti</b>: tüm maçlarda modelin eğildiği taraf (olur / olmaz) doğru mu? <b>Ort. model olasılığı</b> ile <b>gerçekleşme</b> birbirine yakınsa model iyi kalibre demektir.</p>
       <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr>
-        <th>Pazar</th><th>Eşik</th><th>Vurgulanan başarı</th><th>Tuttu / Vurgu</th><th>Genel yön isabeti</th><th>Ort. model olasılığı</th><th>Gerçekleşme</th>
+        <th>Lig</th><th>Eşik</th><th>Vurgulanan başarı</th><th>Tuttu / Vurgu</th><th>Genel yön isabeti</th><th>Ort. model olasılığı</th><th>Gerçekleşme</th>
       </tr></thead><tbody>${MARKETS.map(([k]) => {
         const x = a.m[k];
         return `<tr><td><b>${k}</b></td><td>${thrTxt[k]}</td><td class="st-strong">${pc(x.hh, x.hn)}</td><td>${fmtN(x.hh)} / ${fmtN(x.hn)}</td>

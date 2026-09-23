@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIVISIONS, DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
-from goals_model import LeagueModel  # noqa: E402
+from goals_model import LeagueModel, market_p_over25  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
 from xg_blend import XG_WEIGHT_BY_LEAGUE, load_xg_by_div, xg_seasons_for  # noqa: E402
 
@@ -291,8 +291,9 @@ def reconstruct(actuals, already, start, today):
                     for code, w in plan
                 ], fit_rho_=False, default_rho=league_rho,
                    xg_seasons=xg_seasons, xg_weight=xg_weight)
-                pred = model.predict(m["home"], m["away"])
                 fd = find_actual(actuals, league, m["home"], m["away"], d) or {}
+                pred = model.predict(m["home"], m["away"],
+                                     market_p25=market_p_over25(fd.get("o25_odds"), fd.get("u25_odds")))
                 n += 1
                 row = {
                     "match_id": f"{div}-{d.isoformat()}-R{n:03d}",

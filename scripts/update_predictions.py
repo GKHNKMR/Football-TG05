@@ -25,7 +25,7 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
-from goals_model import LeagueModel, DEFAULT_RHO  # noqa: E402
+from goals_model import LeagueModel, DEFAULT_RHO, market_p_over25  # noqa: E402
 from live_scores import find_live_match, load_live_scores  # noqa: E402
 from xg_blend import XG_WEIGHT_BY_LEAGUE, xg_seasons_for  # noqa: E402
 
@@ -289,9 +289,9 @@ def _of_matches(raw_matches):
     return out
 
 
-def of_predict(model, home, away):
+def of_predict(model, home, away, mk=None):
     """model.predict() + the Vurgu label, for openfootball-sourced leagues."""
-    pred = model.predict(home, away)
+    pred = model.predict(home, away, market_p25=market_p_over25(mk.get("o25_odds"), mk.get("u25_odds")) if mk else None)
     pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
     pred["base_lam_home"], pred["base_lam_away"], pred["base_rho"] = (
         pred["lam_home"], pred["lam_away"], pred["rho"])
@@ -432,9 +432,9 @@ def _fd_upcoming(div, start, end):
     return out
 
 
-def _fd_pred_dict(model, home, away):
+def _fd_pred_dict(model, home, away, mk=None):
     """model.predict() + the Vurgu label, for football-data-sourced leagues."""
-    pred = model.predict(home, away)
+    pred = model.predict(home, away, market_p25=market_p_over25(mk.get("o25_odds"), mk.get("u25_odds")) if mk else None)
     pred["label"] = label(pred["p_over_0_5"]) if pred["basis"].startswith("form") else ""
     pred["base_lam_home"], pred["base_lam_away"], pred["base_rho"] = (
         pred["lam_home"], pred["lam_away"], pred["rho"])
@@ -468,7 +468,8 @@ def fd_predictions(now, start, end, odds, live):
                 dropped += 1
                 continue
             n += 1
-            pred = _fd_pred_dict(model, fx["home"], fx["away"])
+            mk = odds.get((name, fx["home"], fx["away"]))
+            pred = _fd_pred_dict(model, fx["home"], fx["away"], mk)
             home, away = to_pretty(name, fx["home"]), to_pretty(name, fx["away"])
             row = {
                 "match_id": f"{code}-{fx['date'].isoformat()}-{n:02d}",
@@ -480,7 +481,6 @@ def fd_predictions(now, start, end, odds, live):
             }
             if live_hit:
                 row["live"] = {"status": live_hit.get("status"), "score": live_hit.get("score")}
-            mk = odds.get((name, fx["home"], fx["away"]))
             if mk:
                 edge = None
                 if mk["o25_implied"] is not None:
@@ -594,7 +594,8 @@ def main():
                 dropped += 1
                 continue
             count += 1
-            pred = of_predict(model, m["team1"], m["team2"])
+            mk = odds.get((name, to_fd(name, home), to_fd(name, away)))
+            pred = of_predict(model, m["team1"], m["team2"], mk)
             pair = frozenset((m["team1"], m["team2"]))
             if pair in lower_tier_h2h_pairs and pred.get("h2h_matches_used", 0) > 0:
                 pred["h2h_tier"] = lower_tier_h2h_pairs[pair]
@@ -611,7 +612,6 @@ def main():
             }
             if live_hit:
                 row["live"] = {"status": live_hit.get("status"), "score": live_hit.get("score")}
-            mk = odds.get((name, to_fd(name, home), to_fd(name, away)))
             if mk:
                 edge = None
                 if mk["o25_implied"] is not None:

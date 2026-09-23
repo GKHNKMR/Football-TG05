@@ -36,6 +36,12 @@ RECENCY_HALF_LIFE_MATCHES = 6  # a team's Nth-most-recent match counts for 2**-(
 MAX_GOALS = 15                 # scoreline grid bound for the Dixon-Coles sum
 RHO_GRID = [round(-0.35 + 0.01 * i, 2) for i in range(41)]  # -0.35 .. 0.05
 DEFAULT_RHO = -0.10            # literature default when a league has no/too little data
+# Piyasa harmanı: maçın 2.5 üst/alt oranı varsa toplam lambda'nın bu kadarı piyasanın
+# ima ettiği toplamdan gelir. Model tek başına yüksek lambda'larda 0.3-0.5 gol iyimser;
+# piyasa kadro/sakatlık/motivasyon bilgisini taşıyor. scripts/tune_market_blend.py
+# walk-forward ölçümü (2021/22-2026/27, 17.002 maç): Brier 0.1624 -> 0.1584,
+# 1.5+ vurgu isabeti %84.6 -> %88.4, vurgu sayısı yalnızca -%7.
+MARKET_WEIGHT = 0.9
 
 
 def poisson_pmf(k, lam):
@@ -91,6 +97,49 @@ def dc_score_grid(lam_h, lam_a, rho, max_goals=MAX_GOALS):
         for k in grid:
             grid[k] /= total
     return grid
+
+
+def low_total_cdf(lam_h, lam_a, rho):
+    """P(toplam<=0), P(toplam<=1), P(toplam<=2) - dc_score_grid ile aynı sonuç, ama
+    yalnızca x+y<=2 hücreleri + kapalı form normalizasyonla (ızgaranın ~1/40'ı)."""
+    rho = _safe_rho(lam_h, lam_a, rho)
+    px = [poisson_pmf(x, lam_h) for x in range(3)]
+    py = [poisson_pmf(y, lam_a) for y in range(3)]
+    total = (sum(poisson_pmf(x, lam_h) for x in range(MAX_GOALS + 1))
+             * sum(poisson_pmf(y, lam_a) for y in range(MAX_GOALS + 1)))
+    cell = {}
+    for x in range(3):
+        for y in range(3 - x):
+            t = _tau(x, y, lam_h, lam_a, rho)
+            cell[(x, y)] = px[x] * py[y] * t
+            total += px[x] * py[y] * (t - 1)
+    c0 = cell[(0, 0)] / total
+    c1 = c0 + (cell[(1, 0)] + cell[(0, 1)]) / total
+    c2 = c1 + (cell[(2, 0)] + cell[(1, 1)] + cell[(0, 2)]) / total
+    return c0, c1, c2
+
+
+def market_total(lam_h, lam_a, rho, p_over25):
+    """Modelin ev/deplasman oranı ve rho'su korunarak, Dixon-Coles P(toplam>2.5)
+    değerini piyasanınkine eşitleyen toplam lambda (ikiye bölme)."""
+    share = lam_h / (lam_h + lam_a)
+    lo, hi = 0.3, 8.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if 1 - low_total_cdf(mid * share, mid * (1 - share), rho)[2] < p_over25:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def market_p_over25(o25_odds, u25_odds):
+    """2.5 üst/alt oranlarından marjı ayıklanmış P(2.5 üst); oran yoksa None."""
+    try:
+        io, iu = 1 / float(o25_odds), 1 / float(u25_odds)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+    return io / (io + iu)
 
 
 def fit_rho(low_score_matches):
@@ -349,7 +398,10 @@ class LeagueModel:
             "p_over_2_5": round(over(2), 4),
         }
 
-    def predict(self, home, away):
+    def predict(self, home, away, market_p25=None):
+        """market_p25: bahis piyasasının P(2.5 üst) tahmini (marj ayıklanmış), varsa.
+        Toplam gol beklentisi MARKET_WEIGHT oranında piyasanın ima ettiği toplama
+        çekilir; ev/deplasman oranı ve rho modelden kalır."""
         lam_home, lam_away = self._base_lambdas(home, away)
         known = (home in self.home_gf) + (away in self.away_gf)
         basis = "form" if known == 2 else "partial-form" if known == 1 else "league-avg"
@@ -371,4 +423,14 @@ class LeagueModel:
         else:
             lam_home = lam_away = blended_total / 2
 
-        return self.predict_from_lambdas(lam_home, lam_away, basis, h2h_used)
+        # basis'e eklenmez: arayüz basis'i birebir karşılaştırıyor ('form+h2h')
+        market_used = market_p25 is not None and 0.02 < market_p25 < 0.98
+        if market_used:
+            total = lam_home + lam_away
+            target = (1 - MARKET_WEIGHT) * total + MARKET_WEIGHT * market_total(lam_home, lam_away, self.rho, market_p25)
+            lam_home *= target / total
+            lam_away *= target / total
+
+        pred = self.predict_from_lambdas(lam_home, lam_away, basis, h2h_used)
+        pred["market_used"] = market_used
+        return pred

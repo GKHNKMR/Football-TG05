@@ -101,7 +101,7 @@ for div, league in DIVISIONS.items():
         szn_name = season_label(target)
 
         for m in by_code.get(target, []):
-            pred = model.predict(m["home"], m["away"])
+            pred = model.predict(m["home"], m["away"], market_p25=m.get("mk_p25"))
             basis = pred.get("basis", "")
             h2h_used = pred.get("h2h_matches_used", 0)
 

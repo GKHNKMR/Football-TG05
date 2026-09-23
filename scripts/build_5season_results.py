@@ -42,7 +42,7 @@ def main():
                 d_str = m['date']
                 if (league, home, away, d_str) in already:
                     continue
-                pred = model.predict(m['home'], m['away'])
+                pred = model.predict(m['home'], m['away'], market_p25=m.get('mk_p25'))
                 p05 = pred['p_over_0_5']
                 p15 = pred['p_over_1_5']
                 p25 = pred['p_over_2_5']

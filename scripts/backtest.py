@@ -28,7 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import to_pretty  # noqa: E402
-from goals_model import LeagueModel  # noqa: E402
+from goals_model import LeagueModel, market_p_over25  # noqa: E402
 from xg_blend import XG_WEIGHT_BY_LEAGUE, xg_seasons_for  # noqa: E402
 
 CSV_DIR = Path("data/football-data")
@@ -71,6 +71,7 @@ def load_division(div, seasons=None):
                     "season": season, "date": date.isoformat(),
                     "home": r["HomeTeam"].strip(), "away": r["AwayTeam"].strip(),
                     "hg": hg, "ag": ag, "total": hg + ag,
+                    "mk_p25": market_p_over25(r.get("Avg>2.5"), r.get("Avg<2.5")),
                 })
     rows.sort(key=lambda m: m["date"])
     return rows
@@ -186,7 +187,7 @@ def main():
                                  for p, w in zip(priors, PRIOR_WEIGHTS)],
                                 xg_seasons=xg_seasons, xg_weight=xg_weight)
             for m in by_code.get(target, []):
-                pred = model.predict(m["home"], m["away"])
+                pred = model.predict(m["home"], m["away"], market_p25=m.get("mk_p25"))
                 rec = {
                     "league": league, "season": target, "date": m["date"],
                     "home": m["home"], "away": m["away"],

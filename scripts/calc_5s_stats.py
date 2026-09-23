@@ -21,7 +21,7 @@ for div, league in DIVISIONS.items():
         xg_seasons = xg_seasons_for(div, list(zip(priors, PRIOR_WEIGHTS))) if xg_weight else None
         model = LeagueModel([(by_code.get(p, []), w) for p, w in zip(priors, PRIOR_WEIGHTS)], xg_seasons=xg_seasons, xg_weight=xg_weight)
         for m in by_code.get(target, []):
-            pred = model.predict(m['home'], m['away'])
+            pred = model.predict(m['home'], m['away'], market_p25=m.get('mk_p25'))
             all_records.append({
                 'league': league, 'season': target, 'date': m['date'],
                 'home': m['home'], 'away': m['away'],

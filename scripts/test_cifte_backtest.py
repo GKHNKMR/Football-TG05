@@ -135,8 +135,11 @@ with sync_playwright() as p:
     ).length""")
     assert invalid_three_goal_hits == 0, "2-3 gol tahmini ve 3 gerçek gol olan bir maç hatalı biçimde başarısız sayıldı"
     sample_scope_text = page.inner_text('.cifte-bt-sample-scope')
-    assert "13.828" in sample_scope_text and "6.377 / 13.828" in sample_scope_text, "Örnek/genel başarı kapsamı açıklaması eksik"
-    assert "%46.1" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
+    # Sayılar veriden okunur: model değiştikçe (ör. piyasa harmanı) sabit rakam testi bozmasın
+    tr_n = lambda v: f"{v:,}".replace(",", ".")
+    scope = f"{tr_n(range_stats['h'])} / {tr_n(range_stats['n'])}"
+    assert scope in sample_scope_text, f"Örnek/genel başarı kapsamı açıklaması eksik (beklenen: {scope})"
+    assert f"%{range_stats['pct']}" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
     assert "Model Güveni:" in page.inner_text('#tblCifteSamples'), "Gol aralığı yüzdesi Model Güveni olarak etiketlenmiyor"
     dc_cells_text = " ".join(page.locator('#tblCifteSamples tbody td:nth-child(4)').all_inner_texts())
     assert "12 (Beraberlik Yok)" in dc_cells_text, "12 çifte şans kodunun anlamı açıklanmıyor"

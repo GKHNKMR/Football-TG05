@@ -962,7 +962,7 @@
     };
   }
 
-  const KASA_SHEET_DAYS = 365; // Excel "Kasa Simülasyonu" sayfasındaki gün satırı sayısı
+  const KASA_SHEET_DAYS = 30; // kasa planı 30. gün dahil biter; sonrası için yeni kasa oluşturulur
 
   // Başlangıç * (1 + büyüme)^gün; 12 anlamlı basamağa indirgenir ki 66.12499999… Excel'deki gibi 66.13 olsun
   function theoreticalBank(startingBank, dailyGrowthRate, day) {
@@ -1029,7 +1029,7 @@
     const g = params.dailyGrowthRate;
     const startTs = planStartTs(plan);
     const todayDay = getElapsedPlanDays(plan, now) + 1;
-    const totalDays = Math.max(KASA_SHEET_DAYS, todayDay);
+    const totalDays = KASA_SHEET_DAYS;
 
     const settled = ((state && state.slips) || [])
       .filter(s => s.settledAt && (s.status === 'won' || s.status === 'lost') && slipBelongsToPlan(s, plan))

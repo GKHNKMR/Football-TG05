@@ -227,7 +227,7 @@ def main():
         assert (hi['dailyGrowthRate'], hi['reservePct'], hi['daysToTarget'], hi['theoreticalAtTargetDay']) == (0.25, 0.50, 14, 1136.87)
         assert kasa_res['planDays'] == 22
         rows = kasa_res['sim']['rows']
-        assert kasa_res['sim']['todayDay'] == 3 and len(rows) == 365  # Excel sayfası 365 gün
+        assert kasa_res['sim']['todayDay'] == 3 and len(rows) == 30  # kasa planı 30. gün dahil biter
         # Gün 1: Gerçek 68,66 → değişim 18,66 (başlangıca göre), büyüme %37,32; hedef 57,50, kazanç 7,50
         assert rows[0]['actualBank'] == 68.66 and rows[0]['isManual'] is True
         assert rows[0]['dailyChange'] == 18.66 and rows[0]['dailyGrowthPct'] == 37.32

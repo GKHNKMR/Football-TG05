@@ -1865,6 +1865,14 @@
 
   function ensurePlansArray(state) {
     if (!state) return null;
+    if (!Array.isArray(state.closedPlans)) state.closedPlans = [];
+    // Başka cihazdan senkronla gelen kopya kapatılmış bir kasayı yeniden aktif etmesin
+    if (state.closedPlans.length && Array.isArray(state.plans)) {
+      const closedIds = new Set(state.closedPlans.map(c => c.id));
+      state.plans = state.plans.filter(p => !closedIds.has(p.id));
+      if (state.plan && closedIds.has(state.plan.id)) { state.plan = null; state.activePlanId = null; }
+      if (state.activePlanId && closedIds.has(state.activePlanId)) state.activePlanId = null;
+    }
     if (!state.plans || !Array.isArray(state.plans) || state.plans.length === 0) {
       if (state.plan) {
         if (!state.plan.id) state.plan.id = `plan-${Date.now().toString(36)}`;
@@ -1968,6 +1976,64 @@
       return found;
     }
     return null;
+  }
+
+  // Kasayı kapatır: silmek yerine o günkü sonucu (başlangıç, kapanış kasası, kazanç, büyüme) ve
+  // planın tamamını state.closedPlans'a arşivler; plans[]'dan çıkarır. Kuponlar (slips) silinmez.
+  function closePlan(state, planId, now = new Date()) {
+    ensurePlansArray(state);
+    const plan = state.plans.find(p => p.id === planId);
+    if (!plan) return null;
+    const sim = buildKasaSimulation(plan, state, now);
+    const lastActual = sim.rows.filter(r => r.actualBank != null).pop() || null;
+    const S = Number(plan.startingBank) || 0;
+    const finalBank = lastActual ? lastActual.actualBank : S;
+    const record = {
+      id: plan.id,
+      name: plan.name,
+      riskProfile: plan.riskProfile,
+      startingBank: round(S, 2),
+      targetBank: round(Number(plan.targetBank) || 0, 2),
+      finalBank: round(finalBank, 2),
+      profit: round(finalBank - S, 2),
+      growthPct: S > 0 ? round((finalBank / S - 1) * 100, 2) : null,
+      daysPlayed: lastActual ? lastActual.day : Math.min(sim.todayDay, sim.totalDays),
+      startDate: plan.startDate || localDateStr(new Date(planStartTs(plan))),
+      closedAt: now.toISOString(),
+      plan: { ...plan, status: 'closed' }
+    };
+    state.closedPlans = (state.closedPlans || []).filter(c => c.id !== plan.id).concat(record);
+    state.plans = state.plans.filter(p => p.id !== plan.id);
+    if (state.activePlanId === plan.id) {
+      state.activePlanId = state.plans.length ? state.plans[state.plans.length - 1].id : null;
+    }
+    state.plan = state.plans.find(p => p.id === state.activePlanId) || null;
+    if (!state.ledger) state.ledger = [];
+    state.ledger.push({
+      id: `tx-close-${plan.id}`,
+      timestamp: record.closedAt,
+      type: 'plan_closed',
+      amount: record.profit,
+      balanceAfter: record.finalBank,
+      referenceId: plan.id,
+      description: `${plan.name} kapatıldı (${record.startingBank} → ${record.finalBank})`
+    });
+    return record;
+  }
+
+  // Kapatılan kasaların bugüne kadarki toplamı
+  function getClosedPlansSummary(state) {
+    const list = (state && state.closedPlans) || [];
+    const totalStart = round(list.reduce((s, c) => s + (Number(c.startingBank) || 0), 0), 2);
+    const totalFinal = round(list.reduce((s, c) => s + (Number(c.finalBank) || 0), 0), 2);
+    const totalProfit = round(totalFinal - totalStart, 2);
+    return {
+      count: list.length,
+      totalStart,
+      totalFinal,
+      totalProfit,
+      totalGrowthPct: totalStart > 0 ? round((totalProfit / totalStart) * 100, 2) : null
+    };
   }
 
   function deletePlan(state, planId) {
@@ -2636,6 +2702,8 @@
     updatePlanInputs,
     KASA_V01_EXAMPLE,
     KASA_SHEET_DAYS,
+    closePlan,
+    getClosedPlansSummary,
     syncActivePlan,
     classifyPlanStatus,
     getPlanMetrics,

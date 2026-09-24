@@ -63,6 +63,7 @@
       return (a || []).concat((b || []).filter(x => x && x.id && !seen.has(x.id)));
     };
     base.plans = union(base.plans, other.plans);
+    base.closedPlans = union(base.closedPlans, other.closedPlans);
     base.slips = union(base.slips, other.slips);
     base.ledger = union(base.ledger, other.ledger).sort((x, y) => String(x.timestamp || '').localeCompare(String(y.timestamp || '')));
     return JSON.stringify(base);

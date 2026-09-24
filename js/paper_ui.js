@@ -1040,12 +1040,147 @@
   function ensureDefaultKasa() {
     if (paperState) PE.ensurePlansArray(paperState);
     if (paperState && paperState.plans && paperState.plans.length) return;
+    if (paperState && paperState.closedPlans && paperState.closedPlans.length) {
+      openBlankKasaAfter(paperState.closedPlans[paperState.closedPlans.length - 1]);
+      return;
+    }
     const example = Object.assign({}, PE.KASA_V01_EXAMPLE, { name: _t('Kasa {n}', { n: 1 }) });
     if (paperState) {
       PE.createNewPlan(paperState, example);
     } else {
       paperState = PE.createInitialState({ currency: 'EUR', riskProfile: example.riskProfile }, example);
     }
+  }
+
+  // Kapatılan kasanın ayarlarıyla (başlangıç/hedef/risk) boş yeni bir kasa açar
+  function openBlankKasaAfter(prev) {
+    const n = paperState.plans.length + paperState.closedPlans.length + 1;
+    PE.createNewPlan(paperState, {
+      name: _t('Kasa {n}', { n }),
+      startingBank: (prev && prev.startingBank) || PE.KASA_V01_EXAMPLE.startingBank,
+      targetBank: (prev && prev.targetBank) || PE.KASA_V01_EXAMPLE.targetBank,
+      riskProfile: (prev && prev.riskProfile) || PE.KASA_V01_EXAMPLE.riskProfile
+    });
+  }
+
+  // ---- Excel (.xlsx) dışa aktarma: SheetJS ilk tıklamada CDN'den yüklenir; yüklenemezse CSV iner ----
+  let xlsxLoading = null;
+  function loadXlsxLib() {
+    if (root.XLSX) return Promise.resolve(root.XLSX);
+    if (!xlsxLoading) {
+      xlsxLoading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        s.onload = () => (root.XLSX ? resolve(root.XLSX) : reject(new Error('XLSX')));
+        s.onerror = () => { xlsxLoading = null; reject(new Error('XLSX')); };
+        document.head.appendChild(s);
+      });
+    }
+    return xlsxLoading;
+  }
+
+  function safeFileName(s) {
+    return String(s || 'kasa').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 40) || 'kasa';
+  }
+
+  // Kasa sayfası: özet bilgiler + günlük tablo (sayılar Excel'de sayı olarak kalır)
+  function kasaSheetRows(plan, sim, closed) {
+    const p = sim.params;
+    const pct = v => (v == null ? '' : Math.round(v * 100) / 10000);   // Excel yüzde hücresi (0,3732 = %37,3)
+    const head = [
+      [_t('Kasa Adı'), plan.name || ''],
+      [_t('Risk Faktörü'), KASA_RISK_LABELS[p.riskProfile] || p.riskName],
+      [_t('Başlangıç Tarihi'), dmy(plan.startDate)],
+      [_t('Başlangıç Kasası'), p.startingBank],
+      [_t('Hedef Kasa'), p.targetBank],
+      [_t('Günlük Büyüme Oranı'), p.dailyGrowthRate],
+      [_t('Hedefe Ulaşma Günü'), p.daysToTarget != null ? p.daysToTarget : '']
+    ];
+    const moneyRows = [3, 4], pctRows = [5];
+    if (closed) {
+      head.push([_t('Kapanış Tarihi'), dmy(closed.closedAt)]);
+      moneyRows.push(head.push([_t('Kapanış Kasası'), closed.finalBank]) - 1);
+      moneyRows.push(head.push([_t('Toplam Kazanç'), closed.profit]) - 1);
+      pctRows.push(head.push([_t('Toplam Büyüme'), pct(closed.growthPct)]) - 1);
+    }
+    const cols = [_t('Gün'), _t('Tarih'), _t('Hedef Kasa'), _t('Gerçek Kasa'), _t('Günlük Değişim'), _t('Günlük Büyüme'), _t('Toplam Büyüme')];
+    const body = sim.rows.map(r => [r.day, dmy(r.date), r.targetBank, r.actualBank != null ? r.actualBank : '',
+      r.dailyChange != null ? r.dailyChange : '', pct(r.dailyGrowthPct), pct(r.totalGrowthPct)]);
+    return { aoa: head.concat([[]], [cols], body), moneyRows, pctRows, dataStart: head.length + 2 };
+  }
+
+  function exportKasaExcel(plan, sim, closed) {
+    const { aoa, moneyRows, pctRows, dataStart } = kasaSheetRows(plan, sim, closed);
+    const base = `betavus-${safeFileName(plan.name)}-${new Date().toISOString().slice(0, 10)}`;
+    loadXlsxLib().then(XLSX => {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const fmt = (r, c, z) => { const a = XLSX.utils.encode_cell({ r, c }); if (ws[a] && typeof ws[a].v === 'number') ws[a].z = z; };
+      moneyRows.forEach(r => fmt(r, 1, '#,##0.00'));
+      pctRows.forEach(r => fmt(r, 1, '0.0%'));
+      for (let r = dataStart; r < aoa.length; r++) {
+        [2, 3, 4].forEach(c => fmt(r, c, '#,##0.00'));
+        [5, 6].forEach(c => fmt(r, c, '0.0%'));
+      }
+      ws['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 15 }, { wch: 14 }, { wch: 14 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Kasa');
+      XLSX.writeFile(wb, base + '.xlsx');
+    }).catch(() => {
+      // Kütüphane yüklenemezse Excel'in açabildiği CSV (; ayraçlı, UTF-8 BOM)
+      const csv = aoa.map(row => row.map(v => {
+        const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v == null ? '' : v);
+        return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(';')).join('\r\n');
+      const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = base + '.csv'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  }
+
+  // Kapatılan Kasalar: bugüne kadarki toplam + kasa bazında liste
+  function renderClosedKasasHtml(curr) {
+    const list = (paperState.closedPlans || []).slice().reverse();   // en son kapatılan üstte
+    if (!list.length) return '';
+    const sum = PE.getClosedPlansSummary(paperState);
+    const sym = (PE.CURRENCIES[curr] || PE.CURRENCIES.EUR).symbol;
+    const cls = v => (v == null ? '' : v >= 0 ? 'good' : 'bad');
+    const sign = v => (v > 0 ? '+' : '');
+    return `
+      <div class="card closed-kasa-card">
+        <h3 class="ck-title">${_t('Kapatılan Kasalar')}</h3>
+        <div class="ck-summary">
+          <div><span>${_t('Kapatılan Kasa')}</span><b>${sum.count}</b></div>
+          <div><span>${_t('Toplam Başlangıç')}</span><b>${formatCurrency(sum.totalStart, curr)}</b></div>
+          <div><span>${_t('Toplam Kapanış')}</span><b>${formatCurrency(sum.totalFinal, curr)}</b></div>
+          <div><span>${_t('Bugüne Kadar Toplam Kazanç')}</span><b class="${cls(sum.totalProfit)}">${sign(sum.totalProfit)}${formatCurrency(sum.totalProfit, curr)}</b></div>
+          <div><span>${_t('Toplam Büyüme')}</span><b class="${cls(sum.totalGrowthPct)}">${sum.totalGrowthPct != null ? signedPct(sum.totalGrowthPct) : '—'}</b></div>
+        </div>
+        <div class="tbl-scroll">
+          <table class="excel-table kasa-sim-table closed-kasa-table">
+            <thead><tr>
+              <th>${_t('Kasa')}</th><th>${_t('Risk')}</th><th>${_t('Tarih')}</th><th>${_t('Gün')}</th>
+              <th>${_t('Başlangıç Kasası ({sym})', { sym })}</th>
+              <th>${_t('Kapanış Kasası ({sym})', { sym })}</th>
+              <th>${_t('Toplam Kazanç ({sym})', { sym })}</th><th>${_t('Toplam Büyüme (%)')}</th><th></th>
+            </tr></thead>
+            <tbody>
+              ${list.map(c => `
+                <tr>
+                  <td class="ck-name">${esc(c.name)}</td>
+                  <td>${esc(KASA_RISK_LABELS[c.riskProfile] || _t('Özel'))}</td>
+                  <td>${dmy(c.startDate)} – ${dmy(c.closedAt)}</td>
+                  <td>${c.daysPlayed}</td>
+                  <td>${formatCurrency(c.startingBank, curr)}</td>
+                  <td>${formatCurrency(c.finalBank, curr)}</td>
+                  <td class="${cls(c.profit)}">${sign(c.profit)}${formatCurrency(c.profit, curr)}</td>
+                  <td class="${cls(c.growthPct)}">${c.growthPct != null ? signedPct(c.growthPct) : ''}</td>
+                  <td><button type="button" class="ck-xls" data-closed-id="${esc(c.id)}" title="${_t('Excel olarak dışa aktar')}">${_t('📊 Excel')}</button></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
   }
 
   // Excel "Kasa Gelisim Grafigi": çizgi grafik, 1-30. gün, Gerçek Kasa (€) ve Teorik Hedef Kasa (€),
@@ -1179,12 +1314,18 @@
               <div><span>${_t('REZERV')}</span><b>${formatPct(p.reservePct * 100, 0)}</b></div>
             </div>
           </div>
-          <div class="ks-chart">
-            <div class="ks-chart-title">${_t('Kasa Gelişim Grafiği')}</div>
-            ${renderKasaChartSvg(sim, curr)}
-            <div class="ks-legend">
-              <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Gerçek Kasa ({sym})', { sym })}</span>
-              <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
+          <div class="ks-right">
+            <div class="ks-chart">
+              <div class="ks-chart-title">${_t('Kasa Gelişim Grafiği')}</div>
+              ${renderKasaChartSvg(sim, curr)}
+              <div class="ks-legend">
+                <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Gerçek Kasa ({sym})', { sym })}</span>
+                <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
+              </div>
+            </div>
+            <div class="ks-actions">
+              <button type="button" class="ks-act ks-act-close" id="btnCloseKasa">${_t('🔒 Kasayı Kapat')}</button>
+              <button type="button" class="ks-act ks-act-xls" id="btnExportKasaXlsx">${_t('📊 Excel olarak dışa aktar')}</button>
             </div>
           </div>
         </div>
@@ -1219,6 +1360,7 @@
         </div>
         <div class="ks-note">${_t('kasa.note')}</div>
       </div>
+      ${renderClosedKasasHtml(curr)}
     `;
 
     wirePlanDashboardEvents();
@@ -1289,6 +1431,41 @@
         }
       };
     }
+
+    const btnClose = document.getElementById('btnCloseKasa');
+    if (btnClose) {
+      btnClose.onclick = () => {
+        const plan = paperState.plan;
+        if (!plan) return;
+        const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+        const sim = PE.buildKasaSimulation(plan, paperState);
+        const idx = paperState.plans.findIndex(pl => pl.id === plan.id);
+        const name = kasaDisplayName(plan, idx);
+        if (!confirm(_t('kasa.closeConfirm', { name, start: formatCurrency(plan.startingBank, curr), final: formatCurrency(sim.currentBank, curr) }))) return;
+        if (name !== plan.name) PE.updatePlanInputs(paperState, { name });   // listede ekranda görünen ad kalsın
+        const rec = PE.closePlan(paperState, plan.id);
+        if (rec && !paperState.plans.length) openBlankKasaAfter(rec);
+        rerenderAllPanes();
+      };
+    }
+
+    const btnXls = document.getElementById('btnExportKasaXlsx');
+    if (btnXls) {
+      btnXls.onclick = () => {
+        const plan = paperState.plan;
+        if (!plan) return;
+        const idx = paperState.plans.findIndex(pl => pl.id === plan.id);
+        exportKasaExcel({ ...plan, name: kasaDisplayName(plan, idx) }, PE.buildKasaSimulation(plan, paperState), null);
+      };
+    }
+
+    document.querySelectorAll('.ck-xls').forEach(b => {
+      b.onclick = () => {
+        const c = (paperState.closedPlans || []).find(x => x.id === b.dataset.closedId);
+        if (!c || !c.plan) return;
+        exportKasaExcel({ ...c.plan, name: c.name }, PE.buildKasaSimulation(c.plan, paperState, new Date(c.closedAt)), c);
+      };
+    });
 
     // KULLANICI GİRİŞLERİ
     const nameInp = document.getElementById('ksName');

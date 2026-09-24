@@ -1219,18 +1219,6 @@
         </div>
         <div class="ks-note">${_t('kasa.note')}</div>
       </div>
-
-      <div class="plan-actions-card">
-        <div class="p-act-left">
-          <button class="btn-sec" id="btnLoadExcelKasa" type="button">${_t('📑 Excel Örnek Verisini Yükle')}</button>
-          <button class="btn-sec" id="btnExportJSON" type="button">${_t('📥 Dışa Aktar (JSON)')}</button>
-          <button class="btn-sec" id="btnImportJSON" type="button">${_t('📤 JSON İçe Aktar')}</button>
-          <input type="file" id="jsonFileInput" accept=".json" style="display:none">
-        </div>
-        <div class="p-act-right">
-          <button class="btn-danger-subtle" id="btnResetPlan" type="button">${_t('⚠️ Tüm Kasaları Sıfırla')}</button>
-        </div>
-      </div>
     `;
 
     wirePlanDashboardEvents();
@@ -1350,68 +1338,6 @@
         renderPlanPane();
       };
     });
-
-    const btnLoadExcel = document.getElementById('btnLoadExcelKasa');
-    if (btnLoadExcel) {
-      btnLoadExcel.onclick = () => {
-        const ex = PE.KASA_V01_EXAMPLE;
-        if (!confirm(_t('kasa.loadExcelConfirm', { start: formatAmount(ex.startingBank), target: formatAmount(ex.targetBank), risk: KASA_RISK_LABELS[ex.riskProfile], days: Object.keys(ex.dailyBanks).length }))) return;
-        PE.updatePlanInputs(paperState, { startingBank: ex.startingBank, targetBank: ex.targetBank, riskProfile: ex.riskProfile });
-        paperState.plan = Object.assign({}, paperState.plan, { dailyBanks: Object.assign({}, ex.dailyBanks) });
-        PE.syncActivePlan(paperState);
-        rerenderAllPanes();
-      };
-    }
-
-    const btnReset = document.getElementById('btnResetPlan');
-    if (btnReset) {
-      btnReset.onclick = () => {
-        if (confirm(_t('Tüm sanal kasaları ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.'))) {
-          paperState = null;
-          try { localStorage.removeItem(PE.STORAGE_KEY); } catch (e) {}
-          rerenderAllPanes();
-        }
-      };
-    }
-
-    const btnExport = document.getElementById('btnExportJSON');
-    if (btnExport) {
-      btnExport.onclick = () => {
-        if (!paperState) return;
-        const jsonStr = PE.exportPaperState(paperState);
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `betavus-paper-export-${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-    }
-
-    const btnImport = document.getElementById('btnImportJSON');
-    const fileInput = document.getElementById('jsonFileInput');
-    if (btnImport && fileInput) {
-      btnImport.onclick = () => fileInput.click();
-      fileInput.onchange = (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          const val = PE.validateImportedJSON(evt.target.result);
-          if (!val.valid) {
-            alert(_t('İçe aktarma hatası: ') + val.error);
-            return;
-          }
-          if (confirm(_t('İçe aktarılan veriler mevcut kasalarınızın ve kuponlarınızın üzerine yazılacaktır. Onaylıyor musunuz?'))) {
-            paperState = val.data;
-            rerenderAllPanes();
-            alert(_t('Veriler başarıyla içe aktarıldı.'));
-          }
-        };
-        reader.readAsText(file);
-      };
-    }
   }
 
   // ---------------------------------------------------------------------------

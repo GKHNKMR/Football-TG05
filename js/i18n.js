@@ -491,10 +491,6 @@
       en: 'You can enter each day\'s bankroll in the Actual bankroll column; past days you leave empty are filled automatically from settled bets. Days below the theoretical target bankroll are shown in red.',
       nl: 'Je kunt de bankroll van elke dag invullen in de kolom Werkelijke bankroll; lege dagen in het verleden worden automatisch aangevuld uit afgehandelde weddenschappen. Dagen onder de theoretische doelbankroll worden rood weergegeven.'
     },
-    '📑 Excel Örnek Verisini Yükle': { en: '📑 Load Excel sample data', nl: '📑 Excel-voorbeelddata laden' },
-    '📥 Dışa Aktar (JSON)': { en: '📥 Export (JSON)', nl: '📥 Exporteren (JSON)' },
-    '📤 JSON İçe Aktar': { en: '📤 Import JSON', nl: '📤 JSON importeren' },
-    '⚠️ Tüm Kasaları Sıfırla': { en: '⚠️ Reset all bankrolls', nl: '⚠️ Alle bankrolls resetten' },
     'Kasa {n}': { en: 'Bankroll {n}', nl: 'Bankroll {n}' },
     'Özel': { en: 'Custom', nl: 'Aangepast' },
     'Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün': { en: 'Bankroll growth chart: actual and theoretical target bankroll, days 1–{n}', nl: 'Groeigrafiek bankroll: werkelijke en theoretische doelbankroll, dag 1–{n}' },
@@ -505,14 +501,5 @@
     'Başlangıç kasası': { en: 'The starting bankroll', nl: 'De startbankroll' },
     'Hedef kasa': { en: 'The target bankroll', nl: 'De doelbankroll' },
     'Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.': { en: 'Enter a valid amount (e.g. 68.66). If you leave it empty, the day stays empty.', nl: 'Voer een geldig bedrag in (bijv. 68,66). Als je het leeg laat, blijft de dag leeg.' },
-    'kasa.loadExcelConfirm': {
-      tr: 'Aktif kasaya Excel dosyasındaki veriler yüklenecek: Başlangıç {start}, Hedef {target}, Risk {risk} ve 1-{days}. gün gerçek kasa değerleri. Bu kasadaki elle girilmiş günlük değerlerin üzerine yazılır. Onaylıyor musunuz?',
-      en: 'The Excel data will be loaded into the active bankroll: start {start}, target {target}, risk {risk} and the actual bankroll values for days 1–{days}. Manually entered daily values in this bankroll will be overwritten. Continue?',
-      nl: 'De Excel-gegevens worden in de actieve bankroll geladen: start {start}, doel {target}, risico {risk} en de werkelijke bankrollwaarden voor dag 1–{days}. Handmatig ingevoerde dagwaarden in deze bankroll worden overschreven. Doorgaan?'
-    },
-    'Tüm sanal kasaları ve kupon geçmişini sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.': { en: 'Are you sure you want to reset all virtual bankrolls and bet history? This cannot be undone.', nl: 'Weet je zeker dat je alle virtuele bankrolls en de weddenschapsgeschiedenis wilt resetten? Dit kan niet ongedaan worden gemaakt.' },
-    'İçe aktarma hatası: ': { en: 'Import error: ', nl: 'Importfout: ' },
-    'İçe aktarılan veriler mevcut kasalarınızın ve kuponlarınızın üzerine yazılacaktır. Onaylıyor musunuz?': { en: 'The imported data will overwrite your current bankrolls and bets. Continue?', nl: 'De geïmporteerde gegevens overschrijven je huidige bankrolls en weddenschappen. Doorgaan?' },
-    'Veriler başarıyla içe aktarıldı.': { en: 'Data imported successfully.', nl: 'Gegevens succesvol geïmporteerd.' }
   });
 })(window);

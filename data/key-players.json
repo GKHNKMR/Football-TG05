@@ -3,7 +3,7 @@
   {
    "minutes": 1896,
    "player": "Pedro Lima",
-   "share": 0.154
+   "share": 0.153
   }
  ],
  "AZ Alkmaar": [
@@ -31,7 +31,7 @@
   {
    "minutes": 3074,
    "player": "Toni Martínez",
-   "share": 0.133
+   "share": 0.132
   }
  ],
  "Alverca": [
@@ -45,14 +45,14 @@
   {
    "minutes": 1832,
    "player": "A. Sbaï",
-   "share": 0.13
+   "share": 0.128
   }
  ],
  "Antalyaspor": [
   {
    "minutes": 2347,
    "player": "S. van de Streek",
-   "share": 0.195
+   "share": 0.191
   }
  ],
  "Arouca": [
@@ -66,7 +66,7 @@
   {
    "minutes": 2643,
    "player": "B. Saka",
-   "share": 0.161
+   "share": 0.163
   }
  ],
  "Aston Villa": [
@@ -80,14 +80,14 @@
   {
    "minutes": 1977,
    "player": "N. Krstović",
-   "share": 0.134
+   "share": 0.133
   }
  ],
  "Ath Bilbao": [
   {
    "minutes": 2318,
    "player": "Oihan Sancet",
-   "share": 0.153
+   "share": 0.155
   },
   {
    "minutes": 2560,
@@ -99,7 +99,7 @@
   {
    "minutes": 1836,
    "player": "A. Kade",
-   "share": 0.15
+   "share": 0.149
   },
   {
    "minutes": 1211,
@@ -116,7 +116,7 @@
   {
    "minutes": 2931,
    "player": "D. Namaso",
-   "share": 0.139
+   "share": 0.138
   }
  ],
  "Barcelona": [
@@ -128,28 +128,28 @@
   {
    "minutes": 2849,
    "player": "Lamine Yamal",
-   "share": 0.188
+   "share": 0.189
   }
  ],
  "Bayern Munich": [
   {
    "minutes": 2678,
    "player": "H. Kane",
-   "share": 0.157
+   "share": 0.159
   }
  ],
  "Benfica": [
   {
    "minutes": 3224,
    "player": "V. Pavlidis",
-   "share": 0.201
+   "share": 0.2
   }
  ],
  "Besiktas": [
   {
    "minutes": 2982,
    "player": "O. Kökçü",
-   "share": 0.121
+   "share": 0.122
   }
  ],
  "Betis": [
@@ -161,7 +161,7 @@
   {
    "minutes": 3036,
    "player": "C. Hernández",
-   "share": 0.125
+   "share": 0.126
   }
  ],
  "Bolton": [
@@ -175,45 +175,40 @@
   {
    "minutes": 2738,
    "player": "M. Tavernier",
-   "share": 0.14
+   "share": 0.143
   }
  ],
  "Brentford": [
   {
    "minutes": 3727,
    "player": "Igor Thiago",
-   "share": 0.167
-  },
-  {
-   "minutes": 3205,
-   "player": "K. Schade",
-   "share": 0.121
+   "share": 0.166
   }
  ],
  "Brest": [
   {
    "minutes": 2172,
    "player": "K. Doumbia",
-   "share": 0.177
+   "share": 0.176
   },
   {
    "minutes": 3269,
    "player": "L. Ajorque",
-   "share": 0.156
+   "share": 0.155
   }
  ],
  "Burnley": [
   {
    "minutes": 1774,
    "player": "Z. Flemming",
-   "share": 0.164
+   "share": 0.162
   }
  ],
  "Buyuksehyr": [
   {
    "minutes": 3433,
    "player": "E. Shomurodov",
-   "share": 0.21
+   "share": 0.211
   }
  ],
  "Cambuur": [
@@ -244,12 +239,12 @@
   {
    "minutes": 3034,
    "player": "João Pedro",
-   "share": 0.163
+   "share": 0.162
   },
   {
    "minutes": 2408,
    "player": "C. Palmer",
-   "share": 0.16
+   "share": 0.161
   }
  ],
  "Como": [
@@ -263,14 +258,14 @@
   {
    "minutes": 2523,
    "player": "F. Bonazzoli",
-   "share": 0.182
+   "share": 0.18
   }
  ],
  "Derby": [
   {
    "minutes": 1660,
    "player": "S. Szmodics",
-   "share": 0.121
+   "share": 0.122
   }
  ],
  "Dortmund": [
@@ -298,14 +293,14 @@
   {
    "minutes": 3196,
    "player": "A. Marcus",
-   "share": 0.133
+   "share": 0.135
   }
  ],
  "Everton": [
   {
    "minutes": 2334,
    "player": "T. Barry",
-   "share": 0.183
+   "share": 0.186
   },
   {
    "minutes": 3083,
@@ -317,14 +312,14 @@
   {
    "minutes": 2425,
    "player": "N. Naujoks",
-   "share": 0.122
+   "share": 0.121
   }
  ],
  "FC Koln": [
   {
    "minutes": 2128,
    "player": "S. El Mala",
-   "share": 0.128
+   "share": 0.129
   },
   {
    "minutes": 1917,
@@ -336,19 +331,19 @@
   {
    "minutes": 3375,
    "player": "Sorriso",
-   "share": 0.158
+   "share": 0.157
   }
  ],
  "Freiburg": [
   {
    "minutes": 1885,
    "player": "I. Matanović",
-   "share": 0.158
+   "share": 0.159
   },
   {
    "minutes": 1959,
    "player": "Y. Suzuki",
-   "share": 0.145
+   "share": 0.144
   }
  ],
  "Fulham": [
@@ -369,12 +364,12 @@
   {
    "minutes": 2349,
    "player": "M. Bayo",
-   "share": 0.207
+   "share": 0.209
   },
   {
    "minutes": 2693,
    "player": "A. Maxim",
-   "share": 0.133
+   "share": 0.136
   }
  ],
  "Genclerbirligi": [
@@ -388,14 +383,14 @@
   {
    "minutes": 2664,
    "player": "L. Colombo",
-   "share": 0.17
+   "share": 0.172
   }
  ],
  "Getafe": [
   {
    "minutes": 2148,
    "player": "M. Satriano",
-   "share": 0.133
+   "share": 0.132
   }
  ],
  "Gil Vicente": [
@@ -414,12 +409,12 @@
   {
    "minutes": 1032,
    "player": "S. Sigurðarson",
-   "share": 0.171
+   "share": 0.172
   },
   {
    "minutes": 2582,
    "player": "V. Edvardsen",
-   "share": 0.126
+   "share": 0.125
   }
  ],
  "Goztep": [
@@ -436,14 +431,14 @@
    "share": 0.18
   },
   {
-   "minutes": 2698,
-   "player": "Y. Taha",
-   "share": 0.131
-  },
-  {
    "minutes": 2695,
    "player": "D. van der Werff",
-   "share": 0.131
+   "share": 0.132
+  },
+  {
+   "minutes": 2698,
+   "player": "Y. Taha",
+   "share": 0.13
   }
  ],
  "Guimaraes": [
@@ -469,14 +464,14 @@
   {
    "minutes": 1115,
    "player": "J. Hornkamp",
-   "share": 0.232
+   "share": 0.234
   }
  ],
  "Hull": [
   {
    "minutes": 3175,
    "player": "O. McBurnie",
-   "share": 0.163
+   "share": 0.165
   }
  ],
  "Inter": [
@@ -490,38 +485,38 @@
   {
    "minutes": 1567,
    "player": "S. Larsson",
-   "share": 0.147
+   "share": 0.144
   },
   {
    "minutes": 983,
    "player": "D. Fofana",
-   "share": 0.136
+   "share": 0.138
   },
   {
    "minutes": 2195,
    "player": "Serginho",
-   "share": 0.122
+   "share": 0.123
   }
  ],
  "Kasimpasa": [
   {
    "minutes": 1689,
    "player": "A. Benedyczak",
-   "share": 0.226
+   "share": 0.228
   }
  ],
  "Kayserispor": [
   {
    "minutes": 2854,
    "player": "Miguel Cardoso",
-   "share": 0.159
+   "share": 0.156
   }
  ],
  "Lazio": [
   {
    "minutes": 2560,
    "player": "M. Zaccagni",
-   "share": 0.179
+   "share": 0.18
   }
  ],
  "Le Havre": [
@@ -535,14 +530,14 @@
   {
    "minutes": 3147,
    "player": "D. Calvert-Lewin",
-   "share": 0.245
+   "share": 0.247
   }
  ],
  "Lens": [
   {
    "minutes": 2910,
    "player": "F. Thauvin",
-   "share": 0.155
+   "share": 0.156
   }
  ],
  "Levante": [
@@ -554,7 +549,7 @@
   {
    "minutes": 1338,
    "player": "Carlos Espí",
-   "share": 0.122
+   "share": 0.121
   }
  ],
  "Leverkusen": [
@@ -568,7 +563,7 @@
   {
    "minutes": 2289,
    "player": "Matías Fernández",
-   "share": 0.134
+   "share": 0.132
   }
  ],
  "Liverpool": [
@@ -582,7 +577,12 @@
   {
    "minutes": 1770,
    "player": "P. Pagis",
-   "share": 0.13
+   "share": 0.128
+  },
+  {
+   "minutes": 1220,
+   "player": "B. Dieng",
+   "share": 0.121
   }
  ],
  "Mainz": [
@@ -606,7 +606,7 @@
   {
    "minutes": 3090,
    "player": "V. Muriqi",
-   "share": 0.246
+   "share": 0.245
   }
  ],
  "Man City": [
@@ -620,19 +620,19 @@
   {
    "minutes": 3516,
    "player": "Bruno Fernandes",
-   "share": 0.176
+   "share": 0.178
   },
   {
    "minutes": 3071,
    "player": "B. Mbeumo",
-   "share": 0.158
+   "share": 0.157
   }
  ],
  "Marseille": [
   {
    "minutes": 1776,
    "player": "A. Gouiri",
-   "share": 0.126
+   "share": 0.127
   },
   {
    "minutes": 2046,
@@ -644,27 +644,27 @@
   {
    "minutes": 2354,
    "player": "G. Hein",
-   "share": 0.155
+   "share": 0.156
   }
  ],
  "Nacional": [
   {
    "minutes": 2892,
    "player": "J. Ramírez",
-   "share": 0.136
+   "share": 0.134
   }
  ],
  "Nantes": [
   {
    "minutes": 2497,
    "player": "M. Abline",
-   "share": 0.16
+   "share": 0.156
   }
  ],
  "Newcastle": [
   {
-   "minutes": 946,
-   "player": "Y. Wissa",
+   "minutes": 1814,
+   "player": "A. Gordon",
    "share": 0.12
   }
  ],
@@ -672,21 +672,21 @@
   {
    "minutes": 1203,
    "player": "E. Wahi",
-   "share": 0.127
+   "share": 0.126
   }
  ],
  "Nijmegen": [
   {
    "minutes": 3269,
    "player": "T. Chery",
-   "share": 0.151
+   "share": 0.152
   }
  ],
  "Nott'm Forest": [
   {
    "minutes": 3560,
    "player": "M. Gibbs-White",
-   "share": 0.18
+   "share": 0.181
   }
  ],
  "Osasuna": [
@@ -700,14 +700,14 @@
   {
    "minutes": 2429,
    "player": "F. Viñas",
-   "share": 0.145
+   "share": 0.148
   }
  ],
  "Pisa": [
   {
    "minutes": 1053,
    "player": "M'Bala Nzola",
-   "share": 0.168
+   "share": 0.165
   }
  ],
  "Portsmouth": [
@@ -721,19 +721,19 @@
   {
    "minutes": 2789,
    "player": "C. Baumgartner",
-   "share": 0.131
+   "share": 0.129
   }
  ],
  "Real Madrid": [
   {
    "minutes": 3234,
    "player": "K. Mbappé",
-   "share": 0.227
+   "share": 0.226
   },
   {
    "minutes": 3390,
    "player": "Vinícius Júnior",
-   "share": 0.138
+   "share": 0.137
   }
  ],
  "Rennes": [
@@ -747,7 +747,7 @@
   {
    "minutes": 1600,
    "player": "Clayton",
-   "share": 0.164
+   "share": 0.165
   },
   {
    "minutes": 1695,
@@ -757,26 +757,26 @@
   {
    "minutes": 1500,
    "player": "André Luiz",
-   "share": 0.135
+   "share": 0.136
   }
  ],
  "Roma": [
   {
    "minutes": 1823,
    "player": "D. Malen",
-   "share": 0.212
+   "share": 0.214
   },
   {
    "minutes": 1762,
    "player": "P. Dybala",
-   "share": 0.145
+   "share": 0.146
   }
  ],
  "Samsunspor": [
   {
    "minutes": 2212,
    "player": "M. Mouandilmadji",
-   "share": 0.151
+   "share": 0.152
   }
  ],
  "Santa Clara": [
@@ -797,18 +797,18 @@
   {
    "minutes": 2373,
    "player": "P. Bamford",
-   "share": 0.137
+   "share": 0.139
   }
  ],
  "Sociedad": [
   {
-   "minutes": 3192,
-   "player": "Mikel Oyarzabal",
-   "share": 0.122
-  },
-  {
    "minutes": 1137,
    "player": "O. Óskarsson",
+   "share": 0.123
+  },
+  {
+   "minutes": 3192,
+   "player": "Mikel Oyarzabal",
    "share": 0.122
   }
  ],
@@ -816,19 +816,19 @@
   {
    "minutes": 1547,
    "player": "C. Larin",
-   "share": 0.143
+   "share": 0.144
   }
  ],
  "Sp Braga": [
   {
    "minutes": 2713,
    "player": "Pau Víctor",
-   "share": 0.15
+   "share": 0.149
   },
   {
    "minutes": 1944,
    "player": "R. Zalazar",
-   "share": 0.138
+   "share": 0.137
   }
  ],
  "Sparta Rotterdam": [
@@ -842,40 +842,33 @@
   {
    "minutes": 2480,
    "player": "D. Undav",
-   "share": 0.127
+   "share": 0.126
   }
  ],
  "Sunderland": [
   {
    "minutes": 3373,
    "player": "E. Le Fée",
-   "share": 0.211
+   "share": 0.21
   },
   {
    "minutes": 2325,
    "player": "B. Brobbey",
-   "share": 0.159
+   "share": 0.158
   }
  ],
  "Swansea": [
   {
    "minutes": 3249,
    "player": "Ž. Vipotnik",
-   "share": 0.139
-  }
- ],
- "Tondela": [
-  {
-   "minutes": 2470,
-   "player": "Pedro Maranhão",
-   "share": 0.123
+   "share": 0.14
   }
  ],
  "Torino": [
   {
    "minutes": 2588,
    "player": "G. Simeone",
-   "share": 0.138
+   "share": 0.136
   }
  ],
  "Trabzonspor": [
@@ -889,21 +882,21 @@
   {
    "minutes": 608,
    "player": "W. Weghorst",
-   "share": 0.15
+   "share": 0.151
   }
  ],
  "Union Berlin": [
   {
    "minutes": 2256,
    "player": "A. Ilić",
-   "share": 0.143
+   "share": 0.141
   }
  ],
  "Utrecht": [
   {
    "minutes": 1377,
    "player": "A. Stepanov",
-   "share": 0.127
+   "share": 0.126
   }
  ],
  "Vallecano": [
@@ -917,36 +910,36 @@
   {
    "minutes": 2036,
    "player": "G. Orban",
-   "share": 0.157
+   "share": 0.154
   },
   {
    "minutes": 1204,
    "player": "K. Bowie",
-   "share": 0.133
+   "share": 0.131
   }
  ],
  "Villarreal": [
   {
    "minutes": 1473,
    "player": "Ayoze Pérez",
-   "share": 0.145
+   "share": 0.146
   },
   {
    "minutes": 2536,
    "player": "G. Mikautadze",
-   "share": 0.135
+   "share": 0.134
   }
  ],
  "West Ham": [
   {
    "minutes": 4115,
    "player": "J. Bowen",
-   "share": 0.378
+   "share": 0.377
   },
   {
    "minutes": 1395,
    "player": "V. Castellanos",
-   "share": 0.139
+   "share": 0.138
   }
  ],
  "Willem II": [
@@ -965,14 +958,26 @@
   {
    "minutes": 2419,
    "player": "C. Eriksen",
-   "share": 0.138
+   "share": 0.137
+  }
+ ],
+ "Wolves": [
+  {
+   "minutes": 1400,
+   "player": "T. Arokodare",
+   "share": 0.121
   }
  ],
  "Zwolle": [
   {
    "minutes": 3484,
    "player": "K. Kostons",
-   "share": 0.163
+   "share": 0.16
+  },
+  {
+   "minutes": 1056,
+   "player": "Y. Namli",
+   "share": 0.124
   }
  ]
 }

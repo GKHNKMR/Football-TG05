@@ -481,6 +481,7 @@
     'Teorik Hedef Kasa ({sym})': { en: 'Theoretical target bankroll ({sym})', nl: 'Theoretische doelbankroll ({sym})' },
     'Gün': { en: 'Day', nl: 'Dag' },
     'Günlük Değişim ({sym})': { en: 'Daily change ({sym})', nl: 'Dagelijkse wijziging ({sym})' },
+    'Toplam Büyüme (%)': { en: 'Total growth (%)', nl: 'Totale groei (%)' },
     'Günlük Büyüme (%)': { en: 'Daily growth (%)', nl: 'Dagelijkse groei (%)' },
     '{day}. gün gerçek kasa': { en: 'Actual bankroll on day {day}', nl: 'Werkelijke bankroll op dag {day}' },
     'Elle girildi — silerseniz boş/otomatik değere döner': { en: 'Entered manually — clear it to go back to empty/automatic', nl: 'Handmatig ingevoerd — wis het om terug te gaan naar leeg/automatisch' },

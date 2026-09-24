@@ -1010,7 +1010,7 @@
   // ---------------------------------------------------------------------------
   // Sanal Kasa Ekranı (#pane-plan) — Paper_Betting_Kasa_Simulasyonu v01 birebir
   // KULLANICI GİRİŞLERİ · OTOMATİK PARAMETRELER · Kasa Gelişim Grafiği ·
-  // Kasa tablosu: Gün · Hedef Kasa · Gerçek Kasa · Günlük Değişim · Günlük Büyüme
+  // Kasa tablosu: Gün · Hedef Kasa · Gerçek Kasa · Günlük Değişim · Günlük Büyüme · Toplam Büyüme
   // ---------------------------------------------------------------------------
 
   const KASA_RISK_LABELS = { minimum: 'Minimum', medium: 'Medium', high: 'High' };
@@ -1200,6 +1200,7 @@
                 <th>${_t('Gerçek Kasa ({sym})', { sym })}</th>
                 <th>${_t('Günlük Değişim ({sym})', { sym })}</th>
                 <th>${_t('Günlük Büyüme (%)')}</th>
+                <th>${_t('Toplam Büyüme (%)')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1210,6 +1211,7 @@
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
                   <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
                   <td>${r.dailyGrowthPct != null ? signedPct(r.dailyGrowthPct) : ''}</td>
+                  <td class="${r.totalGrowthPct == null ? '' : r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct != null ? signedPct(r.totalGrowthPct) : ''}</td>
                 </tr>
               `).join('')}
             </tbody>

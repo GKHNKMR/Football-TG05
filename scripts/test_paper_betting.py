@@ -231,6 +231,7 @@ def main():
         # Gün 1: Gerçek 68,66 → değişim 18,66 (başlangıca göre), büyüme %37,32; hedef 57,50, kazanç 7,50
         assert rows[0]['actualBank'] == 68.66 and rows[0]['isManual'] is True
         assert rows[0]['dailyChange'] == 18.66 and rows[0]['dailyGrowthPct'] == 37.32
+        assert rows[0]['totalGrowthPct'] == 37.32  # 68,66 / 50 − 1
         assert rows[0]['targetBank'] == 57.5 and rows[0]['targetDailyGain'] == 7.5
         assert rows[0]['belowTarget'] is False
         # Gün 2: 60 < 66,13 hedef → kırmızı (Excel koşullu biçim)

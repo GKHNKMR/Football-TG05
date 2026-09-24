@@ -1064,6 +1064,8 @@
         isManual,
         dailyChange: null,
         dailyGrowthPct: null,
+        // Başlangıç kasasına göre toplam reel büyüme (gün sonu)
+        totalGrowthPct: actualBank != null && S > 0 ? round((actualBank / S - 1) * 100, 2) : null,
         targetBank,
         targetDailyGain: round(targetBank - prevTarget, 2),
         targetReachPct: T > 0 ? round(Math.min(100, (targetBank / T) * 100), 1) : null,

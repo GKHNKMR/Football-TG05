@@ -1010,7 +1010,7 @@
   // ---------------------------------------------------------------------------
   // Sanal Kasa Ekranı (#pane-plan) — Paper_Betting_Kasa_Simulasyonu v01 birebir
   // KULLANICI GİRİŞLERİ · OTOMATİK PARAMETRELER · Kasa Gelişim Grafiği ·
-  // GERÇEK (Gün, Gerçek Kasa, Günlük Değişim, Günlük Büyüme) · HEDEF (Gün, Teorik Hedef Kasa, Günlük Kazanç, Hedefe Ulaşma)
+  // Kasa tablosu: Gün · Hedef Kasa · Gerçek Kasa · Günlük Değişim · Günlük Büyüme
   // ---------------------------------------------------------------------------
 
   const KASA_RISK_LABELS = { minimum: 'Minimum', medium: 'Medium', high: 'High' };
@@ -1185,31 +1185,21 @@
           <table class="excel-table kasa-sim-table">
             <thead>
               <tr>
-                <th class="grp" colspan="4">${_t('GERÇEK')}</th>
-                <th class="grp col-sep" colspan="4">${_t('HEDEF')}</th>
-              </tr>
-              <tr>
                 <th>${_t('Gün')}</th>
+                <th>${_t('Hedef Kasa ({sym})', { sym })}</th>
                 <th>${_t('Gerçek Kasa ({sym})', { sym })}</th>
                 <th>${_t('Günlük Değişim ({sym})', { sym })}</th>
                 <th>${_t('Günlük Büyüme (%)')}</th>
-                <th class="col-sep">${_t('Gün')}</th>
-                <th>${_t('Teorik Hedef Kasa ({sym})', { sym })}</th>
-                <th>${_t('Günlük Kazanç ({sym})', { sym })}</th>
-                <th>${_t('Hedefe Ulaşma (%)')}</th>
               </tr>
             </thead>
             <tbody>
               ${sim.rows.map(r => `
                 <tr class="${r.isToday ? 'row-today' : ''}">
                   <td title="${dmy(r.date)}">${r.day}</td>
+                  <td>${formatCurrency(r.targetBank, curr)}</td>
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
                   <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
                   <td>${r.dailyGrowthPct != null ? signedPct(r.dailyGrowthPct) : ''}</td>
-                  <td class="col-sep">${r.day}</td>
-                  <td>${formatCurrency(r.targetBank, curr)}</td>
-                  <td>${formatCurrency(r.targetDailyGain, curr)}</td>
-                  <td>${r.targetReachPct != null ? signedPct(r.targetReachPct) : ''}</td>
                 </tr>
               `).join('')}
             </tbody>

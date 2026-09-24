@@ -1122,6 +1122,16 @@
     const p = sim.params;
     const riskOptions = Object.keys(KASA_RISK_LABELS).concat(p.riskProfile === 'custom' ? ['custom'] : []);
 
+    // Yeniden çizimde tablo/sayfa kaydırması ve odaktaki gerçek kasa hücresi korunur
+    // (aksi halde giriş sonrası tablo başa sarar, sayfa zıplar)
+    const oldWrap = pane.querySelector('.ks-table-wrap');
+    const keep = {
+      wrapTop: oldWrap ? oldWrap.scrollTop : null,
+      winY: root.scrollY,
+      focusDay: document.activeElement && pane.contains(document.activeElement) && document.activeElement.classList.contains('kasa-input')
+        ? document.activeElement.dataset.day : null
+    };
+
     pane.innerHTML = `
       <div class="bankroll-switcher-bar">
         <div class="bankroll-tabs-scroll">
@@ -1222,6 +1232,14 @@
     `;
 
     wirePlanDashboardEvents();
+
+    const newWrap = pane.querySelector('.ks-table-wrap');
+    if (newWrap && keep.wrapTop != null) newWrap.scrollTop = keep.wrapTop;
+    if (keep.focusDay) {
+      const f = pane.querySelector(`.kasa-input[data-day="${keep.focusDay}"]`);
+      if (f) f.focus({ preventScroll: true });
+    }
+    if (root.scrollY !== keep.winY) root.scrollTo(root.scrollX, keep.winY);
   }
 
   // Dile göre binlik/ondalık: en "1,234.56" · tr/nl "1.234,56". Tek ayırıcı ve ≤2 hane ("68.66" / "68,66") her dilde ondalıktır.

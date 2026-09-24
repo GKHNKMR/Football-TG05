@@ -497,8 +497,12 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .excel-table tr.row-today td{font-weight:800}
 .kasa-sim-table td,.kasa-sim-table th{text-align:right;white-space:nowrap}
 .kasa-sim-table td.real{padding:3px 6px}
-.kasa-input{width:100%;min-width:84px;max-width:120px;padding:4px 6px;font:inherit;font-size:11.5px;text-align:right;color:var(--text);background:transparent;border:1px solid transparent;border-radius:6px}
-.kasa-input:hover,.kasa-input:focus{border-color:var(--line);background:var(--panel2);outline:none}
+.kasa-input{width:100%;min-width:84px;max-width:120px;padding:4px 6px;font:inherit;font-size:11.5px;text-align:right;color:var(--text);background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.45);border-radius:6px;cursor:text}
+.kasa-input:hover{border-color:rgba(250,204,21,.75);background:rgba(250,204,21,.13)}
+.kasa-input:focus{border-color:#facc15;background:rgba(250,204,21,.16);box-shadow:0 0 0 2px rgba(250,204,21,.25);outline:none}
+.kasa-input.manual{color:#fde047;font-weight:800}
+:root[data-theme="light"] .kasa-input{background:rgba(250,204,21,.18);border-color:#eab308}
+:root[data-theme="light"] .kasa-input.manual{color:#a16207}
 .kasa-input.auto{color:var(--muted);font-style:italic}
 .ks-table-wrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:10px}
 .ks-note{margin-top:10px;font-size:11px;color:var(--muted)}
@@ -1258,12 +1262,12 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260923-i18n"></script>
+<script src="js/i18n.js?v=20260924-kasa"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
-<script src="js/paper_engine.js?v=20260923-kasa-v01e"></script>
-<script src="js/paper_ui.js?v=20260923-columns"></script>
+<script src="js/paper_engine.js?v=20260924-kasa"></script>
+<script src="js/paper_ui.js?v=20260924-kasa"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
 <script src="js/stats_ui.js?v=20260923-i18n"></script>

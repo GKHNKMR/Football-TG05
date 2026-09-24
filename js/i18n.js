@@ -108,19 +108,11 @@
     'sadece bunlar': { en: 'only these', nl: 'alleen deze' },
     'yalnızca ÇŞ vurguları': { en: 'double-chance highlights only', nl: 'alleen dubbele-kansmarkeringen' },
     'Vurgulu': { en: 'Highlighted', nl: 'Gemarkeerd' },
-    'Vurgu: kapalı': { en: 'Highlight: off', nl: 'Markering: uit' },
-    'Vurgu: açık (0.5·1.5·2.5·ÇŞ)': { en: 'Highlight: on (0.5·1.5·2.5·DC)', nl: 'Markering: aan (0.5·1.5·2.5·DK)' },
-    'Vurgu: {label}': { en: 'Highlight: {label}', nl: 'Markering: {label}' },
     'Çifte Şans': { en: 'Double chance', nl: 'Dubbele kans' },
     'pred.hint': {
       tr: 'Tahminin dayanağı: <span class="badge b3">●●●</span> H2H + form · <span class="badge b2">●●</span> form · <span class="badge b1">●</span> sınırlı veri · <span class="badge b0">○</span> sadece lig ortalaması',
       en: 'Basis of the prediction: <span class="badge b3">●●●</span> H2H + form · <span class="badge b2">●●</span> form · <span class="badge b1">●</span> limited data · <span class="badge b0">○</span> league average only',
       nl: 'Basis van de voorspelling: <span class="badge b3">●●●</span> H2H + vorm · <span class="badge b2">●●</span> vorm · <span class="badge b1">●</span> beperkte data · <span class="badge b0">○</span> alleen competitiegemiddelde'
-    },
-    'pred.note': {
-      tr: '<b>Vurgu eşikleri:</b> 0.5+ ≥%95 · 1.5+ ≥%85 · 2.5+ ≥%80 · 1X / 12 / X2 ≥%80. Kısıtlı veri veya kritik eksik oyuncu uyarısı olan maçlar vurgulanmaz. Vurgu garanti anlamına gelmez.',
-      en: '<b>Highlight thresholds:</b> 0.5+ ≥95% · 1.5+ ≥85% · 2.5+ ≥80% · 1X / 12 / X2 ≥80%. Matches with limited data or a critical missing-player warning are not highlighted. A highlight is not a guarantee.',
-      nl: '<b>Markeringsdrempels:</b> 0.5+ ≥95% · 1.5+ ≥85% · 2.5+ ≥80% · 1X / 12 / X2 ≥80%. Wedstrijden met beperkte data of een waarschuwing voor een ontbrekende sleutelspeler worden niet gemarkeerd. Een markering is geen garantie.'
     },
     'pred.col.match': { tr: 'Maç <span class="sarr">↑</span>', en: 'Match <span class="sarr">↑</span>', nl: 'Wedstrijd <span class="sarr">↑</span>' },
     'Ev sahibi kazanır veya berabere': { en: 'Home win or draw', nl: 'Thuisoverwinning of gelijkspel' },

@@ -1013,7 +1013,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <div class="datebar">
       <span id="window">Pazar–Pazar</span>
       <span class="dbar-right">
-        <select class="sel" id="hlSel" title="Vurgu" data-i18n-title="Vurgu"></select>
         <button id="hotToggle" class="hotbtn" type="button">sadece bunlar</button>
         <span id="count"></span>
       </span>
@@ -1024,9 +1023,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
       <span class="badge b2">●●</span> form ·
       <span class="badge b1">●</span> sınırlı veri ·
       <span class="badge b0">○</span> sadece lig ortalaması
-    </div>
-    <div class="dc-bulletin-note" data-i18n-html="pred.note">
-      <b>Vurgu eşikleri:</b> 0.5+ ≥%95 · 1.5+ ≥%85 · 2.5+ ≥%80 · 1X / 12 / X2 ≥%80. Kısıtlı veri veya kritik eksik oyuncu uyarısı olan maçlar vurgulanmaz. Vurgu garanti anlamına gelmez.
     </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
@@ -1319,7 +1315,7 @@ if(!MAIN_TABS.includes(tab)) tab='pred';
 let selectedByTab={pred:store('league_pred','Tümü'),res:store('league_res',store('league_bt','Tümü')),
                    bt:store('league_bt','Tümü'),stats:store('league_stats','Tümü'),cpn:store('league_cpn','Tümü'),cifte:store('league_cifte','Tümü')};
 let selected=selectedByTab[tab]||'Tümü';
-let hlKey=store('hl2','all'); if(!HL[hlKey]&&hlKey!=='off'&&hlKey!=='all')hlKey='o05';
+const hlKey='all';                                 // vurgu her zaman açık (tüm pazarlar)
 let hotOnly=false;
 let resMode=store('res_mode','vurgu');  // 'vurgu' = vurgulanan tahminler, 'all' = tüm maçlar genel yön isabeti
 let vurguMatchOnly=false; // Detaylı Maç Listesi: sadece vurgulanan maçlar
@@ -1390,12 +1386,6 @@ function renderFilters(){
   renderLeagueSel();
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;selectedByTab[tab]=selected;save('league_'+tab,selected);renderFilters();renderAll();});
-}
-function renderHlSel(){
-  const s=$('hlSel');
-  s.innerHTML=`<option value="off">${_t('Vurgu: kapalı')}</option><option value="all">${_t('Vurgu: açık (0.5·1.5·2.5·ÇŞ)')}</option>`+
-    Object.entries(HL).map(([k,v])=>`<option value="${k}">${_t('Vurgu: {label}',{label:v.label})}</option>`).join('');
-  s.value=hlKey;
 }
 
 function weekWindow(){
@@ -2789,7 +2779,6 @@ document.querySelectorAll('.subtab[data-view]').forEach(b=>{
 setResSubView(resSubView);
 $('refresh').onclick=load;
 if($('infoBtn'))$('infoBtn').onclick=openInfo;
-$('hlSel').onchange=e=>{hlKey=e.target.value;save('hl2',hlKey);if(!hlActive().length)hotOnly=false;renderPred();};
 $('hotToggle').onclick=()=>{if(!hlActive().length)return;hotOnly=!hotOnly;renderPred();};
 function wireSearch(inpId,xId,apply){
   const el=$(inpId),xb=$(xId);
@@ -2858,7 +2847,7 @@ async function sha256hex(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-function startApp(){renderHlSel();renderFilters();setTab(tab);load();setInterval(pollLiveScores,60000);
+function startApp(){renderFilters();setTab(tab);load();setInterval(pollLiveScores,60000);
   if(window.BETAVUS_STATS)BETAVUS_STATS.renderBanner();
   if(window.BETAVUS_AUTH)BETAVUS_AUTH.init();}
 async function bootGate(){

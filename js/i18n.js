@@ -500,7 +500,7 @@
     '⚠️ Tüm Kasaları Sıfırla': { en: '⚠️ Reset all bankrolls', nl: '⚠️ Alle bankrolls resetten' },
     'Kasa {n}': { en: 'Bankroll {n}', nl: 'Bankroll {n}' },
     'Özel': { en: 'Custom', nl: 'Aangepast' },
-    'Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-30. gün': { en: 'Bankroll growth chart: actual and theoretical target bankroll, days 1–30', nl: 'Groeigrafiek bankroll: werkelijke en theoretische doelbankroll, dag 1–30' },
+    'Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün': { en: 'Bankroll growth chart: actual and theoretical target bankroll, days 1–{n}', nl: 'Groeigrafiek bankroll: werkelijke en theoretische doelbankroll, dag 1–{n}' },
     '{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}': { en: 'Day {day} · Actual bankroll: {real} · Theoretical target: {target}', nl: 'Dag {day} · Werkelijke bankroll: {real} · Theoretisch doel: {target}' },
     'Yeni kasanın adı:': { en: 'Name of the new bankroll:', nl: 'Naam van de nieuwe bankroll:' },
     '"{name}" kasasını silmek istediğinize emin misiniz? Diğer kasalarınız korunacaktır.': { en: 'Are you sure you want to delete the bankroll "{name}"? Your other bankrolls will be kept.', nl: 'Weet je zeker dat je de bankroll "{name}" wilt verwijderen? Je andere bankrolls blijven behouden.' },

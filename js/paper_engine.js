@@ -962,7 +962,8 @@
     };
   }
 
-  const KASA_SHEET_DAYS = 30; // kasa planı 30. gün dahil biter; sonrası için yeni kasa oluşturulur
+  const KASA_SHEET_DAYS = 30;     // hedef günü hesaplanamazsa (hedef ≤ başlangıç vb.) gösterilecek gün sayısı
+  const KASA_MAX_DAYS = 365;      // aşırı uzun planlarda güvenlik sınırı
 
   // Başlangıç * (1 + büyüme)^gün; 12 anlamlı basamağa indirgenir ki 66.12499999… Excel'deki gibi 66.13 olsun
   function theoreticalBank(startingBank, dailyGrowthRate, day) {
@@ -1029,7 +1030,8 @@
     const g = params.dailyGrowthRate;
     const startTs = planStartTs(plan);
     const todayDay = getElapsedPlanDays(plan, now) + 1;
-    const totalDays = KASA_SHEET_DAYS;
+    // Kasa, hedef kasaya ulaşılan gün (dahil) biter: final = hedef; sonrası için yeni kasa oluşturulur
+    const totalDays = Math.min(KASA_MAX_DAYS, params.daysToTarget || KASA_SHEET_DAYS);
 
     const settled = ((state && state.slips) || [])
       .filter(s => s.settledAt && (s.status === 'won' || s.status === 'lost') && slipBelongsToPlan(s, plan))

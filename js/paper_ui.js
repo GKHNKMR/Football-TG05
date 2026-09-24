@@ -1014,7 +1014,6 @@
   // ---------------------------------------------------------------------------
 
   const KASA_RISK_LABELS = { minimum: 'Minimum', medium: 'Medium', high: 'High' };
-  const KASA_CHART_DAYS = 30; // Excel grafiği A13:A42 (1-30. gün)
   const KASA_COLOR_REAL = '#4F81BD';
   const KASA_COLOR_TARGET = '#C0504D';
 
@@ -1061,7 +1060,7 @@
   function renderKasaChartSvg(sim, curr) {
     const W = 820, H = 330, L = 64, R = 18, T = 18, B = 34;
     const pw = W - L - R, ph = H - T - B;
-    const rows = sim.rows.slice(0, KASA_CHART_DAYS);
+    const rows = sim.rows;                 // 1. günden hedef gününe kadar
     const n = rows.length;
     const peak = Math.max(1, ...rows.map(r => r.targetBank), ...rows.map(r => r.actualBank || 0));
     const step = niceAxisStep(peak / 6);
@@ -1075,8 +1074,9 @@
         <text x="${L - 8}" y="${(y(v) + 3.5).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="end">${v.toLocaleString((root.I18N && root.I18N.locale) || 'tr-TR')}</text>`;
     }
     let xLabels = '';
+    const labelEvery = Math.max(1, Math.ceil(n / 15));  // en fazla ~15 gün etiketi
     rows.forEach((r, i) => {
-      if (i % 2 === 0) xLabels += `<text x="${x(i).toFixed(1)}" y="${(T + ph + 18).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="middle">${r.day}</text>`;
+      if (i % labelEvery === 0 || i === n - 1) xLabels += `<text x="${x(i).toFixed(1)}" y="${(T + ph + 18).toFixed(1)}" fill="var(--muted)" font-size="11" text-anchor="middle">${r.day}</text>`;
     });
 
     // Kümelenmiş sütunlar: her gün için yan yana Gerçek Kasa + Teorik Hedef Kasa.
@@ -1101,7 +1101,7 @@
     const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}</title></rect>`).join('');
 
     return `
-      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-30. gün')}" style="display:block">
+      <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün', { n })}" style="display:block">
         ${grid}
         ${hover}
         <g pointer-events="none">${bars}</g>

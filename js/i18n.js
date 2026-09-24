@@ -105,15 +105,8 @@
 
     // Bülten
     'Vurgu': { en: 'Highlight', nl: 'Markering' },
-    'sadece bunlar': { en: 'only these', nl: 'alleen deze' },
-    'yalnızca ÇŞ vurguları': { en: 'double-chance highlights only', nl: 'alleen dubbele-kansmarkeringen' },
     'Vurgulu': { en: 'Highlighted', nl: 'Gemarkeerd' },
     'Çifte Şans': { en: 'Double chance', nl: 'Dubbele kans' },
-    'pred.hint': {
-      tr: 'Tahminin dayanağı: <span class="badge b3">●●●</span> H2H + form · <span class="badge b2">●●</span> form · <span class="badge b1">●</span> sınırlı veri · <span class="badge b0">○</span> sadece lig ortalaması',
-      en: 'Basis of the prediction: <span class="badge b3">●●●</span> H2H + form · <span class="badge b2">●●</span> form · <span class="badge b1">●</span> limited data · <span class="badge b0">○</span> league average only',
-      nl: 'Basis van de voorspelling: <span class="badge b3">●●●</span> H2H + vorm · <span class="badge b2">●●</span> vorm · <span class="badge b1">●</span> beperkte data · <span class="badge b0">○</span> alleen competitiegemiddelde'
-    },
     'pred.col.match': { tr: 'Maç <span class="sarr">↑</span>', en: 'Match <span class="sarr">↑</span>', nl: 'Wedstrijd <span class="sarr">↑</span>' },
     'Ev sahibi kazanır veya berabere': { en: 'Home win or draw', nl: 'Thuisoverwinning of gelijkspel' },
     'Beraberlik olmaz': { en: 'No draw', nl: 'Geen gelijkspel' },

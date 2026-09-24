@@ -961,6 +961,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .st-rf-won.on{background:#16a34a;border-color:#16a34a}
 .st-rf-lost.on{background:#dc2626;border-color:#dc2626}
 .lgsel{font-size:12.5px;padding:8px 12px;border-radius:11px}
+.datectl .hotbtn{font-size:12.5px;padding:8px 13px;border-radius:11px}
 .faq-intro{margin:6px 0 16px}
 .faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
 .faq summary{cursor:pointer;padding:14px 18px;font-weight:900;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
@@ -1013,16 +1014,8 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <div class="datebar">
       <span id="window">Pazar–Pazar</span>
       <span class="dbar-right">
-        <button id="hotToggle" class="hotbtn" type="button">sadece bunlar</button>
         <span id="count"></span>
       </span>
-    </div>
-    <div class="hint" data-i18n-html="pred.hint">
-      Tahminin dayanağı:
-      <span class="badge b3">●●●</span> H2H + form ·
-      <span class="badge b2">●●</span> form ·
-      <span class="badge b1">●</span> sınırlı veri ·
-      <span class="badge b0">○</span> sadece lig ortalaması
     </div>
     <div class="datectl">
       <button class="datebtn" id="dayBtnPred" type="button"></button>
@@ -1032,6 +1025,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
         <button class="sx" id="qPredX" type="button" hidden aria-label="Temizle" data-i18n-aria="Temizle">×</button>
       </span>
       <select class="sel lgsel" id="lgPred" title="Lig filtresi" data-i18n-title="Lig filtresi"></select>
+      <button id="hotToggle" class="hotbtn" type="button" data-i18n="Vurgu">Vurgu</button>
     </div>
     <div class="table">
       <div class="head">
@@ -1598,8 +1592,7 @@ function renderPred(){
   const total=winMs.length;
   const anyHl=hlActive().length, lock=!!dayPred||!!qPred;
   const hlLabel=hlKey==='all'?_t('Vurgulu'):(HL[hlKey]?HL[hlKey].label:'');
-  $('hotToggle').textContent=hlKey==='dc'?_t('yalnızca ÇŞ vurguları'):_t('sadece bunlar');
-  $('hotToggle').classList.toggle('on',hotOnly&&anyHl&&!lock);
+    $('hotToggle').classList.toggle('on',hotOnly&&anyHl&&!lock);
   $('hotToggle').disabled=!anyHl||lock;
   $('hotToggle').style.opacity=(anyHl&&!lock)?1:.4;
   $('count').textContent=(hotOnly&&anyHl&&!lock)?_t('{n} / {total} maç',{n:list.length,total}):_t('{n} maç',{n:list.length});

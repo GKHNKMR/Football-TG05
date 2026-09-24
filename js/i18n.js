@@ -181,6 +181,8 @@
     'cal.weekdays': { tr: 'Pt,Sa,Ça,Pe,Cu,Ct,Pz', en: 'Mo,Tu,We,Th,Fr,Sa,Su', nl: 'Ma,Di,Wo,Do,Vr,Za,Zo' },
     'Tarih yaz:': { en: 'Enter date:', nl: 'Datum invoeren:' },
     'Bugün': { en: 'Today', nl: 'Vandaag' },
+    'Bugün maç yok': { en: 'No matches today', nl: 'Vandaag geen wedstrijden' },
+    'en yakın:': { en: 'nearest:', nl: 'dichtstbij:' },
     'Tüm günler': { en: 'All days', nl: 'Alle dagen' },
 
     // Yükleme / güncelleme satırı

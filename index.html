@@ -131,6 +131,8 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .cal-g button.sel{background:var(--accent);color:var(--accent-ink)}
 .cal-g button.dot::after{content:"";position:absolute;left:50%;bottom:3px;width:3px;height:3px;border-radius:50%;background:var(--good);transform:translateX(-50%)}
 .cal-g button.sel.dot::after{background:var(--accent-ink)}
+.cal-note{margin-top:9px;font-size:11px;color:var(--muted);font-weight:700}
+.cal-note button{border:0;background:none;padding:0;color:var(--accent,#4ade80);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline}
 .cal-f{display:flex;gap:7px;margin-top:9px}
 .cal-f button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:7px;border-radius:9px;cursor:pointer;font-weight:800;font-size:11px}
 .sortcol{cursor:pointer;user-select:none}
@@ -1418,6 +1420,7 @@ const CALICON='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true
 // ---- calendar date picker ----
 const cal=$('cal');
 let calFor=null, calMonth=new Date();          // calMonth = ilk gün; her açılışta bugünün ayı
+let calNote='';                                // "Bugün" sonrası tek seferlik bilgi satırı
 function dateBtnLabel(k){return k?`${CALICON} ${dayLabel(k)}`:`${CALICON} ${_t('Tüm günler')}`;}
 function keysFor(which){
   // takvim, o sekmedeki TÜM verinin tarihlerini gösterir (sadece bu haftayı değil)
@@ -1449,9 +1452,10 @@ function renderCal(){
   const has=keysFor(calFor);
   const sorted=[...has].sort();
   const lo=sorted[0]||'', hi=sorted[sorted.length-1]||'';
-  const loM=lo.slice(0,7), hiM=hi.slice(0,7);          // veri olan ilk/son ay
   const sel=calFor==='pred'?dayPred:dayRes;
-  const today=localKey(new Date());
+  const today=localKey(new Date()), todayM=today.slice(0,7);
+  // gezilebilir ay aralığı = veri olan ilk/son ay + bugünün ayı (maç arasında da bugüne gidilebilsin)
+  const loM=lo&&(lo.slice(0,7)<todayM?lo.slice(0,7):todayM), hiM=hi&&(hi.slice(0,7)>todayM?hi.slice(0,7):todayM);
   // görüntülenen ayı veri aralığına sıkıştır
   if(loM){const cm=`${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,'0')}`;
     if(cm<loM)calMonth=new Date(+loM.slice(0,4),+loM.slice(5,7)-1,1);
@@ -1474,19 +1478,25 @@ function renderCal(){
   cal.innerHTML=`<div class="cal-h"><button data-nav="-1"${noPrev?' disabled':''}>‹</button><b>${mName}</b><button data-nav="1"${noNext?' disabled':''}>›</button></div>
     <div class="cal-g">${cells}</div>
     <label class="cal-man">${_t('Tarih yaz:')} <input type="date" value="${sel||''}"${lo?` min="${lo}" max="${hi}"`:''}></label>
+    ${calNote?`<div class="cal-note">${calNote}</div>`:''}
     <div class="cal-f"><button data-act="today">${_t('Bugün')}</button><button data-act="all">${_t('Tüm günler')}</button></div>`;
+  calNote='';
+  const nb=cal.querySelector('.cal-note button[data-k]');if(nb)nb.onclick=()=>pickDay(nb.dataset.k);
   cal.querySelectorAll('.cal-g button[data-k]').forEach(b=>b.onclick=()=>pickDay(b.dataset.k));
   cal.querySelectorAll('.cal-h button').forEach(b=>b.onclick=()=>{calMonth.setMonth(calMonth.getMonth()+ +b.dataset.nav);renderCal();});
   cal.querySelector('.cal-man input').onchange=e=>{if(e.target.value)pickDay(e.target.value);};
   cal.querySelector('[data-act=today]').onclick=()=>{
-    // bugüne en yakın maç gününü seç: Tahminler'de bugün/sonrası, Sonuçlar'da bugün/öncesi
+    // bugün maç varsa seç; yoksa takvimi bugünün ayına götür ve en yakın maç gününü öner
+    // (Tahminler'de bugün/sonrası, Sonuçlar'da bugün/öncesi)
     const t=localKey(new Date());
     const ks=[...keysFor(calFor)].sort();
-    if(!ks.length){calMonth=new Date();calMonth.setDate(1);renderCal();return;}
-    const pick=ks.includes(t)?t:(calFor==='pred'
+    if(ks.includes(t)){pickDay(t);return;}
+    const near=calFor==='pred'
       ?(ks.find(k=>k>=t)||ks[ks.length-1])
-      :([...ks].reverse().find(k=>k<=t)||ks[0]));
-    pickDay(pick);
+      :([...ks].reverse().find(k=>k<=t)||ks[0]);
+    calMonth=new Date();calMonth.setDate(1);calMonth.setHours(0,0,0,0);
+    calNote=_t('Bugün maç yok')+(near?` · ${_t('en yakın:')} <button data-k="${near}">${dayLabel(near)}</button>`:'');
+    renderCal();
   };
   cal.querySelector('[data-act=all]').onclick=()=>pickDay(null);
 }

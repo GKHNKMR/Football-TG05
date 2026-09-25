@@ -1350,8 +1350,11 @@ const filters=$('filters'),rows=$('rows');
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function localDate(iso){const d=new Date(iso);const fmt=tz=>{const p=new Intl.DateTimeFormat(I18N.locale,{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:tz}).formatToParts(d);return t=>(p.find(x=>x.type===t)||{}).value||'';};const tr=fmt('Europe/Istanbul'),nl=fmt('Europe/Amsterdam');return `${tr('day')}.${tr('month')}.${tr('year')} · ${tr('hour')}:${tr('minute')} TR (${nl('hour')}:${nl('minute')} NL)`;}
 function shortDate(iso){return new Intl.DateTimeFormat(I18N.locale,{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(iso));}
-function pct(v){return v==null?'—':I18N.pctS((Number(v)*100).toFixed(1));}
-function pctI(v){return v==null?'—':I18N.pctS(Math.round(Number(v)*100));}
+// Olasılıklar aşağı kesilerek gösterilir: 0.9399 "%94,0" görünüp ≥%94 vurgusunu geçmiş gibi durmasın
+const p1=v=>(Math.floor(Number(v)*1000+1e-9)/10).toFixed(1);   // 0-1 → "93.9"
+const p1P=v=>(Math.floor(Number(v)*10+1e-9)/10).toFixed(1);    // 0-100 → "77.9"
+function pct(v){return v==null?'—':I18N.pctS(p1(v));}
+function pctI(v){return v==null?'—':I18N.pctS(Math.floor(Number(v)*100+1e-9));}
 
 // inline SVG country flags — no assets, render everywhere (Windows has no flag emoji)
 const FLAGS={
@@ -1374,7 +1377,7 @@ function pillFor(x,line){
   const lim=isLimitedData(x);
   const hot=!lim&&hlHot(v,lineKey,x);
   if(lim){
-    return `<span class="pill limited" title="${_t('{line}+ tahmini: {v} · ⚠️ Kısıtlı Veri ({basis}) — yüksek belirsizlik nedeniyle vurgulanmaz',{line,v:I18N.pct((Number(v)*100).toFixed(1)),basis:_t(x.basis==='league-avg'?'lig ortalaması':'kısmi form')})}">${pct(v)}<span class="lim-tilde" title="${_t('Kısıtlı veri')}">~</span></span>`;
+    return `<span class="pill limited" title="${_t('{line}+ tahmini: {v} · ⚠️ Kısıtlı Veri ({basis}) — yüksek belirsizlik nedeniyle vurgulanmaz',{line,v:I18N.pct(p1(v)),basis:_t(x.basis==='league-avg'?'lig ortalaması':'kısmi form')})}">${pct(v)}<span class="lim-tilde" title="${_t('Kısıtlı veri')}">~</span></span>`;
   }
   return `<span class="pill${hot?' hot':''}" title="${_t('{line} model olasılığı',{line:line+'+'})}${hot?_t(' · vurgulanan'):''}">${pct(v)}</span>`;
 }
@@ -1591,14 +1594,14 @@ function doubleChanceInfo(x){
 function dcCell(d,k){
   if(!d.v)return `<span class="dc-empty" title="${esc(d.reason)}">—</span>`;
   const v=d.v[k], hot=d.ok&&v>=dcMin(k)&&doubleChanceHighlightOn();
-  return `<span class="pill${hot?' hot':''}${d.ok?'':' limited'}" title="${_t('{line} model olasılığı {v}',{line:k,v:I18N.pct(v.toFixed(1))})}${d.ok?'':' · '+esc(d.reason)+_t(' (vurgulanmaz)')}">${I18N.pctS(v.toFixed(1))}</span>`;
+  return `<span class="pill${hot?' hot':''}${d.ok?'':' limited'}" title="${_t('{line} model olasılığı {v}',{line:k,v:I18N.pct(p1P(v))})}${d.ok?'':' · '+esc(d.reason)+_t(' (vurgulanmaz)')}">${I18N.pctS(p1P(v))}</span>`;
 }
 function doubleChanceHighlightOn(){return hlActive().some(h=>h.key==='dc');}
 function doubleChancePill(info,highlighted){
   if(!info||!info.eligible)return `<span class="dc-empty" title="${esc((info&&info.reason)||_t('Vurgulanmadı'))}">—</span>`;
   const cls=highlighted?' is-highlight hot':'';
-  return `<span class="dc-pill${cls}" title="${_t('Model olasılığı {v} · yüksek güven vurgusu, garanti değildir',{v:I18N.pct(info.pct.toFixed(1))})}">
-    <span class="dc-pick">${esc(info.pick)}</span><span class="dc-pct">${I18N.pct(info.pct.toFixed(1))}</span>
+  return `<span class="dc-pill${cls}" title="${_t('Model olasılığı {v} · yüksek güven vurgusu, garanti değildir',{v:I18N.pct(p1P(info.pct))})}">
+    <span class="dc-pick">${esc(info.pick)}</span><span class="dc-pct">${I18N.pct(p1P(info.pct))}</span>
     <span class="dc-note">${_t('★ Yüksek güven')}</span>
   </span>`;
 }
@@ -2413,7 +2416,7 @@ function groupLegsByMatch(legs){
 function lineCell(m,line){
   const L=m.lines[line];
   if(!L)return '<span class="sub">–</span>';
-  const pc=L.pOver==null?'':'%'+Math.round(L.pOver*100);
+  const pc=L.pOver==null?'':'%'+Math.floor(L.pOver*100+1e-9);
   const cls=L.status==='won'?'hit':L.status==='lost'?'miss':'';
   const mk=L.status==='won'?'✓':L.status==='lost'?'✗':'⏳';
   return `<span class="${cls}" title="${line}+ vurgulandı · güven ${pc}">Ü${mk}</span>`;
@@ -2596,7 +2599,7 @@ function renderGun(){
   if(!c){el.innerHTML='<div class="empty"><strong>Uygun maç yok</strong>Yaklaşan fikstür bulunamadı.</div>';return;}
   const back=!!(BACKTEST&&BACKTEST.by_league);
   const row=(c2,tag)=>{
-    const x=c2.x, p=Math.round(c2.p*100);
+    const x=c2.x, p=Math.floor(c2.p*100+1e-9);
     return `<tr>
       <td><span class="gtag ${tag==='GARANTİ'?'g':'s'}">${tag}</span></td>
       <td>${dmy(x.kickoff_utc)}</td>

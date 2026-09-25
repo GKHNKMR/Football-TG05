@@ -1,5 +1,5 @@
 {
- "run_at": "2026-09-25T09:13:09.343502+00:00",
+ "run_at": "2026-09-25T09:18:38.780998+00:00",
  "days": [
   {
    "date": "2026-09-25",
@@ -68,8 +68,9 @@
   },
   {
    "date": "2026-09-12",
-   "ok": true,
-   "n_matches": 46
+   "ok": false,
+   "n_matches": 42,
+   "error": "Eredivisie: <urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1016)>"
   }
  ]
 }

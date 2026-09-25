@@ -792,9 +792,25 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .acctbtn{height:34px;border:0;border-radius:8px;background:#009f93;color:#fff;font-weight:800;font-size:13px;padding:0 14px;cursor:pointer;white-space:nowrap;font-family:inherit}
 .acctbtn:hover{background:#00b3a5}
 .acctbtn.in{background:rgba(255,255,255,.12)}
-.hero{padding:22px 0 8px}
-.hero-t{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:24px;color:var(--text);line-height:1.2}
-.hero-s{color:var(--muted);font-size:14px;margin-top:4px}
+/* --- Hero: baş harfler BETAVUS'u yazar; sağda silik saha çizimi --- */
+.hero{--hx1:#2ed3c3;--hx2:#d9ff4a;position:relative;padding:26px 0 14px;isolation:isolate}
+:root[data-theme="light"] .hero{--hx1:#009f93;--hx2:#1e40af}
+.hero::before{content:"";position:absolute;z-index:-1;right:0;top:6px;width:300px;height:120px;opacity:.5;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 120' fill='none' stroke='%232ed3c3' stroke-opacity='.35' stroke-width='1.5'%3E%3Crect x='2' y='2' width='296' height='116' rx='6'/%3E%3Cpath d='M150 2v116'/%3E%3Ccircle cx='150' cy='60' r='26'/%3E%3Ccircle cx='150' cy='60' r='2.5' fill='%232ed3c3'/%3E%3Crect x='2' y='30' width='40' height='60'/%3E%3Crect x='258' y='30' width='40' height='60'/%3E%3Crect x='2' y='46' width='14' height='28'/%3E%3Crect x='284' y='46' width='14' height='28'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 60%);mask-image:linear-gradient(90deg,transparent,#000 60%)}
+.hero-eye{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.3em;color:var(--pg);background:color-mix(in srgb,var(--pg) 12%,transparent);border:1px solid color-mix(in srgb,var(--pg) 35%,transparent);border-radius:999px;padding:4px 12px 4px 9px;margin-bottom:10px;transition:color .4s,background .4s,border-color .4s}
+:root[data-theme="light"] .hero-eye{color:color-mix(in srgb,var(--pg) 70%,#13293d)}
+.hero-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:herodot 2s ease-out infinite}
+@keyframes herodot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pg) 60%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+.hero-t{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:34px;letter-spacing:-.8px;color:var(--text);line-height:1.12;margin:0}
+.hero-t .hw{white-space:nowrap}
+.hero-t .amp{color:var(--muted);font-weight:800}
+.hx{font-weight:900;background:linear-gradient(120deg,var(--hx1),var(--hx2));-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.04em;display:inline-block;animation:hxpop .7s cubic-bezier(.2,.9,.3,1.4) both;animation-delay:var(--d)}
+@keyframes hxpop{0%{transform:translateY(8px) scale(.7);opacity:0;filter:blur(4px)}100%{transform:none;opacity:1;filter:none}}
+.hero-s{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;color:var(--text);font-size:13px;font-weight:700}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+.hero-chip svg{width:16px;height:16px;fill:none;stroke:var(--hx1);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@media(prefers-reduced-motion:reduce){.hx,.hero-dot{animation:none}}
 .st-h1{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:26px;margin:4px 0 6px;color:var(--text)}
 
 /* --- kartlar, tablolar, çipler --- */
@@ -1000,7 +1016,8 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
   .top .pg-faq{padding:0 5px}.pg-sub{display:none}
   .acctbtn{padding:0 10px;font-size:12px}
   .top .iconbtn{min-width:30px;height:30px;padding:0 6px}
-  .hero{padding:14px 0 4px}.hero-t{font-size:19px}.hero-s{font-size:13px}
+  .hero{padding:16px 0 8px}.hero-t{font-size:23px;letter-spacing:-.4px}.hero-s{font-size:12px;gap:6px;margin-top:10px}
+  .hero::before{width:170px;height:70px;opacity:.35}.hero-chip{padding:5px 10px 5px 7px}
   /* Bülten: maç bilgisi üstte, 6 olasılık altta etiketli ızgara */
   .head{display:none}
   .row{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:11px 10px}
@@ -1078,9 +1095,14 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
       </div>
     </div>
   </header>
-  <div class="hero">
-    <div class="hero-t">Betting Analysis, Variance &amp; Uncertainty System</div>
-    <div class="hero-s">AI-powered football goal probability engine for risk-free paper-betting simulation</div>
+  <div class="hero" lang="en">
+    <div class="hero-eye"><span class="hero-dot"></span>B·E·T·A·V·U·S</div>
+    <h1 class="hero-t" aria-label="Betting Analysis, Variance and Uncertainty System"><span class="hw"><b class="hx" style="--d:0s">Bet</b>ting</span> <span class="hw"><b class="hx" style="--d:.15s">A</b>nalysis,</span> <span class="hw"><b class="hx" style="--d:.3s">V</b>ariance</span> <span class="amp">&amp;</span> <span class="hw"><b class="hx" style="--d:.45s">U</b>ncertainty</span> <span class="hw"><b class="hx" style="--d:.6s">S</b>ystem</span></h1>
+    <div class="hero-s">
+      <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>AI-powered</span>
+      <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 4.5h-5L8 10Z"/></svg>Football goal probability engine</span>
+      <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>Risk-free paper-betting simulation</span>
+    </div>
   </div>
   <nav class="filters" id="filters" hidden></nav>
 

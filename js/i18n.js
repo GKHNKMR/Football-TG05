@@ -358,12 +358,13 @@
     'Sayfa {p} / {n} · {m} maç': { en: 'Page {p} / {n} · {m} matches', nl: 'Pagina {p} / {n} · {m} wedstrijden' },
     'Vurgulanan maçlar — tahmin vs gerçekleşen': { en: 'Highlighted matches — predicted vs actual', nl: 'Gemarkeerde wedstrijden — voorspeld vs werkelijk' },
     'Tüm vurgulular': { en: 'All highlighted', nl: 'Alle gemarkeerde' },
-    '✓ Kazanan': { en: '✓ Won', nl: '✓ Gewonnen' },
-    '✗ Kaybeden': { en: '✗ Lost', nl: '✗ Verloren' },
+    '✓ Tutan': { en: '✓ Won', nl: '✓ Uitgekomen' },
+    '✗ Tutmayan': { en: '✗ Lost', nl: '✗ Niet uitgekomen' },
+    '{n} tahmin': { en: '{n} predictions', nl: '{n} voorspellingen' },
     'st.note.list': {
-      tr: 'Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Tarih başlığına tıklayarak sıralamayı değiştir.',
-      en: 'Each cell is the pre-match model probability. <span class="st-legend win">green</span> = highlighted prediction came true, <span class="st-legend lose">red</span> = highlighted prediction missed, <b>✓</b> = not highlighted but happened. Click the date header to change the order.',
-      nl: 'Elke cel is de modelkans van vóór de wedstrijd. <span class="st-legend win">groen</span> = gemarkeerde voorspelling uitgekomen, <span class="st-legend lose">rood</span> = gemarkeerde voorspelling niet uitgekomen, <b>✓</b> = niet gemarkeerd maar wel gebeurd. Klik op de datumkop om de volgorde te wijzigen.'
+      tr: 'Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Bir maçta birden fazla vurgu olabilir; sayaçlar vurgulu tahmin sayısını gösterir. Tarih başlığına tıklayarak sıralamayı değiştir.',
+      en: 'Each cell is the pre-match model probability. <span class="st-legend win">green</span> = highlighted prediction came true, <span class="st-legend lose">red</span> = highlighted prediction missed, <b>✓</b> = not highlighted but happened. A match can carry several highlights; the counters show highlighted predictions. Click the date header to change the order.',
+      nl: 'Elke cel is de modelkans van vóór de wedstrijd. <span class="st-legend win">groen</span> = gemarkeerde voorspelling uitgekomen, <span class="st-legend lose">rood</span> = gemarkeerde voorspelling niet uitgekomen, <b>✓</b> = niet gemarkeerd maar wel gebeurd. Een wedstrijd kan meerdere markeringen hebben; de tellers tonen gemarkeerde voorspellingen. Klik op de datumkop om de volgorde te wijzigen.'
     },
     'Tıkla: {x} sırala': { en: 'Click: sort {x}', nl: 'Klik: sorteer {x}' },
     'eskiden yeniye': { en: 'oldest first', nl: 'oudste eerst' },

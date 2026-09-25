@@ -130,13 +130,18 @@
     return `<td class="st-p${cls}" title="${T('Model {p}', { p: I.pct((p / 10).toFixed(1)) })}${hl ? T(' · vurgulandı · ') + T(ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? T(' · gerçekleşti') : ''}">${I.pctS((p / 10).toFixed(1))}${!hl && ok ? '<i>✓</i>' : ''}</td>`;
   }
 
-  function hlRows(rows) {          // yalnızca vurgulu maçlar + tutan / kaybeden filtresi
-    const out = { all: [], won: [], lost: [] };
+  // Yalnızca vurgulu maçlar. Sayaçlar TAHMİN bazlıdır (bir maçta birden çok vurgu olabilir),
+  // böylece ana sayfa şeridiyle aynı sayılar görünür: tutan = en az bir vurgusu tutan maçlar,
+  // tutmayan = en az bir vurgusu tutmayan maçlar (karışık maç ikisinde de listelenir).
+  function hlRows(rows) {
+    const out = { all: [], won: [], lost: [], n: { all: 0, won: 0, lost: 0 } };
     for (const r of rows) {
       const o = hlOutcomes(r);
       if (!o.length) continue;
-      out.all.push(r);
-      (o.every(Boolean) ? out.won : out.lost).push(r);
+      const h = o.filter(Boolean).length;
+      out.all.push(r); out.n.all += o.length;
+      if (h) { out.won.push(r); out.n.won += h; }
+      if (h < o.length) { out.lost.push(r); out.n.lost += o.length - h; }
     }
     return out;
   }
@@ -164,9 +169,9 @@
       <span>${T('Sayfa {p} / {n} · {m} maç', { p: st.page + 1, n: pages, m: fmtN(list.length) })}</span>
       <button class="hotbtn" data-pg="next" ${st.page < pages - 1 ? '' : 'disabled'}>${T('Sonraki ›')}</button>
       <button class="hotbtn" data-pg="last" ${st.page < pages - 1 ? '' : 'disabled'}>»</button></div>`;
-    const fbtn = (k, label, n) => `<button class="hotbtn st-rf${st.res === k ? ' on' : ''} st-rf-${k}" type="button" data-res="${k}">${label} <b>${fmtN(n)}</b></button>`;
+    const fbtn = k => `<button class="hotbtn st-rf${st.res === k ? ' on' : ''} st-rf-${k}" type="button" data-res="${k}">${T({ all: 'Tüm vurgulular', won: '✓ Tutan', lost: '✗ Tutmayan' }[k])} <b>${T('{n} tahmin', { n: fmtN(groups.n[k]) })}</b> <small>· ${T('{n} maç', { n: fmtN(groups[k].length) })}</small></button>`;
     return `<div class="card st-card st-list"><h2>${T('Vurgulanan maçlar — tahmin vs gerçekleşen')}</h2>
-      <div class="st-rfs">${fbtn('all', T('Tüm vurgulular'), groups.all.length)}${fbtn('won', T('✓ Kazanan'), groups.won.length)}${fbtn('lost', T('✗ Kaybeden'), groups.lost.length)}</div>
+      <div class="st-rfs">${fbtn('all')}${fbtn('won')}${fbtn('lost')}</div>
       <p class="st-note">${T('st.note.list')}</p>
       ${pager}
       <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="${T('Tıkla: {x} sırala', { x: T(st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye') })}">${T('Tarih')} ${st.order === 'desc' ? '▼' : '▲'}</th><th>${T('Maç')}</th><th>${T('Skor')}</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>${T('Vurgu')}</th></tr></thead>

@@ -1,5 +1,5 @@
 {
- "run_at": "2026-09-25T16:32:45.523545+00:00",
+ "run_at": "2026-09-25T16:42:27.721861+00:00",
  "days": [
   {
    "date": "2026-09-25",
@@ -29,17 +29,17 @@
   {
    "date": "2026-09-20",
    "ok": true,
-   "n_matches": 35
+   "n_matches": 39
   },
   {
    "date": "2026-09-19",
    "ok": true,
-   "n_matches": 44
+   "n_matches": 48
   },
   {
    "date": "2026-09-18",
    "ok": true,
-   "n_matches": 8
+   "n_matches": 9
   },
   {
    "date": "2026-09-17",
@@ -64,12 +64,12 @@
   {
    "date": "2026-09-13",
    "ok": true,
-   "n_matches": 25
+   "n_matches": 29
   },
   {
    "date": "2026-09-12",
    "ok": true,
-   "n_matches": 46
+   "n_matches": 50
   }
  ]
 }

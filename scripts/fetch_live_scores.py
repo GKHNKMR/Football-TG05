@@ -49,6 +49,7 @@ ESPN_SLUG = {
     "Eredivisie": "ned.1",
     "Turkish Süper Lig": "tur.1",
     "Primeira Liga": "por.1",
+    "Belgian Pro League": "bel.1",
 }
 
 

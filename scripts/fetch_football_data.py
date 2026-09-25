@@ -11,6 +11,7 @@ Only the leagues used by BETAVUS are pulled, top division only:
     F1  France   - Ligue 1
     N1  Netherlands - Eredivisie
     P1  Portugal - Primeira Liga
+    B1  Belgium  - Pro League
 
 Files land in data/football-data/<DIV>/<SEASON>.csv (SEASON = e.g. 2425).
 These raw CSVs are the local stats database; scripts/build_match_stats.py
@@ -43,6 +44,7 @@ DIVISIONS = {
     "F1": "Ligue 1",
     "N1": "Eredivisie",
     "P1": "Primeira Liga",
+    "B1": "Belgian Pro League",
     "D2": "2. Bundesliga",
     "SP2": "Segunda División",
     "I2": "Serie B",

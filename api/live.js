@@ -14,7 +14,7 @@
 const https = require("https");
 
 const ESPN_SLUGS = new Set([
-  "eng.1", "eng.2", "esp.1", "ger.1", "ita.1", "fra.1", "ned.1", "tur.1", "por.1",
+  "eng.1", "eng.2", "esp.1", "ger.1", "ita.1", "fra.1", "ned.1", "tur.1", "por.1", "bel.1",
 ]);
 
 function getJson(url) {

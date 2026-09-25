@@ -46,7 +46,7 @@ OUT_FILE = Path("data/weather-strengths.json")
 DIVISIONS = {
     "E0": "Premier League", "E1": "Championship", "SP1": "LaLiga", "D1": "Bundesliga",
     "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie", "T1": "Turkish Süper Lig",
-    "P1": "Primeira Liga",
+    "P1": "Primeira Liga", "B1": "Belgian Pro League",
 }
 ALL_SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526"]
 TARGET_SEASONS = ["2122", "2223", "2324", "2425", "2526"]

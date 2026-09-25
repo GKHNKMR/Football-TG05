@@ -2,7 +2,7 @@
 
 Football Goal Probability Engine.
 
-BETAVUS is a mobile-friendly football dashboard for the following nine leagues:
+BETAVUS is a mobile-friendly football dashboard for the following ten leagues:
 
 - Premier League
 - Championship
@@ -13,6 +13,7 @@ BETAVUS is a mobile-friendly football dashboard for the following nine leagues:
 - Ligue 1
 - Eredivisie
 - Primeira Liga
+- Belgian Pro League
 
 ## Architecture
 
@@ -64,6 +65,7 @@ gives away, so it was dropped.
 | Premier League | `2026-27/en.1.json` |
 | Championship | `2026-27/en.2.json` |
 | Turkish Süper Lig | football-data only (openfootball has no current fixtures) |
+| Belgian Pro League | football-data `B1` history + ESPN `bel.1` scoreboard for upcoming fixtures |
 | LaLiga | `2026-27/es.1.json` |
 | Bundesliga | `2026-27/de.1.json` |
 | Serie A | `2026-27/it.1.json` |
@@ -119,6 +121,7 @@ five completed seasons, drawn as inline SVG).
 | Premier League | `E0` | `mmz4281/<season>/E0.csv` |
 | Championship | `E1` | `mmz4281/<season>/E1.csv` |
 | Turkish Süper Lig | `T1` | `mmz4281/<season>/T1.csv` |
+| Belgian Pro League | `B1` | `mmz4281/<season>/B1.csv` |
 | LaLiga | `SP1` | `mmz4281/<season>/SP1.csv` |
 | Bundesliga | `D1` | `mmz4281/<season>/D1.csv` |
 | Serie A | `I1` | `mmz4281/<season>/I1.csv` |
@@ -133,7 +136,7 @@ Use the apex domain `football-data.co.uk` (the `www` host currently 503s).
 [`scripts/backtest.py`](scripts/backtest.py) walk-forward tests the goal model:
 each target season (2021/22 → 2025/26) is predicted using **only the seasons
 before it** (up to four, no result leakage), then scored against what actually
-happened, across all nine leagues. Output `data/backtest.json` is rendered both by the **Model doğruluğu** tab in the app and by the standalone
+happened, across all ten leagues. Output `data/backtest.json` is rendered both by the **Model doğruluğu** tab in the app and by the standalone
 [`backtest.html`](backtest.html) (`/backtest.html`): matches tested plus
 0.5/1.5/2.5 Üst direction accuracy, sliceable by league and season.
 
@@ -160,7 +163,7 @@ BETAVUS, futbol toplam gol pazarları (0.5 Üst, 1.5 Üst, 2.5 Üst) için yapay
 
 ### 5 Sekmeli Mimari
 
-1. **⚽ Tahminler:** 9 lig için Poisson ve Dixon-Coles düzeltmeli maç bazlı 0.5/1.5/2.5 Üst olasılıkları ve detaylı H2H/Form istatistikleri.
+1. **⚽ Tahminler:** 10 lig için Poisson ve Dixon-Coles düzeltmeli maç bazlı 0.5/1.5/2.5 Üst olasılıkları ve detaylı H2H/Form istatistikleri.
 2. **🎯 Tahmin vs Gerçekleşen:** Modelin 5 sezonluk walk-forward geçmişi, lig bazlı başarı oranları ve 12 Eylül 2026 sonrası canlı doğruluk analizi.
 3. **💡 Kupon Önerileri:** Kullanıcının risk profiline (Temkinli, Dengeli, Atak) göre otomatik oluşturulan minimum, orta ve yüksek riskli kuponlar.
    - **Kupon Düzenleme Modülü:** Maç çıkarma, `+ Maç Ekle` ile uygun fikstürlerden seçim yapma, pazar değiştirme (0.5/1.5/2.5) ve harici oynanan gerçek oranı girebilme.

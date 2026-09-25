@@ -15,6 +15,7 @@ DIVISIONS = {
     "N1": ("Eredivisie", 88),
     "T1": ("Turkish Süper Lig", 203),
     "P1": ("Primeira Liga", 94),
+    "B1": ("Belgian Pro League", 144),
 }
 
 LEAGUE_BY_DIV = {d: name for d, (name, _lid) in DIVISIONS.items()}
@@ -83,6 +84,19 @@ CROSSWALK = {
         "Marítimo": "Maritimo", "Famalicão": "Famalicao",
         "Sporting Braga": "Sp Braga", "Sporting CP": "Sp Lisbon",
         "Vitória Guimarães": "Guimaraes",
+    },
+    # football-data.co.uk uses bare/short forms for Belgian clubs; show the
+    # names Belgian football is usually reported under.
+    "Belgian Pro League": {
+        "Royal Antwerp": "Antwerp", "Beerschot": "Beerschot VA",
+        "FCV Dender": "Dender", "KAS Eupen": "Eupen", "Racing Genk": "Genk",
+        "KAA Gent": "Gent", "KV Kortrijk": "Kortrijk", "Lommel": "Lommel SK",
+        "KV Mechelen": "Mechelen", "Excel Mouscron": "Mouscron",
+        "KV Oostende": "Oostende", "OH Leuven": "Oud-Heverlee Leuven",
+        "RAAL La Louvière": "RAAL La Louviere", "RFC Seraing": "Seraing",
+        "Sint-Truiden": "St Truiden", "Union Saint-Gilloise": "St. Gilloise",
+        "Standard Liège": "Standard", "Zulte Waregem": "Waregem",
+        "KVC Westerlo": "Westerlo",
     },
 }
 

@@ -26,7 +26,7 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from teams import DIV_BY_LEAGUE, to_fd, to_pretty  # noqa: E402
 from goals_model import LeagueModel, DEFAULT_RHO, market_p_over25  # noqa: E402
-from live_scores import find_live_match, load_live_scores  # noqa: E402
+from live_scores import find_live_match, load_live_scores, norm as norm_team  # noqa: E402
 from xg_blend import XG_WEIGHT_BY_LEAGUE, xg_seasons_for  # noqa: E402
 
 try:
@@ -64,14 +64,22 @@ SUMMER_OFFSET_HOURS = {
     "Europe/Rome": 2,
     "Europe/Paris": 2,
     "Europe/Amsterdam": 2,
-    "Europe/Lisbon": 1,  # Portugal runs on Western European Time, same clock as the UK
+    "Europe/Lisbon": 1,
+    "Europe/Brussels": 2,  # Portugal runs on Western European Time, same clock as the UK
     "Europe/Istanbul": 3,
 }
 
 # Leagues openfootball does not publish current fixtures for: source both the
 # history and the upcoming round from football-data.co.uk instead.
 #   league_id -> (football-data DIV, display name, short code, stadium tz)
-FD_LEAGUES = {203: ("T1", "Turkish Süper Lig", "TR", "Europe/Istanbul")}
+FD_LEAGUES = {
+    203: ("T1", "Turkish Süper Lig", "TR", "Europe/Istanbul"),
+    144: ("B1", "Belgian Pro League", "BE", "Europe/Brussels"),
+}
+# FD leagues whose month-ahead schedule comes from ESPN's public scoreboard
+# (openfootball has no be.1; fixtures.csv only lists the imminent round).
+ESPN_FIXTURE_SLUG = {"B1": "bel.1"}
+ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard"
 FD_HIST_SEASONS = ["2223", "2324", "2425", "2526", "2627"]   # oldest -> newest
 FD_MODEL_CODES = ["2627", "2526", "2425", "2324"]            # nearest -> ...
 FD_MODEL_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
@@ -412,6 +420,63 @@ def tff_upcoming(fd_teams, start, end):
     return out
 
 
+def _espn_json(url):
+    # ESPN's WAF blocks a custom UA - leave urllib's default (see fetch_live_scores.py)
+    with urlopen(Request(url), timeout=25) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _espn_to_fd(raw, fd_teams):
+    """ESPN display name -> football-data.co.uk name (accent/alias-folded
+    substring match, longest candidate wins)."""
+    key = norm_team(raw)
+    best = None
+    for t in fd_teams:
+        tn = norm_team(t)
+        if tn == key:
+            return t
+        if tn and (tn in key or key in tn) and (best is None or len(tn) > len(norm_team(best))):
+            best = t
+    return best or raw
+
+
+def espn_upcoming(slug, fd_teams, start, end):
+    """Upcoming league fixtures from ESPN's scoreboard, one request per match
+    day listed in the league calendar (ESPN rejects multi-day ranges here)."""
+    try:
+        cal = _espn_json(ESPN_SCOREBOARD.format(slug=slug))["leagues"][0].get("calendar", [])
+    except Exception as exc:
+        print(f"  ESPN calendar fetch failed: {exc}")
+        return []
+    days = sorted({c[:10] for c in cal if isinstance(c, str)
+                   if start.isoformat() <= c[:10] <= end.isoformat()})
+    out = []
+    for d in days:
+        try:
+            data = _espn_json(f"{ESPN_SCOREBOARD.format(slug=slug)}?dates={d.replace('-', '')}")
+        except Exception as exc:
+            print(f"  ESPN {d} fetch failed: {exc}")
+            continue
+        for ev in data.get("events", []):
+            comp = (ev.get("competitions") or [{}])[0]
+            side = {c.get("homeAway"): c for c in comp.get("competitors", [])}
+            if "home" not in side or "away" not in side:
+                continue
+            if comp.get("status", {}).get("type", {}).get("completed"):
+                continue
+            try:
+                ko = datetime.strptime(ev["date"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
+            except (KeyError, ValueError):
+                continue
+            if not (start <= ko.date() <= end):
+                continue
+            out.append({"date": ko.date(), "time": "",
+                        "utc": ko.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "home": _espn_to_fd(side["home"]["team"]["displayName"], fd_teams),
+                        "away": _espn_to_fd(side["away"]["team"]["displayName"], fd_teams)})
+    return out
+
+
 def _fd_upcoming(div, start, end):
     """Upcoming DIV matches from fixtures.csv inside [start, end]."""
     if not FIXTURES_CSV.exists():
@@ -455,8 +520,13 @@ def fd_predictions(now, start, end, odds, live):
         model = LeagueModel([(by_code.get(c, []), w)
                             for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
         fd_teams = {m["home"] for m in hist} | {m["away"] for m in hist}
-        up = tff_upcoming(fd_teams, start, end) if div == "T1" else []
-        src = "tff.org"
+        recent = {m[s] for m in hist if m["season"] in FD_MODEL_CODES[:2] for s in ("home", "away")}
+        if div == "T1":
+            up, src = tff_upcoming(fd_teams, start, end), "tff.org"
+        elif div in ESPN_FIXTURE_SLUG:
+            up, src = espn_upcoming(ESPN_FIXTURE_SLUG[div], recent or fd_teams, start, end), "espn.com"
+        else:
+            up, src = [], ""
         if not up:
             up, src = _fd_upcoming(div, start, end), "football-data.co.uk"
         n = dropped = 0
@@ -474,7 +544,7 @@ def fd_predictions(now, start, end, odds, live):
             row = {
                 "match_id": f"{code}-{fx['date'].isoformat()}-{n:02d}",
                 "league_id": lid, "league": name,
-                "kickoff_utc": kickoff_utc(fx["date"].isoformat(), fx["time"], tz_name),
+                "kickoff_utc": fx.get("utc") or kickoff_utc(fx["date"].isoformat(), fx["time"], tz_name),
                 "home": home, "away": away,
                 "source": src,
                 **pred, "updated_at": now.isoformat(),

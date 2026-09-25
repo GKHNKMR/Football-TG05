@@ -45,7 +45,7 @@ OUT_FILE = Path("data/motivation-strengths.json")
 DIVISIONS = {
     "E0": "Premier League", "E1": "Championship", "SP1": "LaLiga", "D1": "Bundesliga",
     "I1": "Serie A", "F1": "Ligue 1", "N1": "Eredivisie", "T1": "Turkish Süper Lig",
-    "P1": "Primeira Liga",
+    "P1": "Primeira Liga", "B1": "Belgian Pro League",
 }
 ALL_SEASONS = ["1920", "2021", "2122", "2223", "2324", "2425", "2526"]
 TARGET_SEASONS = ["2122", "2223", "2324", "2425", "2526"]
@@ -81,7 +81,8 @@ LEAGUE_ZONES = {
     "Ligue 1": {"relegation": 3, "top": 6},            # 4 CL + 1 EL + 1 ECL; 16th relegation play-off folded in
     "Eredivisie": {"relegation": 3, "top": 5},         # 3 CL (incl. qualifying) + 1 EL + 1 ECL; 16th play-off folded in
     "Turkish Süper Lig": {"relegation": 3, "top": 4},  # 2 CL (incl. qualifying) + 1 EL + 1 ECL
-    "Primeira Liga": {"relegation": 3, "top": 4},      # 2 CL (incl. qualifying) + 1 EL + 1 ECL; 16th play-off folded in
+    "Primeira Liga": {"relegation": 3, "top": 4},
+    "Belgian Pro League": {"relegation": 2, "top": 6},  # regular season: top 6 go to the Champions play-off      # 2 CL (incl. qualifying) + 1 EL + 1 ECL; 16th play-off folded in
 }
 
 

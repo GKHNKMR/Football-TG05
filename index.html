@@ -1366,7 +1366,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 <script src="js/auth_config.js?v=20260923-google"></script>
 <script src="js/auth_sync.js?v=20260924-closed"></script>
 <script>
-const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
+const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga','Belgian Pro League'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
 let STATS={matches:{}},RESULTS=null,BACKTEST=(window.BACKTEST_DATA||null),H2H={pairs:{}};
 const FALLBACK_DATA=[
@@ -1439,6 +1439,7 @@ const FLAGS={
  'Eredivisie':'<rect width="20" height="14" fill="#ae1c28"/><rect y="4.67" width="20" height="4.67" fill="#f1f2f1"/><rect y="9.33" width="20" height="4.67" fill="#21468b"/>',
  'Turkish Süper Lig':'<rect width="20" height="14" fill="#e30a17"/><circle cx="7.4" cy="7" r="3.1" fill="#fff"/><circle cx="8.5" cy="7" r="2.5" fill="#e30a17"/><path d="M11 7l2 .65-1.24-1.7v2.1L10.5 6.36z" fill="#fff"/>',
  'Primeira Liga':'<rect width="20" height="14" fill="#046a38"/><rect x="8" width="12" height="14" fill="#da291c"/><circle cx="8" cy="7" r="3" fill="#ffcc00"/><rect x="6.7" y="5.3" width="2.6" height="3.4" fill="#da291c" stroke="#fff" stroke-width=".3"/>'
+ 'Belgian Pro League':'<rect width="6.67" height="14" fill="#000"/><rect x="6.67" width="6.66" height="14" fill="#fdda24"/><rect x="13.33" width="6.67" height="14" fill="#ef3340"/>',
 };
 FLAGS['Championship']=FLAGS['Premier League'];   // İngiltere 2. lig — aynı bayrak
 function flag(lg,h){h=h||13;const f=FLAGS[lg];if(!f)return '';
@@ -2072,7 +2073,7 @@ function renderAll(){
 }
 
 // ---- model doğruluğu (backtest tabloları) ----
-const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga'];
+const BT_ORDER=['Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga','Belgian Pro League'];
 const btPc=v=>v==null?'—':(v*100).toFixed(1)+'%';
 function btTiles(rows){/* handled in unified tiles */}
 function btSeasonList(){return BACKTEST?Object.keys(BACKTEST.by_season||{}).sort():[];}
@@ -2356,7 +2357,7 @@ function timeAgo(iso){
 // /api/live proxy'si (bkz. api/live.js) üzerinden çekip window.__data'daki
 // ilgili maça live alanı olarak işliyoruz, böylece "● CANLI" rozeti gerçek
 // zamana yakın güncellenir.
-const ESPN_SLUG={'Premier League':'eng.1','Championship':'eng.2','LaLiga':'esp.1','Bundesliga':'ger.1','Serie A':'ita.1','Ligue 1':'fra.1','Eredivisie':'ned.1','Turkish Süper Lig':'tur.1','Primeira Liga':'por.1'};
+const ESPN_SLUG={'Premier League':'eng.1','Championship':'eng.2','LaLiga':'esp.1','Bundesliga':'ger.1','Serie A':'ita.1','Ligue 1':'fra.1','Eredivisie':'ned.1','Turkish Süper Lig':'tur.1','Primeira Liga':'por.1','Belgian Pro League':'bel.1'};
 const _WORD_ALIASES={UTD:'UNITED',WOLVES:'WOLVERHAMPTON',SPURS:'TOTTENHAM',BORO:'MIDDLESBROUGH',NIJMEGEN:'NEC',COLOGNE:'KOLN',HAMBURGER:'HAMBURG',MUNICH:'MUNCHEN'};
 const _NAME_ALIASES={'STADE RENNAIS':'RENNES','ATHLETIC CLUB':'ATHLETIC BILBAO','ERZURUM BB':'ERZURUMSPOR','AMED SFK':'AMEDSPOR'};
 function normTeam(s){

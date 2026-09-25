@@ -338,7 +338,7 @@
 
     const leaguesList = [
       'Premier League', 'Championship', 'LaLiga', 'Bundesliga',
-      'Serie A', 'Ligue 1', 'Eredivisie', 'Turkish Süper Lig', 'Primeira Liga'
+      'Serie A', 'Ligue 1', 'Eredivisie', 'Turkish Süper Lig', 'Primeira Liga', 'Belgian Pro League'
     ];
 
     const seasonList = ['2025/26', '2024/25', '2023/24', '2022/23', '2021/22'];

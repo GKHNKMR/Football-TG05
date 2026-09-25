@@ -41,7 +41,7 @@ def load_live_scores():
 _WORD_ALIASES = {
     "UTD": "UNITED", "WOLVES": "WOLVERHAMPTON", "SPURS": "TOTTENHAM",
     "BORO": "MIDDLESBROUGH", "NIJMEGEN": "NEC", "COLOGNE": "KOLN",
-    "HAMBURGER": "HAMBURG", "MUNICH": "MUNCHEN",
+    "HAMBURGER": "HAMBURG", "MUNICH": "MUNCHEN", "SAINT": "ST", "SINT": "ST",
 }
 # A few club names ESPN spells so differently from ours that no amount of
 # per-word aliasing lines them up (a rebrand, a different short form, or a
@@ -49,6 +49,8 @@ _WORD_ALIASES = {
 _NAME_ALIASES = {
     "STADE RENNAIS": "RENNES", "ATHLETIC CLUB": "ATHLETIC BILBAO",
     "ERZURUM BB": "ERZURUMSPOR", "AMED SFK": "AMEDSPOR",
+    "SINT TRUIDENSE": "ST TRUIDEN", "OH LEUVEN": "OUD HEVERLEE LEUVEN",
+    "ROYAL CHARLEROI SC": "CHARLEROI",
 }
 
 

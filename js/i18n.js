@@ -306,9 +306,9 @@
     },
     'faq.q9': { tr: "Fikstür'de hangi maçlar var?", en: 'Which matches are in the Fixture?', nl: 'Welke wedstrijden staan in het Wedstrijdschema?' },
     'faq.a9': {
-      tr: '9 ligin (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga) önümüzdeki 1 aydaki maçları. Veriler saatte bir güncellenir; milli aralarda liste kısalabilir.',
-      en: 'The next month\'s matches from 9 leagues (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga). Data is updated every hour; the list may be shorter during international breaks.',
-      nl: 'De wedstrijden van de komende maand uit 9 competities (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga). De gegevens worden elk uur bijgewerkt; tijdens interlandperiodes kan de lijst korter zijn.'
+      tr: '10 ligin (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga, Belçika Pro League) önümüzdeki 1 aydaki maçları. Veriler saatte bir güncellenir; milli aralarda liste kısalabilir.',
+      en: 'The next month\'s matches from 10 leagues (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga, Belgian Pro League). Data is updated every hour; the list may be shorter during international breaks.',
+      nl: 'De wedstrijden van de komende maand uit 10 competities (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga, Belgische Pro League). De gegevens worden elk uur bijgewerkt; tijdens interlandperiodes kan de lijst korter zijn.'
     },
     'faq.q10': { tr: 'Sanal Kasa verilerim nerede saklanıyor?', en: 'Where is my Virtual Bankroll data stored?', nl: 'Waar worden mijn Virtuele bankroll-gegevens opgeslagen?' },
     'faq.a10': {

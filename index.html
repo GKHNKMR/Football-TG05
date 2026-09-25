@@ -1096,7 +1096,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
   <section id="pane-res" hidden>
     <p class="lede" id="res-lede"></p>
     <div class="datectl" style="margin:4px 0 10px;gap:8px;display:flex;flex-wrap:wrap">
-      <button id="modeVurgu" class="hotbtn on" type="button">🟢 Vurgulanan Tahminler (0.5≥%95 · 1.5≥%85 · 2.5≥%75)</button>
+      <button id="modeVurgu" class="hotbtn on" type="button">🟢 Vurgulanan Tahminler (0.5≥%94 · 1.5≥%83 · 2.5≥%75)</button>
       <button id="modeAll" class="hotbtn" type="button">⚪ Tüm Maçlar (Genel Yön İsabeti)</button>
     </div>
     <nav class="filters" id="res-seasons"></nav>
@@ -1113,8 +1113,8 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
       <div class="datectl">
         <button class="datebtn" id="dayBtnRes" type="button"></button>
         <button id="resSortBtn" class="hotbtn" type="button" title="Tarih sıralamasını değiştir">📅 Yeniden Eskiye (↓)</button>
-        <button id="vurguMatchToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 en az bir çizgide yeşil yanan maçlar">⚡ sadece vurgulanan maçlar</button>
-        <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
+        <button id="vurguMatchToggle" class="hotbtn" type="button" title="0.5+ ≥ %94 · 1.5+ ≥ %83 · 2.5+ ≥ %75 en az bir çizgide yeşil yanan maçlar">⚡ sadece vurgulanan maçlar</button>
+        <button id="hiMissToggle" class="hotbtn" type="button" title="0.5+ ≥ %94 · 1.5+ ≥ %83 · 2.5+ ≥ %75 güvenle tahmin edilip tutmayan maçlar">yüksek güven ıskaları</button>
         <span class="srch">
           <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           <input id="qRes" type="search" placeholder="Takım ara…" autocomplete="off" spellcheck="false">
@@ -1280,7 +1280,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260924-kasa4"></script>
+<script src="js/i18n.js?v=20260925-vurgu2"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
@@ -1288,7 +1288,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 <script src="js/paper_ui.js?v=20260924-kasa4"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
-<script src="js/stats_ui.js?v=20260923-i18n"></script>
+<script src="js/stats_ui.js?v=20260925-vurgu2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/auth_config.js?v=20260923-google"></script>
 <script src="js/auth_sync.js?v=20260924-closed"></script>
@@ -1301,10 +1301,10 @@ const FALLBACK_DATA=[
 ];
 
 // Vurgu eşikleri — backtest'te her pazarın sürdürülebilir güven bölgesi
-const HL={o05:{key:'p_over_0_5',min:0.95,label:'0.5+ ≥ '+I18N.pct(95)},
-         o15:{key:'p_over_1_5',min:0.85,label:'1.5+ ≥ '+I18N.pct(85)},
-         o25:{key:'p_over_2_5',min:0.80,label:'2.5+ ≥ '+I18N.pct(80)},
-         dc:{key:'dc',min:0.80,label:_t('Çifte Şans')+' ≥ '+I18N.pct(80)}};
+const HL={o05:{key:'p_over_0_5',min:0.94,label:'0.5+ ≥ '+I18N.pct(94)},
+         o15:{key:'p_over_1_5',min:0.83,label:'1.5+ ≥ '+I18N.pct(83)},
+         o25:{key:'p_over_2_5',min:0.75,label:'2.5+ ≥ '+I18N.pct(75)},
+         dc:{key:'dc',min:0.78,label:_t('Çifte Şans')+' ≥ '+I18N.pct(80)+' (X2 ≥ '+I18N.pct(78)+')'}};
 // hlKey: 'off' | 'all' (tüm vurgular) | HL anahtarı
 function hlActive(){return hlKey==='all'?[HL.o05,HL.o15,HL.o25,HL.dc]:(HL[hlKey]?[HL[hlKey]]:[]);}
 function isLimitedData(x){
@@ -1556,7 +1556,8 @@ function missingKeyInfo(x){
   if(am.length)parts.push(`${x.away}: ${am.join(', ')}`);
   return {source:info.source,isConfirmed:info.source==='ESPN starting XI',text:parts.join(' · ')};
 }
-const DC_MIN=80;
+const DC_MIN_BY={'1X':80,'12':80,'X2':78};   // X2 ≥%78: backtest'te %80 ile aynı isabet (%84), 1,7 kat daha fazla vurgu
+const dcMin=k=>DC_MIN_BY[k]??80;
 // 1X / 12 / X2 olasılıklarının üçü birden (yüzde). ok=false ise vurgu yok, değerler yine gösterilebilir.
 function dcAll(x){
   const out={ok:false,reason:'',v:null};
@@ -1584,12 +1585,12 @@ function doubleChanceInfo(x){
   if(!d.v)return {eligible:false,pick:null,pct:0,reason:d.reason};
   const [pick,pct]=Object.entries(d.v).sort((p,q)=>q[1]-p[1])[0];
   if(!d.ok)return {eligible:false,pick,pct,reason:d.reason};
-  if(pct<DC_MIN)return {eligible:false,pick,pct,reason:_t('Güven eşiğinin altında')};
+  if(pct<dcMin(pick))return {eligible:false,pick,pct,reason:_t('Güven eşiğinin altında')};
   return {eligible:true,pick,pct,reason:_t('Yüksek güven eşiğini geçti')};
 }
 function dcCell(d,k){
   if(!d.v)return `<span class="dc-empty" title="${esc(d.reason)}">—</span>`;
-  const v=d.v[k], hot=d.ok&&v>=DC_MIN&&doubleChanceHighlightOn();
+  const v=d.v[k], hot=d.ok&&v>=dcMin(k)&&doubleChanceHighlightOn();
   return `<span class="pill${hot?' hot':''}${d.ok?'':' limited'}" title="${_t('{line} model olasılığı {v}',{line:k,v:I18N.pct(v.toFixed(1))})}${d.ok?'':' · '+esc(d.reason)+_t(' (vurgulanmaz)')}">${I18N.pctS(v.toFixed(1))}</span>`;
 }
 function doubleChanceHighlightOn(){return hlActive().some(h=>h.key==='dc');}
@@ -1624,7 +1625,7 @@ function renderPred(){
   rows.innerHTML=list.map(x=>{
     const mk=missingKeyInfo(x);
     const dca=dcAll(x);
-    const dcHot=dca.ok&&dca.v&&Object.values(dca.v).some(v=>v>=DC_MIN)&&doubleChanceHighlightOn();
+    const dcHot=dca.ok&&dca.v&&Object.entries(dca.v).some(([k,v])=>v>=dcMin(k))&&doubleChanceHighlightOn();
     const ms=STATS.matches&&STATS.matches[x.match_id];
     const h2h=ms&&ms.h2h&&ms.h2h.count?ms.h2h:null;
     let h2hChip='';
@@ -1652,7 +1653,7 @@ function renderPred(){
   }).join('');
 }
 
-const HIMIN={'05':0.95,'15':0.85,'25':0.75};
+const HIMIN={'05':0.94,'15':0.83,'25':0.75};
 // gerçekleşen toplam gol ile tahmin edilen toplam gol (λ) arasındaki isabet %
 function golAcc(m){
   if(m.pred_lambda==null||m.total==null)return null;
@@ -1732,7 +1733,7 @@ function edgeLabel(m){
 function hiStrip(o){
   const p=(t,lbl)=>o['hi_n_'+t]?`${lbl} → <b>%${o['hi_acc_'+t]}</b> <span class="sm">(${o['hi_hits_'+t]?.toLocaleString('tr-TR')||0} / ${o['hi_n_'+t].toLocaleString('tr-TR')} maç tuttu)</span>`:`${lbl} → <span class="sm">bu grupta maç yok</span>`;
   return `<div class="rsum2"><b>Yalnızca yüksek güven tahminleri</b> — Tahminler'de yeşil yanan eşikler:<br>
-    ${p('05','0.5+ ≥ %95')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %85')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
+    ${p('05','0.5+ ≥ %94')} &nbsp;·&nbsp; ${p('15','1.5+ ≥ %83')} &nbsp;·&nbsp; ${p('25','2.5+ ≥ %75')}</div>`;
 }
 // yüksek güvenle (Tahminler'de yeşil yanan eşik) tahmin edilip tutmayan maçlar —
 // "%95 dedi, 0-0 bitti" gibi sürpriz ıskaları tek başına incelemek için (kısıtlı veri hariç)
@@ -1831,8 +1832,8 @@ function renderResults(){
   let tileHtml;
   if(resMode==='vurgu'){
     tileHtml = `
-      ${lineTile('0.5+ Vurgu (≥ %95)', o.hi_acc_05, o.hi_hits_05, o.hi_n_05)}
-      ${lineTile('1.5+ Vurgu (≥ %85)', o.hi_acc_15, o.hi_hits_15, o.hi_n_15)}
+      ${lineTile('0.5+ Vurgu (≥ %94)', o.hi_acc_05, o.hi_hits_05, o.hi_n_05)}
+      ${lineTile('1.5+ Vurgu (≥ %83)', o.hi_acc_15, o.hi_hits_15, o.hi_n_15)}
       ${lineTile('2.5+ Vurgu (≥ %75)', o.hi_acc_25, o.hi_hits_25, o.hi_n_25)}
       <div class="tile">
         <div class="v">${(o.hi_unique_n||0).toLocaleString('tr-TR')}</div>
@@ -2065,7 +2066,7 @@ function renderBacktest(){
     }
     const rate = hiN > 0 ? (hiHits / hiN) : null;
     const pct = rate != null ? (rate * 100).toFixed(1) + '%' : '—';
-    const isGood = rate != null ? (rate >= (marketKey==='0.5'?0.95:(marketKey==='1.5'?0.85:0.75))) : false;
+    const isGood = rate != null ? (rate >= (marketKey==='0.5'?0.94:(marketKey==='1.5'?0.83:0.75))) : false;
     return { hiN, hiHits, hiMiss: hiN - hiHits, rate, pct, isGood };
   }
 
@@ -2073,8 +2074,8 @@ function renderBacktest(){
   const kpiEl=$('btpane-kpi');
   if(kpiEl){
     const mkDefs=[
-      {key:'0.5',thr:0.95,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %95'},
-      {key:'1.5',thr:0.85,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %85'},
+      {key:'0.5',thr:0.94,label:'0.5 Üst',emoji:'🟢',color:'#10b981',threshold:'≥ %94'},
+      {key:'1.5',thr:0.83,label:'1.5 Üst',emoji:'🔵',color:'#3b82f6',threshold:'≥ %83'},
       {key:'2.5',thr:0.75,label:'2.5 Üst',emoji:'🟠',color:'#f59e0b',threshold:'≥ %75'},
     ];
 
@@ -2123,8 +2124,8 @@ function renderBacktest(){
     <tr style="font-size:11px;">
       <th rowspan="2" style="text-align:left;vertical-align:bottom;padding:6px 8px;">Lig / Sezon</th>
       <th rowspan="2" style="vertical-align:bottom;padding:6px 4px;">Maç</th>
-      <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">0.5 Üst (≥%95)</th>
-      <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">1.5 Üst (≥%85)</th>
+      <th colspan="3" style="border-bottom:2px solid #10b981;color:#10b981;padding:4px;">0.5 Üst (≥%94)</th>
+      <th colspan="3" style="border-bottom:2px solid #3b82f6;color:#3b82f6;padding:4px;">1.5 Üst (≥%83)</th>
       <th colspan="3" style="border-bottom:2px solid #f59e0b;color:#f59e0b;padding:4px;">2.5 Üst (≥%75)</th>
     </tr>
     <tr style="font-size:10.5px;color:var(--muted);">
@@ -2135,8 +2136,8 @@ function renderBacktest(){
   </thead>`;
 
   function renderRowCols(matchSubList){
-    const s05 = calcMarketStats(matchSubList, 0.95, '0.5');
-    const s15 = calcMarketStats(matchSubList, 0.85, '1.5');
+    const s05 = calcMarketStats(matchSubList, 0.94, '0.5');
+    const s15 = calcMarketStats(matchSubList, 0.83, '1.5');
     const s25 = calcMarketStats(matchSubList, 0.75, '2.5');
     return `<td style="color:var(--muted);">${num(s05.hiN)}</td><td>${num(s05.hiHits)}</td><td style="font-weight:800;color:${s05.isGood?'#10b981':'var(--text)'};">${s05.pct}</td>`+
            `<td style="color:var(--muted);">${num(s15.hiN)}</td><td>${num(s15.hiHits)}</td><td style="font-weight:800;color:${s15.isGood?'#3b82f6':'var(--text)'};">${s15.pct}</td>`+
@@ -2355,7 +2356,7 @@ rows.addEventListener('click',e=>{
 // ---- sepet / kupon ----
 // Kuponlarım — modelin canlı olarak uygulanmaya ve istatistiklere dayanarak
 // kupon yapılmaya başlandığı 12.09.2026 tarihinden itibaren (12 Eylül 2026 dahil)
-// Tahminler'deki sabit vurgu eşiklerini (0.5 ≥ %95 · 1.5 ≥ %85 · 2.5 ≥ %75) geçen
+// Tahminler'deki sabit vurgu eşiklerini (0.5 ≥ %94 · 1.5 ≥ %83 · 2.5 ≥ %75) geçen
 // her maç otomatik olarak bir bacak sayılır ve gerçek sonuçlara göre başarı oranı ölçülür.
 const CPN_START_DATE='2026-09-12';
 const CPN_CAP_DAYS=60;
@@ -2441,7 +2442,7 @@ function renderCoupons(){
   if(!RESULTS){sum.innerHTML='';list.innerHTML='<div class="empty"><strong>Sonuç verisi yok</strong>İlk maçlar oynandıkça burası dolacak.</div>';return;}
   const lede=`<p class="lede">Kuponlarım, modelin canlı olarak uygulanmaya ve istatistiklere dayanarak kupon yapılmaya başlandığı
     <b>12 Eylül 2026</b> tarihinden itibaren (12.09.2026 dahil) Tahminler'de vurgulanan
-    (0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %75 model güveni) her maçı otomatik olarak bir bacak sayar ve gerçek sonuçlara göre başarı oranını analiz eder.</p>`;
+    (0.5+ ≥ %94 · 1.5+ ≥ %83 · 2.5+ ≥ %75 model güveni) her maçı otomatik olarak bir bacak sayar ve gerçek sonuçlara göre başarı oranını analiz eder.</p>`;
   const legsAll=autoLegs();
   if(!legsAll.length){
     sum.innerHTML=lede;
@@ -2567,7 +2568,7 @@ function buildDailyCoupon(){
   const d0=dayKey(up[0].kickoff_utc), d0d=new Date(d0+'T00:00:00');
   let pool=up.filter(x=>(new Date(dayKey(x.kickoff_utc)+'T00:00:00')-d0d)/864e5<=2);   // en yakın maç günü + 2 gün
   if(pool.length<6)pool=up.slice(0,12);
-  const LN=[['0.5','p_over_0_5',0.95],['1.5','p_over_1_5',0.85],['2.5','p_over_2_5',0.75]];
+  const LN=[['0.5','p_over_0_5',0.94],['1.5','p_over_1_5',0.83],['2.5','p_over_2_5',0.75]];
   const cands=[];
   pool.forEach(x=>LN.forEach(([ln,key,thr])=>{
     const p=x[key];if(p==null)return;
@@ -2579,8 +2580,8 @@ function buildDailyCoupon(){
   const take=(f,s,n)=>{const o=[];cands.filter(f).sort(s).forEach(c=>{if(o.length<n&&!used.has(c.x.match_id)){used.add(c.x.match_id);o.push(c);}});return o;};
   const byScore=(a,b)=>b.score-a.score||tie(a,b);
   // en fazla 2× 0.5 Üst + 2× 1.5 Üst — çeşitlilik için
-  let g=[...take(c=>c.line==='0.5'&&c.p>=0.95&&c.hacc>=0.55,byScore,2),
-         ...take(c=>c.line==='1.5'&&c.p>=0.85&&c.hacc>=0.55,byScore,2)];
+  let g=[...take(c=>c.line==='0.5'&&c.p>=0.94&&c.hacc>=0.55,byScore,2),
+         ...take(c=>c.line==='1.5'&&c.p>=0.83&&c.hacc>=0.55,byScore,2)];
   if(g.length<4)g=g.concat(take(c=>c.line!=='2.5'&&c.p>=c.thr-0.05&&c.hacc>=0.5,byScore,4-g.length));
   if(g.length<4)g=g.concat(take(c=>c.p>=0.72,byScore,4-g.length));
   let s=take(c=>c.line==='2.5'&&c.p>=0.55&&c.p<0.78,(a,b)=>(b.p*b.hacc)-(a.p*a.hacc)||tie(a,b),1);

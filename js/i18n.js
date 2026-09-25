@@ -267,9 +267,9 @@
     },
     'faq.q3': { tr: 'Vurgu eşikleri nelerdir?', en: 'What are the highlight thresholds?', nl: 'Wat zijn de markeringsdrempels?' },
     'faq.a3': {
-      tr: 'Bir tahmin şu eşiği geçerse vurgulanır: <b>0.5+ ≥ %95 · 1.5+ ≥ %85 · 2.5+ ≥ %80 · 1X / 12 / X2 ≥ %80</b>. Vurgu, modelin en emin olduğu tahminlerdir; garanti değildir.',
-      en: 'A prediction is highlighted when it passes this threshold: <b>0.5+ ≥ 95% · 1.5+ ≥ 85% · 2.5+ ≥ 80% · 1X / 12 / X2 ≥ 80%</b>. Highlights are the predictions the model is most confident about; they are not guarantees.',
-      nl: 'Een voorspelling wordt gemarkeerd als ze deze drempel haalt: <b>0.5+ ≥ 95% · 1.5+ ≥ 85% · 2.5+ ≥ 80% · 1X / 12 / X2 ≥ 80%</b>. Markeringen zijn de voorspellingen waar het model het zekerst van is; ze zijn geen garantie.'
+      tr: 'Bir tahmin şu eşiği geçerse vurgulanır: <b>0.5+ ≥ %94 · 1.5+ ≥ %83 · 2.5+ ≥ %75 · 1X / 12 ≥ %80 · X2 ≥ %78</b>. Vurgu, modelin en emin olduğu tahminlerdir; garanti değildir.',
+      en: 'A prediction is highlighted when it passes this threshold: <b>0.5+ ≥ 94% · 1.5+ ≥ 83% · 2.5+ ≥ 75% · 1X / 12 ≥ 80% · X2 ≥ 78%</b>. Highlights are the predictions the model is most confident about; they are not guarantees.',
+      nl: 'Een voorspelling wordt gemarkeerd als ze deze drempel haalt: <b>0.5+ ≥ 94% · 1.5+ ≥ 83% · 2.5+ ≥ 75% · 1X / 12 ≥ 80% · X2 ≥ 78%</b>. Markeringen zijn de voorspellingen waar het model het zekerst van is; ze zijn geen garantie.'
     },
     'faq.q4': { tr: 'Hangi maçlar vurgulanmaz?', en: 'Which matches are not highlighted?', nl: 'Welke wedstrijden worden niet gemarkeerd?' },
     'faq.a4': {

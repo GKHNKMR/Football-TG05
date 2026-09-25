@@ -11,12 +11,12 @@
   const PAGE = 50;
   // [ad, satır indeksi, vurgu eşiği (binde), olay gerçekleşti mi]
   const MARKETS = [
-    ['0.5+', 6, 950, (h, a) => h + a >= 1],
-    ['1.5+', 7, 850, (h, a) => h + a >= 2],
-    ['2.5+', 8, 800, (h, a) => h + a >= 3],
+    ['0.5+', 6, 940, (h, a) => h + a >= 1],
+    ['1.5+', 7, 830, (h, a) => h + a >= 2],
+    ['2.5+', 8, 750, (h, a) => h + a >= 3],
     ['1X', 9, 800, (h, a) => h >= a],
     ['12', 10, 800, (h, a) => h !== a],
-    ['X2', 11, 800, (h, a) => a >= h],
+    ['X2', 11, 780, (h, a) => a >= h],
   ];
 
   let DATA = null, loading = null;
@@ -95,7 +95,7 @@
   }
 
   function marketTable(a) {
-    const thrTxt = { '0.5+': '≥' + I.pct(95), '1.5+': '≥' + I.pct(85), '2.5+': '≥' + I.pct(80), '1X': '≥' + I.pct(80), '12': '≥' + I.pct(80), 'X2': '≥' + I.pct(80) };
+    const thrTxt = { '0.5+': '≥' + I.pct(94), '1.5+': '≥' + I.pct(83), '2.5+': '≥' + I.pct(75), '1X': '≥' + I.pct(80), '12': '≥' + I.pct(80), 'X2': '≥' + I.pct(78) };
     return `<div class="card st-card"><h2>${T('Lig bazında doğruluk')}</h2>
       <p class="st-note">${T('st.note.market')}</p>
       <div class="tbl-scroll"><table class="bt-table st-table"><thead><tr>

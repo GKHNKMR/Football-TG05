@@ -79,7 +79,7 @@
   add({
     // Genel / üst menü
     'Dil': { en: 'Language', nl: 'Taal' },
-    'Bülten': { en: 'Predictions', nl: 'Voorspellingen' },
+    'Fikstür': { en: 'Fixture', nl: 'Wedstrijdschema' },
     'İstatistikler': { en: 'Statistics', nl: 'Statistieken' },
     'Sanal Kasa': { en: 'Virtual Bankroll', nl: 'Virtuele bankroll' },
     'FAQ': { en: 'FAQ', nl: 'FAQ' },
@@ -304,7 +304,7 @@
       en: 'The model is <b>calibrated</b>: when it says "60%", it happens about 60% of the time in the long run. Across all predictions, its single-match discriminating power is only slightly better than the market; but the smaller number of predictions above the high-confidence threshold come true noticeably more often. There is no guarantee against losses.',
       nl: 'Het model is <b>gekalibreerd</b>: als het "60%" zegt, gebeurt het op lange termijn ongeveer 60% van de tijd. Over alle voorspellingen is het onderscheidend vermogen per wedstrijd maar iets beter dan de markt; het kleinere aantal voorspellingen boven de hoge betrouwbaarheidsdrempel komt echter duidelijk vaker uit. Er is geen garantie tegen verlies.'
     },
-    'faq.q9': { tr: "Bülten'de hangi maçlar var?", en: 'Which matches are in Predictions?', nl: 'Welke wedstrijden staan bij Voorspellingen?' },
+    'faq.q9': { tr: "Fikstür'de hangi maçlar var?", en: 'Which matches are in the Fixture?', nl: 'Welke wedstrijden staan in het Wedstrijdschema?' },
     'faq.a9': {
       tr: '9 ligin (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga) önümüzdeki 1 aydaki maçları. Veriler saatte bir güncellenir; milli aralarda liste kısalabilir.',
       en: 'The next month\'s matches from 9 leagues (Premier League, Championship, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie, Süper Lig, Primeira Liga). Data is updated every hour; the list may be shorter during international breaks.',

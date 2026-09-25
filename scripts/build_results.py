@@ -51,7 +51,7 @@ RECON_WEIGHTS = [1.0, 0.7, 0.45, 0.30]
 LINES = [(0.5, "p_over_0_5"), (1.5, "p_over_1_5"), (2.5, "p_over_2_5")]
 # "high confidence" thresholds = the Vurgu levels highlighted on the site; the
 # Sonuçlar tab reports how the picks above these did (the risk-reduced view).
-HI_MIN = {"05": 0.94, "15": 0.83, "25": 0.75}
+HI_MIN = {"05": 0.935, "15": 0.83, "25": 0.75}
 
 
 def _f(v):

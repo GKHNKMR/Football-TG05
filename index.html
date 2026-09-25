@@ -855,26 +855,28 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .hlb-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .hlb-ring circle{fill:none;stroke-width:7}
 .hlb-rbg{stroke:rgba(255,255,255,.12)}
-.hlb-rfg{stroke:url(#hlbFireG);stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px rgba(255,120,0,.85))}
-.hlb-ring span{position:absolute;inset:0;display:grid;place-items:center}
-/* Ateş: halkanın içindeki titreyen alev */
-.hlb-flame{width:34px;height:42px;transform-origin:50% 100%;animation:hlbflick .9s ease-in-out infinite alternate;filter:drop-shadow(0 0 8px rgba(255,110,0,.9))}
-.hlb-flame .in{transform-origin:50% 100%;animation:hlbflick .6s ease-in-out infinite alternate-reverse}
-@keyframes hlbflick{0%{transform:scale(1,1) skewX(0)}35%{transform:scale(.94,1.08) skewX(-3deg)}70%{transform:scale(1.05,.95) skewX(2deg)}100%{transform:scale(.97,1.1) skewX(-1deg)}}
+.hlb-rfg{stroke:var(--hl);stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 5px rgba(25,211,192,.7))}
+.hlb-ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-weight:900;color:var(--hl)}
 .hlb-num{flex:none;position:relative}
-.hlb-embers{position:absolute;left:-20px;right:-20px;bottom:18px;height:150%;width:calc(100% + 40px);pointer-events:none;z-index:0}
-/* Ateş: sayı aşağıdan yukarı akan alev gradyanıyla yanar, parıltısı titrer */
-.hlb-v{position:relative;z-index:1;font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:64px;letter-spacing:-1px;line-height:.95;font-variant-numeric:tabular-nums;padding-right:.08em;
-  background:linear-gradient(0deg,#ff2d00 0%,#ff6a00 22%,#ffb000 45%,#ffe66b 62%,#fff8d6 72%,#ffb000 86%,#ff4d00 100%);background-size:100% 220%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:hlbflow 1.6s linear infinite,hlbglow 1.3s ease-in-out infinite alternate}
-@keyframes hlbflow{0%{background-position:0 0}100%{background-position:0 -220%}}
-@keyframes hlbglow{0%{filter:drop-shadow(0 0 6px rgba(255,140,0,.75)) drop-shadow(0 0 18px rgba(255,60,0,.35))}50%{filter:drop-shadow(0 0 10px rgba(255,170,0,.9)) drop-shadow(0 0 30px rgba(255,70,0,.55))}100%{filter:drop-shadow(0 -2px 7px rgba(255,120,0,.8)) drop-shadow(0 0 22px rgba(255,40,0,.45))}}
-.hl-banner.lit .hlb-v{animation:hlbflow 1.6s linear infinite,hlbglow 1.3s ease-in-out infinite alternate,hlbignite .75s cubic-bezier(.2,.9,.3,1.5)}
-@keyframes hlbignite{0%{transform:scale(1)}35%{transform:scale(1.14) rotate(-2deg)}100%{transform:scale(1)}}
-.hl-banner.lit .hlb-ring{animation:hlbringpop .75s cubic-bezier(.2,.9,.3,1.5)}
-@keyframes hlbringpop{35%{transform:scale(1.12)}}
-.hlb-cap{position:relative;z-index:1}
-.hl-banner.lit .hlb-cap{color:#ffc36b}
+/* İsabet görseli: 100 nokta = 100 vurgulu tahmin; tutanlar dalga halinde yanar, sonra periyodik bir ışık taraması geçer */
+.hlb-waf{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.hlb-grid{display:grid;grid-template-columns:repeat(10,8px);gap:2.5px;padding:7px;border-radius:12px;background:rgba(0,0,0,.22);border:1px solid rgba(25,211,192,.25);box-shadow:inset 0 0 18px rgba(0,0,0,.35)}
+.hlb-grid i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);transition:background .35s,box-shadow .35s,transform .35s cubic-bezier(.2,.9,.3,1.6);transition-delay:var(--d)}
+.hl-banner.go .hlb-grid i.on{background:var(--hl);box-shadow:0 0 6px rgba(25,211,192,.8);transform:scale(1.12)}
+.hl-banner.go .hlb-grid i.miss{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.hl-banner.done .hlb-grid i.on{transform:none;transition-delay:0s;animation:hlbscan 4.5s ease-in-out infinite;animation-delay:calc(var(--d) + .4s)}
+@keyframes hlbscan{0%,12%,100%{background:var(--hl);box-shadow:0 0 5px rgba(25,211,192,.7)}5%{background:#eafffb;box-shadow:0 0 12px rgba(160,255,240,1)}}
+.hlb-wcap{font-size:11px;font-weight:800;color:rgba(255,255,255,.6);letter-spacing:.04em;white-space:nowrap}
+.hlb-wcap b{color:var(--hl);font-size:13px}
+/* Büyük sayı: turkuaz→buz beyazı, ardındaki nabız gibi atan ışık halesi */
+.hlb-num::before{content:"";position:absolute;left:-10%;right:-10%;top:-30%;bottom:-10%;z-index:-1;background:radial-gradient(closest-side,rgba(25,211,192,.35),transparent);opacity:0;transition:opacity 1s}
+.hl-banner.done .hlb-num::before{opacity:1;animation:hlbhalo 3s ease-in-out infinite}
+@keyframes hlbhalo{50%{transform:scale(1.12);opacity:.55}}
+.hlb-main{isolation:isolate}
+.hlb-v{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:66px;letter-spacing:-1.5px;line-height:.95;font-variant-numeric:tabular-nums;padding-right:.08em;
+  background:linear-gradient(100deg,#19d3c0 0%,#19d3c0 35%,#eafffb 50%,#19d3c0 65%,#19d3c0 100%);background-size:300% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(25,211,192,.45))}
+.hl-banner.done .hlb-v{animation:hlbshimmer 4.5s ease-in-out .4s infinite}
+@keyframes hlbshimmer{0%{background-position:100% 0}25%,100%{background-position:0 0}}
 .hlb-cap{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:4px}
 .hlb-t{min-width:0}
 .hlb-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#0b2530;background:var(--hl);border-radius:999px;padding:2px 9px;margin-bottom:6px}
@@ -891,7 +893,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .hlb-chip em{font-style:normal;color:rgba(255,255,255,.55);font-size:11px}
 .hlb-link{align-self:center;font-weight:800;font-size:13px;color:#0b2530;background:var(--hl);border-radius:10px;padding:10px 14px;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(25,211,192,.35)}
 .hlb-link:hover{filter:brightness(1.08)}
-@media(prefers-reduced-motion:reduce){.hl-banner::after{animation:none;display:none}.hlb-rfg{transition:none}.hlb-flame,.hlb-flame .in,.hlb-v,.hl-banner.lit .hlb-v,.hl-banner.lit .hlb-ring{animation:none}.hlb-v{filter:drop-shadow(0 0 10px rgba(255,120,0,.7))}.hlb-embers{display:none}}
+@media(prefers-reduced-motion:reduce){.hl-banner::after{animation:none;display:none}.hlb-rfg{transition:none}.hlb-grid i{transition:none}.hl-banner.done .hlb-grid i.on,.hl-banner.done .hlb-v,.hl-banner.done .hlb-num::before{animation:none}}
 
 /* --- İstatistikler --- */
 .st-intro p{color:var(--muted);margin:0 0 12px;font-size:14px}
@@ -1042,7 +1044,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
   .row .prob::before{content:attr(data-l);font-size:10.5px;font-weight:900;color:var(--muted)}
   .pill{min-width:0;width:100%;font-size:12.5px;padding:6px 1px}
   .teams{font-size:15px;white-space:normal}
-  .hl-banner{padding:16px 14px}.hlb-main{flex-wrap:wrap;gap:12px}.hlb-ring{width:56px;height:56px}.hlb-flame{width:26px;height:32px}
+  .hl-banner{padding:16px 14px}.hlb-main{flex-wrap:wrap;gap:12px}.hlb-grid{grid-template-columns:repeat(10,6px);gap:2px;padding:5px}.hlb-grid i{width:6px;height:6px}
   .hlb-v{font-size:50px}.hlb-t{flex-basis:100%}.hlb-t b{font-size:17px}.hlb-chip{min-width:96px;flex-basis:96px}.hlb-link{flex-basis:100%;text-align:center}
   .st-kpis{grid-template-columns:1fr}
   .st-table{font-size:12.5px}

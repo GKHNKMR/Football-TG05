@@ -231,10 +231,13 @@
       if (!s || !s.picks) { el.hidden = true; return; }
       const mk = s.markets || {};
       const pct = +s.picks.pct, fmtP = v => I.dec(v), pctP = v => (I.lang === 'tr' || !I.lang ? '%' + fmtP(v) : fmtP(v) + '%');
-      const R = 34, C = +(2 * Math.PI * R).toFixed(1);
+      // 10×10 ızgara: her nokta 100 vurgulu tahminden birini temsil eder; çapraz dalga sırasıyla yanar
+      const on = Math.round(pct);
+      let grid = '';
+      for (let i = 0; i < 100; i++) grid += `<i class="${i < on ? 'on' : 'miss'}" style="--d:${((i % 10) + Math.floor(i / 10)) * 60}ms"></i>`;
       el.innerHTML = `<div class="hlb-main">
-          <div class="hlb-ring" aria-hidden="true"><svg viewBox="0 0 80 80"><defs><linearGradient id="hlbFireG" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ff2d00"/><stop offset=".5" stop-color="#ff8a00"/><stop offset="1" stop-color="#ffe066"/></linearGradient></defs><circle class="hlb-rbg" cx="40" cy="40" r="${R}"/><circle class="hlb-rfg" cx="40" cy="40" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span>${FLAME}</span></div>
-          <div class="hlb-num"><canvas class="hlb-embers" aria-hidden="true"></canvas><div class="hlb-v">${pctP(pct)}</div><div class="hlb-cap">${T('isabet oranı')}</div></div>
+          <div class="hlb-waf" title="${T('{h} tahmin tuttu / {n} vurgulu tahmin', { h: fmtN(s.picks.h), n: fmtN(s.picks.n) })}"><div class="hlb-grid" aria-hidden="true">${grid}</div><div class="hlb-wcap"><b>${on}</b>/100</div></div>
+          <div class="hlb-num"><div class="hlb-v">${pctP(pct)}</div><div class="hlb-cap">${T('isabet oranı')}</div></div>
           <div class="hlb-t"><span class="hlb-badge">${T('Doğrulanmış geçmiş performans')}</span>
             <b>${T('Vurguladığımız tahminlerin başarı oranı')}</b>
             <span class="hlb-sub">${T('{season} sezonundan bugüne · <strong>{h}</strong> / {n} vurgulu tahmin tuttu', { season: s.seasons[0], h: fmtN(s.picks.h), n: fmtN(s.picks.n) })}</span></div>
@@ -242,67 +245,20 @@
         <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${T('{h} tahmin tuttu / {n} vurgulu tahmin', { h: fmtN(v.h), n: fmtN(v.n) })}"><span class="hlb-ct"><b>${k}</b><i>${pctP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${T('{h}/{n} maç', { h: fmtN(v.h), n: fmtN(v.n) })}</em></span>`).join('')}
           <a href="#" class="hlb-link" onclick="setTab('stats');return false">${T('Tüm istatistikler →')}</a></div>`;
       el.hidden = false;
-      // Giriş animasyonu: halka dolar, yüzde sayarak yükselir, bitince sayı "tutuşur"
-      const ring = el.querySelector('.hlb-rfg'), num = el.querySelector('.hlb-v');
-      requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.strokeDashoffset = (C * (1 - pct / 100)).toFixed(1); }));
-      el.classList.remove('lit');
+      // Giriş animasyonu: noktalar dalga halinde yanar, yüzde sayarak yükselir; bitince ışık taraması başlar
+      const num = el.querySelector('.hlb-v');
+      el.classList.remove('go', 'done');
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
       if (!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-        const embers = startEmbers(el, el.querySelector('.hlb-embers'));
-        const t0 = performance.now(), D = 1400;
+        const t0 = performance.now(), D = 1500;
         const step = now => {
           const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
           num.textContent = pctP(k < 1 ? (pct * e).toFixed(1) : pct);
-          if (k < 1) requestAnimationFrame(step);
-          else { el.classList.add('lit'); embers.burst(); }
+          if (k < 1) requestAnimationFrame(step); else el.classList.add('done');
         };
         requestAnimationFrame(step);
-      } else el.classList.add('lit');
+      } else el.classList.add('done');
     }).catch(() => { el.hidden = true; });
-  }
-
-  const FLAME = '<svg class="hlb-flame" viewBox="0 0 32 40"><defs><linearGradient id="hlbFl1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff2d00"/><stop offset=".55" stop-color="#ff8a00"/><stop offset="1" stop-color="#ffd23f"/></linearGradient><linearGradient id="hlbFl2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffb000"/><stop offset="1" stop-color="#fff6c2"/></linearGradient></defs>'
-    + '<path d="M16 1c1.5 6.5 9 10 11.5 17.5C30 27 24.5 39 16 39S2 32 3.5 23.5C4.6 17.6 9 15.5 9.5 9.5c3 2.2 4 5.2 4 8C16 14 17.5 8 16 1Z" fill="url(#hlbFl1)"/>'
-    + '<path class="in" d="M16 18c1 3.5 6 5.5 6 11 0 4.6-2.7 8-6 8s-6.5-2.7-6-7.5c.4-3.3 3-4.5 3.5-7.5 1.5 1.2 2 2.6 2 4 .9-2.4 1.2-5 .5-8Z" fill="url(#hlbFl2)"/></svg>';
-
-  // Sayının arkasından yükselen kıvılcımlar (canvas). Şerit görünmüyorsa durur.
-  function startEmbers(host, cv) {
-    if (host._embersStop) host._embersStop();
-    const noop = { burst() {} };
-    if (!cv || !cv.getContext) return noop;
-    const ctx = cv.getContext('2d'), dpr = Math.min(2, root.devicePixelRatio || 1);
-    let W = 0, H = 0, raf = 0, visible = true, alive = true;
-    const P = [];
-    const size = () => { const r = cv.getBoundingClientRect(); W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
-    const spawn = (n, fast) => { for (let i = 0; i < n; i++) P.push({
-      x: 20 + Math.random() * (W - 40), y: H - Math.random() * 10,
-      vx: (Math.random() - .5) * (fast ? 2.2 : .5), vy: -(fast ? 1.8 + Math.random() * 2.6 : .5 + Math.random() * 1.1),
-      r: .8 + Math.random() * (fast ? 2.4 : 1.8), life: 0, max: 50 + Math.random() * (fast ? 50 : 70), ph: Math.random() * 6.3 }); };
-    const tick = () => {
-      if (!alive) return;
-      raf = requestAnimationFrame(tick);
-      if (!visible || !W) return;
-      if (P.length < 70 && Math.random() < .55) spawn(1);
-      ctx.clearRect(0, 0, W, H);
-      ctx.globalCompositeOperation = 'lighter';
-      for (let i = P.length - 1; i >= 0; i--) {
-        const p = P[i]; p.life++;
-        if (p.life > p.max) { P.splice(i, 1); continue; }
-        p.x += p.vx + Math.sin(p.life / 9 + p.ph) * .35; p.y += p.vy; p.vy *= .995;
-        const t = p.life / p.max, a = (1 - t) * (t < .1 ? t * 10 : 1);
-        const g = Math.round(220 - 170 * t);
-        ctx.fillStyle = `rgba(255,${g},${Math.round(60 * (1 - t))},${a.toFixed(2)})`;
-        ctx.shadowColor = 'rgba(255,120,0,.9)'; ctx.shadowBlur = 8;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - t * .5), 0, 6.283); ctx.fill();
-      }
-    };
-    size();
-    const onResize = () => size();
-    root.addEventListener('resize', onResize);
-    const io = root.IntersectionObserver ? new IntersectionObserver(es => { visible = es[0].isIntersecting && !host.hidden; }) : null;
-    if (io) io.observe(host);
-    raf = requestAnimationFrame(tick);
-    host._embersStop = () => { alive = false; cancelAnimationFrame(raf); root.removeEventListener('resize', onResize); if (io) io.disconnect(); };
-    return { burst() { size(); spawn(45, true); } };
   }
 
   root.BETAVUS_STATS = { render, renderBanner, load };

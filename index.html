@@ -959,9 +959,9 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .top .brand .bv-name .b1,:root[data-theme="light"] .top .brand .bv-name .b1{background:linear-gradient(100deg,#2ed3c3 0%,#5eead4 35%,#d9ff4a 50%,#5eead4 65%,#2ed3c3 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:bvshine 6s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(46,211,195,.35))}
 .top .brand .bv-name .b2,:root[data-theme="light"] .top .brand .bv-name .b2{color:#fff;text-shadow:0 0 18px rgba(255,255,255,.25)}
 @keyframes bvshine{0%,100%{background-position:100% 0}50%{background-position:0 0}}
-.bv-tag{font-family:"Nunito Sans",sans-serif;font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.5)}
-.top .tabs{align-self:center;align-items:center;gap:6px;padding:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;flex:0 1 auto;overflow:visible;max-width:none}
-.top .pg-tab{--c:#2ed3c3;--crgb:46,211,195;position:relative;display:flex;align-items:center;gap:9px;padding:7px 14px 7px 8px;border-radius:12px;border:1px solid transparent;text-transform:none;letter-spacing:0;text-align:left;color:#b9c6d0;transition:background .25s,border-color .25s,color .25s,transform .2s}
+.bv-tag{font-family:"Nunito Sans",sans-serif;font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.28em;color:rgba(255,255,255,.5)}
+.top .tabs{align-self:center;align-items:center;gap:6px;padding:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 4px 16px rgba(0,0,0,.25);flex:0 1 auto;overflow:visible;max-width:none}
+.top .pg-tab{--c:#2ed3c3;--crgb:46,211,195;position:relative;display:flex;align-items:center;gap:9px;padding:7px 14px 7px 8px;border-radius:12px;border:1px solid rgba(var(--crgb),.28);text-transform:none;letter-spacing:0;text-align:left;color:#b9c6d0;transition:background .25s,border-color .25s,color .25s,transform .2s}
 #tab-stats.pg-tab{--c:#8b9dff;--crgb:139,157,255}
 #tab-plan.pg-tab{--c:#ffb547;--crgb:255,181,71}
 .pg-ic{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:10px;background:rgba(var(--crgb),.12);color:var(--c);transition:background .25s,color .25s,box-shadow .25s}
@@ -969,7 +969,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .pg-txt{display:flex;flex-direction:column;line-height:1.15}
 .pg-lbl{white-space:nowrap;font-weight:900;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase}
 .pg-sub{font-size:11px;font-weight:700;color:rgba(255,255,255,.45);margin-top:2px;white-space:nowrap}
-.top .pg-tab:hover{background:rgba(var(--crgb),.08);color:#fff;transform:translateY(-1px)}
+.top .pg-tab:hover{background:rgba(var(--crgb),.08);border-color:rgba(var(--crgb),.5);color:#fff;transform:translateY(-1px)}
 .top .pg-tab.active{background:linear-gradient(135deg,rgba(var(--crgb),.24),rgba(var(--crgb),.06));border-color:rgba(var(--crgb),.55);color:#fff;box-shadow:0 6px 20px rgba(var(--crgb),.18),inset 0 1px 0 rgba(255,255,255,.08)}
 .top .pg-tab.active .pg-ic{background:var(--c);color:#0b1620;box-shadow:0 0 14px rgba(var(--crgb),.6)}
 .top .pg-tab.active .pg-sub{color:rgba(var(--crgb),.95)}
@@ -1055,7 +1055,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <div class="topbar">
       <a class="brand" href="#" onclick="setTab('pred');return false" aria-label="BETAVUS ana sayfa" data-i18n-aria="BETAVUS ana sayfa">
         <span class="bv-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><defs><linearGradient id="bvG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2ed3c3"/><stop offset=".55" stop-color="#5eead4"/><stop offset="1" stop-color="#d9ff4a"/></linearGradient></defs><path d="M20 2.5 35.2 11.25v17.5L20 37.5 4.8 28.75v-17.5Z" fill="url(#bvG)"/><path d="M20 12.5l6.2 4.5-2.4 7.3h-7.6l-2.4-7.3Z" fill="#0b1620"/><path d="M20 12.5V6.8M26.2 17l5.4-1.8M23.8 24.3l3.4 4.6M16.2 24.3l-3.4 4.6M13.8 17l-5.4-1.8" stroke="#0b1620" stroke-width="2.2" stroke-linecap="round"/></svg></span>
-        <span class="bv-word"><span class="bv-name"><span class="b1">BET</span><span class="b2">AVUS</span></span><span class="bv-tag">Goal Probability Engine</span></span>
+        <span class="bv-word"><span class="bv-name"><span class="b1">BET</span><span class="b2">AVUS</span></span><span class="bv-tag" lang="en">GOAL PROBABILITY ENGINE</span></span>
       </a>
       <div class="tabs" role="tablist">
         <button class="tab pg-tab" id="tab-pred" type="button" data-pg="pred"><span class="pg-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="pg-txt"><span class="pg-lbl" data-i18n="Bülten">Bülten</span><span class="pg-sub" data-i18n="Maç tahminleri">Maç tahminleri</span></span></button>

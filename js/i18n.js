@@ -459,6 +459,7 @@
 
     // Sanal Kasa
     'PAPER BETTING – KASA SİMÜLASYONU': { en: 'PAPER BETTING – BANKROLL SIMULATION', nl: 'PAPER BETTING – BANKROLLSIMULATIE' },
+    '« Önce simüle et. Riskini gör. Stratejini ölç. Sonra karar ver. »': { en: '« Simulate first. See your risk. Measure your strategy. Then decide. »', nl: '« Eerst simuleren. Zie je risico. Meet je strategie. Dan pas beslissen. »' },
     'KASALARIM:': { en: 'MY BANKROLLS:', nl: 'MIJN BANKROLLS:' },
     '➕ Yeni Kasa Aç': { en: '➕ New bankroll', nl: '➕ Nieuwe bankroll' },
     '🗑️ Kasayı Sil': { en: '🗑️ Delete bankroll', nl: '🗑️ Bankroll verwijderen' },

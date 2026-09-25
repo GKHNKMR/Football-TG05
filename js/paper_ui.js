@@ -1286,6 +1286,7 @@
 
       <div class="card kasa-sheet">
         <h2 class="ks-title">${_t('PAPER BETTING – KASA SİMÜLASYONU')}</h2>
+        <div class="p-quote ks-motto">${_t('« Önce simüle et. Riskini gör. Stratejini ölç. Sonra karar ver. »')}</div>
         <div class="ks-top">
           <div class="ks-left">
             <div class="ks-block">

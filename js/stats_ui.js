@@ -231,12 +231,9 @@
       if (!s || !s.picks) { el.hidden = true; return; }
       const mk = s.markets || {};
       const pct = +s.picks.pct, fmtP = v => I.dec(v), pctP = v => (I.lang === 'tr' || !I.lang ? '%' + fmtP(v) : fmtP(v) + '%');
-      // 10×10 ızgara: her nokta 100 vurgulu tahminden birini temsil eder; çapraz dalga sırasıyla yanar
-      const on = Math.round(pct);
-      let grid = '';
-      for (let i = 0; i < 100; i++) grid += `<i class="${i < on ? 'on' : 'miss'}" style="--d:${((i % 10) + Math.floor(i / 10)) * 60}ms"></i>`;
+      const R = 34, C = +(2 * Math.PI * R).toFixed(1);
       el.innerHTML = `<div class="hlb-main">
-          <div class="hlb-waf" title="${T('{h} tahmin tuttu / {n} vurgulu tahmin', { h: fmtN(s.picks.h), n: fmtN(s.picks.n) })}"><div class="hlb-grid" aria-hidden="true">${grid}</div><div class="hlb-wcap"><b>${on}</b>/100</div></div>
+          <div class="hlb-ring" aria-hidden="true"><svg viewBox="0 0 80 80"><circle class="hlb-rbg" cx="40" cy="40" r="${R}"/><circle class="hlb-rfg" cx="40" cy="40" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span>✓</span></div>
           <div class="hlb-num"><div class="hlb-v">${pctP(pct)}</div><div class="hlb-cap">${T('isabet oranı')}</div></div>
           <div class="hlb-t"><span class="hlb-badge">${T('Doğrulanmış geçmiş performans')}</span>
             <b>${T('Vurguladığımız tahminlerin başarı oranı')}</b>
@@ -245,19 +242,18 @@
         <div class="hlb-mk">${MARKETS.map(([k]) => [k, mk[k]]).filter(([, v]) => v).map(([k, v]) => `<span class="hlb-chip" title="${T('{h} tahmin tuttu / {n} vurgulu tahmin', { h: fmtN(v.h), n: fmtN(v.n) })}"><span class="hlb-ct"><b>${k}</b><i>${pctP(v.pct)}</i></span><span class="hlb-bar"><span style="width:${v.pct}%"></span></span><em>${T('{h}/{n} maç', { h: fmtN(v.h), n: fmtN(v.n) })}</em></span>`).join('')}
           <a href="#" class="hlb-link" onclick="setTab('stats');return false">${T('Tüm istatistikler →')}</a></div>`;
       el.hidden = false;
-      // Giriş animasyonu: noktalar dalga halinde yanar, yüzde sayarak yükselir; bitince ışık taraması başlar
-      const num = el.querySelector('.hlb-v');
-      el.classList.remove('go', 'done');
-      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
+      // Giriş animasyonu: halka dolar, yüzde sayarak yükselir
+      const ring = el.querySelector('.hlb-rfg'), num = el.querySelector('.hlb-v');
+      requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.strokeDashoffset = (C * (1 - pct / 100)).toFixed(1); }));
       if (!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-        const t0 = performance.now(), D = 1500;
+        const t0 = performance.now(), D = 1400;
         const step = now => {
           const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
           num.textContent = pctP(k < 1 ? (pct * e).toFixed(1) : pct);
-          if (k < 1) requestAnimationFrame(step); else el.classList.add('done');
+          if (k < 1) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);
-      } else el.classList.add('done');
+      }
     }).catch(() => { el.hidden = true; });
   }
 

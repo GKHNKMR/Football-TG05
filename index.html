@@ -798,10 +798,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .hero::before{content:"";position:absolute;z-index:-1;right:0;top:6px;width:300px;height:120px;opacity:.5;pointer-events:none;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 120' fill='none' stroke='%232ed3c3' stroke-opacity='.35' stroke-width='1.5'%3E%3Crect x='2' y='2' width='296' height='116' rx='6'/%3E%3Cpath d='M150 2v116'/%3E%3Ccircle cx='150' cy='60' r='26'/%3E%3Ccircle cx='150' cy='60' r='2.5' fill='%232ed3c3'/%3E%3Crect x='2' y='30' width='40' height='60'/%3E%3Crect x='258' y='30' width='40' height='60'/%3E%3Crect x='2' y='46' width='14' height='28'/%3E%3Crect x='284' y='46' width='14' height='28'/%3E%3C/svg%3E") center/contain no-repeat;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 60%);mask-image:linear-gradient(90deg,transparent,#000 60%)}
-.hero-eye{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.3em;color:var(--pg);background:color-mix(in srgb,var(--pg) 12%,transparent);border:1px solid color-mix(in srgb,var(--pg) 35%,transparent);border-radius:999px;padding:4px 12px 4px 9px;margin-bottom:10px;transition:color .4s,background .4s,border-color .4s}
-:root[data-theme="light"] .hero-eye{color:color-mix(in srgb,var(--pg) 70%,#13293d)}
-.hero-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:herodot 2s ease-out infinite}
-@keyframes herodot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pg) 60%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
 .hero-t{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:34px;letter-spacing:-.8px;color:var(--text);line-height:1.12;margin:0}
 .hero-t .hw{white-space:nowrap}
 .hero-t .amp{color:var(--muted);font-weight:800}
@@ -810,7 +806,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .hero-s{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;color:var(--text);font-size:13px;font-weight:700}
 .hero-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
 .hero-chip svg{width:16px;height:16px;fill:none;stroke:var(--hx1);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-@media(prefers-reduced-motion:reduce){.hx,.hero-dot{animation:none}}
+@media(prefers-reduced-motion:reduce){.hx{animation:none}}
 .st-h1{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:26px;margin:4px 0 6px;color:var(--text)}
 
 /* --- kartlar, tablolar, çipler --- */
@@ -1096,7 +1092,6 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     </div>
   </header>
   <div class="hero" lang="en">
-    <div class="hero-eye"><span class="hero-dot"></span>B·E·T·A·V·U·S</div>
     <h1 class="hero-t" aria-label="Betting Analysis, Variance and Uncertainty System"><span class="hw"><b class="hx" style="--d:0s">Bet</b>ting</span> <span class="hw"><b class="hx" style="--d:.15s">A</b>nalysis,</span> <span class="hw"><b class="hx" style="--d:.3s">V</b>ariance</span> <span class="amp">&amp;</span> <span class="hw"><b class="hx" style="--d:.45s">U</b>ncertainty</span> <span class="hw"><b class="hx" style="--d:.6s">S</b>ystem</span></h1>
     <div class="hero-s">
       <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>AI-powered</span>

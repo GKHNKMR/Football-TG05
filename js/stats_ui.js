@@ -20,10 +20,11 @@
   ];
 
   let DATA = null, loading = null;
-  const st = { season: '', res: 'all', q: '', order: 'desc', page: 0 };   // res: all | won | lost (vurgulu maçlar)
+  const st = { season: '', res: 'all', q: '', order: 'desc', page: 0, cal: '0.5+' };   // res: all | won | lost (vurgulu maçlar)
   try {
     st.season = localStorage.getItem('betavus.stats_season') || '';
     st.order = localStorage.getItem('betavus.stats_order2') || 'desc';   // varsayılan: yeniden eskiye
+    st.cal = localStorage.getItem('betavus.stats_cal') || '0.5+';
   } catch (e) {}
 
   const escH = s => String(s).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
@@ -124,6 +125,89 @@
       }).join('')}</tbody></table></div></div>`;
   }
 
+  // ---- Kalibrasyon (iş listesi #4): "model %X dedi, gerçekte %X mi oldu?" — seçili lig/sezon/aramaya göre ----
+  const CAL_EDGES = [0, .1, .2, .3, .4, .5, .55, .6, .65, .7, .75, .8, .85, .9, .925, .95, .975, 1.0001];
+  const CAL_MIN_N = 20;               // bu kadar maçın altındaki aralık soluk çizilir, sapma hesabına girmez
+  function calibrate(rows, mk) {
+    const [, i, thr, hit] = MARKETS.find(m => m[0] === mk);
+    const bins = CAL_EDGES.slice(0, -1).map((lo, k) => ({ lo, hi: CAL_EDGES[k + 1], n: 0, ps: 0, h: 0 }));
+    const hl = { n: 0, ps: 0, h: 0 };
+    for (const r of rows) {
+      const p = r[i] / 1000, ok = hit(r[4], r[5]);
+      const b = bins.find(x => p >= x.lo && p < x.hi); if (!b) continue;
+      b.n++; b.ps += p; if (ok) b.h++;
+      if (!r[12] && r[i] >= thr) { hl.n++; hl.ps += p; if (ok) hl.h++; }
+    }
+    const used = bins.filter(b => b.n >= CAL_MIN_N), tot = used.reduce((a, b) => a + b.n, 0);
+    const gap = tot ? used.reduce((a, b) => a + b.n * Math.abs(b.h / b.n - b.ps / b.n), 0) / tot * 100 : null;
+    return { bins: bins.filter(b => b.n), hl, gap, thr: thr / 1000 };
+  }
+  const p1 = v => I.dec((v * 100).toFixed(1));
+  const pr = v => I.dec(String(Math.round(Math.min(1, v) * 1000) / 10));
+  const rng = b => `${pr(b.lo)}–${pr(b.hi)}`;
+  function calChart(c) {
+    const narrow = (root.innerWidth || 1000) < 640;   // telefonda dar çizim: yazılar küçülmesin
+    const W = narrow ? 340 : 560, H = narrow ? 260 : 320, L = 46, R = 14, Tp = 14, B = 40;
+    const pts = c.bins.map(b => ({ b, x: b.ps / b.n, y: b.h / b.n, weak: b.n < CAL_MIN_N }));
+    if (!pts.length) return `<p class="st-note">${T('Bu filtrede maç yok')}</p>`;
+    const strong = pts.filter(p => !p.weak).map(p => Math.min(p.x, p.y));
+    const lo = Math.max(0, Math.min(Math.floor(Math.min(1, ...strong) * 10) / 10, .9));
+    const sx = v => L + (v - lo) / (1 - lo) * (W - L - R), sy = v => Tp + (1 - (v - lo) / (1 - lo)) * (H - Tp - B);
+    const step = (1 - lo) > .5 ? .2 : (1 - lo) > .25 ? .1 : .05, ticks = [];
+    for (let t = 1; t >= lo - 1e-9; t -= step) ticks.push(+t.toFixed(2));
+    const vis = pts.filter(p => p.x >= lo && p.y >= lo);
+    const nMax = Math.max(...pts.map(p => p.b.n));
+    const rad = n => 4 + 5 * Math.sqrt(n / nMax);
+    const line = vis.filter(p => !p.weak).map((p, k) => `${k ? 'L' : 'M'}${sx(p.x).toFixed(1)} ${sy(p.y).toFixed(1)}`).join(' ');
+    let g = '';
+    for (const t of ticks) {
+      g += `<line class="cal-grid" x1="${L}" x2="${W - R}" y1="${sy(t)}" y2="${sy(t)}"/><text class="cal-ax" x="${L - 6}" y="${sy(t) + 4}" text-anchor="end">${Math.round(t * 100)}</text>`;
+      g += `<text class="cal-ax" x="${sx(t)}" y="${H - B + 16}" text-anchor="middle">${Math.round(t * 100)}</text>`;
+    }
+    const thrX = c.thr >= lo ? `<line class="cal-thr" x1="${sx(c.thr)}" x2="${sx(c.thr)}" y1="${Tp}" y2="${H - B}"/>` : '';
+    const dots = vis.map(p => `<g class="cal-pt${p.weak ? ' weak' : ''}" data-k="${c.bins.indexOf(p.b)}" tabindex="0"><circle class="cal-hit" cx="${sx(p.x)}" cy="${sy(p.y)}" r="14"/><circle class="cal-dot" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${rad(p.b.n).toFixed(1)}"/></g>`).join('');
+    return `<svg class="cal-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T('Kalibrasyon grafiği')}">
+      ${g}<line class="cal-diag" x1="${sx(lo)}" y1="${sy(lo)}" x2="${sx(1)}" y2="${sy(1)}"/>
+      ${thrX}<path class="cal-line" d="${line}"/>${dots}
+      <text class="cal-ax cal-at" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">${T('Modelin verdiği olasılık (%)')}</text>
+      <text class="cal-ax cal-at" transform="translate(12 ${(Tp + H - B) / 2}) rotate(-90)" text-anchor="middle">${T('Gerçekleşme (%)')}</text></svg>`;
+  }
+  function calibCard(rows) {
+    const c = calibrate(rows, st.cal);
+    const hl = c.hl.n ? T('cal.hl', { p: I.pct(p1(c.hl.ps / c.hl.n)), a: I.pct(p1(c.hl.h / c.hl.n)), n: fmtN(c.hl.n) }) : T('Bu filtrede vurgulu tahmin yok.');
+    const chips = MARKETS.map(([k]) => `<button type="button" class="hotbtn st-rf${st.cal === k ? ' on' : ''}" data-cal="${k}">${k}</button>`).join('');
+    const tbl = c.bins.map(b => {
+      const d = (b.h - b.ps) / b.n * 100;
+      return `<tr${b.n < CAL_MIN_N ? ' class="st-mut"' : ''}><td>${rng(b)}</td><td>${fmtN(b.n)}</td><td>${I.pctS(p1(b.ps / b.n))}</td><td class="st-strong">${I.pctS(p1(b.h / b.n))}</td><td>${(d >= 0 ? '+' : '') + I.dec(d.toFixed(1))}</td></tr>`;
+    }).join('');
+    return `<div class="card st-card" id="stCal"><h2>${T('Model ne kadar güvenilir? (kalibrasyon)')}</h2>
+      <p class="st-note">${T('cal.note')}</p>
+      <div class="st-rfs">${chips}</div>
+      <div class="cal-kpis"><div>${hl}</div>${c.gap != null ? `<div>${T('cal.gap', { g: I.dec(c.gap.toFixed(1)) })}</div>` : ''}</div>
+      <div class="cal-leg"><span><i class="cal-k-line"></i>${T('Model')}</span><span><i class="cal-k-diag"></i>${T('mükemmel kalibrasyon')}</span><span><i class="cal-k-thr"></i>${T('vurgu eşiği')}</span></div>
+      <div class="cal-wrap">${calChart(c)}<div class="cal-tip" hidden></div></div>
+      <details class="cal-tbl"><summary>${T('Tablo olarak göster')}</summary><div class="tbl-scroll"><table class="bt-table st-table"><thead><tr><th>${T('Olasılık aralığı (%)')}</th><th>${T('Maç')}</th><th>${T('Ort. model olasılığı')}</th><th>${T('Gerçekleşme')}</th><th>${T('Fark (puan)')}</th></tr></thead><tbody>${tbl}</tbody></table></div></details></div>`;
+  }
+  function wireCal(host, rows) {
+    const card = host.querySelector('#stCal'); if (!card) return;
+    card.querySelectorAll('[data-cal]').forEach(b => b.onclick = () => {
+      st.cal = b.dataset.cal; try { localStorage.setItem('betavus.stats_cal', st.cal); } catch (x) {}
+      card.outerHTML = calibCard(rows); wireCal(host, rows);
+    });
+    const c = calibrate(rows, st.cal), tip = card.querySelector('.cal-tip'), wrap = card.querySelector('.cal-wrap');
+    card.querySelectorAll('.cal-pt').forEach(g => {
+      const show = () => {
+        const b = c.bins[+g.dataset.k], r = g.querySelector('.cal-dot').getBoundingClientRect(), w = wrap.getBoundingClientRect();
+        tip.innerHTML = `<b>${T('Model %{r} arası dedi', { r: rng(b) })}</b><br>${T('{n} maç · ort. model {p} · gerçekleşen {a}', { n: fmtN(b.n), p: I.pct(p1(b.ps / b.n)), a: I.pct(p1(b.h / b.n)) })}${b.n < CAL_MIN_N ? `<br><i>${T('az maç — güvenilir değil')}</i>` : ''}`;
+        tip.hidden = false;
+        tip.style.left = Math.min(w.width - tip.offsetWidth, Math.max(0, r.left - w.left + r.width / 2 - tip.offsetWidth / 2)) + 'px';
+        tip.style.top = Math.max(0, r.top - w.top - tip.offsetHeight - 8) + 'px';
+      };
+      g.onmouseenter = show; g.onfocus = show; g.onclick = show;
+      g.onmouseleave = g.onblur = () => { tip.hidden = true; };
+    });
+  }
+
   function cell(r, i, thr, hit) {
     const p = r[i], ok = hit(r[4], r[5]), hl = !r[12] && p >= thr;
     const cls = hl ? (ok ? ' hl win' : ' hl lose') : (ok ? ' ok' : '');
@@ -206,7 +290,8 @@
     const lg = curLeague();
     host.innerHTML = `<div class="st-intro"><h1 class="st-h1">${T('İstatistikler')}</h1>
         <p>${T('st.intro', { seasons: (DATA.seasons || []).join(', '), n: fmtN(DATA.rows.length) })}${lg !== 'Tümü' ? T(' Filtre: <b>{lg}</b>.', { lg: escH(lg) }) : ''}</p></div>
-      ${controls()}${kpis(a)}${marketTable(a)}${leagueTable()}${matchList(rows)}`;
+      ${controls()}${kpis(a)}${marketTable(a)}${calibCard(rows)}${leagueTable()}${matchList(rows)}`;
+    wireCal(host, rows);
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
     $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };

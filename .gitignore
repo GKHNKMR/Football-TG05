@@ -63,3 +63,6 @@ data/cache/meteostat/
 predictions.xlsx
 *.xlsx
 !BETAVUS_Is_Listesi.xlsx
+
+# Test ekran görüntüleri (scripts/*.py yazar), commit edilmez
+scratch/

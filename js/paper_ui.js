@@ -1105,8 +1105,8 @@
       moneyRows.push(head.push([_t('Toplam Kazanç'), closed.profit]) - 1);
       pctRows.push(head.push([_t('Toplam Büyüme'), pct(closed.growthPct)]) - 1);
     }
-    if (sim.secured > 0) moneyRows.push(head.push([_t('Kenarda (Güvende)'), sim.secured]) - 1);
-    const cols = [_t('Gün'), _t('Tarih'), _t('Hedef Kasa'), _t('Gerçek Kasa'), _t('Kenarda'), _t('Günlük Değişim'), _t('Günlük Büyüme'), _t('Toplam Büyüme')];
+    if (sim.secured > 0) moneyRows.push(head.push([_t('Güven Payı'), sim.secured]) - 1);
+    const cols = [_t('Gün'), _t('Tarih'), _t('Hedef Kasa'), _t('Gerçek Kasa'), _t('Güven Payı'), _t('Günlük Değişim'), _t('Günlük Büyüme'), _t('Toplam Büyüme')];
     const body = sim.rows.map(r => [r.day, dmy(r.date), r.targetBank, r.actualBank != null ? r.actualBank : '',
       r.actualBank != null && r.secured > 0 ? r.secured : '',
       r.dailyChange != null ? r.dailyChange : '', pct(r.dailyGrowthPct), pct(r.totalGrowthPct)]);
@@ -1233,13 +1233,16 @@
     };
     const bars = rows.map((r, i) => {
       const gx = x(i) - groupW / 2;
-      const sec = r.totalBank != null && r.secured > 0 && r.secured - r.cashout > 0 ? r.secured - r.cashout : 0;
-      const secRect = sec > 0 ? `<rect x="${gx.toFixed(1)}" y="${y(sec).toFixed(1)}" width="${barW.toFixed(1)}" height="${(base - y(sec)).toFixed(1)}" fill="${KASA_COLOR_SECURED}"/>` : '';
-      return bar(gx, r.totalBank, KASA_COLOR_REAL) + secRect + bar(gx + barW + 2, r.targetBank, KASA_COLOR_TARGET);
+      // Güven payı (yeşil) oyundaki kasanın (mavi) üstünde durur; mavi yükseklik hedefle kıyaslanır
+      const sec = r.actualBank != null && r.secured - r.cashout > 0 ? r.secured - r.cashout : 0;
+      const real = sec > 0
+        ? bar(gx, r.actualBank + sec, KASA_COLOR_SECURED) + (r.actualBank > 0 ? `<rect x="${gx.toFixed(1)}" y="${y(r.actualBank).toFixed(1)}" width="${barW.toFixed(1)}" height="${(base - y(r.actualBank)).toFixed(1)}" fill="${KASA_COLOR_REAL}"/>` : '')
+        : bar(gx, r.actualBank, KASA_COLOR_REAL);
+      return real + bar(gx + barW + 2, r.targetBank, KASA_COLOR_TARGET);
     }).join('');
 
     // Üzerine gelince günün iki değeri (sütundan geniş, tüm gün dilimi)
-    const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}${r.secured > 0 && r.totalBank != null ? ' · ' + _t('Kenarda: {v}', { v: formatCurrency(r.secured, curr) }) : ''}</title></rect>`).join('');
+    const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}${r.secured > 0 && r.actualBank != null ? ' · ' + _t('Güven Payı: {v}', { v: formatCurrency(r.secured, curr) }) : ''}</title></rect>`).join('');
 
     return `
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün', { n })}" style="display:block">
@@ -1256,7 +1259,7 @@
   // ---------------------------------------------------------------------------
 
   const EI_LEVEL_LABELS = { calm: 'Sakin', watch: 'Dikkat', high: 'Yüksek stres' };
-  const EI_STEP_LABELS = { principal: 'Anapara güvencesi', stress: 'Stres eşiği', drawdown: 'Zirveden düşüş', streak: 'Kazanç serisi', manual: 'Elle' };
+  const EI_STEP_LABELS = { principal: 'Anapara güvencesi', stress: 'Stres eşiği', drawdown: 'Zirveden düşüş', streak: 'Kazanç serisi', manual: 'Elle', return: 'Elle' };
 
   function eiRiskName(k) {
     return KASA_RISK_LABELS[k] || _t('Özel');
@@ -1322,9 +1325,9 @@
 
     const cashouts = sim.cashouts || [];
     const history = cashouts.length ? `
-      <div class="ei-sub-h">${_t('Kenara koyduklarım')}</div>
+      <div class="ei-sub-h">${_t('Güven payı hareketleri')}</div>
       <ul class="ei-hist">
-        ${cashouts.map(c => `<li><b>${_t('{day}. gün', { day: c.day })}</b> · ${formatCurrency(c.amount, curr)} · ${esc(eiRiskName(c.fromProfile))} → ${esc(eiRiskName(c.toProfile))} <span class="ei-muted">(${esc(_t(EI_STEP_LABELS[c.reason] || EI_STEP_LABELS.manual))})</span></li>`).join('')}
+        ${cashouts.map(c => `<li><b>${_t('{day}. gün', { day: c.day })}</b> · ${c.amount < 0 ? _t('kasaya geri alındı: {v}', { v: formatCurrency(-c.amount, curr) }) : formatCurrency(c.amount, curr)} · ${esc(eiRiskName(c.fromProfile))} → ${esc(eiRiskName(c.toProfile))} <span class="ei-muted">(${esc(_t(EI_STEP_LABELS[c.reason] || EI_STEP_LABELS.manual))})</span></li>`).join('')}
       </ul>
       <button type="button" class="ei-undo" id="btnEIUndo">${_t('↩ Son işlemi geri al')}</button>` : '';
 
@@ -1332,7 +1335,7 @@
       <tr>
         <td>${i + 1}</td>
         <td>${s.day}</td>
-        <td>${formatCurrency(s.totalBefore, curr)}</td>
+        <td>${formatCurrency(s.bankBefore, curr)}</td>
         <td>${esc(_t(EI_STEP_LABELS[s.type]))}</td>
         <td>${s.amount > 0 ? formatCurrency(s.amount, curr) : '—'}</td>
         <td>${esc(eiRiskName(s.fromProfile))}${s.toProfile !== s.fromProfile ? ' → ' + esc(eiRiskName(s.toProfile)) : ''}</td>
@@ -1349,7 +1352,7 @@
         </div>
         <div class="ei-tiles">
           <div><span>${_t('Oyundaki Kasa')}</span><b>${formatCurrency(coach.working, curr)}</b></div>
-          <div><span>${_t('Kenarda (Güvende)')}</span><b class="good">${formatCurrency(coach.secured, curr)}</b></div>
+          <div><span>${_t('Güven Payı')}</span><b class="good">${formatCurrency(coach.secured, curr)}</b></div>
           <div><span>${_t('Toplam Varlık')}</span><b>${formatCurrency(coach.total, curr)}</b></div>
           <div><span>${_t('Tek Kupon Riski')}</span><b>${formatCurrency(coach.stake, curr)}</b></div>
         </div>
@@ -1361,21 +1364,25 @@
           <div class="ei-bar"><i style="width:${gaugePct.toFixed(0)}%"></i></div>
         </div>
         ${signalHtml}
-        <details class="ei-manual">
-          <summary>${_t('Kendi tutarımı kenara koy')}</summary>
+        <div class="ei-manual">
+          <div class="ei-sub-h">${_t('💰 Güven Payı İşlemleri')}</div>
           <div class="ei-manual-row">
             <label>${_t('Tutar')} <input type="text" inputmode="decimal" id="eiManualAmount" class="ks-input" placeholder="${formatAmount(Math.floor(coach.working / 2))}"></label>
             <label>${_t('Sonra risk')} <select id="eiManualRisk" class="ks-input">${riskOpts}</select></label>
-            <button type="button" class="ei-opt-inline" id="btnEIManual" data-day="${coach.day}" ${coach.day ? '' : 'disabled'}>${_t('Kenara koy')}</button>
+            <button type="button" class="ei-opt-inline" id="btnEIManual" data-day="${coach.day}" ${coach.day ? '' : 'disabled'}>${_t('➕ Kenara koy')}</button>
+            <button type="button" class="ei-opt-inline ei-return" id="btnEIReturn" data-day="${coach.day}" ${coach.day && coach.secured > 0 ? '' : 'disabled'}>${_t('↩ Kasaya geri al')}</button>
           </div>
-        </details>
+          <p class="ei-muted">${coach.day
+            ? _t('Kenara koyduğun para oyundaki kasadan düşer; geri aldığın para güven payından oyundaki kasaya eklenir. Kazanç eğrisi o günden itibaren yeni kasayla yeniden kurulur. Güven payında şu an {sec} var.', { sec: formatCurrency(coach.secured, curr) })
+            : _t('Gerçek Kasa tablosuna ilk günün kasasını girdiğinde kullanılabilir.')}</p>
+        </div>
         <details class="ei-road" ${road.steps.length ? '' : ''}>
           <summary>${_t('🗺️ Yol haritası')} <span class="ei-muted">${_t('Koçla ~{d1} gün, en yüksek tek kupon {m1} · Koçsuz ~{d2} gün, en yüksek tek kupon {m2}', { d1: road.daysWith, m1: formatCurrency(road.maxStakeWith, curr), d2: road.daysWithout == null ? '—' : road.daysWithout, m2: formatCurrency(road.maxStakeWithout, curr) })}</span></summary>
           <p class="ei-muted">${_t('ei.road.note')}</p>
           ${road.steps.length ? `
           <div class="tbl-scroll">
             <table class="excel-table ei-road-table">
-              <thead><tr><th>${_t('Seviye')}</th><th>${_t('Gün')}</th><th>${_t('Toplam Varlık')}</th><th>${_t('Tetikleyici')}</th><th>${_t('Kenara')}</th><th>${_t('Risk')}</th><th>${_t('Tek Kupon Riski')}</th></tr></thead>
+              <thead><tr><th>${_t('Seviye')}</th><th>${_t('Gün')}</th><th>${_t('Oyundaki Kasa')}</th><th>${_t('Tetikleyici')}</th><th>${_t('Kenara')}</th><th>${_t('Risk')}</th><th>${_t('Tek Kupon Riski')}</th></tr></thead>
               <tbody>${roadRows}</tbody>
             </table>
           </div>` : `<p class="ei-muted">${_t('Hedefe kadar ek bir kenara koyma seviyesi görünmüyor.')}</p>`}
@@ -1397,22 +1404,38 @@
     if (dis) dis.onclick = () => { PE.dismissEISignal(paperState, dis.dataset.key); rerenderAllPanes(); };
     const undo = document.getElementById('btnEIUndo');
     if (undo) undo.onclick = () => { PE.undoLastCashout(paperState); rerenderAllPanes(); };
+    const currOf = () => (paperState.settings && paperState.settings.currency) || 'EUR';
     const man = document.getElementById('btnEIManual');
     if (man) {
       man.onclick = () => {
         const val = parseKasaAmount(document.getElementById('eiManualAmount').value);
         const sim = PE.buildKasaSimulation(paperState.plan, paperState);
-        if (val === '' || val == null || val < 0 || val > sim.currentBank) {
-          alert(_t('0 ile oyundaki kasa ({max}) arasında bir tutar girin.', { max: formatCurrency(sim.currentBank, (paperState.settings && paperState.settings.currency) || 'EUR') }));
+        if (val === '' || val == null || val <= 0 || val > sim.currentBank) {
+          alert(_t('0 ile oyundaki kasa ({max}) arasında bir tutar girin.', { max: formatCurrency(sim.currentBank, currOf()) }));
           return;
         }
         PE.applyCashout(paperState, { day: Number(man.dataset.day), amount: val, toProfile: document.getElementById('eiManualRisk').value, reason: 'manual' });
         rerenderAllPanes();
       };
     }
+    const ret = document.getElementById('btnEIReturn');
+    if (ret) {
+      ret.onclick = () => {
+        const sim = PE.buildKasaSimulation(paperState.plan, paperState);
+        const raw = document.getElementById('eiManualAmount').value;
+        // Tutar boşsa güven payının tamamı geri alınır
+        const val = String(raw).trim() === '' ? sim.secured : parseKasaAmount(raw);
+        if (val === '' || val == null || val <= 0 || val > sim.secured) {
+          alert(_t('0 ile güven payı ({max}) arasında bir tutar girin.', { max: formatCurrency(sim.secured, currOf()) }));
+          return;
+        }
+        PE.applyCashout(paperState, { day: Number(ret.dataset.day), amount: -val, toProfile: document.getElementById('eiManualRisk').value, reason: 'return' });
+        rerenderAllPanes();
+      };
+    }
   }
 
-  function renderPlanPane() {
+  function renderPlanPane(opts = {}) {
     const pane = document.getElementById('pane-plan');
     if (!pane) return;
 
@@ -1428,12 +1451,17 @@
 
     // Yeniden çizimde tablo/sayfa kaydırması ve odaktaki gerçek kasa hücresi korunur
     // (aksi halde giriş sonrası tablo başa sarar, sayfa zıplar)
+    // Üstteki kartların yüksekliği değişse bile (koç önerisi açılıp kapanınca) tablo kartı ekranda aynı yerde kalır.
     const oldWrap = pane.querySelector('.ks-table-wrap');
+    const anchorSel = opts.anchor || (document.activeElement && document.activeElement.closest && document.activeElement.closest('#kasaSimCard') ? '#kasaSimCard' : null);
+    const oldAnchor = anchorSel ? pane.querySelector(anchorSel) : null;
     const keep = {
       wrapTop: oldWrap ? oldWrap.scrollTop : null,
       winY: root.scrollY,
-      focusDay: document.activeElement && pane.contains(document.activeElement) && document.activeElement.classList.contains('kasa-input')
-        ? document.activeElement.dataset.day : null
+      anchorTop: oldAnchor ? oldAnchor.getBoundingClientRect().top : null,
+      focusDay: opts.focusDay != null ? String(opts.focusDay)
+        : document.activeElement && pane.contains(document.activeElement) && document.activeElement.classList.contains('kasa-input')
+          ? document.activeElement.dataset.day : null
     };
 
     pane.innerHTML = `
@@ -1491,7 +1519,7 @@
               <div class="ks-legend">
                 <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Gerçek Kasa ({sym})', { sym })}</span>
                 <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
-                ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Kenara Konan ({sym})', { sym })}</span>` : ''}
+                ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Güven Payı ({sym})', { sym })}</span>` : ''}
               </div>
             </div>
             <div class="ks-actions">
@@ -1512,7 +1540,7 @@
                 <th>${_t('Gün')}</th>
                 <th>${_t('Hedef Kasa ({sym})', { sym })}</th>
                 <th>${_t('Gerçek Kasa ({sym})', { sym })}</th>
-                ${hasCash ? `<th>${_t('Kenarda ({sym})', { sym })}</th>` : ''}
+                ${hasCash ? `<th>${_t('Güven Payı ({sym})', { sym })}</th>` : ''}
                 <th>${_t('Günlük Değişim ({sym})', { sym })}</th>
                 <th>${_t('Günlük Büyüme (%)')}</th>
                 <th>${_t('Toplam Büyüme (%)')}</th>
@@ -1524,7 +1552,7 @@
                   <td title="${dmy(r.date)}">${r.day}</td>
                   <td>${formatCurrency(r.targetBank, curr)}</td>
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
-                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${_t('Bu gün {amount} kenara kondu', { amount: formatCurrency(r.cashout, curr) })}"` : ''}>${r.secured > 0 && (r.actualBank != null || r.day <= lastCashDay) ? formatCurrency(r.secured, curr) + (r.cashout ? ` <span class="ks-co">+${formatAmount(r.cashout)}</span>` : '') : ''}</td>` : ''}
+                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kenara kondu', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? formatCurrency(r.secured, curr) + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}
                   <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
                   <td>${r.dailyGrowthPct != null ? signedPct(r.dailyGrowthPct) : ''}</td>
                   <td class="${r.totalGrowthPct == null ? '' : r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct != null ? signedPct(r.totalGrowthPct) : ''}</td>
@@ -1542,11 +1570,29 @@
 
     const newWrap = pane.querySelector('.ks-table-wrap');
     if (newWrap && keep.wrapTop != null) newWrap.scrollTop = keep.wrapTop;
-    if (keep.focusDay) {
-      const f = pane.querySelector(`.kasa-input[data-day="${keep.focusDay}"]`);
-      if (f) f.focus({ preventScroll: true });
-    }
     if (root.scrollY !== keep.winY) root.scrollTo(root.scrollX, keep.winY);
+    const newAnchor = anchorSel ? pane.querySelector(anchorSel) : null;
+    if (newAnchor && keep.anchorTop != null) {
+      const delta = newAnchor.getBoundingClientRect().top - keep.anchorTop;
+      if (Math.abs(delta) > 0.5) root.scrollTo(root.scrollX, root.scrollY + delta);
+    }
+    if (keep.focusDay) focusKasaInput(keep.focusDay);
+  }
+
+  // Gerçek kasa hücresine odaklanır; hücre tablo kutusunun dışındaysa yalnızca tablo kayar, sayfa kaymaz
+  function focusKasaInput(day) {
+    const f = document.querySelector(`#kasaSimCard .kasa-input[data-day="${day}"]`);
+    if (!f) return false;
+    f.focus({ preventScroll: true });
+    const wrap = f.closest('.ks-table-wrap');
+    if (wrap) {
+      const fr = f.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+      const head = (wrap.querySelector('thead') || { offsetHeight: 0 }).offsetHeight;
+      if (fr.bottom > wr.bottom - 4) wrap.scrollTop += fr.bottom - wr.bottom + 8;
+      else if (fr.top < wr.top + head + 4) wrap.scrollTop -= wr.top + head - fr.top + 8;
+    }
+    try { f.select(); } catch (e) {}
+    return true;
   }
 
   // Dile göre binlik/ondalık: en "1,234.56" · tr/nl "1.234,56". Tek ayırıcı ve ≤2 hane ("68.66" / "68,66") her dilde ondalıktır.
@@ -1678,18 +1724,37 @@
       };
     }
 
-    // GERÇEK KASA girişleri
+    // GERÇEK KASA girişleri: değişince kaydedilir; Tab / Enter sonraki güne, Shift+Tab önceki güne geçer
+    const commitKasaInput = (inp, focusDay) => {
+      const val = parseKasaAmount(inp.value);
+      if (val == null) {
+        alert(_t('Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.'));
+        renderPlanPane({ anchor: '#kasaSimCard', focusDay: inp.dataset.day });
+        return;
+      }
+      PE.setPlanDailyBank(paperState, inp.dataset.day, val === '' ? null : val);
+      saveState();
+      renderPlanPane({ anchor: '#kasaSimCard', focusDay });
+    };
     document.querySelectorAll('#kasaSimCard .kasa-input').forEach(inp => {
       inp.onchange = () => {
-        const val = parseKasaAmount(inp.value);
-        if (val == null) {
-          alert(_t('Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.'));
-          renderPlanPane();
-          return;
+        if (inp._committed) return;
+        commitKasaInput(inp, null);
+      };
+      inp.onkeydown = e => {
+        if (e.key !== 'Tab' && e.key !== 'Enter') return;
+        const day = Number(inp.dataset.day);
+        const next = e.shiftKey ? day - 1 : day + 1;
+        const hasNext = !!document.querySelector(`#kasaSimCard .kasa-input[data-day="${next}"]`);
+        if (!hasNext && e.key === 'Tab') return;          // tablo sonu: normal Tab davranışı
+        e.preventDefault();
+        const target = hasNext ? next : day;
+        if (inp.value !== inp.defaultValue) {
+          inp._committed = true;                          // yeniden çizimde change ikinci kez çalışmasın
+          commitKasaInput(inp, target);
+        } else {
+          focusKasaInput(target);
         }
-        PE.setPlanDailyBank(paperState, inp.dataset.day, val === '' ? null : val);
-        saveState();
-        renderPlanPane();
       };
     });
   }

@@ -520,9 +520,9 @@
     'Elle girildi — silerseniz boş/otomatik değere döner': { en: 'Entered manually — clear it to go back to empty/automatic', nl: 'Handmatig ingevoerd — wis het om terug te gaan naar leeg/automatisch' },
     'Sonuçlanan kuponlardan otomatik hesaplandı': { en: 'Calculated automatically from settled bets', nl: 'Automatisch berekend uit afgehandelde weddenschappen' },
     'kasa.note': {
-      tr: 'Gerçek Kasa sütununa her günün kasasını yazabilirsiniz; yazılmayan geçmiş günler sonuçlanan kuponlardan otomatik dolar. Teorik hedef kasanın altında kalan günler kırmızı gösterilir.',
-      en: 'You can enter each day\'s bankroll in the Actual bankroll column; past days you leave empty are filled automatically from settled bets. Days below the theoretical target bankroll are shown in red.',
-      nl: 'Je kunt de bankroll van elke dag invullen in de kolom Werkelijke bankroll; lege dagen in het verleden worden automatisch aangevuld uit afgehandelde weddenschappen. Dagen onder de theoretische doelbankroll worden rood weergegeven.'
+      tr: 'Gerçek Kasa sütununa her günün kasasını yazabilirsiniz; yazılmayan geçmiş günler sonuçlanan kuponlardan otomatik dolar. Teorik hedef kasanın altında kalan günler kırmızı gösterilir. Tab veya Enter ile sonraki güne geçebilirsiniz.',
+      en: 'You can enter each day\'s bankroll in the Actual bankroll column; past days you leave empty are filled automatically from settled bets. Days below the theoretical target bankroll are shown in red. Press Tab or Enter to move to the next day.',
+      nl: 'Je kunt de bankroll van elke dag invullen in de kolom Werkelijke bankroll; lege dagen in het verleden worden automatisch aangevuld uit afgehandelde weddenschappen. Dagen onder de theoretische doelbankroll worden rood weergegeven. Met Tab of Enter ga je naar de volgende dag.'
     },
     'Kasa {n}': { en: 'Bankroll {n}', nl: 'Bankroll {n}' },
     'Özel': { en: 'Custom', nl: 'Aangepast' },
@@ -537,12 +537,14 @@
     // Duygusal Denge Koçu (Sanal Kasa cash-out)
     '🧠 Duygusal Denge Koçu': { en: '🧠 Emotional Balance Coach', nl: '🧠 Emotionele Balans Coach' },
     'ei.intro': {
-      tr: 'Kasa büyüdükçe tek kuponda riske ettiğin para da büyür; stres ve heyecan karar kalitesini düşürür. Koç bu tutarı, başlarken tamamını göze aldığın tutarla (konfor tutarı) kıyaslar ve gereken seviyelerde kazancın bir kısmını kenara koymayı (cash-out) ve riski düşürmeyi önerir. Kenara konan para hedefe sayılır.',
-      en: 'As your bankroll grows, so does the money you put on a single bet, and stress and excitement start to cloud decisions. The coach compares that amount with what you were prepared to lose entirely when you started (your comfort amount) and, at the right levels, suggests setting part of your winnings aside (cash-out) and lowering your risk. Money set aside counts towards your target.',
-      nl: 'Naarmate je bankroll groeit, groeit ook het bedrag dat je op één weddenschap zet, en stress en opwinding gaan je beslissingen beïnvloeden. De coach vergelijkt dat bedrag met wat je bij de start volledig durfde te verliezen (je comfortbedrag) en stelt op de juiste momenten voor een deel van je winst opzij te zetten (cash-out) en je risico te verlagen. Opzijgezet geld telt mee voor je doel.'
+      tr: 'Kasa büyüdükçe tek kuponda riske ettiğin para da büyür; stres ve heyecan karar kalitesini düşürür. Koç bu tutarı, başlarken tamamını göze aldığın tutarla (konfor tutarı) kıyaslar ve gereken seviyelerde kazancın bir kısmını kenara koymayı (cash-out) ve riski düşürmeyi önerir. Kenara konan para senin güven payındır: kazanç eğrisine ve hedefe dahil edilmez.',
+      en: 'As your bankroll grows, so does the money you put on a single bet, and stress and excitement start to cloud decisions. The coach compares that amount with what you were prepared to lose entirely when you started (your comfort amount) and, at the right levels, suggests setting part of your winnings aside (cash-out) and lowering your risk. Money set aside is your safety margin: it is not part of the growth curve or the target.',
+      nl: 'Naarmate je bankroll groeit, groeit ook het bedrag dat je op één weddenschap zet, en stress en opwinding gaan je beslissingen beïnvloeden. De coach vergelijkt dat bedrag met wat je bij de start volledig durfde te verliezen (je comfortbedrag) en stelt op de juiste momenten voor een deel van je winst opzij te zetten (cash-out) en je risico te verlagen. Opzijgezet geld is je veiligheidsbuffer: het telt niet mee in de groeicurve of het doel.'
     },
     'Oyundaki Kasa': { en: 'In play', nl: 'In het spel' },
-    'Kenarda (Güvende)': { en: 'Set aside (safe)', nl: 'Opzij (veilig)' },
+    'Güven Payı': { en: 'Safety margin', nl: 'Veiligheidsbuffer' },
+    'Güven Payı ({sym})': { en: 'Safety margin ({sym})', nl: 'Veiligheidsbuffer ({sym})' },
+    'Güven Payı: {v}': { en: 'Safety margin: {v}', nl: 'Veiligheidsbuffer: {v}' },
     'Toplam Varlık': { en: 'Total', nl: 'Totaal' },
     'Tek Kupon Riski': { en: 'Risk per bet', nl: 'Risico per weddenschap' },
     'Stres seviyesi': { en: 'Stress level', nl: 'Stressniveau' },
@@ -581,9 +583,9 @@
     },
     'Hedefe ulaştın!': { en: "You've reached your target!", nl: 'Je hebt je doel bereikt!' },
     'ei.reached.body': {
-      tr: 'Toplam varlığın (oyundaki + kenarda) hedefe ulaştı. Kasayı kapatıp kazancını korumanı öneririm.',
-      en: 'Your total (in play + set aside) has reached the target. Close the bankroll to lock in your profit.',
-      nl: 'Je totaal (in het spel + opzij) heeft het doel bereikt. Sluit de bankroll om je winst veilig te stellen.'
+      tr: 'Oyundaki kasan hedefe ulaştı; güven payın da ayrıca kenarda. Kasayı kapatıp kazancını korumanı öneririm.',
+      en: 'Your bankroll in play has reached the target, and your safety margin is set aside on top. Close the bankroll to lock in your profit.',
+      nl: 'Je bankroll in het spel heeft het doel bereikt, en je veiligheidsbuffer staat daarnaast opzij. Sluit de bankroll om je winst veilig te stellen.'
     },
     '{amount} kenara koy · {risk} ile devam': { en: 'Set aside {amount} · continue at {risk}', nl: '{amount} opzij · verder met {risk}' },
     '{risk} riskine geç': { en: 'Switch to {risk} risk', nl: 'Overstappen naar {risk}-risico' },
@@ -593,7 +595,15 @@
     'Bugünkü öneriyi erteledin. Yarın kasanı girdiğinde koç yeniden bakar.': { en: "You postponed today's suggestion. The coach will look again when you enter tomorrow's bankroll.", nl: 'Je hebt het advies van vandaag uitgesteld. De coach kijkt opnieuw als je morgen je bankroll invult.' },
     'Şu an bir öneri yok: tek kupon riskin konfor bölgende. Her gün kasanı girdiğinde koç yeniden değerlendirir.': { en: 'No suggestion right now: your risk per bet is within your comfort zone. The coach re-evaluates every time you enter your bankroll.', nl: 'Op dit moment geen advies: je risico per weddenschap ligt binnen je comfortzone. De coach kijkt opnieuw telkens als je je bankroll invult.' },
     'Gerçek Kasa tablosuna ilk günün kasasını girdiğinde koç değerlendirmeye başlar.': { en: "The coach starts once you enter the first day's bankroll in the Actual bankroll table.", nl: 'De coach begint zodra je de bankroll van de eerste dag invult in de tabel Werkelijke bankroll.' },
-    'Kendi tutarımı kenara koy': { en: 'Set aside my own amount', nl: 'Zelf een bedrag opzij zetten' },
+    '💰 Güven Payı İşlemleri': { en: '💰 Safety margin', nl: '💰 Veiligheidsbuffer' },
+    '➕ Kenara koy': { en: '➕ Set aside', nl: '➕ Opzij zetten' },
+    '↩ Kasaya geri al': { en: '↩ Return to bankroll', nl: '↩ Terug naar bankroll' },
+    'Kenara koyduğun para oyundaki kasadan düşer; geri aldığın para güven payından oyundaki kasaya eklenir. Kazanç eğrisi o günden itibaren yeni kasayla yeniden kurulur. Güven payında şu an {sec} var.': { en: 'Money you set aside is taken out of the bankroll in play; money you return goes from the safety margin back into play. From that day the growth curve is rebuilt with the new bankroll. Your safety margin is currently {sec}.', nl: 'Geld dat je opzij zet gaat uit de bankroll in het spel; geld dat je terugzet gaat van de veiligheidsbuffer terug in het spel. Vanaf die dag wordt de groeicurve opnieuw opgebouwd met de nieuwe bankroll. Je veiligheidsbuffer is nu {sec}.' },
+    'Gerçek Kasa tablosuna ilk günün kasasını girdiğinde kullanılabilir.': { en: "Available once you enter the first day's bankroll in the Actual bankroll table.", nl: 'Beschikbaar zodra je de bankroll van de eerste dag invult in de tabel Werkelijke bankroll.' },
+    '0 ile güven payı ({max}) arasında bir tutar girin.': { en: 'Enter an amount between 0 and your safety margin ({max}).', nl: 'Voer een bedrag in tussen 0 en je veiligheidsbuffer ({max}).' },
+    'kasaya geri alındı: {v}': { en: 'returned to bankroll: {v}', nl: 'terug naar bankroll: {v}' },
+    'Bu gün {amount} kasaya geri alındı': { en: 'On this day {amount} was returned to the bankroll', nl: 'Op deze dag is {amount} teruggezet naar de bankroll' },
+    'Güven payı hareketleri': { en: 'Safety margin history', nl: 'Geschiedenis veiligheidsbuffer' },
     'Tutar': { en: 'Amount', nl: 'Bedrag' },
     'Sonra risk': { en: 'Then risk', nl: 'Daarna risico' },
     'Kenara koy': { en: 'Set aside', nl: 'Opzij zetten' },
@@ -616,16 +626,12 @@
     'Elle': { en: 'Manual', nl: 'Handmatig' },
     'Kenara koyduklarım': { en: 'Set aside so far', nl: 'Tot nu toe opzijgezet' },
     '{day}. gün': { en: 'Day {day}', nl: 'Dag {day}' },
-    '↩ Son işlemi geri al': { en: '↩ Undo last cash-out', nl: '↩ Laatste cash-out ongedaan maken' },
-    'Kenarda ({sym})': { en: 'Set aside ({sym})', nl: 'Opzij ({sym})' },
-    'Kenarda': { en: 'Set aside', nl: 'Opzij' },
-    'Kenarda: {v}': { en: 'Set aside: {v}', nl: 'Opzij: {v}' },
-    'Kenara Konan ({sym})': { en: 'Set aside ({sym})', nl: 'Opzijgezet ({sym})' },
+    '↩ Son işlemi geri al': { en: '↩ Undo last action', nl: '↩ Laatste actie ongedaan maken' },
     'Bu gün {amount} kenara kondu': { en: 'On this day {amount} was set aside', nl: 'Op deze dag is {amount} opzijgezet' },
     'kasa.note.cashout': {
-      tr: 'Gerçek Kasa oyundaki kasadır; kenara koyduğun para Kenarda sütunundadır. Hedef ve büyüme, toplam varlığa (oyundaki + kenarda) göre hesaplanır.',
-      en: 'Actual bankroll is the money in play; money you set aside is in the Set aside column. Target and growth are based on your total (in play + set aside).',
-      nl: 'Werkelijke bankroll is het geld in het spel; opzijgezet geld staat in de kolom Opzij. Doel en groei zijn gebaseerd op je totaal (in het spel + opzij).'
+      tr: 'Gerçek Kasa oyundaki kasadır; kenara koyduğun para Güven Payı sütunundadır ve kazanç eğrisine, büyümeye ve hedefe dahil edilmez. Grafikte yeşil kısım olarak gösterilir.',
+      en: 'Actual bankroll is the money in play; money you set aside is in the Safety margin column and is not part of the growth curve, the growth figures or the target. The chart shows it in green.',
+      nl: 'Werkelijke bankroll is het geld in het spel; opzijgezet geld staat in de kolom Veiligheidsbuffer en telt niet mee in de groeicurve, de groei of het doel. De grafiek toont het in groen.'
     },
   });
 })(window);

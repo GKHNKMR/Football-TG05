@@ -31,7 +31,10 @@ başlar; `Özet` sayfası formüllerle kendini günceller, elle yazılmaz).
 **Bir iş bittiğinde**
 - `Durum = Tamamlandı`, `Kapanış Tarihi = bugün`, `Commit / Yapılan` = kısa
   commit hash'i + bir cümle ne yapıldı. Test bekleyen iş için `Test`.
-- İş listesini, işin kendi değişiklikleriyle **aynı commit'te** gönder.
+- Commit hash'ini listeye **push'tan sonra** yaz: bot sık commit attığı için `pull --rebase`
+  hash'i değiştirir. Sıra: iş commit + push → hash'i listeye yaz → liste commit + push.
+- Canlıda etkin olması başkasının adımına bağlıysa (ör. Supabase'de SQL çalıştırmak)
+  `Tamamlandı` değil `Test` yap ve `Not`'a kimin ne yapması gerektiğini yaz.
 
 **Dosyayı düzenleme kuralları**
 - Yalnızca `openpyxl` ile yaz; mevcut biçim, açılır listeler, koşullu renkler
@@ -52,4 +55,5 @@ başlar; `Özet` sayfası formüllerle kendini günceller, elle yazılmaz).
 - Değişiklikler yerelde bırakılmaz: her iş commit + push ile biter.
 - Bot sık sık `Update BETAVUS predictions` commit'i atar; push reddedilirse
   `git pull --rebase origin main` ve tekrar push.
+- Değişiklikten sonra `python scripts/run_tests.py` (tüm testler) yeşil olmalı.
 - `scratch/` commit edilmez.

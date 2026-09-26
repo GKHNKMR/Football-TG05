@@ -211,6 +211,16 @@
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
     $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };
     $('stLeague').onchange = e => { if (typeof setLeague === 'function') setLeague(e.target.value); st.page = 0; render(); };
+    // Fikstür'deki modern açılır panel; sayılar sezon + aramaya göre, lig hariç
+    if (typeof root.enhanceLeagueSelect === 'function') root.enhanceLeagueSelect($('stLeague'), () => {
+      const q = st.q.toLocaleLowerCase('tr-TR').split(/\s+/).filter(Boolean), c = { 'Tümü': 0 };
+      for (const r of DATA.rows) {
+        if (st.season && r[14] !== st.season) continue;
+        if (q.length && !q.every(w => (r[2] + ' ' + r[3]).toLocaleLowerCase('tr-TR').includes(w))) continue;
+        c['Tümü']++; c[r[1]] = (c[r[1]] || 0) + 1;
+      }
+      return c;
+    });
     host.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { st.res = b.dataset.res; st.page = 0; render(); });
     let t = null;
     $('stQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); st.page = 0; render(); }, 250); };

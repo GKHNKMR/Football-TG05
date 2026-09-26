@@ -79,7 +79,7 @@
   add({
     // Genel / üst menü
     'Dil': { en: 'Language', nl: 'Taal' },
-    'Fikstür': { en: 'Fixture', nl: 'Wedstrijdschema' },
+    'Fikstür': { en: 'Fixture', nl: 'Wedstrijden' },
     'İstatistikler': { en: 'Statistics', nl: 'Statistieken' },
     'Sanal Kasa': { en: 'Virtual Bankroll', nl: 'Virtuele bankroll' },
     'FAQ': { en: 'FAQ', nl: 'FAQ' },

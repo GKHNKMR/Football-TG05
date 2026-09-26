@@ -58,21 +58,8 @@ jobs:
       - name: Build Istatistikler list + Bulten success banner (5 seasons + current season)
         run: python scripts/build_cifte_backtest.py
         continue-on-error: true
-      - name: Validate predictions
-        run: |
-          python - << 'PY'
-          import json, sys
-          from pathlib import Path
-          p = Path("predictions.json")
-          if not p.exists(): sys.exit("predictions.json missing")
-          data = json.loads(p.read_text(encoding="utf-8"))
-          if not isinstance(data, list): sys.exit("predictions.json must contain a list")
-          if not data: sys.exit("predictions.json contains no fixtures")
-          required = {"match_id", "league", "home", "away", "kickoff_utc", "p_over_0_5", "p_over_1_5", "p_over_2_5"}
-          missing = required - set(data[0])
-          if missing: sys.exit(f"Missing keys: {missing}")
-          print(f"Validated {len(data)} fixtures")
-          PY
+      - name: Validate data (errors stop the publish, warnings go to the run summary)
+        run: python scripts/validate_data.py
       - name: Commit updated predictions
         run: |
           git config user.name "GitHub Actions"

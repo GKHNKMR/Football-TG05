@@ -306,7 +306,7 @@
   async function readProfileFields() {
     const username = $('aUser').value.trim(), age = parseInt($('aAge').value, 10), gender = $('aGender').value, country = $('aCountry').value;
     if (!USER_RE.test(username)) throw new Error(T('Kullanıcı adı 3–20 karakter olmalı; yalnızca harf, rakam, _ ve . kullanılabilir.'));
-    if (!Number.isFinite(age) || age < 18 || age > 100) throw new Error(T("BETAVUS'u kullanmak için 18 yaşından büyük olmalısın."));
+    if (!Number.isFinite(age) || age < 18 || age > 100) throw new Error(T("BETAVUS'u kullanmak için en az 18 yaşında olmalısın."));
     if (!gender) throw new Error(T('Cinsiyet seç.'));
     if (!country) throw new Error(T('Ülke seç.'));
     return { username, age, gender, country };

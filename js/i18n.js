@@ -534,5 +534,98 @@
     'Başlangıç kasası': { en: 'The starting bankroll', nl: 'De startbankroll' },
     'Hedef kasa': { en: 'The target bankroll', nl: 'De doelbankroll' },
     'Geçerli bir kasa tutarı girin (örn: 68,66). Boş bırakırsanız gün boş kalır.': { en: 'Enter a valid amount (e.g. 68.66). If you leave it empty, the day stays empty.', nl: 'Voer een geldig bedrag in (bijv. 68,66). Als je het leeg laat, blijft de dag leeg.' },
+    // Duygusal Denge Koçu (Sanal Kasa cash-out)
+    '🧠 Duygusal Denge Koçu': { en: '🧠 Emotional Balance Coach', nl: '🧠 Emotionele Balans Coach' },
+    'ei.intro': {
+      tr: 'Kasa büyüdükçe tek kuponda riske ettiğin para da büyür; stres ve heyecan karar kalitesini düşürür. Koç bu tutarı, başlarken tamamını göze aldığın tutarla (konfor tutarı) kıyaslar ve gereken seviyelerde kazancın bir kısmını kenara koymayı (cash-out) ve riski düşürmeyi önerir. Kenara konan para hedefe sayılır.',
+      en: 'As your bankroll grows, so does the money you put on a single bet, and stress and excitement start to cloud decisions. The coach compares that amount with what you were prepared to lose entirely when you started (your comfort amount) and, at the right levels, suggests setting part of your winnings aside (cash-out) and lowering your risk. Money set aside counts towards your target.',
+      nl: 'Naarmate je bankroll groeit, groeit ook het bedrag dat je op één weddenschap zet, en stress en opwinding gaan je beslissingen beïnvloeden. De coach vergelijkt dat bedrag met wat je bij de start volledig durfde te verliezen (je comfortbedrag) en stelt op de juiste momenten voor een deel van je winst opzij te zetten (cash-out) en je risico te verlagen. Opzijgezet geld telt mee voor je doel.'
+    },
+    'Oyundaki Kasa': { en: 'In play', nl: 'In het spel' },
+    'Kenarda (Güvende)': { en: 'Set aside (safe)', nl: 'Opzij (veilig)' },
+    'Toplam Varlık': { en: 'Total', nl: 'Totaal' },
+    'Tek Kupon Riski': { en: 'Risk per bet', nl: 'Risico per weddenschap' },
+    'Stres seviyesi': { en: 'Stress level', nl: 'Stressniveau' },
+    'Sakin': { en: 'Calm', nl: 'Rustig' },
+    'Dikkat': { en: 'Caution', nl: 'Let op' },
+    'Yüksek stres': { en: 'High stress', nl: 'Hoge stress' },
+    'Tek kupon riski konfor tutarının {x} katı · konfor tutarı {c}': { en: 'Risk per bet is {x}× your comfort amount · comfort amount {c}', nl: 'Risico per weddenschap is {x}× je comfortbedrag · comfortbedrag {c}' },
+    'ei.comfort.tip': {
+      tr: "Konfor tutarı: başlangıç kasan + kenara koyduğunun %25'i. Başlarken tamamını göze aldığın tutar, kaybetmeyi kaldırabileceğin miktarın en iyi göstergesidir.",
+      en: 'Comfort amount: your starting bankroll + 25% of what you have set aside. The amount you were prepared to lose entirely at the start is the best indicator of what you can handle losing.',
+      nl: 'Comfortbedrag: je startbankroll + 25% van wat je opzij hebt gezet. Het bedrag dat je bij de start volledig durfde te verliezen is de beste maatstaf voor wat je kunt verdragen.'
+    },
+    'Stres eşiği: tek kuponda {stake} riske ediyorsun': { en: 'Stress threshold: you are risking {stake} on a single bet', nl: 'Stressdrempel: je riskeert {stake} op één weddenschap' },
+    'ei.stress.body': {
+      tr: 'Bu, başlarken tamamını göze aldığın tutarın ({comfort}) {x} katı. Bu büyüklükte bir kayıp kazancın keyfini bir anda siler ve kaybı telafi etme isteği doğurur. Kasanın bir kısmını kenara koyup tek kupon riskini konfor tutarına indir.',
+      en: 'That is {x} times the amount you were prepared to lose entirely when you started ({comfort}). A loss this size wipes out the joy of your gains at once and triggers the urge to win it back. Set part of your bankroll aside and bring your risk per bet back to your comfort amount.',
+      nl: 'Dat is {x} keer het bedrag dat je bij de start volledig durfde te verliezen ({comfort}). Een verlies van deze omvang wist in één keer het plezier van je winst uit en wekt de neiging om het terug te winnen. Zet een deel van je bankroll opzij en breng je risico per weddenschap terug naar je comfortbedrag.'
+    },
+    'Kasanı ikiye katladın!': { en: "You've doubled your bankroll!", nl: 'Je hebt je bankroll verdubbeld!' },
+    'ei.principal.body': {
+      tr: 'Başlangıç paranı ({amount}) kenara koy: bundan sonra masada yalnızca kazancın olur, en kötü günde bile kendi paran güvende kalır.',
+      en: 'Set your starting money ({amount}) aside: from now on only your winnings are in play, and your own money stays safe even on the worst day.',
+      nl: 'Zet je startgeld ({amount}) opzij: vanaf nu speel je alleen nog met je winst, en je eigen geld blijft zelfs op de slechtste dag veilig.'
+    },
+    'Zirveden {pct} düştün': { en: "You're down {pct} from your peak", nl: 'Je staat {pct} onder je piek' },
+    'ei.drawdown.body': {
+      tr: 'Zirven {peak} idi. Kayıptan sonra parayı hızla geri kazanma isteği (kaybı kovalama) en pahalı hatadır. Bugün mola vermeni ve riski bir kademe düşürmeni öneririm.',
+      en: 'Your peak was {peak}. After a loss, the urge to win the money back quickly (chasing losses) is the most expensive mistake. Take a break today and lower your risk by one level.',
+      nl: 'Je piek was {peak}. Na verlies is de drang om het geld snel terug te winnen (verlies najagen) de duurste fout. Neem vandaag een pauze en verlaag je risico één niveau.'
+    },
+    '{n} gündür kazanıyorsun (+{pct})': { en: '{n} winning days in a row (+{pct})', nl: '{n} winstdagen op rij (+{pct})' },
+    'ei.streak.body': {
+      tr: "Seri sırasında kazanç 'kasanın parası' gibi gelir ve risk iştahı artar. Serinin kazancının yarısını ({amount}) kenara koyarak heyecanı dengele.",
+      en: "During a streak, winnings feel like 'house money' and your appetite for risk grows. Set half of the streak's winnings ({amount}) aside to keep the excitement in check.",
+      nl: "Tijdens een reeks voelt winst als 'geld van het huis' en groeit je risicobereidheid. Zet de helft van de winst uit deze reeks ({amount}) opzij om de opwinding in balans te houden."
+    },
+    'Hedefe ulaştın!': { en: "You've reached your target!", nl: 'Je hebt je doel bereikt!' },
+    'ei.reached.body': {
+      tr: 'Toplam varlığın (oyundaki + kenarda) hedefe ulaştı. Kasayı kapatıp kazancını korumanı öneririm.',
+      en: 'Your total (in play + set aside) has reached the target. Close the bankroll to lock in your profit.',
+      nl: 'Je totaal (in het spel + opzij) heeft het doel bereikt. Sluit de bankroll om je winst veilig te stellen.'
+    },
+    '{amount} kenara koy · {risk} ile devam': { en: 'Set aside {amount} · continue at {risk}', nl: '{amount} opzij · verder met {risk}' },
+    '{risk} riskine geç': { en: 'Switch to {risk} risk', nl: 'Overstappen naar {risk}-risico' },
+    'Önerilen': { en: 'Recommended', nl: 'Aanbevolen' },
+    'Tek kupon: {stake} · Hedefe ~{days} gün': { en: 'Per bet: {stake} · ~{days} days to target', nl: 'Per weddenschap: {stake} · ~{days} dagen tot doel' },
+    'Şimdilik devam et': { en: 'Continue for now', nl: 'Voorlopig doorgaan' },
+    'Bugünkü öneriyi erteledin. Yarın kasanı girdiğinde koç yeniden bakar.': { en: "You postponed today's suggestion. The coach will look again when you enter tomorrow's bankroll.", nl: 'Je hebt het advies van vandaag uitgesteld. De coach kijkt opnieuw als je morgen je bankroll invult.' },
+    'Şu an bir öneri yok: tek kupon riskin konfor bölgende. Her gün kasanı girdiğinde koç yeniden değerlendirir.': { en: 'No suggestion right now: your risk per bet is within your comfort zone. The coach re-evaluates every time you enter your bankroll.', nl: 'Op dit moment geen advies: je risico per weddenschap ligt binnen je comfortzone. De coach kijkt opnieuw telkens als je je bankroll invult.' },
+    'Gerçek Kasa tablosuna ilk günün kasasını girdiğinde koç değerlendirmeye başlar.': { en: "The coach starts once you enter the first day's bankroll in the Actual bankroll table.", nl: 'De coach begint zodra je de bankroll van de eerste dag invult in de tabel Werkelijke bankroll.' },
+    'Kendi tutarımı kenara koy': { en: 'Set aside my own amount', nl: 'Zelf een bedrag opzij zetten' },
+    'Tutar': { en: 'Amount', nl: 'Bedrag' },
+    'Sonra risk': { en: 'Then risk', nl: 'Daarna risico' },
+    'Kenara koy': { en: 'Set aside', nl: 'Opzij zetten' },
+    '0 ile oyundaki kasa ({max}) arasında bir tutar girin.': { en: 'Enter an amount between 0 and your bankroll in play ({max}).', nl: 'Voer een bedrag in tussen 0 en je bankroll in het spel ({max}).' },
+    '🗺️ Yol haritası': { en: '🗺️ Roadmap', nl: '🗺️ Routekaart' },
+    'Koçla ~{d1} gün, en yüksek tek kupon {m1} · Koçsuz ~{d2} gün, en yüksek tek kupon {m2}': { en: 'With coach ~{d1} days, highest single bet {m1} · Without ~{d2} days, highest single bet {m2}', nl: 'Met coach ~{d1} dagen, hoogste inzet {m1} · Zonder ~{d2} dagen, hoogste inzet {m2}' },
+    'ei.road.note': {
+      tr: 'Bugünden itibaren her gün teorik büyüme gerçekleşirse koçun hangi seviyelerde kenara koymayı önereceği (önerilen seçenek uygulanarak). Gerçek kasa farklı gittikçe yol haritası kendini günceller.',
+      en: 'Where the coach would suggest setting money aside if every day from today hits the theoretical growth (applying the recommended option). As your actual bankroll deviates, the roadmap updates itself.',
+      nl: 'Waar de coach zou voorstellen geld opzij te zetten als elke dag vanaf vandaag de theoretische groei haalt (met de aanbevolen optie). Wijkt je werkelijke bankroll af, dan past de routekaart zich aan.'
+    },
+    'Seviye': { en: 'Level', nl: 'Niveau' },
+    'Tetikleyici': { en: 'Trigger', nl: 'Aanleiding' },
+    'Kenara': { en: 'Set aside', nl: 'Opzij' },
+    'Hedefe kadar ek bir kenara koyma seviyesi görünmüyor.': { en: 'No further set-aside levels before the target.', nl: 'Geen verdere momenten om geld opzij te zetten vóór het doel.' },
+    'Anapara güvencesi': { en: 'Secure starting money', nl: 'Startgeld veiligstellen' },
+    'Stres eşiği': { en: 'Stress threshold', nl: 'Stressdrempel' },
+    'Zirveden düşüş': { en: 'Drop from peak', nl: 'Daling vanaf piek' },
+    'Kazanç serisi': { en: 'Winning streak', nl: 'Winstreeks' },
+    'Elle': { en: 'Manual', nl: 'Handmatig' },
+    'Kenara koyduklarım': { en: 'Set aside so far', nl: 'Tot nu toe opzijgezet' },
+    '{day}. gün': { en: 'Day {day}', nl: 'Dag {day}' },
+    '↩ Son işlemi geri al': { en: '↩ Undo last cash-out', nl: '↩ Laatste cash-out ongedaan maken' },
+    'Kenarda ({sym})': { en: 'Set aside ({sym})', nl: 'Opzij ({sym})' },
+    'Kenarda': { en: 'Set aside', nl: 'Opzij' },
+    'Kenarda: {v}': { en: 'Set aside: {v}', nl: 'Opzij: {v}' },
+    'Kenara Konan ({sym})': { en: 'Set aside ({sym})', nl: 'Opzijgezet ({sym})' },
+    'Bu gün {amount} kenara kondu': { en: 'On this day {amount} was set aside', nl: 'Op deze dag is {amount} opzijgezet' },
+    'kasa.note.cashout': {
+      tr: 'Gerçek Kasa oyundaki kasadır; kenara koyduğun para Kenarda sütunundadır. Hedef ve büyüme, toplam varlığa (oyundaki + kenarda) göre hesaplanır.',
+      en: 'Actual bankroll is the money in play; money you set aside is in the Set aside column. Target and growth are based on your total (in play + set aside).',
+      nl: 'Werkelijke bankroll is het geld in het spel; opzijgezet geld staat in de kolom Opzij. Doel en groei zijn gebaseerd op je totaal (in het spel + opzij).'
+    },
   });
 })(window);

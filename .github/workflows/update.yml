@@ -69,5 +69,13 @@ jobs:
             echo "No data changes."
           else
             git commit -m "Update BETAVUS predictions $(date -u +'%Y-%m-%d')"
-            git push
+            # Arka arkaya iki push'ta bu çalışma bayat kalabilir: önce yeni main'in üstüne al.
+            # Çakışmada bu çalışmanın taze ürettiği veri kazanır (rebase'de "theirs" = bizim commit).
+            pushed=0
+            for i in 1 2 3; do
+              if git pull --rebase -X theirs origin main && git push; then pushed=1; break; fi
+              git rebase --abort 2>/dev/null || true
+              sleep 5
+            done
+            [ "$pushed" = 1 ]
           fi

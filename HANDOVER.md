@@ -4,7 +4,7 @@
 > **Repository:** `https://github.com/GKHNKMR/Football-TG05.git`
 > **Aktif dal:** `main`
 > **Canlı site:** `https://betavus.vercel.app`
-> **Çalışma dizini:** `C:\Users\mtem01\OneDrive\VS-Studio Working File\Football Goal Analyst\Football-TG05-main`
+> **Çalışma dizini:** her geliştiricinin kendi klonu, `C:\Users\<kullanıcı>\source\Football-TG05` (OneDrive dışında)
 
 Bu dosya projenin **kanonik handover kaynağıdır**. `BETAVUS_HANDOVER.md` yalnızca bu dosyaya yönlendirme amacıyla tutulur. Başlamadan önce `git status --short` ve `git log -5 --oneline` çalıştırılmalıdır.
 
@@ -184,6 +184,7 @@ Son doğrulanan durum:
 ## 8. Claude için başlangıç sırası
 
 1. Bu `HANDOVER.md` dosyasını tamamen oku.
+   Ardından `BETAVUS_Is_Listesi.xlsx` iş listesini oku ve `CLAUDE.md`'deki iş takibi kurallarını uygula (açık işleri kullanıcıya sor, biten işi kapat).
 2. `git status --short` ile kullanıcıya ait değişiklikleri koru.
 3. `git log -5 --oneline` ile başlangıç commit'ini doğrula.
 4. Gol aralığı vurgusu istenirse Bölüm 3'teki `%47 sarı / yeşil kapalı` kararını temel al; bunu Çifte Şans `%75` kuralıyla karıştırma.

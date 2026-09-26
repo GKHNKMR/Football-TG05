@@ -19,3 +19,7 @@ data/opta-xg.json
 
 # Backtest CSV is not fetched by any page.
 data/backtest-pl-2526.csv
+
+# Ekip içi iş takibi, sitede yayınlanmaz.
+BETAVUS_Is_Listesi.xlsx
+CLAUDE.md

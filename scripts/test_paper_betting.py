@@ -34,6 +34,7 @@ def main():
         page.add_init_script("""
             localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');
             localStorage.setItem('betavus.tab', 'sim-kasa');
+            localStorage.setItem('betavus.lang', 'tr');
         """)
 
         print(f"Navigating to http://127.0.0.1:{PORT}/index.html...")
@@ -542,43 +543,17 @@ def main():
         print("  ✓ Adaptif 2 alternatif (Hedefi Ayarla, Riski Değiştir) başarıyla üretildi.")
 
         # ----------------------------------------------------------------------
-        # TEST 10: DOM & 7-Sekme Mimarisi & Başlık Açıklama Kartı (Nedir/Ne Değildir)
+        # TEST 10: Menü mimarisi — görünen 4 sekme (Bülten · İstatistikler · Sanal Kasa · FAQ), eski sekmeler gizli
         # ----------------------------------------------------------------------
-        print("\n--- TEST 10: DOM & 7-Sekme Mimarisi & Başlık Kartı ---")
-        # Başlık Nedir / Ne Değildir kartı
-        intro_card = page.query_selector(".betavus-intro-card")
-        assert intro_card is not None, "Açıklama kartı (.betavus-intro-card) bulunamadı"
-        intro_text = intro_card.inner_text()
-        assert "NEDİR" in intro_text
-        assert "DEĞİLDİR" in intro_text
-        assert "kumarhane" in intro_text.lower() or "bahis" in intro_text.lower()
-        print("  ✓ 'BETAVUS Nedir? / Ne Değildir?' açıklama kartı doğrulandı.")
-
-        # 7 Sekmenin sırası ve varlığı
-        tabs = page.query_selector_all(".tabs .tab")
-        tab_names = [t.inner_text().strip() for t in tabs]
-        print(f"  Bulunan Sekmeler ({len(tab_names)}): {tab_names}")
-        assert len(tab_names) == 8, f"8 sekme bekleniyordu, bulunan: {len(tab_names)}"
-        assert "Örnek Kasa Simülasyonu" in tab_names[0]
-        assert "Örnek Kuponlarım Simülasyonu" in tab_names[1]
-        assert "Gerçek Kasa" in tab_names[2]
-        assert "Gerçek Kuponlarım" in tab_names[3]
-        assert "Model Doğruluğu" in tab_names[4]
-        assert "Tahmin vs Gerçekleşen" in tab_names[5]
-        assert "Admin Kuponlarım" in tab_names[6]
-        assert "Bülten" in tab_names[7] or "Tahminler" in tab_names[7]
-        print("  ✓ 8 Sekmeli mimari ve tam sıra (Örnek Kasa -> Örnek Kupon -> Gerçek Kasa -> Gerçek Kupon -> Model Doğruluğu -> Tahmin vs Gerçekleşen -> Admin -> Bülten) doğrulandı.")
-
-        # Varsayılan iniş sekmesi: Örnek Kasa Simülasyonu (#pane-sim-kasa)
-        assert "active" in page.get_attribute("#tab-sim-kasa", "class")
-        assert page.is_visible("#pane-sim-kasa") is True
-        page.wait_for_selector("#pane-sim-kasa .sim30-kpi-card", timeout=8000)
-        sim_kpi_cards = page.query_selector_all("#pane-sim-kasa .sim30-kpi-card")
-        assert len(sim_kpi_cards) == 3, f"3 KPI kartı bekleniyordu, bulunan {len(sim_kpi_cards)}"
-        assert page.query_selector("#pane-sim-kasa #sim30Svg") is not None, "#sim30Svg grafiği bulunamadı"
-        ledger_rows_kasa = page.query_selector_all("#pane-sim-kasa .sim30-table tbody tr")
-        assert len(ledger_rows_kasa) == 31, f"31 günlük kasa muhasebe satırı bekleniyordu, bulunan {len(ledger_rows_kasa)}"
-        print("  ✓ Varsayılan iniş sekmesi (Örnek Kasa Simülasyonu), 3 KPI kartı, SVG grafiği ve 31 günlük muhasebe tablosu doğrulandı.")
+        print("\n--- TEST 10: Menü Mimarisi (4 görünen sekme, eski sekmeler gizli) ---")
+        tab_state = page.evaluate("""() => [...document.querySelectorAll('.top .tabs .tab')].map(t => ({ id: t.id, hidden: t.hidden }))""")
+        visible = [t['id'] for t in tab_state if not t['hidden']]
+        hidden = [t['id'] for t in tab_state if t['hidden']]
+        print(f"  Görünen: {visible} · Gizli: {hidden}")
+        assert visible == ['tab-pred', 'tab-stats', 'tab-plan', 'tab-faq'], f"Görünen sekmeler beklenenden farklı: {visible}"
+        for tid in ['tab-sim-kasa', 'tab-sim-kupon', 'tab-rec', 'tab-bt', 'tab-res', 'tab-cpn', 'tab-cifte']:
+            assert tid in hidden, f"{tid} gizli olmalı"
+        print("  ✓ Menüde 4 sekme görünüyor; eski sekmelerin kodu korunuyor ama menüde gizli.")
 
         # ----------------------------------------------------------------------
         # TEST 11: 30 Günlük Simülasyon Motoru & ~%4-5 Yanılma Oranı Kalibrasyonu
@@ -636,143 +611,172 @@ def main():
         print(f"  ✓ Kasa Büyümesi: 50,00 € -> {sim_eval['finalBank']} € (+%{sim_eval['totalRoiPct']} ROI, %50 Rezerv Korumalı: {sim_eval['reserveBank']} €)")
 
         # ----------------------------------------------------------------------
-        # TEST 12: Örnek Kuponlarım Simülasyonu (#pane-sim-kupon) & Model Başarı Özeti
+        # TEST 12: Güven Payı motoru — güvenli sınır, kilitleme tutarı, geri alma, mola uyarısı, hedef
         # ----------------------------------------------------------------------
-        print("\n--- TEST 12: Örnek Kuponlarım Simülasyonu & Model Hata Analizi ---")
-        page.click("#tab-sim-kupon")
-        time.sleep(0.5)
-        assert page.is_visible("#pane-sim-kupon") is True
-        page.wait_for_selector("#pane-sim-kupon .sim-analysis-summary-card", timeout=8000)
-
-        summary_card = page.query_selector("#pane-sim-kupon .sim-analysis-summary-card")
-        assert summary_card is not None, "Model Hata & İsabet Özet Kartı bulunamadı"
-        card_text = summary_card.inner_text()
-        assert "30 Günlük Kupon & Model Başarı Analizi" in card_text
-        assert "%95.5" in card_text or "95." in card_text
-        assert "%4.5" in card_text or "4." in card_text
-        print("  ✓ Model Hata/İsabet Özeti Kartı (%95.5 başarı, %4.5 yanılma) doğrulandı.")
-
-        # 31 kupon kartı render edildi mi?
-        sim_cpn_cards = page.query_selector_all("#pane-sim-kupon .sim30-cpn-card")
-        assert len(sim_cpn_cards) == 31, f"31 simülasyon kuponu bekleniyordu, bulunan {len(sim_cpn_cards)}"
-
-        # Kuponlarda "Yatış" argo kelimesinin olmaması ve "✅ Geldi / ❌ Gelmedi" kontrolü
-        has_yatis = page.evaluate("""() => {
-            const txt = document.querySelector('#pane-sim-kupon').innerText;
-            return txt.includes('Yatış') || txt.includes('yatış');
+        print("\n--- TEST 12: Güven Payı Motoru ---")
+        gp = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const mk = (banks, prof = 'medium', S = 50, T = 10000) => {
+                const st = PE.createInitialState({ currency: 'EUR', riskProfile: prof }, { startingBank: S, targetBank: T, riskProfile: prof, dailyBanks: banks });
+                const d = new Date(); d.setDate(d.getDate() - (Object.keys(banks).length - 1));
+                st.plan.startDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                st.plans = [st.plan];
+                return st;
+            };
+            const coach = st => PE.getEICoach(st.plan, PE.buildKasaSimulation(st.plan, st));
+            const out = {};
+            // 50 € başlangıç, 4. gün kasa 105 €: Medium kupon = %50 → 52,50 € > sınır 50 €
+            const st = mk({ 1: 60, 2: 75, 3: 90, 4: 105 });
+            const c1 = coach(st);
+            out.before = { level: c1.level, stake: c1.stake, limit: c1.limit, lock: c1.lock };
+            PE.applyCashout(st, { day: c1.day, amount: c1.lock.amount, reason: 'lock' });
+            const sim2 = PE.buildKasaSimulation(st.plan, st);
+            const c2 = coach(st);
+            out.after = { level: c2.level, stake: c2.stake, limit: c2.limit, secured: sim2.secured, working: sim2.currentBank,
+                          total: sim2.currentTotal, lockToday: c2.lock, day5Target: sim2.rows[4].targetBank };
+            // Kasaya geri alma (negatif tutar) ve son işlemi geri alma
+            PE.applyCashout(st, { day: 4, amount: -20, reason: 'return' });
+            const sim3 = PE.buildKasaSimulation(st.plan, st);
+            out.afterReturn = { secured: sim3.secured, working: sim3.currentBank };
+            out.overReturn = PE.applyCashout(st, { day: 4, amount: -1000 }) === null;
+            PE.undoLastCashout(st);
+            out.afterUndo = PE.buildKasaSimulation(st.plan, st).secured;
+            // Minimum: kupon %25 → ilk kilit kasa 4 katını geçince
+            out.min200 = coach(mk({ 1: 200 }, 'minimum')).level;
+            out.min210 = coach(mk({ 1: 210 }, 'minimum')).level;
+            // Zirveden %40 düşüş → mola uyarısı; hedefe ulaşıldı
+            out.drop = coach(mk({ 1: 100, 2: 60 })).drop;
+            out.reached = coach(mk({ 1: 10000 })).reached;
+            // Yol haritası: 50 → 10.000 € Medium için durak sayısı
+            out.stops = coach(mk({ 1: 55 })).roadmap.stops.length;
+            return out;
         }""")
-        assert has_yatis is False, "UYARI: Örnek kuponlarım sekmesinde 'Yatış' kelimesi bulundu!"
-
-        leg_badges = page.query_selector_all("#pane-sim-kupon .sim30-table tbody tr td span.good, #pane-sim-kupon .sim30-table tbody tr td span.bad")
-        assert len(leg_badges) > 50
-        sample_leg = leg_badges[0].inner_text()
-        assert "Geldi" in sample_leg or "Gelmedi" in sample_leg
-        print(f"  ✓ Örnek bacak metni: '{sample_leg}' (Argo 'Yatış' kelimesi tamamen temizlendi).")
+        print(f"  Önce: {gp['before']}")
+        assert gp['before']['level'] == 'red' and gp['before']['stake'] == 52.5 and gp['before']['limit'] == 50
+        assert gp['before']['lock']['amount'] == 53 and gp['before']['lock']['stakeAfter'] == 26
+        print("  ✓ Sınır aşımı: kupon 52,50 € > güvenli sınır 50 € (başlangıç kasası) → 53 € kilitle, kupon 26 €'ya iner.")
+        a = gp['after']
+        assert a['level'] == 'green' and a['limit'] == 103 and a['secured'] == 53 and a['working'] == 52 and a['total'] == 105
+        assert a['lockToday'] is None, "Aynı gün ikinci öneri çıkmamalı"
+        assert a['day5Target'] == 112.8, f"5. gün hedefi kilitli + oyundaki büyümesi olmalı (53 + 52×1,15), bulunan {a['day5Target']}"
+        print("  ✓ Kilit sonrası: sınır 103 € (başlangıç + kilitli), toplam 105 € korunur, hedef kilitli parayı sayar, aynı gün yeni öneri yok.")
+        assert gp['afterReturn'] == {'secured': 33, 'working': 72} and gp['overReturn'] and gp['afterUndo'] == 53
+        print("  ✓ Kasaya geri alma (20 €), kilitli paradan fazlasını geri almayı engelleme ve son işlemi geri alma doğrulandı.")
+        assert gp['min200'] == 'yellow' and gp['min210'] == 'red'
+        print("  ✓ Minimum risk: kasa başlangıcın 4 katını geçince (210 €) kilit önerisi.")
+        assert gp['drop'] is not None and gp['drop']['pct'] == 40 and gp['reached'] is True
+        assert 4 <= gp['stops'] <= 7, f"50 → 10.000 € Medium için 4-7 durak bekleniyordu, bulunan {gp['stops']}"
+        print(f"  ✓ Zirveden %40 düşüşte mola uyarısı, hedefe ulaşma ve yol haritası ({gp['stops']} durak) doğrulandı.")
 
         # ----------------------------------------------------------------------
-        # TEST 13: Gerçek Kasa (#pane-plan) — Kurulum, KPI Tiles & Trajectory
+        # TEST 13: Sanal Kasa ekranı (#pane-plan) — Güven Payı kartı, kilitleme, tablo, Tab ile gün geçişi
         # ----------------------------------------------------------------------
-        print("\n--- TEST 13: Gerçek Kasa (#pane-plan) ---")
+        print("\n--- TEST 13: Sanal Kasa Ekranı & Güven Payı Kartı ---")
+        page.on("dialog", lambda d: d.accept())
+        page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const d = new Date(); d.setDate(d.getDate() - 3);
+            const st = PE.createInitialState({ currency: 'EUR', riskProfile: 'medium' }, { name: 'Test Kasa', startingBank: 50, targetBank: 10000, riskProfile: 'medium', dailyBanks: { 1: 60, 2: 75, 3: 90, 4: 105 } });
+            st.plan.startDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            st.plans = [st.plan];
+            localStorage.setItem('betavus.paper_v1', JSON.stringify(st));
+        }""")
+        page.reload(wait_until="networkidle")
+        time.sleep(0.8)
         page.click("#tab-plan")
         time.sleep(0.5)
         assert page.is_visible("#pane-plan") is True
-
-        setup_title = page.inner_text("#pane-plan h2")
-        assert "Sanal Kasa Planı" in setup_title or "Sanal Kasa Planım" in setup_title
-
-        # Plan oluştur
-        page.fill("#setupStartBank", "100")
-        page.fill("#setupTargetBank", "1000")
-        page.click("#btnCreatePlan")
-        time.sleep(0.5)
-
-        dash_title = page.inner_text("#pane-plan h2")
-        assert "Sanal Kasa Planım" in dash_title
-        plan_tiles = page.query_selector_all("#pane-plan .plan-tiles .tile")
-        assert len(plan_tiles) == 4
-        assert "100,00 €" in plan_tiles[0].inner_text()
-
-        # İnteraktif grafik ve kırmızı yüksek risk çizgisi
-        assert page.query_selector("#planChartCard") is not None
-        high_stroke = page.evaluate("""() => {
-            const svg = document.querySelector('#planTrajectorySvg');
-            return svg ? svg.innerHTML.includes('#ef4444') : false;
-        }""")
-        assert high_stroke is True, "Yüksek risk çizgisi kırmızı (#ef4444) değil!"
-        print("  ✓ Gerçek Kasa planı panosu, KPI kutuları ve kırmızı yüksek risk eğrisi doğrulandı.")
-
-        # ----------------------------------------------------------------------
-        # TEST 14: Gerçek Kuponlarım (#pane-rec) & AI Model Risk Uyarı Rozetleri
-        # ----------------------------------------------------------------------
-        print("\n--- TEST 14: Gerçek Kuponlarım (#pane-rec) & AI Model Risk Rozetleri ---")
-        page.click("#tab-rec")
-        time.sleep(0.5)
-        assert page.is_visible("#pane-rec") is True
-
-        rec_cards = page.query_selector_all("#pane-rec .rec-card")
-        assert len(rec_cards) == 3
-
-        # AI Güven rozetleri
-        safe_badge = page.query_selector("#pane-rec .ai-badge.safe")
-        med_badge = page.query_selector("#pane-rec .ai-badge.med")
-        risky_badge = page.query_selector("#pane-rec .ai-badge.risky")
-
-        assert safe_badge is not None, "Minimum risk için .ai-badge.safe bulunamadı"
-        assert med_badge is not None, "Orta risk için .ai-badge.med bulunamadı"
-        assert risky_badge is not None, "Yüksek risk için .ai-badge.risky bulunamadı"
-
-        assert "Yüksek Güven / Garanti Profil" in safe_badge.inner_text()
-        assert "%95.5" in safe_badge.inner_text()
-        assert "Yüksek Risk / Düşük Başarı Oranı Uyarısı" in risky_badge.inner_text()
-        assert "sorumluluğunuzdadır" in risky_badge.inner_text()
-        print("  ✓ Model risk rozetleri (Minimum: Garanti/Yüksek Güven, Yüksek: Düşük Başarı / Sorumluluk uyarısı) doğrulandı.")
-
-        # Kupon düzenleyici modalı ve dinamik AI uyarısı
-        btn_edit = page.query_selector("#pane-rec .btn-edit-rec")
-        if btn_edit:
-            page.click("#pane-rec .btn-edit-rec")
-        else:
-            page.evaluate("""() => {
-                window.BETAVUS_PAPER_UI.openCouponEditor({
-                    couponClass: 'minimum',
-                    selections: [{ matchId: 'TEST', league: 'Premier League', home: 'Arsenal', away: 'Chelsea', market: 'over_0_5', probability: 0.96 }]
-                });
-            }""")
+        assert page.query_selector("#pane-plan .kasa-sheet") is not None
+        assert page.query_selector("#pane-plan .ks-chart svg") is not None
+        assert page.query_selector("#ksComfort") is None, "Güvenli sınır otomatik olmalı; kullanıcıya sorulan alan olmamalı"
+        light = page.inner_text("#eiCoachCard .ei-light")
+        assert "52,50" in light and "50,00" in light and "aştın" in light, light
+        assert "53,00" in page.inner_text("#btnEILock")
+        print(f"  ✓ Kart: '{light}'")
+        page.click("#btnEILock")
         time.sleep(0.4)
-        editor_modal = page.query_selector("#couponEditorModal")
-        assert editor_modal is not None and editor_modal.is_visible() is True
-        assert page.query_selector("#couponEditorModal .ai-editor-feedback") is not None
-        print("  ✓ Kupon Düzenleme Modalı ve dinamik AI değerlendirme uyarısı doğrulandı.")
-        page.click("#btnCloseEditor")
+        light2 = page.inner_text("#eiCoachCard .ei-light")
+        assert "26,00" in light2 and "103,00" in light2 and "Rahatsın" in light2, light2
+        assert "Sonraki kilit" in page.inner_text("#eiCoachCard")
+        heads = page.evaluate("""() => [...document.querySelectorAll('#kasaSimCard thead th')].map(t => t.textContent.trim())""")
+        assert any(h.startswith('Oyundaki Kasa') for h in heads) and any(h.startswith('Kilitli') for h in heads), heads
+        assert not any(h.startswith('Günlük Büyüme') for h in heads), "Günlük Büyüme sütunu kaldırılmış olmalı"
+        print("  ✓ Kilitle butonu: kupon 26 €, sınır 103 €; tabloda 'Oyundaki Kasa' ve 'Kilitli' sütunları.")
+        # Tab ile sonraki güne geçiş; tablo kartı ekranda yerinde kalır
+        page.evaluate("scrollTo(0, document.querySelector('#kasaSimCard').getBoundingClientRect().top + scrollY - 40)")
+        top_before = page.evaluate("Math.round(document.querySelector('#kasaSimCard').getBoundingClientRect().top)")
+        page.click('.kasa-input[data-day="5"]')
+        page.keyboard.type("62")
+        page.keyboard.press("Tab")
         time.sleep(0.3)
+        focus_day = page.evaluate("document.activeElement && document.activeElement.dataset.day")
+        top_after = page.evaluate("Math.round(document.querySelector('#kasaSimCard').getBoundingClientRect().top)")
+        saved = page.evaluate("JSON.parse(localStorage.getItem('betavus.paper_v1')).plan.dailyBanks['5']")
+        assert focus_day == '6', f"Tab sonrası 6. güne geçilmeliydi, odak: {focus_day}"
+        assert saved == 62 and abs(top_after - top_before) <= 1, (saved, top_before, top_after)
+        print("  ✓ Değer girip Tab: kayıt yapıldı, imleç 6. güne geçti, tablo ekranda yerinde kaldı.")
 
         # ----------------------------------------------------------------------
-        # TEST 15: Admin Kuponlarım (#pane-cpn) & Admin Notice Banner
+        # TEST 14: Kapatılan kasayı yeniden aç / sil + senkronda geri gelmeme
         # ----------------------------------------------------------------------
-        print("\n--- TEST 15: Admin Kuponlarım (#pane-cpn) ---")
-        page.click("#tab-cpn")
-        time.sleep(0.5)
-        assert page.is_visible("#pane-cpn") is True
-
-        admin_banner = page.query_selector("#pane-cpn .admin-notice-banner")
-        assert admin_banner is not None, "Admin bildirim bannerı (.admin-notice-banner) bulunamadı"
-        assert "Admin & Canlı Model Takip Ekranı" in admin_banner.inner_text()
-
-        # 12 Eylül canlı model takibi alt sekmesi
-        page.click("#csub-model12")
-        time.sleep(0.5)
-        cpn_sum = page.inner_text("#cpnSummary")
-        assert "12 Eylül 2026" in cpn_sum
-        print("  ✓ Admin Kuponlarım sekmesi, admin bilgilendirme bannerı ve 12 Eylül canlı takip ekranı doğrulandı.")
+        print("\n--- TEST 14: Kapatılan Kasa — Yeniden Aç / Sil ---")
+        page.click("#btnCloseKasa")
+        time.sleep(0.4)
+        assert len(page.query_selector_all(".closed-kasa-table tbody tr")) == 1
+        page.click(".ck-reopen")
+        time.sleep(0.4)
+        assert len(page.query_selector_all(".closed-kasa-table tbody tr")) == 0
+        tabs_now = page.evaluate("[...document.querySelectorAll('.bankroll-tab .bt-name')].map(t => t.textContent.trim())")
+        assert "Test Kasa" in tabs_now, tabs_now
+        assert page.evaluate("JSON.parse(localStorage.getItem('betavus.paper_v1')).plan.cashouts.length") == 1, "Yeniden açılan kasa geçmişini korumalı"
+        print("  ✓ Yeniden aç: kasa geçmişiyle (kilitleme dahil) aktif kasalara döndü.")
+        page.click("#btnCloseKasa")
+        time.sleep(0.4)
+        assert len(page.query_selector_all(".closed-kasa-table tbody tr")) == 1, "Yeniden kapatılan kasa listede görünmeli"
+        page.click(".ck-del")
+        time.sleep(0.4)
+        assert page.query_selector(".closed-kasa-table") is None or len(page.query_selector_all(".closed-kasa-table tbody tr")) == 0
+        sync = page.evaluate("""() => {
+            const PE = window.BETAVUS_PAPER;
+            const st = JSON.parse(localStorage.getItem('betavus.paper_v1'));
+            const tomb = st.closedTombstones || {};
+            // Başka cihazdan gelen eski kopya (silinen kasa hâlâ closedPlans içinde) ilk senkronda birleştirilir
+            const id = Object.keys(tomb)[0];
+            const remote = JSON.parse(JSON.stringify(st));
+            remote.closedTombstones = {};
+            remote.closedPlans = [{ id, name: 'Eski kopya', closedAt: new Date(tomb[id] - 60000).toISOString(), plan: { id, name: 'Eski kopya' } }];
+            const merged = window.BETAVUS_AUTH ? JSON.parse(window.BETAVUS_AUTH._mergePaper(JSON.stringify(st), JSON.stringify(remote), true)) : null;
+            if (merged) PE.ensurePlansArray(merged);
+            return { hasTomb: !!id, mergedClosed: merged ? merged.closedPlans.length : null };
+        }""")
+        assert sync['hasTomb'] is True
+        assert sync['mergedClosed'] == 0, f"Silinen kasa senkronda geri gelmemeli: {sync}"
+        print("  ✓ Sil: kasa listeden kalktı; başka cihazdan gelen eski kopya senkronda geri gelmiyor.")
 
         # ----------------------------------------------------------------------
-        # TEST 16: Tüm DOM Genelinde Sıfır Argo ("Yatış") Doğrulaması
+        # TEST 15: Tüm DOM Genelinde Sıfır Argo ("Yatış") Doğrulaması
         # ----------------------------------------------------------------------
-        print("\n--- TEST 16: Zero Slang ('Yatış') Global DOM Verification ---")
+        print("\n--- TEST 15: Zero Slang ('Yatış') Global DOM Verification ---")
         page_body_text = page.inner_text("body")
         for bad_word in ['Yatış', 'yatış', 'Yatis', 'yatis']:
             assert bad_word not in page_body_text, f"Sayfa gövdesinde yasaklı kelime bulundu: {bad_word}"
         print("  ✓ Tüm sayfada sıfır 'Yatış' argo kelimesi teyit edildi.")
+
+        # ----------------------------------------------------------------------
+        # TEST 16: Üst menü her dilde sığar (yatay taşma yok)
+        # ----------------------------------------------------------------------
+        print("\n--- TEST 16: Üst Menü Sığdırma (TR / EN / NL) ---")
+        for lang, width in [('tr', 1280), ('en', 1280), ('nl', 1280), ('nl', 1600), ('nl', 390)]:
+            ctx = browser.new_context(viewport={'width': width, 'height': 800})
+            ctx.add_init_script(f"localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d'); localStorage.setItem('betavus.lang', '{lang}');")
+            pg2 = ctx.new_page()
+            pg2.goto(f"http://127.0.0.1:{PORT}/index.html", wait_until="networkidle")
+            time.sleep(0.5)
+            sw = pg2.evaluate("document.documentElement.scrollWidth")
+            mode = pg2.evaluate("document.querySelector('.top .topbar').className")
+            assert sw <= width, f"{lang} {width}px: sayfa yatay taşıyor ({sw}px)"
+            print(f"  ✓ {lang} {width}px: taşma yok ({mode})")
+            ctx.close()
 
         browser.close()
         print("\n========================================================")

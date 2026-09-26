@@ -62,3 +62,4 @@ data/cache/meteostat/
 # Legacy Streamlit path (not used by the static app)
 predictions.xlsx
 *.xlsx
+!BETAVUS_Is_Listesi.xlsx

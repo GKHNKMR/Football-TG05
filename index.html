@@ -960,6 +960,34 @@ body{position:relative;z-index:0}
 .filters[hidden]{display:none}
 .st-card{min-width:0;overflow:hidden}
 /* Kalibrasyon grafiği (#4): tek seri, recessive ızgara, köşegen referans, hover ipucu */
+/* Sanal Kasa → Kupon önerisi (#3) */
+.cs-card{padding:16px 18px;margin-bottom:14px}
+.cs-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.cs-head h2{margin:0;font-size:17px;font-weight:900}
+.cs-sub{margin:2px 0 0;color:var(--muted);font-size:13px}
+.cs-nav{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;text-transform:capitalize}
+.cs-nb{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;line-height:1;cursor:pointer}
+.cs-nb:disabled{opacity:.35;cursor:default}
+.cs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cs-tier{min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.cs-tier.mine{border:2px solid var(--good);box-shadow:0 0 0 4px color-mix(in srgb,var(--good) 12%,transparent)}
+.cs-th{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+.cs-badge{font-size:11px;font-weight:900;background:var(--good);color:var(--good-ink,#fff);border-radius:999px;padding:2px 9px}
+.cs-rule{font-size:12.5px;color:var(--muted);font-weight:700}
+.cs-legs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cs-leg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;background:var(--panel2)}
+.cs-m{min-width:0;display:flex;flex-direction:column;font-size:13px}
+.cs-m b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-lg{font-size:10.5px;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-pick{flex:none;font-weight:900;font-size:13px;border:1px solid var(--good);color:var(--good);border-radius:8px;padding:3px 8px;cursor:help;white-space:nowrap}
+.cs-pick em{font-style:normal;font-weight:800;color:var(--text);margin-left:4px}
+.cs-sum{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--muted)}
+.cs-sum b{color:var(--text)}
+.cs-hist{margin-top:auto;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:7px}
+.cs-hist b{color:var(--text)}
+.cs-empty{color:var(--muted);font-size:13px;margin:4px 0}
+.cs-note{margin:12px 0 0;font-size:12px;color:var(--muted)}
+@media (max-width:900px){.cs-grid{grid-template-columns:minmax(0,1fr)}}
 .cal-kpis{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13.5px;margin:0 0 8px}
 .cal-kpis b{font-weight:900}
 .cal-wrap{position:relative;max-width:640px}
@@ -1464,12 +1492,13 @@ body{position:relative;z-index:0}
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260926-cal"></script>
+<script src="js/i18n.js?v=20260926-cpn"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
 <script src="js/paper_engine.js?v=20260926-gp2"></script>
-<script src="js/paper_ui.js?v=20260926-gp2"></script>
+<script src="js/paper_ui.js?v=20260926-cpn"></script>
+<script src="js/coupon_suggest.js?v=20260926-cpn"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
 <script src="js/stats_ui.js?v=20260926-cal"></script>
@@ -2497,6 +2526,7 @@ async function load(){
     $('updated').innerHTML=`${_t('Canlı veri bekleniyor · Geçici fikstür')} · <a href="#" onclick="setTab('stats');return false">${_t('İstatistikler →')}</a>`;
   }
   renderAll();
+  if(window.BETAVUS_COUPON)BETAVUS_COUPON.mount();   // fikstür geldi: Sanal Kasa'daki kupon önerisini tazele
   pollLiveScores();   // sayfa yüklenir yüklenmez canlı skoru tazele - saatlik pipeline'ın bıraktığı eski live durumunu beklemeden
 }
 function timeAgo(iso){

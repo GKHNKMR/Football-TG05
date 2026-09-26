@@ -1456,6 +1456,8 @@
 
       ${renderEICoachHtml(plan, sim, curr)}
 
+      ${window.BETAVUS_COUPON ? window.BETAVUS_COUPON.html(p.riskProfile) : ''}
+
       <div class="card excel-model-card" id="kasaSimCard">
         <div class="tbl-scroll ks-table-wrap">
           <table class="excel-table kasa-sim-table">

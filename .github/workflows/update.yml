@@ -58,13 +58,16 @@ jobs:
       - name: Build Istatistikler list + Bulten success banner (5 seasons + current season)
         run: python scripts/build_cifte_backtest.py
         continue-on-error: true
+      - name: Build coupon suggestion rules + measured history (Sanal Kasa)
+        run: python scripts/build_coupon_rules.py
+        continue-on-error: true
       - name: Validate data (errors stop the publish, warnings go to the run summary)
         run: python scripts/validate_data.py
       - name: Commit updated predictions
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add predictions.json data/cache data/football-data data/match-stats.json data/h2h.json data/results.json data/predictions-archive.json data/backtest.json data/live-scores.json data/live-scores-debug.json data/opta-xg.json data/key-players.json data/stats-5season.json data/stats-summary.json js/cifte_backtest_data.js
+          git add predictions.json data/cache data/football-data data/match-stats.json data/h2h.json data/results.json data/predictions-archive.json data/backtest.json data/live-scores.json data/live-scores-debug.json data/opta-xg.json data/key-players.json data/stats-5season.json data/stats-summary.json data/coupon-rules.json js/cifte_backtest_data.js
           if git diff --cached --quiet; then
             echo "No data changes."
           else

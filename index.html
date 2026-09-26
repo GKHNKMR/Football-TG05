@@ -1102,6 +1102,16 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .st-rf-won.on{background:#16a34a;border-color:#16a34a}
 .st-rf-lost.on{background:#dc2626;border-color:#dc2626}
 .lgsel{font-size:12.5px;padding:8px 12px;border-radius:11px}
+/* Lig filtresi: bayraklı düğme şeridi (Fikstür + İstatistikler). Telefonda tek satır, yatay kaydırma */
+.lgchips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.lgchip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:6px 10px;border-radius:999px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:800;line-height:1.2}
+.lgchip .n{font-size:11px;font-weight:800;color:var(--muted);background:var(--panel2);border-radius:999px;padding:1px 7px;min-width:14px;text-align:center}
+.lgchip:hover:not(:disabled){border-color:var(--good)}
+.lgchip.on{background:var(--good);border-color:var(--good);color:#fff}
+.lgchip.on .n{background:rgba(255,255,255,.25);color:#fff}
+.lgchip:disabled{opacity:.4;cursor:default}
+.lgchip:focus-visible{outline:2px solid var(--good);outline-offset:2px}
+@media (max-width:640px){.lgchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}.lgchips::-webkit-scrollbar{display:none}}
 .datectl .hotbtn{font-size:12.5px;padding:8px 13px;border-radius:11px}
 .faq-intro{margin:6px 0 16px}
 .faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
@@ -1172,9 +1182,9 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
         <input id="qPred" type="search" placeholder="Takım ara…" data-i18n-placeholder="Takım ara…" autocomplete="off" spellcheck="false">
         <button class="sx" id="qPredX" type="button" hidden aria-label="Temizle" data-i18n-aria="Temizle">×</button>
       </span>
-      <select class="sel lgsel" id="lgPred" title="Lig filtresi" data-i18n-title="Lig filtresi"></select>
       <button id="hotToggle" class="hotbtn" type="button" data-i18n="Vurgu">Vurgu</button>
     </div>
+    <div class="lgchips" id="lgChipsPred" role="group" aria-label="Lig filtresi" data-i18n-aria="Lig filtresi"></div>
     <div class="table">
       <div class="head">
         <div class="sortcol" data-sort="date" data-i18n-html="pred.col.match">Maç <span class="sarr">↑</span></div>
@@ -1414,7 +1424,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 <script src="js/paper_ui.js?v=20260926-gp2"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
-<script src="js/stats_ui.js?v=20260925-vurgu4"></script>
+<script src="js/stats_ui.js?v=20260926-lg"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/auth_config.js?v=20260923-google"></script>
 <script src="js/auth_sync.js?v=20260926-nl"></script>
@@ -1523,13 +1533,26 @@ function basisBadge(x){
 const LIVE_STATUS_LABEL={'1H':'İlk yarı','HT':'Devre arası','2H':'İkinci yarı','ET':'Uzatma','BT':'Mola','P':'Penaltılar','SUSP':'Askıda','INT':'Yarıda kaldı'};
 function liveStatusLabel(s){return LIVE_STATUS_LABEL[s]?_t(LIVE_STATUS_LABEL[s]):(s||'');}
 function setLeague(l){selected=l;selectedByTab[tab]=l;save('league_'+tab,l);renderFilters();renderAll();}
-function renderLeagueSel(){
-  const s=$('lgPred');if(!s)return;
-  s.innerHTML=leagues.map(l=>`<option value="${esc(l)}">${l==='Tümü'?_t('Tüm ligler'):esc(l)}</option>`).join('');
-  s.value=selectedByTab.pred||'Tümü';
+// Lig adları: düğmede kısa ad; satır etiketinde doğru dilin büyük harf kuralı (TR'de "TURKİSH" olmasın)
+const LG_SHORT={'Turkish Süper Lig':'Süper Lig','Belgian Pro League':'Pro League'};
+const LG_LANG={'Turkish Süper Lig':'tr','Primeira Liga':'pt'};
+function lgLabel(l){return `<span lang="${LG_LANG[l]||'en'}" title="${esc(l)}">${esc(LG_SHORT[l]||l)}</span>`;}
+// counts: {lig: maç sayısı, 'Tümü': toplam}. Maçı olmayan lig pasif (seçiliyse açık kalır)
+function leagueChipsHtml(counts,active){
+  return leagues.map(l=>{const all=l==='Tümü',n=counts[l]||0,on=l===active;
+    return `<button type="button" class="lgchip${on?' on':''}" data-lg="${esc(l)}" aria-pressed="${on}"${!all&&!n&&!on?' disabled':''}>${all?'':flag(l,12)}<span${all?'':` lang="${LG_LANG[l]||'en'}"`}>${all?_t('Tüm ligler'):esc(LG_SHORT[l]||l)}</span><span class="n">${Number(n).toLocaleString(I18N.locale)}</span></button>`;}).join('');
+}
+window.leagueChipsHtml=leagueChipsHtml;
+function renderLeagueChips(){
+  const box=$('lgChipsPred');if(!box)return;
+  const src=window.__data||[];
+  // Sayılar lig hariç diğer filtrelerle (gün, arama, Vurgu) tutarlı olsun
+  const prev=selected;selected='Tümü';let base=[];try{base=visible(src);}finally{selected=prev;}
+  const counts={'Tümü':base.length};base.forEach(x=>{counts[x.league]=(counts[x.league]||0)+1;});
+  box.innerHTML=leagueChipsHtml(counts,selectedByTab.pred||'Tümü');
 }
 function renderFilters(){
-  renderLeagueSel();
+  renderLeagueChips();
   filters.innerHTML=leagues.map(x=>`<button class="chip ${x===selected?'active':''}" data-league="${x}">${flag(x,12)}${x}</button>`).join('');
   filters.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{selected=b.dataset.league;selectedByTab[tab]=selected;save('league_'+tab,selected);renderFilters();renderAll();});
 }
@@ -1734,6 +1757,7 @@ function doubleChancePill(info,highlighted){
 }
 function renderPred(){
   const src=window.__data||[];
+  renderLeagueChips();
   const winMs=visibleAll(src);
   const dk=new Set(src.filter(inLeague).map(x=>dayKey(x.kickoff_utc)));
   if(dayPred&&!dk.has(dayPred))dayPred=null;
@@ -1769,7 +1793,7 @@ function renderPred(){
     if(byDate&&dk!==lastDay){lastDay=dk;dayHead=`<div class="dayhead">${dayLabel(dk)}</div>`;}
     return dayHead+`<div class="row ${dcHot?'dc-highlighted':''}" data-mid="${esc(x.match_id||'')}" data-league="${esc(x.league||'')}" data-dc-eligible="${dcHot?'1':'0'}">
     <div class="match">
-      <div class="league">${flag(x.league,11)} ${esc(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">${_t('● CANLI')} ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="${_t('Eksik kilit oyuncu: {text} ({src})',{text:esc(mk.text),src:esc(mk.source)})}">${_t('⚠️ Eksik: {text}',{text:esc(mk.text)})}</span>`:''}</div>
+      <div class="league">${flag(x.league,11)} ${lgLabel(x.league)} ${basisBadge(x)}${h2hChip}${x.live?` <span class="live-badge">${_t('● CANLI')} ${esc(x.live.score||'')}${x.live.status?' · '+esc(liveStatusLabel(x.live.status)):''}</span>`:''}${mk?` <span class="kp-badge ${mk.isConfirmed?'confirmed':'est'}" title="${_t('Eksik kilit oyuncu: {text} ({src})',{text:esc(mk.text),src:esc(mk.source)})}">${_t('⚠️ Eksik: {text}',{text:esc(mk.text)})}</span>`:''}</div>
       <div class="teams">${esc(x.home)} — ${esc(x.away)}</div>
       <div class="kick">${localDate(x.kickoff_utc)}</div>
     </div>
@@ -2918,7 +2942,7 @@ if($('tab-pred')) $('tab-pred').onclick=()=>setTab('pred');
 if($('tab-cifte')) $('tab-cifte').onclick=()=>setTab('cifte');
 if($('tab-stats')) $('tab-stats').onclick=()=>setTab('stats');
 if($('tab-faq')) $('tab-faq').onclick=()=>setTab('faq');
-if($('lgPred')) $('lgPred').onchange=e=>setLeague(e.target.value);
+if($('lgChipsPred')) $('lgChipsPred').onclick=e=>{const b=e.target.closest('.lgchip');if(b&&!b.disabled)setLeague(b.dataset.lg);};
 if($('tab-gun')) $('tab-gun').onclick=()=>setTab('rec');
 document.querySelectorAll('.subtab[data-view]').forEach(b=>{
   b.onclick=()=>setResSubView(b.dataset.view);

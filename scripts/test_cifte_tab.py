@@ -79,14 +79,26 @@ with sync_playwright() as p:
       window.__data = [{...window.__data[0], match_id:'TEST-ONLY-PRIMEIRA', league:'Primeira Liga'}];
       renderPred();
     }""")
-    page.select_option('#lgPred', 'Premier League')
+    # Lig şeridi: maçı olmayan lig pasif; yine de (kayıtlı seçim vb.) seçili kalırsa başka lig gösterilmemeli
+    assert page.is_disabled('#lgChipsPred .lgchip[data-lg="Premier League"]'), "Maçı olmayan lig düğmesi pasif olmalı"
+    page.evaluate("setLeague('Premier League')")
     time.sleep(0.2)
-    assert page.eval_on_selector('#lgPred', 'e=>e.value') == 'Premier League', "Premier League filtresi aktif olmadı"
+    assert page.get_attribute('#lgChipsPred .lgchip[data-lg="Premier League"]', 'aria-pressed') == 'true', "Premier League seçili görünmeli"
     assert not page.query_selector('#rows .row'), "Premier League seçiliyken Primeira Liga maçı görünmemeli"
     assert "TEST-ONLY-PRIMEIRA" not in page.inner_text('#rows'), "Seçili lig dışında maç listelendi"
-    page.evaluate("""() => { window.__data = window.__leagueFilterOriginal; delete window.__leagueFilterOriginal; }""")
-    page.select_option('#lgPred', 'Tümü')
+    page.evaluate("""() => { window.__data = window.__leagueFilterOriginal; delete window.__leagueFilterOriginal; renderPred(); }""")
+    # Gerçek veriyle: düğmeye tıklayınca süzülür, sayılar satır sayısıyla tutarlı
+    page.click('#lgChipsPred .lgchip[data-lg="Eredivisie"]')
+    time.sleep(0.3)
+    n_chip = int(page.inner_text('#lgChipsPred .lgchip[data-lg="Eredivisie"] .n').replace('.', ''))
+    lgs = page.eval_on_selector_all('#rows .row[data-mid]', "e=>e.map(r=>r.querySelector('.league').textContent)")
+    assert lgs and all('Eredivisie' in t for t in lgs), f"Eredivisie filtresinde başka lig: {set(lgs)}"
+    assert len(lgs) == n_chip, f"Düğmedeki sayı ({n_chip}) listelenen maçla ({len(lgs)}) tutarsız"
+    page.click('#lgChipsPred .lgchip[data-lg="Tümü"]')
     time.sleep(0.2)
+    total = int(page.inner_text('#lgChipsPred .lgchip[data-lg="Tümü"] .n').replace('.', ''))
+    per = sum(int(t.replace('.', '')) for t in page.eval_on_selector_all('#lgChipsPred .lgchip:not([data-lg="Tümü"]) .n', 'e=>e.map(x=>x.textContent)'))
+    assert total == per == len(page.query_selector_all('#rows .row[data-mid]')), f"Tümü sayısı tutarsız: {total} / {per}"
     print("  ✓ Lig filtresi, seçili ligde maç yokken başka ligleri göstermiyor.")
 
     # Veriden bağımsız: pencere içinde ev sahibinin açık favori olduğu sentetik, tam verili bir maç ekle

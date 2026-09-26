@@ -167,9 +167,7 @@ Sonrasında `c2df6ab` ile zihin haritası, `b12a68d` ile ikinci handover dosyas�
 ## 7. Test ve dağıtım
 
 ```powershell
-python scripts/test_cifte_tab.py
-python scripts/test_cifte_backtest.py
-python scripts/verify_site.py
+python scripts/run_tests.py   # test_sim_math, test_paper_betting, test_cifte_tab, test_cifte_backtest, verify_site
 git diff --check
 ```
 

@@ -20,7 +20,7 @@ with sync_playwright() as p:
     page.on('console', lambda m: print('CONSOLE:', m.text))
     page.on('pageerror', lambda e: print('PAGE_ERROR:', e))
     
-    page.add_init_script("localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');")
+    page.add_init_script("localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');localStorage.setItem('betavus.lang', 'tr');")
     page.goto(f'http://127.0.0.1:{PORT}/index.html')
     time.sleep(1.5)
     
@@ -142,9 +142,12 @@ with sync_playwright() as p:
     assert f"%{range_stats['pct']}" in sample_scope_text, "Tüm doğrulama havuzunun başarı oranı örnek tablonun altında gösterilmiyor"
     assert "Model Güveni:" in page.inner_text('#tblCifteSamples'), "Gol aralığı yüzdesi Model Güveni olarak etiketlenmiyor"
     dc_cells_text = " ".join(page.locator('#tblCifteSamples tbody td:nth-child(4)').all_inner_texts())
-    assert "12 (Beraberlik Yok)" in dc_cells_text, "12 çifte şans kodunun anlamı açıklanmıyor"
-    assert "1X (Ev/Beraberlik)" in dc_cells_text, "1X çifte şans kodunun anlamı açıklanmıyor"
-    assert "X2 (Beraberlik/Deplasman)" in dc_cells_text, "X2 çifte şans kodunun anlamı açıklanmıyor"
+    # Hangi kodların ilk 12 örnekte çıktığı güncel veriye bağlı; görünen her kod açıklamalı olmalı
+    shown_codes = page.evaluate("() => [...new Set(window.CIFTE_BACKTEST_DATA.samples.slice(0, 12).map(x => x.best_dc))]")
+    assert shown_codes, "Örnek tabloda çifte şans tahmini yok"
+    dc_meaning = {'12': '12 (Beraberlik Yok)', '1X': '1X (Ev/Beraberlik)', 'X2': 'X2 (Beraberlik/Deplasman)'}
+    for code in shown_codes:
+        assert dc_meaning[code] in dc_cells_text, f"{code} çifte şans kodunun anlamı açıklanmıyor"
     assert "Model Güveni:" in dc_cells_text, "Çifte şans yüzdesi Model Güveni olarak etiketlenmiyor"
     assert "Çifte şans tuttu" in dc_cells_text, "Çifte şans başarı sonucu açık biçimde gösterilmiyor"
     print("  ✓ Lig ve sezon tabloları Vurgu / Tuttu / % alt sütunlu Model Doğruluğu formatında.")

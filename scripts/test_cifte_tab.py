@@ -16,15 +16,17 @@ with sync_playwright() as p:
     page.on('console', lambda m: print('CONSOLE:', m.text))
     page.on('pageerror', lambda e: print('PAGE_ERROR:', e))
     
-    page.add_init_script("localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');")
+    page.add_init_script("localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');localStorage.setItem('betavus.lang', 'tr');")
     page.goto(f'http://127.0.0.1:{PORT}/index.html')
     time.sleep(1.5)
     
     # 1. Verify #tab-cifte exists next to #tab-pred
     # Menüde yalnızca 3 ana sekme görünür; Çifte Şans sekmesi gizli ama kodu duruyor
-    tabs = [t.inner_text().strip() for t in page.query_selector_all('.tabs .tab:not([hidden])')]
+    tabs = page.eval_on_selector_all('.tabs .tab:not([hidden])', 'e=>e.map(t=>t.id)')
     print(f"Mevcut Sekmeler ({len(tabs)}): {tabs}")
-    assert [t.upper() for t in tabs] == ['BÜLTEN', 'İSTATİSTİKLER', 'SANAL KASA', 'FAQ'], f"Ana sekmeler hatalı: {tabs}"
+    assert tabs == ['tab-pred', 'tab-stats', 'tab-plan', 'tab-faq'], f"Ana sekmeler hatalı: {tabs}"
+    labels = page.eval_on_selector_all('.tabs .tab:not([hidden]) .pg-lbl', 'e=>e.map(t=>t.textContent.trim())')
+    assert labels == ['Fikstür', 'İstatistikler', 'Sanal Kasa'], f"Sekme etiketleri hatalı: {labels}"
     assert page.query_selector('#tab-cifte'), "tab-cifte DOM'da bulunamadı!"
     
     # 2. Click #tab-cifte: doğrudan Model Doğruluğu açılmalı
@@ -98,22 +100,16 @@ with sync_playwright() as p:
     eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
     assert len(eligible_rows) > 0, "Bültende yüksek güvenli Çifte Şans vurgusu bulunamadı!"
 
-    # Vurgu kapalıyken Çifte Şans dahil hiçbir kutu yanıp sönmemeli
-    page.select_option('#hlSel', 'off')
-    time.sleep(0.2)
-    assert not page.query_selector('#rows .dcp .pill.hot'), "Vurgu kapalıyken Çifte Şans kutusu yanıyor"
-    assert not page.query_selector('#rows .row.dc-highlighted'), "Vurgu kapalıyken Çifte Şans satırı vurgulanıyor"
-
-    # Tüm vurgular açıldığında uygun Çifte Şans kutuları yeniden yanmalı
-    page.select_option('#hlSel', 'all')
-    time.sleep(0.2)
-    eligible_rows = page.query_selector_all('#rows .row[data-dc-eligible="1"]')
+    # Vurgu her zaman açık (vurgu seçici 24.09'da kaldırıldı): uygun Çifte Şans kutuları yanmalı
     assert all(r.query_selector('.dcp .pill.hot') for r in eligible_rows), "Uygun Çifte Şans satırında yanıp sönen vurgu eksik"
     dc_animation = page.eval_on_selector('.dcp .pill.hot', "el => getComputedStyle(el).animationName")
     assert dc_animation in ('pillhot', 'pillhot2'), f"Çifte Şans vurgu animasyonu çalışmıyor: {dc_animation}"
-    for r in eligible_rows:   # vurgulanan her ÇŞ hücresi gerçekten ≥%80
-        for v in r.eval_on_selector_all('.dcp .pill.hot', "e=>e.map(x=>parseFloat(x.textContent))"):
-            assert v >= 80, f"%80 altı ÇŞ vurgulandı: {v}"
+    # Vurgulanan her ÇŞ hücresi kendi eşiğinin üstünde (1X/12 ≥%80, X2 ≥%78 — ce97f77, 25.09 backtest kararı)
+    dc_min = page.evaluate("DC_MIN_BY")
+    assert dc_min == {'1X': 80, '12': 80, 'X2': 78}, f"ÇŞ eşikleri değişmiş, testi güncelle: {dc_min}"
+    for r in eligible_rows:
+        for code, v in r.eval_on_selector_all('.dcp .pill.hot', "e=>e.map(x=>[x.closest('.dcp').dataset.l, parseFloat(x.textContent.replace(',', '.'))])"):
+            assert v >= dc_min[code], f"{code} eşiği %{dc_min[code]} altında vurgulandı: {v}"
     print(f"  Çifte Şans yüksek güvenli maç sayısı: {len(eligible_rows)}")
 
     # Kısıtlı veri ve kritik eksik oyunculu iki sentetik maç asla ÇŞ vurgusu almamalı
@@ -128,16 +124,18 @@ with sync_playwright() as p:
     assert limited_row and limited_row.get_attribute('data-dc-eligible') == '0', "Kısıtlı veri ÇŞ vurgusu almamalı"
     assert critical_row and critical_row.get_attribute('data-dc-eligible') == '0', "Kritik eksik oyunculu maç ÇŞ vurgusu almamalı"
 
-    # ÇŞ filtresi açılınca yalnızca uygun ve vurgulu maçlar listelenmeli
-    page.select_option('#hlSel', 'dc')
+    # "Vurgu" filtresi açılınca yalnızca en az bir vurgusu olan maçlar listelenmeli
     page.click('#hotToggle')
     time.sleep(0.4)
     filtered_rows = page.query_selector_all('#rows .row')
-    assert len(filtered_rows) > 0, "Çifte Şans vurguları filtresi sonuç vermedi"
-    assert all(r.get_attribute('data-dc-eligible') == '1' for r in filtered_rows), "ÇŞ filtresinde uygunsuz maç listelendi"
-    assert not page.query_selector('#rows .row[data-mid="TEST-DC-LIMITED"]'), "Kısıtlı veri ÇŞ filtresine girdi"
-    assert not page.query_selector('#rows .row[data-mid="TEST-DC-CRITICAL"]'), "Kritik maç ÇŞ filtresine girdi"
-    assert 'ÇŞ' in page.inner_text('#hotToggle'), "ÇŞ filtre düğmesi etiketi güncellenmedi"
+    assert len(filtered_rows) > 0, "Vurgu filtresi sonuç vermedi"
+    assert all(r.query_selector('.pill.hot') for r in filtered_rows), "Vurgu filtresinde vurgusuz maç listelendi"
+    assert page.query_selector('#rows .row[data-mid="TEST-DC-STRONG"]'), "ÇŞ vurgulu sentetik maç filtrede görünmeli"
+    assert not page.query_selector('#rows .row[data-mid="TEST-DC-LIMITED"]'), "Kısıtlı veri vurgu filtresine girdi"
+    # Kritik eksik oyuncu yalnızca ÇŞ vurgusunu kapatır; gol pazarlarında eksik oyuncu zaten λ'ya yansıtılır
+    # (sentetik maçın 0.5+ %94'ü, 25.09'dan beri %93,5 eşiğini geçtiği için filtrede görünebilir)
+    critical_row = page.query_selector('#rows .row[data-mid="TEST-DC-CRITICAL"]')
+    assert not (critical_row and critical_row.query_selector('.dcp .pill.hot')), "Kritik maçta ÇŞ vurgulandı"
 
     page.screenshot(path='scratch/predictions_double_chance.png', full_page=False)
     print("  ✓ Tahminler bültenine Çifte Şans sütunu ve sıkı yüksek güven filtresi eklendi.")

@@ -198,8 +198,8 @@ BETAVUS, futbol toplam gol pazarları (0.5 Üst, 1.5 Üst, 2.5 Üst) için yapay
 
 ### Otomasyon ve Testler
 
-- `scripts/test_paper_betting.py`: Şartnamede tanımlanan Senaryo A–F, Monte Carlo simülasyonu, adaptif seçenekler, LocalStorage şeması ve DOM entegrasyonunu doğrulayan 10 adımlı test suite.
-- `scripts/verify_e2e.py`: Tüm sekmelerin ve veri akışının geriye dönük uyumluluğunu doğrulayan 8 adımlı E2E regression testi.
+- `scripts/test_paper_betting.py`: Şartnamede tanımlanan Senaryo A–F, Monte Carlo simülasyonu, adaptif seçenekler, LocalStorage şeması ve DOM entegrasyonunu doğrulayan 16 adımlı test suite.
+- `scripts/run_tests.py`: tüm regresyon testlerini (test_paper_betting, test_sim_math, test_cifte_tab, test_cifte_backtest, verify_site) sırayla çalıştırır, özet verir; herhangi biri düşerse çıkış kodu 1.
 
 <!-- BETAVUS data pipeline verified 2026-09-20 -->
 <!-- Calculation run requested 2026-09-20 -->

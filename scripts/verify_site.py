@@ -18,7 +18,7 @@ with sync_playwright() as p:
     page.on('dialog', lambda d: (print('DIALOG:', d.message), d.accept()))
     
     page.add_init_script("""
-        localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');
+        localStorage.setItem('betavus.access', '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d');localStorage.setItem('betavus.lang', 'tr');
     """)
     print(f"Navigating to http://127.0.0.1:{PORT}/index.html...")
     page.goto(f'http://127.0.0.1:{PORT}/index.html')
@@ -53,6 +53,9 @@ with sync_playwright() as p:
     print("  ✓ Model Doğruluğu altındaki tüm tablolar (Lig, Sezon, Örnek Maçlar) eksiksiz dolu ve çalışıyor!")
 
     # Lig satırına tıklama ve dinamik yüzde/KPI güncelleme testi
+    # Toplamlar results.json'dan gelir ve lig eklendikçe büyür; sabit sayı yerine ilk açılışla karşılaştır
+    kpi_total = lambda: page.inner_text('#btpane-kpi .card:first-child').split('\n')
+    kpi_initial = kpi_total()
     pl_row = page.query_selector('#btpane-byleague tr[data-league="Premier League"]')
     assert pl_row is not None, "Premier League row must exist with data-league"
     pl_row.click()
@@ -60,58 +63,17 @@ with sync_playwright() as p:
     kpi_pl = page.inner_text('#btpane-kpi')
     print(f"  Premier League tıklandıktan sonra KPI özeti: {kpi_pl[:90].replace(chr(10), ' ')}...")
     assert "Premier League" in kpi_pl, "KPI cards must show Premier League"
-    assert "1.900" in kpi_pl, "KPI cards must show 1.900 matches for Premier League"
+    assert "1.900" in kpi_pl, "KPI cards must show 1.900 matches for Premier League (5 × 380)"
     print("  ✓ Lig satırına tıklandığında KPI kartları ve başarı oranları ilgili lige özel anında güncellendi!")
 
     # Tümü satırına tıklayarak sıfırlama testi
     page.click('#btpane-byleague tr[data-league="Tümü"]')
     time.sleep(0.3)
-    kpi_reset = page.inner_text('#btpane-kpi')
-    assert "16.478" in kpi_reset, "KPI cards must reset to 16.478 on Tümü"
-    print("  ✓ Tümü satırına tıklandığında genel toplam (16.478 maç) başarıyla geri yüklendi!")
+    assert kpi_total() == kpi_initial, f"KPI kartları Tümü'de ilk açılıştaki toplama dönmeli: {kpi_total()[:4]} != {kpi_initial[:4]}"
+    print(f"  ✓ Tümü satırına tıklandığında genel toplam ({kpi_initial[3]} maç) başarıyla geri yüklendi!")
 
-    # -------------------------------------------------------------------------
-    # TEST 2: Risk Profili Özelleştirmesi & 1 Haftalık / 1 Aylık Maç Havuzu
-    # -------------------------------------------------------------------------
-    print("\n--- TEST 2: Risk Profile Customization & 1-Week / 1-Month Coupon Window ---")
-    page.click('#tab-plan')
-    time.sleep(0.5)
-    
-    # Check if plan exists or create one with Minimum Risk
-    if page.query_selector('#btnResetPlan'):
-        page.click('#btnResetPlan')
-        time.sleep(0.5)
-        
-    page.fill('#setupStartBank', '50')
-    page.fill('#setupTargetBank', '500')
-    page.click('#btnCreatePlan')
-    time.sleep(0.5)
-    assert page.query_selector('#btnResetPlan') is not None, "Plan should be created"
-    print("  ✓ Minimum risk kasa planı oluşturuldu.")
-
-    # Go to Gerçek Kuponlarım (#pane-rec)
-    page.evaluate("setTab('rec')")
-    time.sleep(0.5)
-    assert page.is_visible('#pane-rec') is True, "pane-rec should be visible"
-    
-    # Check featured coupon card
-    first_card = page.query_selector('#pane-rec .rec-cards-grid .rec-card')
-    assert first_card is not None, "At least one recommendation card must exist"
-    first_card_html = first_card.inner_html()
-    
-    print(f"  First card has 'KASA PLANINIZA ÖZEL SEÇİLEN KUPON': {'KASA PLANINIZA ÖZEL' in first_card_html}")
-    assert 'KASA PLANINIZA ÖZEL' in first_card_html, "User's plan risk profile card must be prioritized and labeled"
-    
-    # Check window badge
-    has_win_badge = ('Önümüzdeki 1 Hafta' in first_card_html or 'Önümüzdeki 1 Ay' in first_card_html or '1 Aylık' in first_card_html)
-    print(f"  First card has window badge (1 Hafta or 1 Ay): {has_win_badge}")
-    assert has_win_badge, "Coupon must display fixture window badge"
-    
-    # Check selections in coupon
-    selections = first_card.query_selector_all('.rc-table tbody tr')
-    print(f"  First card selections count: {len(selections)}")
-    assert len(selections) >= 2, "Coupon should have at least 2 match selections"
-    print("  ✓ Gerçek Kuponlarım sekmesinde 1 haftalık/1 aylık maç filtreleme ve plana özel kupon doğrulandı!")
+    # (Eski TEST 2 — eski kasa kurulum formu + gizli 'Gerçek Kuponlarım' — kaldırıldı: form 23.09'da
+    #  Excel düzenine geçti; yeni Sanal Kasa test_paper_betting.py 12-14'te test ediliyor.)
 
     # -------------------------------------------------------------------------
     # TEST 3: 30 Günlük Kasa & Kuponlarım Simülasyonu Başarı Oranları (≥95%, ≥85%, ~1.35x)

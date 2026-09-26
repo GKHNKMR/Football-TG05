@@ -1017,7 +1017,6 @@
   const KASA_COLOR_REAL = '#4F81BD';
   const KASA_COLOR_TARGET = '#C0504D';
   const KASA_COLOR_SECURED = '#9BBB59';   // kenara konan (cash-out) kısım
-  const eiDec = v => { const t = (Number(v) || 0).toFixed(1); return root.I18N ? root.I18N.dec(t) : t; };
 
   function kasaRiskLabel(params) {
     return KASA_RISK_LABELS[params.riskProfile] || params.riskName;
@@ -1105,8 +1104,8 @@
       moneyRows.push(head.push([_t('Toplam Kazanç'), closed.profit]) - 1);
       pctRows.push(head.push([_t('Toplam Büyüme'), pct(closed.growthPct)]) - 1);
     }
-    if (sim.secured > 0) moneyRows.push(head.push([_t('Güven Payı'), sim.secured]) - 1);
-    const cols = [_t('Gün'), _t('Tarih'), _t('Hedef Kasa'), _t('Gerçek Kasa'), _t('Güven Payı'), _t('Günlük Değişim'), _t('Günlük Büyüme'), _t('Toplam Büyüme')];
+    if (sim.secured > 0) moneyRows.push(head.push([_t('Kilitli'), sim.secured]) - 1);
+    const cols = [_t('Gün'), _t('Tarih'), _t('Hedef Kasa'), _t('Oyundaki Kasa'), _t('Kilitli'), _t('Günlük Değişim'), _t('Günlük Büyüme'), _t('Toplam Büyüme')];
     const body = sim.rows.map(r => [r.day, dmy(r.date), r.targetBank, r.actualBank != null ? r.actualBank : '',
       r.actualBank != null && r.secured > 0 ? r.secured : '',
       r.dailyChange != null ? r.dailyChange : '', pct(r.dailyGrowthPct), pct(r.totalGrowthPct)]);
@@ -1179,7 +1178,9 @@
                   <td>${formatCurrency(c.finalBank, curr)}</td>
                   <td class="${cls(c.profit)}">${sign(c.profit)}${formatCurrency(c.profit, curr)}</td>
                   <td class="${cls(c.growthPct)}">${c.growthPct != null ? signedPct(c.growthPct) : ''}</td>
-                  <td><button type="button" class="ck-xls" data-closed-id="${esc(c.id)}" title="${_t('Excel olarak dışa aktar')}">${_t('📊 Excel')}</button></td>
+                  <td class="ck-acts"><button type="button" class="ck-xls" data-closed-id="${esc(c.id)}" title="${_t('Excel olarak dışa aktar')}">${_t('📊 Excel')}</button>
+                    <button type="button" class="ck-xls ck-reopen" data-closed-id="${esc(c.id)}" title="${_t('Kasayı yeniden aç: girdileri düzeltip tekrar kapatabilirsin')}">${_t('✏️ Yeniden aç')}</button>
+                    <button type="button" class="ck-xls ck-del" data-closed-id="${esc(c.id)}" title="${_t('Kapatılan kasayı sil')}">${_t('🗑️ Sil')}</button></td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -1242,7 +1243,7 @@
     }).join('');
 
     // Üzerine gelince günün iki değeri (sütundan geniş, tüm gün dilimi)
-    const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Gerçek Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}${r.secured > 0 && r.actualBank != null ? ' · ' + _t('Güven Payı: {v}', { v: formatCurrency(r.secured, curr) }) : ''}</title></rect>`).join('');
+    const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Oyundaki Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}${r.secured > 0 && r.actualBank != null ? ' · ' + _t('Kilitli: {v}', { v: formatCurrency(r.secured, curr) }) : ''}</title></rect>`).join('');
 
     return `
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün', { n })}" style="display:block">
@@ -1255,166 +1256,121 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Duygusal Denge Koçu (EI): cash-out ve risk düşürme önerileri, yol haritası
+  // Güven Payı kartı: kupon / rahat sınır ışığı, tek butonla kilitleme, duraklı yol çizgisi
   // ---------------------------------------------------------------------------
-
-  const EI_LEVEL_LABELS = { calm: 'Sakin', watch: 'Dikkat', high: 'Yüksek stres' };
-  const EI_STEP_LABELS = { principal: 'Anapara güvencesi', stress: 'Stres eşiği', drawdown: 'Zirveden düşüş', streak: 'Kazanç serisi', manual: 'Elle', return: 'Elle' };
 
   function eiRiskName(k) {
     return KASA_RISK_LABELS[k] || _t('Özel');
   }
 
-  function eiSignalText(sig, coach, curr) {
-    const m = v => formatCurrency(v, curr);
-    if (sig.type === 'stress') {
-      return {
-        icon: '😰',
-        title: _t('Stres eşiği: tek kuponda {stake} riske ediyorsun', { stake: m(sig.stake) }),
-        body: _t('ei.stress.body', { comfort: m(sig.comfort), x: eiDec(sig.multiple) })
-      };
-    }
-    if (sig.type === 'principal') {
-      return { icon: '🎯', title: _t('Kasanı ikiye katladın!'), body: _t('ei.principal.body', { amount: m(sig.amount) }) };
-    }
-    if (sig.type === 'drawdown') {
-      return { icon: '📉', title: _t('Zirveden {pct} düştün', { pct: formatPct(sig.dropPct, 0) }), body: _t('ei.drawdown.body', { peak: m(sig.peakTotal) }) };
-    }
-    if (sig.type === 'streak') {
-      return { icon: '🔥', title: _t('{n} gündür kazanıyorsun (+{pct})', { n: PE.EI_CONFIG.streakDays, pct: formatPct(sig.gainPct, 0) }), body: _t('ei.streak.body', { amount: m(sig.amount) }) };
-    }
-    return { icon: '🏁', title: _t('Hedefe ulaştın!'), body: _t('ei.reached.body') };
+  // Başlangıçtan hedefe logaritmik konum (para algısı orantısal: 50→100 ile 1.000→2.000 aynı adım gibi hissedilir)
+  function eiPos(v, S, T) {
+    if (!(v > 0) || !(T > S) || !(S > 0)) return 0;
+    return Math.max(0, Math.min(100, (Math.log(v / S) / Math.log(T / S)) * 100));
   }
 
-  function renderEIOptionHtml(o, day, reason, curr) {
-    const label = o.amount > 0
-      ? _t('{amount} kenara koy · {risk} ile devam', { amount: formatCurrency(o.amount, curr), risk: eiRiskName(o.profile) })
-      : _t('{risk} riskine geç', { risk: eiRiskName(o.profile) });
-    const days = o.daysLeft == null ? '—' : o.daysLeft;
+  function renderEIRoadHtml(coach, plan, curr) {
+    const S = Number(plan.startingBank) || 0, T = Number(plan.targetBank) || 0;
+    const m = v => formatCurrency(v, curr);
+    const mark = (v, cls, title, icon) => `<span class="ei-stop ${cls}" style="left:${eiPos(v, S, T).toFixed(1)}%" title="${esc(title)}">${icon}</span>`;
+    const r = coach.roadmap;
+    const marks = []
+      .concat(r.done.filter(x => x.total != null).map(x => mark(x.total, 'done', _t('{day}. gün: {amount} kilitlendi', { day: x.day, amount: m(x.amount) }), '🔒')))
+      .concat(r.today ? [mark(r.today.total, 'today', _t('Bugün: {amount} kilitle', { amount: m(r.today.amount) }), '🔒')] : [])
+      .concat(r.stops.map(x => mark(x.total, 'next', _t('Kasa {bank} olunca {amount} kilitle', { bank: m(x.total), amount: m(x.amount) }), '🔒')))
+      .join('');
+    const pos = eiPos(coach.total, S, T);
     return `
-      <button type="button" class="ei-opt ${o.recommended ? 'rec' : ''}" data-day="${day}" data-amount="${o.amount}" data-profile="${esc(o.profile)}" data-reason="${esc(reason)}">
-        ${o.recommended ? `<span class="ei-rec">${_t('Önerilen')}</span>` : ''}
-        <b>${label}</b>
-        <small>${_t('Tek kupon: {stake} · Hedefe ~{days} gün', { stake: formatCurrency(o.stakeAfter, curr), days })}</small>
-      </button>`;
+      <div class="ei-road" aria-label="${_t('Hedefe giden yol')}">
+        <div class="ei-track"><i style="width:${pos.toFixed(1)}%"></i>${marks}
+          <span class="ei-you" style="left:${pos.toFixed(1)}%" title="${esc(_t('Sen buradasın: {v}', { v: m(coach.total) }))}"></span>
+        </div>
+        <div class="ei-road-ends"><span>${m(S)}</span><span>${m(T)}</span></div>
+      </div>`;
   }
 
   function renderEICoachHtml(plan, sim, curr) {
-    const coach = PE.getEICoach(plan, sim);
-    const road = PE.buildEIRoadmap(plan, sim);
-    const sig = coach.signal;
-    const gaugePct = Math.max(4, Math.min(100, (coach.stressMultiple / (PE.EI_CONFIG.stressMultiple * 1.25)) * 100));
+    const c = PE.getEICoach(plan, sim);
+    const m = v => formatCurrency(v, curr);
+    const light = { green: '🟢', yellow: '🟡', red: '🔴' }[c.level];
 
-    let signalHtml = '';
-    if (sig && !sig.dismissed) {
-      const tx = eiSignalText(sig, coach, curr);
-      signalHtml = `
-        <div class="ei-signal ei-sig-${sig.type}">
-          <div class="ei-sig-h"><span class="ei-sig-i">${tx.icon}</span>${esc(tx.title)}</div>
-          <p>${esc(tx.body)}</p>
-          ${sig.options && sig.options.length ? `<div class="ei-opts">${sig.options.map(o => renderEIOptionHtml(o, coach.day, sig.type, curr)).join('')}</div>` : ''}
-          ${sig.type !== 'reached' ? `<button type="button" class="ei-dismiss" data-key="${esc(sig.key)}">${_t('Şimdilik devam et')}</button>` : ''}
-        </div>`;
-    } else if (sig && sig.dismissed) {
-      signalHtml = `<div class="ei-signal ei-sig-muted"><p>${_t('Bugünkü öneriyi erteledin. Yarın kasanı girdiğinde koç yeniden bakar.')}</p></div>`;
-    } else if (coach.day) {
-      signalHtml = `<div class="ei-signal ei-sig-muted"><p>${_t('Şu an bir öneri yok: tek kupon riskin konfor bölgende. Her gün kasanı girdiğinde koç yeniden değerlendirir.')}</p></div>`;
+    let status;
+    if (!c.day) {
+      status = `<p class="ei-msg">${_t('İlk günün kasasını tabloya girince başlar.')}</p>`;
+    } else if (c.reached) {
+      status = `<p class="ei-msg good">${_t('🏁 Hedefe ulaştın! Kasayı kapatıp kazancını koruyabilirsin.')}</p>`;
     } else {
-      signalHtml = `<div class="ei-signal ei-sig-muted"><p>${_t('Gerçek Kasa tablosuna ilk günün kasasını girdiğinde koç değerlendirmeye başlar.')}</p></div>`;
+      status = `
+        <div class="ei-light ei-${c.level}" title="${esc(_t('Rahat sınır = seçtiğin tutar ({base}) + kilitli paran. Kilitli para güvende olduğu için sınır onunla birlikte büyür.', { base: m(c.limit - c.secured) }))}">${light} ${_t('Bugünkü kuponun {stake} · Rahat sınırın {limit}', { stake: `<b>${m(c.stake)}</b>`, limit: `<b>${m(c.limit)}</b>` })}</div>
+        ${c.lock ? `
+          <div class="ei-act">
+            <button type="button" class="ei-lock-btn" id="btnEILock" data-day="${c.day}" data-amount="${c.lock.amount}">${_t('🔒 {amount} kilitle', { amount: m(c.lock.amount) })}</button>
+            ${c.lowerProfile ? `<label class="ei-chk"><input type="checkbox" id="eiLowerRisk"> ${_t('riski de {risk} seviyesine düşür', { risk: eiRiskName(c.lowerProfile) })}</label>` : ''}
+            <span class="ei-muted">${_t('Sonra kuponun {stake} olur.', { stake: m(c.lock.stakeAfter) })}</span>
+          </div>`
+        : `<p class="ei-msg">${c.level === 'yellow' ? _t('Sınırına yaklaşıyorsun.') : _t('Rahatsın, planına devam et.')}</p>`}
+        ${c.drop ? `<p class="ei-msg bad">${_t('📉 Zirveden %{pct} düştün. Bugün mola vermeyi düşün; kaybı hemen geri kazanmaya çalışma.', { pct: c.drop.pct })}</p>` : ''}`;
     }
 
-    const cashouts = sim.cashouts || [];
-    const history = cashouts.length ? `
-      <div class="ei-sub-h">${_t('Güven payı hareketleri')}</div>
-      <ul class="ei-hist">
-        ${cashouts.map(c => `<li><b>${_t('{day}. gün', { day: c.day })}</b> · ${c.amount < 0 ? _t('kasaya geri alındı: {v}', { v: formatCurrency(-c.amount, curr) }) : formatCurrency(c.amount, curr)} · ${esc(eiRiskName(c.fromProfile))} → ${esc(eiRiskName(c.toProfile))} <span class="ei-muted">(${esc(_t(EI_STEP_LABELS[c.reason] || EI_STEP_LABELS.manual))})</span></li>`).join('')}
-      </ul>
-      <button type="button" class="ei-undo" id="btnEIUndo">${_t('↩ Son işlemi geri al')}</button>` : '';
-
-    const roadRows = road.steps.map((s, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${s.day}</td>
-        <td>${formatCurrency(s.bankBefore, curr)}</td>
-        <td>${esc(_t(EI_STEP_LABELS[s.type]))}</td>
-        <td>${s.amount > 0 ? formatCurrency(s.amount, curr) : '—'}</td>
-        <td>${esc(eiRiskName(s.fromProfile))}${s.toProfile !== s.fromProfile ? ' → ' + esc(eiRiskName(s.toProfile)) : ''}</td>
-        <td>${formatCurrency(s.stakeBefore, curr)} → ${formatCurrency(s.stakeAfter, curr)}</td>
-      </tr>`).join('');
-
-    const riskOpts = Object.keys(KASA_RISK_LABELS).map(k => `<option value="${k}" ${k === coach.profile ? 'selected' : ''}>${esc(KASA_RISK_LABELS[k])}</option>`).join('');
+    // Durak kasası yaklaşık gösterilir (263,37 € → ~260 €): kişi kuruşla değil, seviyeyle ilgilenir
+    const approx = v => '~' + formatCurrency(v >= 100 ? Math.round(v / 10) * 10 : Math.round(v), curr).replace(/[.,]00(?=\D*$)/, '');
+    const next = c.next
+      ? _t('Sıradaki durak: kasa {bank} olunca {amount} kilitle', { bank: approx(c.next.total), amount: m(c.next.amount) })
+      : (c.reached ? '' : _t('Hedefe kadar başka durak yok.'));
 
     return `
       <div class="card ei-card" id="eiCoachCard">
-        <div class="ei-head">
-          <h3>${_t('🧠 Duygusal Denge Koçu')}</h3>
-          <p>${_t('ei.intro')}</p>
+        <h3 class="ei-title">${_t('🔒 Güven Payı')}</h3>
+        <p class="ei-lead">${_t('Kasan büyüdükçe bir kısmını kilitle. Kilitlediğin para bir daha riske girmez ama hedefine sayılır.')}</p>
+        <div class="ei-sum">
+          <span>${_t('Oyundaki')} <b>${m(c.working)}</b></span>
+          <span>${_t('Kilitli')} <b class="good">${m(c.secured)}</b></span>
+          <span>${_t('Toplam')} <b>${m(c.total)}</b> <em>${_t('(hedefin {pct})', { pct: formatPct(c.reachPct, 0) })}</em></span>
         </div>
-        <div class="ei-tiles">
-          <div><span>${_t('Oyundaki Kasa')}</span><b>${formatCurrency(coach.working, curr)}</b></div>
-          <div><span>${_t('Güven Payı')}</span><b class="good">${formatCurrency(coach.secured, curr)}</b></div>
-          <div><span>${_t('Toplam Varlık')}</span><b>${formatCurrency(coach.total, curr)}</b></div>
-          <div><span>${_t('Tek Kupon Riski')}</span><b>${formatCurrency(coach.stake, curr)}</b></div>
+        ${status}
+        ${renderEIRoadHtml(c, plan, curr)}
+        ${next ? `<p class="ei-next">${next}</p>` : ''}
+        <div class="ei-links">
+          <button type="button" class="ei-link" id="btnEIManual" data-day="${c.day}" ${c.day ? '' : 'disabled'}>${_t('Kilitle')}</button>
+          <button type="button" class="ei-link" id="btnEIReturn" data-day="${c.day}" ${c.day && c.secured > 0 ? '' : 'disabled'}>${_t('Geri al')}</button>
+          ${(sim.cashouts || []).length ? `<button type="button" class="ei-link" id="btnEIUndo">${_t('Son işlemi geri al')}</button>` : ''}
         </div>
-        <div class="ei-gauge ei-lv-${coach.level}" title="${_t('ei.comfort.tip')}">
-          <div class="ei-gauge-top">
-            <span>${_t('Stres seviyesi')}: <b>${_t(EI_LEVEL_LABELS[coach.level])}</b></span>
-            <span class="ei-muted">${_t('Tek kupon riski konfor tutarının {x} katı · konfor tutarı {c}', { x: eiDec(coach.stressMultiple), c: formatCurrency(coach.comfort, curr) })}</span>
-          </div>
-          <div class="ei-bar"><i style="width:${gaugePct.toFixed(0)}%"></i></div>
-        </div>
-        ${signalHtml}
-        <div class="ei-manual">
-          <div class="ei-sub-h">${_t('💰 Güven Payı İşlemleri')}</div>
-          <div class="ei-manual-row">
-            <label>${_t('Tutar')} <input type="text" inputmode="decimal" id="eiManualAmount" class="ks-input" placeholder="${formatAmount(Math.floor(coach.working / 2))}"></label>
-            <label>${_t('Sonra risk')} <select id="eiManualRisk" class="ks-input">${riskOpts}</select></label>
-            <button type="button" class="ei-opt-inline" id="btnEIManual" data-day="${coach.day}" ${coach.day ? '' : 'disabled'}>${_t('➕ Kenara koy')}</button>
-            <button type="button" class="ei-opt-inline ei-return" id="btnEIReturn" data-day="${coach.day}" ${coach.day && coach.secured > 0 ? '' : 'disabled'}>${_t('↩ Kasaya geri al')}</button>
-          </div>
-          <p class="ei-muted">${coach.day
-            ? _t('Kenara koyduğun para oyundaki kasadan düşer; geri aldığın para güven payından oyundaki kasaya eklenir. Kazanç eğrisi o günden itibaren yeni kasayla yeniden kurulur. Güven payında şu an {sec} var.', { sec: formatCurrency(coach.secured, curr) })
-            : _t('Gerçek Kasa tablosuna ilk günün kasasını girdiğinde kullanılabilir.')}</p>
-        </div>
-        <details class="ei-road" ${road.steps.length ? '' : ''}>
-          <summary>${_t('🗺️ Yol haritası')} <span class="ei-muted">${_t('Koçla ~{d1} gün, en yüksek tek kupon {m1} · Koçsuz ~{d2} gün, en yüksek tek kupon {m2}', { d1: road.daysWith, m1: formatCurrency(road.maxStakeWith, curr), d2: road.daysWithout == null ? '—' : road.daysWithout, m2: formatCurrency(road.maxStakeWithout, curr) })}</span></summary>
-          <p class="ei-muted">${_t('ei.road.note')}</p>
-          ${road.steps.length ? `
-          <div class="tbl-scroll">
-            <table class="excel-table ei-road-table">
-              <thead><tr><th>${_t('Seviye')}</th><th>${_t('Gün')}</th><th>${_t('Oyundaki Kasa')}</th><th>${_t('Tetikleyici')}</th><th>${_t('Kenara')}</th><th>${_t('Risk')}</th><th>${_t('Tek Kupon Riski')}</th></tr></thead>
-              <tbody>${roadRows}</tbody>
-            </table>
-          </div>` : `<p class="ei-muted">${_t('Hedefe kadar ek bir kenara koyma seviyesi görünmüyor.')}</p>`}
-        </details>
-        ${history}
       </div>`;
   }
 
   function wireEICoachEvents() {
     const card = document.getElementById('eiCoachCard');
     if (!card) return;
-    card.querySelectorAll('.ei-opt').forEach(btn => {
-      btn.onclick = () => {
-        PE.applyCashout(paperState, { day: Number(btn.dataset.day), amount: Number(btn.dataset.amount), toProfile: btn.dataset.profile, reason: btn.dataset.reason });
+    const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+    const lock = document.getElementById('btnEILock');
+    if (lock) {
+      lock.onclick = () => {
+        const low = document.getElementById('eiLowerRisk');
+        const coach = PE.getEICoach(paperState.plan, PE.buildKasaSimulation(paperState.plan, paperState));
+        PE.applyCashout(paperState, {
+          day: Number(lock.dataset.day), amount: Number(lock.dataset.amount),
+          toProfile: low && low.checked && coach.lowerProfile ? coach.lowerProfile : undefined, reason: 'lock'
+        });
         rerenderAllPanes();
       };
-    });
-    const dis = card.querySelector('.ei-dismiss');
-    if (dis) dis.onclick = () => { PE.dismissEISignal(paperState, dis.dataset.key); rerenderAllPanes(); };
-    const undo = document.getElementById('btnEIUndo');
-    if (undo) undo.onclick = () => { PE.undoLastCashout(paperState); rerenderAllPanes(); };
-    const currOf = () => (paperState.settings && paperState.settings.currency) || 'EUR';
+    }
+    const ask = (msg, def, max) => {
+      const raw = prompt(msg, formatAmount(def));
+      if (raw === null) return null;
+      const v = parseKasaAmount(raw);
+      if (v === '' || v == null || v <= 0 || v > max) {
+        alert(_t('0 ile {max} arasında bir tutar girin.', { max: formatCurrency(max, curr) }));
+        return null;
+      }
+      return v;
+    };
     const man = document.getElementById('btnEIManual');
     if (man) {
       man.onclick = () => {
-        const val = parseKasaAmount(document.getElementById('eiManualAmount').value);
         const sim = PE.buildKasaSimulation(paperState.plan, paperState);
-        if (val === '' || val == null || val <= 0 || val > sim.currentBank) {
-          alert(_t('0 ile oyundaki kasa ({max}) arasında bir tutar girin.', { max: formatCurrency(sim.currentBank, currOf()) }));
-          return;
-        }
-        PE.applyCashout(paperState, { day: Number(man.dataset.day), amount: val, toProfile: document.getElementById('eiManualRisk').value, reason: 'manual' });
+        const v = ask(_t('Oyundaki kasadan ne kadar kilitlemek istiyorsun?'), Math.floor(sim.currentBank / 2), sim.currentBank);
+        if (v == null) return;
+        PE.applyCashout(paperState, { day: Number(man.dataset.day), amount: v, reason: 'manual' });
         rerenderAllPanes();
       };
     }
@@ -1422,17 +1378,14 @@
     if (ret) {
       ret.onclick = () => {
         const sim = PE.buildKasaSimulation(paperState.plan, paperState);
-        const raw = document.getElementById('eiManualAmount').value;
-        // Tutar boşsa güven payının tamamı geri alınır
-        const val = String(raw).trim() === '' ? sim.secured : parseKasaAmount(raw);
-        if (val === '' || val == null || val <= 0 || val > sim.secured) {
-          alert(_t('0 ile güven payı ({max}) arasında bir tutar girin.', { max: formatCurrency(sim.secured, currOf()) }));
-          return;
-        }
-        PE.applyCashout(paperState, { day: Number(ret.dataset.day), amount: -val, toProfile: document.getElementById('eiManualRisk').value, reason: 'return' });
+        const v = ask(_t('Kilitli paradan ne kadarını oyundaki kasaya geri almak istiyorsun?'), sim.secured, sim.secured);
+        if (v == null) return;
+        PE.applyCashout(paperState, { day: Number(ret.dataset.day), amount: -v, reason: 'return' });
         rerenderAllPanes();
       };
     }
+    const undo = document.getElementById('btnEIUndo');
+    if (undo) undo.onclick = () => { PE.undoLastCashout(paperState); rerenderAllPanes(); };
   }
 
   function renderPlanPane(opts = {}) {
@@ -1494,6 +1447,8 @@
                 <input type="text" inputmode="decimal" id="ksStart" class="ks-input" value="${formatAmount(p.startingBank)}"></label>
               <label class="ks-row"><span>${_t('Hedef Kasa ({sym})', { sym })}</span>
                 <input type="text" inputmode="decimal" id="ksTarget" class="ks-input" value="${formatAmount(p.targetBank)}"></label>
+              <label class="ks-row" title="${_t('Tek kupona en fazla ne kadar koymak seni rahatsız etmez? Boş bırakırsan başlangıç kasası kullanılır.')}"><span>${_t('Rahat Sınır ({sym})', { sym })}</span>
+                <input type="text" inputmode="decimal" id="ksComfort" class="ks-input" value="${plan.comfortLimit > 0 ? formatAmount(plan.comfortLimit) : ''}" placeholder="${formatAmount(p.startingBank)}"></label>
               <label class="ks-row"><span>${_t('Risk Faktörü')}</span>
                 <select id="ksRisk" class="ks-input">
                   ${riskOptions.map(k => `<option value="${k}" ${k === p.riskProfile ? 'selected' : ''}>${esc(KASA_RISK_LABELS[k] || p.riskName)}</option>`).join('')}
@@ -1517,9 +1472,9 @@
               <div class="ks-chart-title">${_t('Kasa Gelişim Grafiği')}</div>
               ${renderKasaChartSvg(sim, curr)}
               <div class="ks-legend">
-                <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Gerçek Kasa ({sym})', { sym })}</span>
+                <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Oyundaki Kasa ({sym})', { sym })}</span>
                 <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
-                ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Güven Payı ({sym})', { sym })}</span>` : ''}
+                ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Kilitli ({sym})', { sym })}</span>` : ''}
               </div>
             </div>
             <div class="ks-actions">
@@ -1539,10 +1494,9 @@
               <tr>
                 <th>${_t('Gün')}</th>
                 <th>${_t('Hedef Kasa ({sym})', { sym })}</th>
-                <th>${_t('Gerçek Kasa ({sym})', { sym })}</th>
-                ${hasCash ? `<th>${_t('Güven Payı ({sym})', { sym })}</th>` : ''}
+                <th>${_t('Oyundaki Kasa ({sym})', { sym })}</th>
+                ${hasCash ? `<th>${_t('Kilitli ({sym})', { sym })}</th>` : ''}
                 <th>${_t('Günlük Değişim ({sym})', { sym })}</th>
-                <th>${_t('Günlük Büyüme (%)')}</th>
                 <th>${_t('Toplam Büyüme (%)')}</th>
               </tr>
             </thead>
@@ -1552,9 +1506,8 @@
                   <td title="${dmy(r.date)}">${r.day}</td>
                   <td>${formatCurrency(r.targetBank, curr)}</td>
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
-                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kenara kondu', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? formatCurrency(r.secured, curr) + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}
+                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kilitlendi', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? formatCurrency(r.secured, curr) + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}
                   <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
-                  <td>${r.dailyGrowthPct != null ? signedPct(r.dailyGrowthPct) : ''}</td>
                   <td class="${r.totalGrowthPct == null ? '' : r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct != null ? signedPct(r.totalGrowthPct) : ''}</td>
                 </tr>
               `).join('')}
@@ -1631,8 +1584,11 @@
         const defaultName = _t('Kasa {n}', { n: paperState.plans.length + 1 });
         const entered = prompt(_t('Yeni kasanın adı:'), defaultName);
         if (entered === null) return; // Vazgeç
+        const comfortRaw = prompt(_t('Tek kupona en fazla ne kadar koymak seni rahatsız etmez? Boş bırakırsan başlangıç kasası kullanılır. (Sonra "Rahat Sınır" alanından değiştirebilirsin.)'), '');
+        const comfort = comfortRaw == null ? null : parseKasaAmount(comfortRaw);
         PE.createNewPlan(paperState, {
           name: entered.trim().slice(0, 40) || defaultName,
+          comfortLimit: comfort > 0 ? comfort : null,
           startingBank: PE.KASA_V01_EXAMPLE.startingBank,
           targetBank: PE.KASA_V01_EXAMPLE.targetBank,
           riskProfile: PE.KASA_V01_EXAMPLE.riskProfile
@@ -1680,7 +1636,25 @@
       };
     }
 
-    document.querySelectorAll('.ck-xls').forEach(b => {
+    document.querySelectorAll('.ck-reopen').forEach(b => {
+      b.onclick = () => {
+        const c = (paperState.closedPlans || []).find(x => x.id === b.dataset.closedId);
+        if (!c || !confirm(_t('"{name}" kasası yeniden açılsın mı? Girdileri düzeltip tekrar kapatabilirsin.', { name: c.name }))) return;
+        PE.reopenClosedPlan(paperState, c.id);
+        rerenderAllPanes();
+        root.scrollTo(0, 0);
+      };
+    });
+    document.querySelectorAll('.ck-del').forEach(b => {
+      b.onclick = () => {
+        const c = (paperState.closedPlans || []).find(x => x.id === b.dataset.closedId);
+        if (!c || !confirm(_t('"{name}" kapatılan kasası kalıcı olarak silinsin mi? Bu işlem geri alınamaz.', { name: c.name }))) return;
+        PE.deleteClosedPlan(paperState, c.id);
+        rerenderAllPanes();
+      };
+    });
+
+    document.querySelectorAll('.ck-xls:not(.ck-reopen):not(.ck-del)').forEach(b => {
       b.onclick = () => {
         const c = (paperState.closedPlans || []).find(x => x.id === b.dataset.closedId);
         if (!c || !c.plan) return;
@@ -1716,6 +1690,15 @@
     };
     bindAmount('ksStart', 'startingBank', _t('Başlangıç kasası'));
     bindAmount('ksTarget', 'targetBank', _t('Hedef kasa'));
+    const comfortInp = document.getElementById('ksComfort');
+    if (comfortInp) {
+      comfortInp.onchange = () => {
+        const val = parseKasaAmount(comfortInp.value);
+        if (val == null) { alert(_t('Geçerli bir tutar girin veya boş bırakın.')); renderPlanPane(); return; }
+        PE.updatePlanInputs(paperState, { comfortLimit: val === '' ? null : val });   // boş = başlangıç kasası
+        rerenderAllPanes();
+      };
+    }
     const riskSel = document.getElementById('ksRisk');
     if (riskSel) {
       riskSel.onchange = () => {

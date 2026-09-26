@@ -64,6 +64,10 @@
     };
     base.plans = union(base.plans, other.plans);
     base.closedPlans = union(base.closedPlans, other.closedPlans);
+    // Silinen / yeniden açılan kapatılmış kasa işaretleri (en yeni tarih geçerli)
+    const tomb = Object.assign({}, other.closedTombstones || {});
+    Object.entries(base.closedTombstones || {}).forEach(([id, t]) => { tomb[id] = Math.max(t, tomb[id] || 0); });
+    if (Object.keys(tomb).length) base.closedTombstones = tomb;
     base.slips = union(base.slips, other.slips);
     base.ledger = union(base.ledger, other.ledger).sort((x, y) => String(x.timestamp || '').localeCompare(String(y.timestamp || '')));
     return JSON.stringify(base);

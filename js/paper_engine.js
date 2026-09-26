@@ -1025,9 +1025,10 @@
   // Gerçek kasa kuponlardan otomatik hesaplanır; plan.dailyBanks[gün] elle girilen değerle ezer.
   //
   // Cash-out (Duygusal Denge Koçu): plan.cashouts[] = { day, amount, fromProfile, toProfile, reason }.
-  // Gerçek Kasa = oyundaki kasa; kenara konan para kişinin güven payıdır ("secured"), kazanç eğrisine,
-  // büyüme sütunlarına ve hedefe dahil edilmez. Her cash-out günü yol haritası o günden itibaren
-  // kalan oyundaki kasa ve yeni risk faktörüyle yeniden kurulur: hedef = W·(1+g')^(gün−d).
+  // Gerçek Kasa = oyundaki kasa; kilitlenen para ("secured", güven payı) bir daha riske girmez ama
+  // hedefe sayılır: Hedef Kasa ve Toplam Büyüme toplam varlığa (oyundaki + kilitli) göredir, günlük
+  // değişim oyundaki kasadan hesaplanır. Her kilitleme günü yol haritası o günden itibaren yeniden
+  // kurulur: hedef = kilitli + W·(1+g')^(gün−d).
   function getPlanCashouts(plan) {
     return ((plan && plan.cashouts) || []).slice().sort((a, b) => a.day - b.day);
   }
@@ -1068,7 +1069,7 @@
         actualBank = round(S - secured + settled.filter(x => x.ts < dayEnd).reduce((sum, x) => sum + x.net, 0), 2);
       }
 
-      const targetBank = theoreticalBank(seg.w0, seg.g, d - seg.day0);
+      const targetBank = round(seg.secured + theoreticalBank(seg.w0, seg.g, d - seg.day0), 2);
       const totalBank = actualBank != null ? round(actualBank + secured, 2) : null;
       const row = {
         day: d,
@@ -1078,17 +1079,17 @@
         isManual,
         startBank: prevActual,        // günün başındaki oyundaki kasa (önceki günün cash-out'u düşülmüş)
         secured,                      // gün sonunda kenarda duran (o günkü cash-out dahil, aşağıda güncellenir)
-        totalBank,                    // oyundaki + güven payı (yalnızca bilgi; eğriye girmez)
+        totalBank,                    // oyundaki + kilitli
         cashout: 0,
         riskProfile: seg.profile,
         dailyChange: null,
         dailyGrowthPct: null,
-        // Başlangıç kasasına göre oyundaki kasanın toplam büyümesi (gün sonu; güven payı hariç)
-        totalGrowthPct: actualBank != null && S > 0 ? round((actualBank / S - 1) * 100, 2) : null,
+        // Başlangıç kasasına göre toplam büyüme (gün sonu, kilitli para dahil)
+        totalGrowthPct: totalBank != null && S > 0 ? round((totalBank / S - 1) * 100, 2) : null,
         targetBank,
         targetDailyGain: round(targetBank - prevTarget, 2),
         targetReachPct: T > 0 ? round(Math.min(100, (targetBank / T) * 100), 1) : null,
-        belowTarget: actualBank != null && actualBank < targetBank
+        belowTarget: totalBank != null && totalBank < targetBank
       };
       if (actualBank != null && prevActual != null) {
         row.dailyChange = round(actualBank - prevActual, 2);
@@ -1111,8 +1112,8 @@
         row.secured = round(secured + amount, 2);
         seg = { day0: d, w0: round(Math.max(0, before - amount), 2), g: risk.dailyGrowthRate, secured: row.secured, profile: risk.id };
         prevActual = seg.w0;
-        prevTarget = seg.w0;
-        const rest = calculateDaysToTarget(seg.w0, T, seg.g);
+        prevTarget = round(seg.secured + seg.w0, 2);
+        const rest = calculateDaysToTarget(seg.w0, T - seg.secured, seg.g);
         totalDays = Math.min(KASA_MAX_DAYS, Math.max(d, d + (rest || 0)));
       }
     }
@@ -1136,7 +1137,7 @@
       daysToTarget: totalDays,
       currentBank,                                   // oyundaki kasa (son cash-out düşülmüş)
       currentTotal: round(currentBank + secured, 2), // oyundaki + güven payı
-      currentReachPct: T > 0 ? round(Math.min(100, (currentBank / T) * 100), 1) : null
+      currentReachPct: T > 0 ? round(Math.min(100, ((currentBank + secured) / T) * 100), 1) : null
     };
   }
 
@@ -1171,6 +1172,11 @@
     if (inputs.targetBank != null && Number(inputs.targetBank) > 0) {
       plan.targetBank = round(Number(inputs.targetBank), 2);
     }
+    // Rahat sınır: tek kupona en fazla ne kadar koymak kişiyi rahatsız etmez (boş/0 = başlangıç kasası)
+    if (inputs.comfortLimit !== undefined) {
+      const c = Number(inputs.comfortLimit);
+      plan.comfortLimit = c > 0 ? round(c, 2) : null;
+    }
     if (inputs.riskProfile) {
       plan.riskProfile = normalizeProfileKey(inputs.riskProfile);
       if (!state.settings) state.settings = {};
@@ -1183,29 +1189,18 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Duygusal Denge Koçu (EI): kasa büyüdükçe cash-out ve risk düşürme önerileri
+  // Güven Payı (EI): kasa büyüdükçe bir kısmını kilitleme önerisi
   // ---------------------------------------------------------------------------
-  // Paranın insan üzerindeki etkisi kasanın yüzdesine değil, riske edilen MUTLAK tutara bağlıdır.
-  // Kişinin baştan "tamamını kaybetmeyi göze aldığı" tutar başlangıç kasasıdır: konfor tutarı budur.
-  // - Stres (kayıptan kaçınma): tek kuponda riske edilen tutar konfor tutarının 2 katına çıkınca
-  //   kasanın bir kısmı kenara konur, tek kupon riski yeniden konfor tutarına iner.
-  // - Anapara: toplam varlık başlangıcın 2 katına çıkınca başlangıç parası kenara konur;
-  //   masada artık yalnızca kazanç kalır.
-  // - Kaybı kovalama: zirveden %30 düşüşte risk bir kademe düşürülür, mola önerilir.
-  // - Heyecan ("kasa parası" etkisi): 3 gün üst üste büyüme ve bu sürede %50+ artışta serinin
-  //   kazancının yarısı kenara konur.
-  // Kenara konan para güvence verdiği için konfor tutarı, kenara konanın %25'i kadar büyür (alışma).
-  // Güven payı hedefe sayılmaz: hedef, oyundaki kasanın hedef kasaya ulaşmasıdır.
-  // Katsayılar varsayımdır; kişiye göre ayarlanabilir (EI_CONFIG).
+  // Tek kural: bugünkü kupon (oyundaki kasa × oynanan pay) kişinin "rahat sınırını" geçerse kasanın bir
+  // kısmı kilitlenir; kupon sınırın dörtte birine iner. Rahat sınırı kişi kasa açarken söyler (varsayılan
+  // başlangıç kasası); kilitli para güvence verdiği için sınır kilitli para kadar büyür.
+  // Kilitli para bir daha riske girmez ama hedefe sayılır. Ayrıca zirveden %30 düşüşte mola uyarısı.
   const EI_CONFIG = {
-    principalMultiple: 2,
-    stressMultiple: 2,
-    adaptation: 0.25,
-    drawdownPct: 0.30,
-    streakDays: 3,
-    streakGain: 0.50,
-    streakSecure: 0.50,
-    maxRoadmapDays: 365
+    limitGrowth: 1.0,     // kilitlenen her 1 € rahat sınırı 1 € büyütür
+    resetRatio: 0.25,     // kilitlemeden sonra kupon = rahat sınır × 0,25
+    watchRatio: 0.75,     // kupon sınırın %75'ini geçince sarı
+    drawdownPct: 0.30,    // zirveden %30 düşüş: mola uyarısı
+    maxRoadmapDays: 400
   };
   const EI_LADDER = ['high', 'medium', 'minimum'];   // yüksekten düşüğe
 
@@ -1213,213 +1208,119 @@
     return round(1 - resolvePlanRisk(plan, profile).reservePct, 4);
   }
 
-  function eiComfort(plan, secured) {
-    return round((Number(plan && plan.startingBank) || 0) + EI_CONFIG.adaptation * (Number(secured) || 0), 2);
+  function eiBaseLimit(plan) {
+    const c = Number(plan && plan.comfortLimit);
+    return c > 0 ? c : (Number(plan && plan.startingBank) || 0);
   }
 
-  // Kenara konacak tutarı yuvarlar: 100'ün üstünde 10'luk, altında tam sayı (873,41 → 870)
+  function eiLimit(plan, secured) {
+    return round(eiBaseLimit(plan) + EI_CONFIG.limitGrowth * (Number(secured) || 0), 2);
+  }
+
+  function eiOneStepDown(profile) {
+    const i = EI_LADDER.indexOf(profile);
+    return i === -1 || i === EI_LADDER.length - 1 ? null : EI_LADDER[i + 1];
+  }
+
+  // 100'ün üstünde 10'luk, altında tam sayıya aşağı yuvarlar (873,41 → 870)
   function eiNiceAmount(x) {
     if (!(x > 0)) return 0;
     return x >= 100 ? Math.floor(x / 10) * 10 : Math.floor(x);
   }
 
-  function eiLowerProfiles(profile) {
-    const i = EI_LADDER.indexOf(profile);
-    return i === -1 ? [profile].concat(EI_LADDER.slice(1)) : EI_LADDER.slice(i);
-  }
-
-  function eiOneStepDown(profile) {
-    const i = EI_LADDER.indexOf(profile);
-    return i === -1 ? 'medium' : EI_LADDER[Math.min(EI_LADDER.length - 1, i + 1)];
-  }
-
-  // Tek kupon riski konfor tutarına insin diye kenara konacak x:
-  //   f·(W − x) = S + a·(kenarda + x)  →  x = (f·W − S − a·kenarda) / (f + a)
-  function eiStressAmount(plan, W, secured, profile) {
+  // Kupon sınırı geçtiyse kilitlenecek x:  f·(W − x) = r·(L0 + a·(kilitli + x))
+  function eiLockAmount(plan, W, secured, profile) {
     const f = eiStakeFraction(plan, profile);
-    const S = Number(plan.startingBank) || 0;
-    const a = EI_CONFIG.adaptation;
-    const x = eiNiceAmount(Math.min(W, (f * W - S - a * secured) / (f + a)));
-    // Kasanın %5'inden küçük tutar için kenara koyma önerilmez; yalnızca risk faktörü değişir
-    return x < W * 0.05 ? 0 : x;
+    const r = EI_CONFIG.resetRatio, a = EI_CONFIG.limitGrowth;
+    if (!(W * f > eiLimit(plan, secured))) return 0;
+    const x = (f * W - r * eiBaseLimit(plan) - r * a * secured) / (f + r * a);
+    return Math.max(0, Math.min(W, eiNiceAmount(x)));
   }
 
-  function eiOption(plan, W, secured, profile, amount, recommended) {
+  // Bugünden itibaren her gün teorik büyüme gerçekleşirse kilitleme durakları
+  function eiProject(plan, W, secured, profile, day0) {
     const T = Number(plan.targetBank) || 0;
-    const amt = round(Math.max(0, Math.min(amount, W)), 2);
-    const wAfter = round(W - amt, 2);
-    const secAfter = round(secured + amt, 2);
-    const risk = resolvePlanRisk(plan, profile);
-    return {
-      profile: risk.id,
-      amount: amt,
-      workingAfter: wAfter,
-      securedAfter: secAfter,
-      stakeAfter: round(wAfter * (1 - risk.reservePct), 2),
-      comfortAfter: eiComfort(plan, secAfter),
-      dailyGrowthRate: risk.dailyGrowthRate,
-      daysLeft: wAfter >= T ? 0 : calculateDaysToTarget(wAfter, T, risk.dailyGrowthRate),
-      recommended: !!recommended
-    };
-  }
-
-  // Tek bir kasa anı (oyundaki W, güven payı, risk) için sinyal; ctx: son cash-out'tan beri zirve ve seri başı
-  function eiDetect(plan, W, secured, profile, ctx = {}) {
-    const S = Number(plan.startingBank) || 0;
-    const T = Number(plan.targetBank) || 0;
-    if (!(S > 0) || !(W > 0)) return null;
-    if (T > 0 && W >= T) return { type: 'reached' };
+    const g = resolvePlanRisk(plan, profile).dailyGrowthRate;
     const f = eiStakeFraction(plan, profile);
-    const comfort = eiComfort(plan, secured);
-    const stake = W * f;
-    const lower = eiLowerProfiles(profile);
-    const down = eiOneStepDown(profile);
-
-    if (ctx.peak && W <= ctx.peak * (1 - EI_CONFIG.drawdownPct) && profile !== 'minimum') {
-      return {
-        type: 'drawdown',
-        dropPct: round((1 - W / ctx.peak) * 100, 1),
-        peakTotal: round(ctx.peak, 2),
-        options: lower.filter(p => p !== profile).map(p => eiOption(plan, W, secured, p, 0, p === down))
-      };
-    }
-    if (stake >= EI_CONFIG.stressMultiple * comfort) {
-      return {
-        type: 'stress',
-        stake: round(stake, 2),
-        comfort,
-        multiple: round(stake / comfort, 2),
-        options: lower.map(p => eiOption(plan, W, secured, p, eiStressAmount(plan, W, secured, p), p === down))
-          .filter(o => o.amount > 0 || o.profile !== profile)
-      };
-    }
-    if (secured <= 0 && W >= EI_CONFIG.principalMultiple * S) {
-      const amt = eiNiceAmount(Math.min(S, W / 2));
-      return {
-        type: 'principal',
-        amount: amt,
-        options: lower.slice(0, 2).map((p, i) => eiOption(plan, W, secured, p, amt, i === 0))
-      };
-    }
-    if (ctx.streakFrom && W >= ctx.streakFrom * (1 + EI_CONFIG.streakGain)) {
-      const amt = eiNiceAmount((W - ctx.streakFrom) * EI_CONFIG.streakSecure);
-      if (amt > 0) {
-        return {
-          type: 'streak',
-          gainPct: round((W / ctx.streakFrom - 1) * 100, 1),
-          amount: amt,
-          options: lower.slice(0, 2).map((p, i) => eiOption(plan, W, secured, p, amt, i === 0))
-        };
+    const stops = [];
+    let d = day0, maxStake = 0;
+    while (W + secured < T && d - day0 < EI_CONFIG.maxRoadmapDays) {
+      maxStake = Math.max(maxStake, W * f);
+      d++;
+      W *= 1 + g;
+      if (W + secured >= T) break;
+      const x = eiLockAmount(plan, W, secured, profile);
+      if (x > 0) {
+        stops.push({ day: d, bank: round(W, 2), total: round(W + secured, 2), amount: x });
+        W -= x; secured += x;
       }
     }
-    return null;
+    return { stops, days: d - day0, maxStake: round(maxStake, 2), securedAtEnd: round(secured, 2) };
   }
 
-  // Aktif kasanın bugünkü durumu + (varsa) öneri
+  // Aktif kasanın bugünkü durumu: kupon / rahat sınır ışığı, kilitleme önerisi, düşüş uyarısı, yol haritası
   function getEICoach(plan, sim) {
     sim = sim || buildKasaSimulation(plan, null);
     const S = Number(plan.startingBank) || 0;
+    const T = Number(plan.targetBank) || 0;
     const profile = sim.currentProfile;
     const filled = sim.rows.filter(r => r.actualBank != null);
     const last = filled[filled.length - 1] || null;
-    const W = sim.currentBank;
-    const secured = sim.secured;
+    const W = sim.currentBank, secured = sim.secured;
     const f = eiStakeFraction(plan, profile);
-    const comfort = eiComfort(plan, secured);
     const stake = round(W * f, 2);
-    const base = {
+    const limit = eiLimit(plan, secured);
+    const total = round(W + secured, 2);
+    const coach = {
       day: last ? last.day : 0,
       working: W,
       secured,
-      total: round(W + secured, 2),
+      total,
+      reachPct: T > 0 ? round(Math.min(100, (total / T) * 100), 1) : 0,
       profile,
+      lowerProfile: eiOneStepDown(profile),
       stake,
-      comfort,
-      stressMultiple: comfort > 0 ? round(stake / comfort, 2) : 0,
-      level: stake >= EI_CONFIG.stressMultiple * comfort ? 'high' : stake > comfort * 1.25 ? 'watch' : 'calm',
-      signal: null
+      limit,
+      level: stake > limit ? 'red' : stake > limit * EI_CONFIG.watchRatio ? 'yellow' : 'green',
+      reached: T > 0 && total >= T,
+      lock: null,
+      drop: null
     };
-    // O gün zaten cash-out yapıldıysa aynı gün tekrar önerilmez
-    if (!last || last.cashout) return base;
-
-    // Zirve: son cash-out'tan beri oyundaki kasa; seri: son N gün hep büyüme
+    // Bugün zaten kilitleme/geri alma yapıldıysa yeni öneri yok
+    const actedToday = !!(last && last.cashout);
+    if (last && !coach.reached && !actedToday && coach.level === 'red') {
+      const amount = eiLockAmount(plan, W, secured, profile);
+      if (amount > 0) coach.lock = { amount, stakeAfter: round((W - amount) * f, 2), limitAfter: eiLimit(plan, secured + amount) };
+    }
+    // Zirve: son kilitlemeden beri oyundaki kasa
     const lastCash = sim.cashouts.length ? sim.cashouts[sim.cashouts.length - 1].day : 0;
-    const since = filled.filter(r => r.day > lastCash);
     const lastCashRow = lastCash ? sim.rows.find(r => r.day === lastCash) : null;
-    const base0 = lastCashRow ? lastCashRow.actualBank - lastCashRow.cashout : S;
-    const peak = Math.max(base0, ...since.map(r => r.actualBank));
-    let streakFrom = null;
-    const n = EI_CONFIG.streakDays;
-    const tail = sim.rows.slice(Math.max(0, last.day - n), last.day);
-    if (tail.length === n && tail.every(r => r.actualBank != null && r.dailyChange > 0 && r.day > lastCash)) {
-      streakFrom = tail[0].startBank;
+    const base0 = lastCashRow && lastCashRow.actualBank != null ? lastCashRow.actualBank - lastCashRow.cashout : S;
+    const peak = Math.max(base0, ...filled.filter(r => r.day > lastCash).map(r => r.actualBank));
+    if (last && !coach.reached && W <= peak * (1 - EI_CONFIG.drawdownPct)) {
+      coach.drop = { pct: round((1 - W / peak) * 100, 0), peak: round(peak, 2) };
     }
-    const signal = eiDetect(plan, W, secured, profile, { peak, streakFrom });
-    if (signal) {
-      signal.key = `${signal.type}@${last.day}`;
-      signal.dismissed = (plan.eiDismissed || []).includes(signal.key);
-    }
-    base.signal = signal;
-    return base;
-  }
-
-  // Yol haritası: bugünden itibaren her gün hedef büyüme gerçekleşirse koç hangi seviyede ne önerir
-  // (önerilen seçenek uygulanır). Karşılaştırma için koçsuz (hiç cash-out yok) gidiş de hesaplanır.
-  function buildEIRoadmap(plan, sim) {
-    sim = sim || buildKasaSimulation(plan, null);
-    const T = Number(plan.targetBank) || 0;
-    const filled = sim.rows.filter(r => r.actualBank != null);
-    const day0 = filled.length ? filled[filled.length - 1].day : 0;
-    let W = sim.currentBank, secured = sim.secured, profile = sim.currentProfile;
-    const steps = [];
-    let maxStake = 0;
-    let d = day0;
-    const lastRow = filled[filled.length - 1];
-    let checkToday = !!lastRow && !lastRow.cashout;
-    while (W < T && d - day0 < EI_CONFIG.maxRoadmapDays) {
-      if (!checkToday) {
-        // Günün kuponu (gün başı kasa ile) oynanır, gün sonunda koç kontrol eder
-        maxStake = Math.max(maxStake, W * eiStakeFraction(plan, profile));
-        d++;
-        W = W * (1 + resolvePlanRisk(plan, profile).dailyGrowthRate);
-      }
-      checkToday = false;
-      const sig = eiDetect(plan, W, secured, profile);
-      if (!sig || sig.type === 'reached' || !sig.options || !sig.options.length) continue;
-      const opt = sig.options.find(o => o.recommended) || sig.options[0];
-      steps.push({
-        day: d,
-        type: sig.type,
-        bankBefore: round(W, 2),
-        stakeBefore: round(W * eiStakeFraction(plan, profile), 2),
-        fromProfile: profile,
-        toProfile: opt.profile,
-        amount: opt.amount,
-        securedAfter: opt.securedAfter,
-        stakeAfter: opt.stakeAfter
-      });
-      W = opt.workingAfter; secured = opt.securedAfter; profile = opt.profile;
-    }
-    // Koçsuz: aynı risk faktörüyle hiç kenara koymadan
-    const g0 = resolvePlanRisk(plan, sim.currentProfile).dailyGrowthRate;
-    const W0 = sim.currentBank, sec0 = sim.secured;
-    const daysWithout = W0 >= T ? 0 : calculateDaysToTarget(W0, T, g0);
-    const f0 = eiStakeFraction(plan, sim.currentProfile);
-    const maxStakeWithout = daysWithout ? round(W0 * Math.pow(1 + g0, daysWithout - 1) * f0, 2) : 0;
-    return {
-      fromDay: day0,
-      steps,
-      daysWith: d - day0,
-      reached: W >= T,
-      maxStakeWith: round(maxStake, 2),
-      securedAtEnd: round(secured, 2),
-      daysWithout,
-      maxStakeWithout
+    // Yol haritası: bugünün önerisi uygulanmış kabul edilir
+    const wNow = coach.lock ? W - coach.lock.amount : W;
+    const sNow = coach.lock ? secured + coach.lock.amount : secured;
+    const proj = eiProject(plan, wNow, sNow, profile, coach.day);
+    const done = sim.cashouts.filter(c => c.amount > 0).map(c => {
+      const row = sim.rows.find(r => r.day === c.day);
+      return { day: c.day, total: row && row.totalBank != null ? row.totalBank : null, amount: c.amount };
+    });
+    coach.roadmap = {
+      done,
+      today: coach.lock ? { day: coach.day, total, amount: coach.lock.amount } : null,
+      stops: proj.stops,
+      days: proj.days,
+      maxStake: proj.maxStake
     };
+    coach.next = proj.stops[0] || null;
+    return coach;
   }
 
-  // Öneriyi uygular: o günün gerçek kasasından `amount` kenara konur, risk faktörü `toProfile` olur.
-  // Negatif `amount` güven payından oyundaki kasaya geri almadır (en fazla güven payı kadar).
+  // Kilitleme: o günün oyundaki kasasından `amount` kilitlenir; isteğe bağlı risk faktörü `toProfile` olur.
+  // Negatif `amount` kilitli paradan oyundaki kasaya geri almadır (en fazla kilitli para kadar).
   function applyCashout(state, { day, amount, toProfile, reason } = {}) {
     if (!state || !state.plan) return null;
     const plan = { ...state.plan };
@@ -1429,7 +1330,7 @@
     const sim = buildKasaSimulation(plan, state);
     const row = sim.rows.find(r => r.day === d);
     const before = row && row.actualBank != null ? row.actualBank : sim.currentBank;
-    // Aynı gün önceden kenara konan/geri alınan düşülür
+    // Aynı gün önceden kilitlenen/geri alınan düşülür
     const available = row && row.actualBank != null ? round(row.actualBank - (row.cashout || 0), 2) : sim.currentBank;
     if (amt > available || -amt > sim.secured) return null;
     const rec = {
@@ -1451,7 +1352,7 @@
     return rec;
   }
 
-  // Son güven payı işlemini (kenara koyma / geri alma) geri alır; risk faktörü de öncekine döner
+  // Son kilitleme / geri alma işlemini geri alır; risk faktörü de öncekine döner
   function undoLastCashout(state) {
     if (!state || !state.plan) return null;
     const list = getPlanCashouts(state.plan);
@@ -1461,15 +1362,6 @@
     if (state.settings) state.settings.riskProfile = rec.fromProfile;
     syncActivePlan(state);
     return rec;
-  }
-
-  // "Şimdilik devam et": o günün önerisi bir daha gösterilmez
-  function dismissEISignal(state, key) {
-    if (!state || !state.plan || !key) return false;
-    const list = (state.plan.eiDismissed || []).filter(k => k !== key).concat(key).slice(-50);
-    state.plan = { ...state.plan, eiDismissed: list };
-    syncActivePlan(state);
-    return true;
   }
 
   // Excel dosyasındaki örnek kasa (Başlangıç 50 €, Hedef 1000 €, Medium, 1-12. gün gerçek kasa)
@@ -2205,6 +2097,11 @@
   function ensurePlansArray(state) {
     if (!state) return null;
     if (!Array.isArray(state.closedPlans)) state.closedPlans = [];
+    // Silinen / yeniden açılan kapatılmış kasalar (tarihli işaret): başka cihazdan gelen eski kopya geri gelmesin
+    const tomb = state.closedTombstones || {};
+    if (Object.keys(tomb).length) {
+      state.closedPlans = state.closedPlans.filter(c => !(tomb[c.id] >= Date.parse(c.closedAt || 0)));
+    }
     // Başka cihazdan senkronla gelen kopya kapatılmış bir kasayı yeniden aktif etmesin
     if (state.closedPlans.length && Array.isArray(state.plans)) {
       const closedIds = new Set(state.closedPlans.map(c => c.id));
@@ -2276,6 +2173,7 @@
       availableBalance: round(startBank, 2),
       riskProfile,
       customRisk,
+      comfortLimit: Number(planParams.comfortLimit) > 0 ? round(Number(planParams.comfortLimit), 2) : null,
       dailyBanks: Object.assign({}, planParams.dailyBanks || {}),
       status: 'active'
     };
@@ -2360,6 +2258,35 @@
       description: `${plan.name} kapatıldı (${record.startingBank} → ${record.finalBank})`
     });
     return record;
+  }
+
+  function markClosedRemoved(state, id) {
+    state.closedTombstones = Object.assign({}, state.closedTombstones || {}, { [id]: Date.now() });
+  }
+
+  // Kapatılan kasayı düzeltmek için yeniden açar: kasa, geçmişiyle birlikte aktif kasalara döner
+  function reopenClosedPlan(state, id) {
+    ensurePlansArray(state);
+    const rec = (state.closedPlans || []).find(c => c.id === id);
+    if (!rec || !rec.plan) return null;
+    markClosedRemoved(state, id);
+    state.closedPlans = state.closedPlans.filter(c => c.id !== id);
+    const plan = { ...rec.plan, name: rec.name || rec.plan.name, status: 'active' };
+    state.plans = state.plans.filter(p => p.id !== id).concat(plan);
+    state.activePlanId = plan.id;
+    state.plan = plan;
+    if (!state.settings) state.settings = {};
+    state.settings.riskProfile = plan.riskProfile;
+    return plan;
+  }
+
+  // Kapatılan kasayı listeden kalıcı olarak siler
+  function deleteClosedPlan(state, id) {
+    ensurePlansArray(state);
+    if (!(state.closedPlans || []).some(c => c.id === id)) return false;
+    markClosedRemoved(state, id);
+    state.closedPlans = state.closedPlans.filter(c => c.id !== id);
+    return true;
   }
 
   // Kapatılan kasaların bugüne kadarki toplamı
@@ -3044,14 +2971,14 @@
     KASA_V01_EXAMPLE,
     KASA_SHEET_DAYS,
     closePlan,
+    reopenClosedPlan,
+    deleteClosedPlan,
     getClosedPlansSummary,
     EI_CONFIG,
     getPlanCashouts,
     getEICoach,
-    buildEIRoadmap,
     applyCashout,
     undoLastCashout,
-    dismissEISignal,
     syncActivePlan,
     classifyPlanStatus,
     getPlanMetrics,

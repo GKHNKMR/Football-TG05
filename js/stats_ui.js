@@ -179,26 +179,18 @@
       ${pager}</div>`;
   }
 
-  // Lig filtresi: Fikstür ile aynı bayraklı düğme şeridi (index.html → leagueChipsHtml).
-  // Sayılar sezon ve takım aramasına göre, lig hariç.
-  function leagueChips() {
-    if (typeof root.leagueChipsHtml !== 'function') return '';
-    const q = st.q.toLocaleLowerCase('tr-TR').split(/\s+/).filter(Boolean);
-    const counts = { 'Tümü': 0 };
-    for (const r of DATA.rows) {
-      if (st.season && r[14] !== st.season) continue;
-      if (q.length && !q.every(w => (r[2] + ' ' + r[3]).toLocaleLowerCase('tr-TR').includes(w))) continue;
-      counts['Tümü']++; counts[r[1]] = (counts[r[1]] || 0) + 1;
-    }
-    return `<div class="lgchips" id="stLeagues" role="group" aria-label="${T('Lig filtresi')}">${root.leagueChipsHtml(counts, curLeague())}</div>`;
+  function leagueSelect() {
+    const lgs = (typeof leagues !== 'undefined' ? leagues : ['Tümü']);
+    return `<select class="sel" id="stLeague" title="${T('Lig filtresi')}">${lgs.map(l => `<option value="${escH(l)}"${l === curLeague() ? ' selected' : ''}>${l === 'Tümü' ? T('Tüm ligler') : escH(l)}</option>`).join('')}</select>`;
   }
 
   function controls() {
     const seasons = DATA.seasons || [];
     return `<div class="st-ctl">
+      ${leagueSelect()}
       <select class="sel" id="stSeason"><option value="">${T('Tüm sezonlar')}</option>${seasons.map(s => `<option value="${s}"${s === st.season ? ' selected' : ''}>${s}</option>`).join('')}</select>
       <span class="srch"><input id="stQ" type="search" placeholder="${T('Takım ara…')}" value="${escH(st.q)}" autocomplete="off" spellcheck="false"></span>
-    </div>${leagueChips()}`;
+    </div>`;
   }
 
   function render() {
@@ -218,8 +210,7 @@
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
     $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };
-    const lgBox = $('stLeagues');
-    if (lgBox) lgBox.onclick = e => { const b = e.target.closest('.lgchip'); if (!b || b.disabled) return; if (typeof setLeague === 'function') setLeague(b.dataset.lg); st.page = 0; render(); };
+    $('stLeague').onchange = e => { if (typeof setLeague === 'function') setLeague(e.target.value); st.page = 0; render(); };
     host.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { st.res = b.dataset.res; st.page = 0; render(); });
     let t = null;
     $('stQ').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); st.page = 0; render(); }, 250); };

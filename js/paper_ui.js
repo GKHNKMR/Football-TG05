@@ -1263,36 +1263,12 @@
     return KASA_RISK_LABELS[k] || _t('Özel');
   }
 
-  // Başlangıçtan hedefe logaritmik konum (para algısı orantısal: 50→100 ile 1.000→2.000 aynı adım gibi hissedilir)
-  function eiPos(v, S, T) {
-    if (!(v > 0) || !(T > S) || !(S > 0)) return 0;
-    return Math.max(0, Math.min(100, (Math.log(v / S) / Math.log(T / S)) * 100));
-  }
-
-  function renderEIRoadHtml(coach, plan, curr) {
-    const S = Number(plan.startingBank) || 0, T = Number(plan.targetBank) || 0;
-    const m = v => formatCurrency(v, curr);
-    const mark = (v, cls, title, icon) => `<span class="ei-stop ${cls}" style="left:${eiPos(v, S, T).toFixed(1)}%" title="${esc(title)}">${icon}</span>`;
-    const r = coach.roadmap;
-    const marks = []
-      .concat(r.done.filter(x => x.total != null).map(x => mark(x.total, 'done', _t('{day}. gün: {amount} kilitlendi', { day: x.day, amount: m(x.amount) }), '🔒')))
-      .concat(r.today ? [mark(r.today.total, 'today', _t('Bugün: {amount} kilitle', { amount: m(r.today.amount) }), '🔒')] : [])
-      .concat(r.stops.map(x => mark(x.total, 'next', _t('Kasa {bank} olunca {amount} kilitle', { bank: m(x.total), amount: m(x.amount) }), '🔒')))
-      .join('');
-    const pos = eiPos(coach.total, S, T);
-    return `
-      <div class="ei-road" aria-label="${_t('Hedefe giden yol')}">
-        <div class="ei-track"><i style="width:${pos.toFixed(1)}%"></i>${marks}
-          <span class="ei-you" style="left:${pos.toFixed(1)}%" title="${esc(_t('Sen buradasın: {v}', { v: m(coach.total) }))}"></span>
-        </div>
-        <div class="ei-road-ends"><span>${m(S)}</span><span>${m(T)}</span></div>
-      </div>`;
-  }
-
   function renderEICoachHtml(plan, sim, curr) {
     const c = PE.getEICoach(plan, sim);
     const m = v => formatCurrency(v, curr);
-    const light = { green: '🟢', yellow: '🟡', red: '🔴' }[c.level];
+    // Durak kasası yaklaşık gösterilir (263,37 € → ~260 €): kişi kuruşla değil, seviyeyle ilgilenir
+    const approx = v => '~' + formatCurrency(v >= 100 ? Math.round(v / 10) * 10 : Math.round(v), curr).replace(/[.,]00(?=\D*$)/, '');
+    const vars = { stake: `<b>${m(c.stake)}</b>`, limit: `<b>${m(c.limit)}</b>` };
 
     let status;
     if (!c.day) {
@@ -1300,36 +1276,36 @@
     } else if (c.reached) {
       status = `<p class="ei-msg good">${_t('🏁 Hedefe ulaştın! Kasayı kapatıp kazancını koruyabilirsin.')}</p>`;
     } else {
+      const line = {
+        red: _t('🔴 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Sınırı aştın.', vars),
+        yellow: _t('🟡 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Sınıra yaklaşıyorsun.', vars),
+        green: _t('🟢 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Rahatsın.', vars)
+      }[c.level];
       status = `
-        <div class="ei-light ei-${c.level}" title="${esc(_t('Rahat sınır = seçtiğin tutar ({base}) + kilitli paran. Kilitli para güvende olduğu için sınır onunla birlikte büyür.', { base: m(c.limit - c.secured) }))}">${light} ${_t('Bugünkü kuponun {stake} · Rahat sınırın {limit}', { stake: `<b>${m(c.stake)}</b>`, limit: `<b>${m(c.limit)}</b>` })}</div>
+        <div class="ei-light ei-${c.level}">${line}</div>
         ${c.lock ? `
           <div class="ei-act">
             <button type="button" class="ei-lock-btn" id="btnEILock" data-day="${c.day}" data-amount="${c.lock.amount}">${_t('🔒 {amount} kilitle', { amount: m(c.lock.amount) })}</button>
-            ${c.lowerProfile ? `<label class="ei-chk"><input type="checkbox" id="eiLowerRisk"> ${_t('riski de {risk} seviyesine düşür', { risk: eiRiskName(c.lowerProfile) })}</label>` : ''}
-            <span class="ei-muted">${_t('Sonra kuponun {stake} olur.', { stake: m(c.lock.stakeAfter) })}</span>
-          </div>`
-        : `<p class="ei-msg">${c.level === 'yellow' ? _t('Sınırına yaklaşıyorsun.') : _t('Rahatsın, planına devam et.')}</p>`}
-        ${c.drop ? `<p class="ei-msg bad">${_t('📉 Zirveden %{pct} düştün. Bugün mola vermeyi düşün; kaybı hemen geri kazanmaya çalışma.', { pct: c.drop.pct })}</p>` : ''}`;
+            <span class="ei-muted">${_t('Kuponun {stake} olur.', { stake: m(c.lock.stakeAfter) })}</span>
+          </div>` : ''}
+        ${c.drop ? `<p class="ei-msg bad">${_t('📉 Zirveden %{pct} düştün. Bugün mola vermeyi düşün; kaybı hemen geri kazanmaya çalışma.', { pct: c.drop.pct })}</p>` : ''}
+        ${!c.lock && c.next ? `<p class="ei-next">${_t('Sonraki kilit: kasan {bank} olunca.', { bank: approx(c.next.total) })}</p>` : ''}`;
     }
-
-    // Durak kasası yaklaşık gösterilir (263,37 € → ~260 €): kişi kuruşla değil, seviyeyle ilgilenir
-    const approx = v => '~' + formatCurrency(v >= 100 ? Math.round(v / 10) * 10 : Math.round(v), curr).replace(/[.,]00(?=\D*$)/, '');
-    const next = c.next
-      ? _t('Sıradaki durak: kasa {bank} olunca {amount} kilitle', { bank: approx(c.next.total), amount: m(c.next.amount) })
-      : (c.reached ? '' : _t('Hedefe kadar başka durak yok.'));
 
     return `
       <div class="card ei-card" id="eiCoachCard">
         <h3 class="ei-title">${_t('🔒 Güven Payı')}</h3>
-        <p class="ei-lead">${_t('Kasan büyüdükçe bir kısmını kilitle. Kilitlediğin para bir daha riske girmez ama hedefine sayılır.')}</p>
+        <p class="ei-lead">${_t('Kasan büyüdükçe bir kısmını kilitle. Kilitli para bir daha riske girmez ama hedefine sayılır.')}</p>
         <div class="ei-sum">
           <span>${_t('Oyundaki')} <b>${m(c.working)}</b></span>
           <span>${_t('Kilitli')} <b class="good">${m(c.secured)}</b></span>
-          <span>${_t('Toplam')} <b>${m(c.total)}</b> <em>${_t('(hedefin {pct})', { pct: formatPct(c.reachPct, 0) })}</em></span>
+          <span>${_t('Toplam')} <b>${m(c.total)}</b></span>
         </div>
         ${status}
-        ${renderEIRoadHtml(c, plan, curr)}
-        ${next ? `<p class="ei-next">${next}</p>` : ''}
+        <details class="ei-why">
+          <summary>${_t('Güvenli sınır nedir?')}</summary>
+          <p>${_t('ei.why', { start: m(Number(plan.startingBank) || 0) })}</p>
+        </details>
         <div class="ei-links">
           <button type="button" class="ei-link" id="btnEIManual" data-day="${c.day}" ${c.day ? '' : 'disabled'}>${_t('Kilitle')}</button>
           <button type="button" class="ei-link" id="btnEIReturn" data-day="${c.day}" ${c.day && c.secured > 0 ? '' : 'disabled'}>${_t('Geri al')}</button>
@@ -1345,12 +1321,7 @@
     const lock = document.getElementById('btnEILock');
     if (lock) {
       lock.onclick = () => {
-        const low = document.getElementById('eiLowerRisk');
-        const coach = PE.getEICoach(paperState.plan, PE.buildKasaSimulation(paperState.plan, paperState));
-        PE.applyCashout(paperState, {
-          day: Number(lock.dataset.day), amount: Number(lock.dataset.amount),
-          toProfile: low && low.checked && coach.lowerProfile ? coach.lowerProfile : undefined, reason: 'lock'
-        });
+        PE.applyCashout(paperState, { day: Number(lock.dataset.day), amount: Number(lock.dataset.amount), reason: 'lock' });
         rerenderAllPanes();
       };
     }
@@ -1447,8 +1418,6 @@
                 <input type="text" inputmode="decimal" id="ksStart" class="ks-input" value="${formatAmount(p.startingBank)}"></label>
               <label class="ks-row"><span>${_t('Hedef Kasa ({sym})', { sym })}</span>
                 <input type="text" inputmode="decimal" id="ksTarget" class="ks-input" value="${formatAmount(p.targetBank)}"></label>
-              <label class="ks-row" title="${_t('Tek kupona en fazla ne kadar koymak seni rahatsız etmez? Boş bırakırsan başlangıç kasası kullanılır.')}"><span>${_t('Rahat Sınır ({sym})', { sym })}</span>
-                <input type="text" inputmode="decimal" id="ksComfort" class="ks-input" value="${plan.comfortLimit > 0 ? formatAmount(plan.comfortLimit) : ''}" placeholder="${formatAmount(p.startingBank)}"></label>
               <label class="ks-row"><span>${_t('Risk Faktörü')}</span>
                 <select id="ksRisk" class="ks-input">
                   ${riskOptions.map(k => `<option value="${k}" ${k === p.riskProfile ? 'selected' : ''}>${esc(KASA_RISK_LABELS[k] || p.riskName)}</option>`).join('')}
@@ -1584,11 +1553,8 @@
         const defaultName = _t('Kasa {n}', { n: paperState.plans.length + 1 });
         const entered = prompt(_t('Yeni kasanın adı:'), defaultName);
         if (entered === null) return; // Vazgeç
-        const comfortRaw = prompt(_t('Tek kupona en fazla ne kadar koymak seni rahatsız etmez? Boş bırakırsan başlangıç kasası kullanılır. (Sonra "Rahat Sınır" alanından değiştirebilirsin.)'), '');
-        const comfort = comfortRaw == null ? null : parseKasaAmount(comfortRaw);
         PE.createNewPlan(paperState, {
           name: entered.trim().slice(0, 40) || defaultName,
-          comfortLimit: comfort > 0 ? comfort : null,
           startingBank: PE.KASA_V01_EXAMPLE.startingBank,
           targetBank: PE.KASA_V01_EXAMPLE.targetBank,
           riskProfile: PE.KASA_V01_EXAMPLE.riskProfile
@@ -1690,15 +1656,6 @@
     };
     bindAmount('ksStart', 'startingBank', _t('Başlangıç kasası'));
     bindAmount('ksTarget', 'targetBank', _t('Hedef kasa'));
-    const comfortInp = document.getElementById('ksComfort');
-    if (comfortInp) {
-      comfortInp.onchange = () => {
-        const val = parseKasaAmount(comfortInp.value);
-        if (val == null) { alert(_t('Geçerli bir tutar girin veya boş bırakın.')); renderPlanPane(); return; }
-        PE.updatePlanInputs(paperState, { comfortLimit: val === '' ? null : val });   // boş = başlangıç kasası
-        rerenderAllPanes();
-      };
-    }
     const riskSel = document.getElementById('ksRisk');
     if (riskSel) {
       riskSel.onchange = () => {

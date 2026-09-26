@@ -1172,11 +1172,6 @@
     if (inputs.targetBank != null && Number(inputs.targetBank) > 0) {
       plan.targetBank = round(Number(inputs.targetBank), 2);
     }
-    // Rahat sınır: tek kupona en fazla ne kadar koymak kişiyi rahatsız etmez (boş/0 = başlangıç kasası)
-    if (inputs.comfortLimit !== undefined) {
-      const c = Number(inputs.comfortLimit);
-      plan.comfortLimit = c > 0 ? round(c, 2) : null;
-    }
     if (inputs.riskProfile) {
       plan.riskProfile = normalizeProfileKey(inputs.riskProfile);
       if (!state.settings) state.settings = {};
@@ -1191,9 +1186,12 @@
   // ---------------------------------------------------------------------------
   // Güven Payı (EI): kasa büyüdükçe bir kısmını kilitleme önerisi
   // ---------------------------------------------------------------------------
-  // Tek kural: bugünkü kupon (oyundaki kasa × oynanan pay) kişinin "rahat sınırını" geçerse kasanın bir
-  // kısmı kilitlenir; kupon sınırın dörtte birine iner. Rahat sınırı kişi kasa açarken söyler (varsayılan
-  // başlangıç kasası); kilitli para güvence verdiği için sınır kilitli para kadar büyür.
+  // Tek kural: bugünkü kupon (oyundaki kasa × oynanan pay) "güvenli sınırı" geçerse kasanın bir kısmı
+  // kilitlenir; kupon sınırın dörtte birine iner. Sınır otomatiktir: başlangıç kasası + kilitli para.
+  // - Zihinsel muhasebe (Thaler 1999): başlangıç kasası kişinin kaybetmeyi baştan kabul ettiği bütçedir.
+  // - Kasanın parası etkisi (Thaler & Johnson 1990): kazançtan sonra risk fark edilmeden artar; bu yüzden
+  //   sınır kazançla değil, yalnızca kilitlenen (güvenli) parayla büyür.
+  // - Tutar büyüdükçe beklenen hayal kırıklığı ve temkin artar (Weber & Chapman 2005).
   // Kilitli para bir daha riske girmez ama hedefe sayılır. Ayrıca zirveden %30 düşüşte mola uyarısı.
   const EI_CONFIG = {
     limitGrowth: 1.0,     // kilitlenen her 1 € rahat sınırı 1 € büyütür
@@ -1209,8 +1207,7 @@
   }
 
   function eiBaseLimit(plan) {
-    const c = Number(plan && plan.comfortLimit);
-    return c > 0 ? c : (Number(plan && plan.startingBank) || 0);
+    return Number(plan && plan.startingBank) || 0;
   }
 
   function eiLimit(plan, secured) {
@@ -2173,7 +2170,6 @@
       availableBalance: round(startBank, 2),
       riskProfile,
       customRisk,
-      comfortLimit: Number(planParams.comfortLimit) > 0 ? round(Number(planParams.comfortLimit), 2) : null,
       dailyBanks: Object.assign({}, planParams.dailyBanks || {}),
       status: 'active'
     };

@@ -1235,6 +1235,23 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .faq details p{margin:0;padding:0 18px 16px;color:var(--muted);font-size:14.5px;line-height:1.6}
 .faq details p b{color:var(--text)}
 @media(max-width:650px){.faq-intro{grid-template-columns:1fr}}
+/* #16 Telefonda üst alan: logo + düğmeler tek satır, sekmeler ince, başlık bandı yalnız Fikstür'de ve kısa */
+@media(max-width:650px){
+  .bv-tag{display:none}
+  .top .brand{font-size:21px;gap:6px}.bv-mark{width:26px;height:26px}
+  .topbar.wrapped{gap:4px 8px;padding-top:6px}
+  .top .iconbtn,.top .langsel{height:28px;min-width:28px}
+  .acctbtn{height:28px}
+  .topbar.wrapped .tabs{min-height:0;margin-bottom:6px}
+  .top .pg-tab{flex-direction:row;gap:5px;padding:5px 4px}
+  .top .pg-ic{display:none}.top .pg-lbl{font-size:11px;white-space:nowrap}
+  html:not([data-page="pred"]) .hero{display:none}
+  .hero{padding:8px 0 4px}.hero-t{font-size:18px;letter-spacing:-.3px}
+  .hero-s{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-top:6px;padding-bottom:2px}.hero-s::-webkit-scrollbar{display:none}
+  .hero-chip{flex:none;font-size:11px;padding:3px 8px 3px 6px}.hero-chip svg{width:13px;height:13px}
+}
+@media(max-width:420px){.top #refresh{display:none}}
+@media(max-width:380px){.top .brand{font-size:18px}.bv-mark{width:22px;height:22px}.acctbtn{padding:0 8px;font-size:11px}.top .topbtns{gap:4px}.top .pg-lbl{font-size:10px}}
 </style>
 
 </head>

@@ -984,6 +984,10 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .a-msg.ok{background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--text)}
 .a-msg[hidden]{display:none}
 .a-link{background:none;border:0;color:var(--good);font-weight:800;cursor:pointer;padding:0;font-size:13px;font-family:inherit}
+.a-link.a-danger{color:var(--bad);margin-left:auto}
+.a-btn.a-danger{background:var(--bad)}
+.a-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:0 0 12px;cursor:pointer}
+.a-check input{margin-top:2px}
 .a-prof{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:6px 0 14px}
 .a-prof dt{color:var(--muted);font-weight:700}
 .a-prof dd{margin:0;font-weight:800}
@@ -1402,7 +1406,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260926-gp2"></script>
+<script src="js/i18n.js?v=20260926-del"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
@@ -1413,7 +1417,7 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 <script src="js/stats_ui.js?v=20260925-vurgu4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/auth_config.js?v=20260923-google"></script>
-<script src="js/auth_sync.js?v=20260926-gp"></script>
+<script src="js/auth_sync.js?v=20260926-del"></script>
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga','Belgian Pro League'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';

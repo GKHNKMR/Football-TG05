@@ -93,6 +93,24 @@ begin
   return v_email;
 end $$;
 
+-- 6) "Hesabımı sil": giriş yapmış kullanıcı kendi hesabını ve ona bağlı tüm veriyi siler.
+--    auth.users satırı silinince profiles / user_state (on delete cascade), oturumlar ve
+--    Google kimliği de gider. Başkasının hesabına dokunamaz: yalnızca auth.uid() silinir.
+create or replace function public.delete_my_account()
+returns void language plpgsql security definer set search_path = public, auth as $$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then raise exception 'not_authenticated'; end if;
+  delete from public.login_attempts
+   where lower(username) = (select lower(username) from public.profiles where id = v_uid);
+  delete from public.user_state where user_id = v_uid;
+  delete from public.profiles  where id = v_uid;
+  delete from auth.users       where id = v_uid;
+end $$;
+
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
+
 revoke all on function public.email_for_login(text, text) from public;
 revoke all on function public.username_available(text) from public;
 grant execute on function public.email_for_login(text, text) to anon, authenticated;

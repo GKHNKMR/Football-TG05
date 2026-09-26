@@ -17,6 +17,7 @@ TESTS = [
     'test_paper_betting.py',     # Sanal Kasa motoru + ekranı, menü, üst menü taşması
     'test_cifte_tab.py',         # Fikstür bülteni, Çifte Şans vurgusu, lig filtresi
     'test_cifte_backtest.py',    # Çifte Şans model doğruluğu (gizli sekme)
+    'test_delete_account.py',    # Hesabımı sil akışı (sahte Supabase)
     'verify_site.py',            # Model doğruluğu tabloları, 30 günlük simülasyon, tüm sekmeler açılıyor
 ]
 

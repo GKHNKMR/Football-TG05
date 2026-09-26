@@ -20,7 +20,9 @@
 
   const LS = root.localStorage;
   const origSet = Storage.prototype.setItem, origRemove = Storage.prototype.removeItem, origGet = Storage.prototype.getItem;
-  let applying = false, client = null, user = null, profile = null, pushTimer = null, pushing = null, lastSync = null;
+  let applying = false, client = null, user = null, profile = null, pushTimer = null, pushing = null, lastSync = null, deleting = false;
+  // Hesap silinirken "bu cihazdaki verileri de sil" seçilse bile dil ve tema kalsın (kişisel veri değil)
+  const KEEP_ON_WIPE = new Set(['betavus.lang', 'betavus.theme2']);
 
   const tracked = k => typeof k === 'string' && k.startsWith(PREFIX) && !NO_SYNC.has(k) && !k.startsWith(BACKUP);
   function metaGet() { try { const m = JSON.parse(origGet.call(LS, META) || '{}'); m.t = m.t || {}; m.synced = m.synced || {}; return m; } catch (e) { return { t: {}, synced: {} }; } }
@@ -120,7 +122,7 @@
   }
 
   async function syncNow(opts) {
-    if (!client || !user) return;
+    if (!client || !user || deleting) return;
     if (pushing) { await pushing.catch(() => {}); }
     pushing = (async () => {
       const m = metaGet();
@@ -142,7 +144,7 @@
     finally { pushing = null; }
   }
   function schedulePush() {
-    if (!client || !user) return;
+    if (!client || !user || deleting) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(() => syncNow(), 1500);
   }
@@ -378,12 +380,64 @@
         <dt>${T('Cinsiyet')}</dt><dd>${escH(g)}</dd><dt>${T('Ülke')}</dt><dd>${escH(p.country ? countryName(p.country) : '—')}</dd></dl>
       <p class="a-sub">${T('Sanal Kasa ve tercihlerin hesabına kaydedilir; başka bir cihazda giriş yaptığında aynı veriler orada da görünür.')} <span id="aSync"></span></p>
       <button class="a-btn" type="button" id="aSyncNow">${T('Şimdi senkronla')}</button>
-      <p style="margin:12px 0 0;font-size:13px;display:flex;gap:16px"><button type="button" class="a-link" id="aEdit">${T('Profili düzenle')}</button><button type="button" class="a-link" id="aOut">${T('Çıkış yap')}</button></p>
+      <p style="margin:12px 0 0;font-size:13px;display:flex;gap:16px"><button type="button" class="a-link" id="aEdit">${T('Profili düzenle')}</button><button type="button" class="a-link" id="aOut">${T('Çıkış yap')}</button><button type="button" class="a-link a-danger" id="aDel">${T('Hesabımı sil')}</button></p>
       <div id="aMsg" class="a-msg" hidden></div></div>`);
     setStatus('');
     $('aSyncNow').onclick = async () => { busy($('aSyncNow'), true, T('Senkronlanıyor…')); await syncNow(); busy($('aSyncNow'), false, T('Şimdi senkronla')); setStatus(''); };
     $('aEdit').onclick = showCompleteProfile;
     $('aOut').onclick = signOut;
+    $('aDel').onclick = showDeleteAccount;
+  }
+
+  // Hesabı ve buluttaki tüm veriyi kalıcı siler (Supabase: delete_my_account, supabase/hesap_silme.sql)
+  function showDeleteAccount() {
+    const name = (profile && profile.username) || user.email || '';
+    modal(`<div class="auth-tabs"><button type="button" class="on">${T('Hesabımı sil')}</button><button type="button" class="auth-x" aria-label="${T('Kapat')}">×</button></div>
+      <div class="auth-body"><h3>${T('Hesabını kalıcı olarak sil')}</h3>
+      <p class="a-sub">${T('Hesabın, profilin ve hesabına kaydedilmiş tüm Sanal Kasa verilerin kalıcı olarak silinir. Bu işlem geri alınamaz.')}</p>
+      <form id="aForm" novalidate>
+        <label class="a-check"><input type="checkbox" id="aDelLocal" checked><span>${T('Bu cihazdaki Sanal Kasa verilerini de sil')}</span></label>
+        <label class="a-field"><span>${T('Onaylamak için kullanıcı adını yaz: {name}', { name: escH(name) })}</span><input id="aDelConfirm" autocomplete="off" spellcheck="false"></label>
+        <button class="a-btn a-danger" type="submit" id="aSubmit" disabled>${T('Hesabımı kalıcı olarak sil')}</button>
+      </form>
+      <p style="margin:10px 0 0;font-size:13px"><button type="button" class="a-link" id="aBack">${T('Vazgeç')}</button></p>
+      <div id="aMsg" class="a-msg" hidden></div></div>`);
+    $('aBack').onclick = showAccount;
+    $('aDelConfirm').oninput = e => { $('aSubmit').disabled = e.target.value.trim().toLowerCase() !== name.toLowerCase(); };
+    $('aForm').onsubmit = async e => {
+      e.preventDefault(); msg('');
+      const btn = $('aSubmit');
+      if (btn.disabled) return;
+      busy(btn, true, T('Siliniyor…'));
+      clearTimeout(pushTimer);
+      deleting = true;                       // silme sürerken senkron buluta yazmasın
+      if (pushing) await pushing.catch(() => {});
+      const { error } = await client.rpc('delete_my_account');
+      if (error) {
+        deleting = false;
+        const missing = error.code === 'PGRST202' || /could not find the function/i.test(error.message || '');
+        msg(missing ? T('Hesap silme henüz etkinleştirilmedi. Lütfen daha sonra tekrar dene.') : T('Hesap silinemedi: ') + error.message);
+        busy(btn, false, T('Hesabımı kalıcı olarak sil'));
+        return;
+      }
+      const wipeLocal = $('aDelLocal').checked;
+      applying = true;
+      try {
+        const keys = [];
+        for (let i = 0; i < LS.length; i++) {
+          const k = LS.key(i);
+          if (k === META || (wipeLocal && k && k.startsWith(BACKUP)) || (wipeLocal && tracked(k) && !KEEP_ON_WIPE.has(k))) keys.push(k);
+        }
+        keys.forEach(k => origRemove.call(LS, k));
+      } finally { applying = false; }
+      // Kullanıcı sunucuda artık yok: yalnızca bu cihazdaki oturumu kapat
+      try { await client.auth.signOut({ scope: 'local' }); } catch (err) {}
+      user = null; profile = null; deleting = false; renderButton();
+      modal(`<div class="auth-tabs"><button type="button" class="on">${T('Hesabımı sil')}</button></div>
+        <div class="auth-body"><h3>${T('Hesabın silindi')}</h3><p class="a-sub">${wipeLocal ? T('Hesabın ve tüm verilerin silindi. Bu cihazdaki Sanal Kasa verileri de temizlendi.') : T('Hesabın ve buluttaki tüm verilerin silindi. Bu cihazdaki Sanal Kasa verileri yerinde duruyor.')}</p>
+        <button class="a-btn" type="button" id="aOk">${T('Tamam')}</button></div>`);
+      $('aOk').onclick = () => location.reload();
+    };
   }
 
   async function signOut() {

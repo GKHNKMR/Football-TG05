@@ -48,3 +48,15 @@ kullanıcı sayısı artınca **Project Settings → Auth → SMTP** ile kendi S
   buluttakilerle **birleştirilir**, üzerine yazılmaz. Üzerine yazılan her yerel değerin son 3
   kopyası tarayıcıda `betavus.__backup.*` altında saklanır.
 - Erişim kodu kapısı olduğu gibi duruyor; üyelik onun arkasında çalışır.
+
+## 5. "Hesabımı sil" (26.09.2026'da eklendi)
+Kurulum 26 Eylül'den önce yapıldıysa bir kez: **SQL Editor** → `supabase/hesap_silme.sql`
+dosyasının tamamını yapıştır → **Run**. Bu yapılana kadar sitedeki "Hesabımı sil" butonu
+"hesap silme henüz etkin değil" der ve hiçbir şeyi silmez.
+
+Kontrol (giriş yapmadan çağrılınca yetki hatası vermeli, "Could not find the function" değil):
+```sh
+curl -X POST https://<proje-ref>.supabase.co/rest/v1/rpc/delete_my_account -H "apikey: <anon anahtar>"
+```
+Kullanıcı yalnızca kendi hesabını silebilir; hesap, profil, Sanal Kasa verisi (`user_state`),
+oturumlar ve Google bağlantısı kalıcı olarak silinir.

@@ -959,6 +959,19 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .cs-nav{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;text-transform:capitalize}
 .cs-nb{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;line-height:1;cursor:pointer}
 .cs-nb:disabled{opacity:.35;cursor:default}
+.cs-target{border:2px solid var(--good);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:6px;background:color-mix(in srgb,var(--good) 5%,var(--panel))}
+.cs-target .cs-legs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.cs-est{font-style:normal;font-size:11px;color:var(--muted)}
+.cs-proj{font-size:13px;line-height:1.45;border-top:1px dashed var(--line);padding-top:8px}
+.cs-projm{font-size:12px;color:var(--muted);margin-top:3px}
+.cs-res{flex:none;font-size:12px;font-weight:900;border-radius:6px;padding:2px 6px}
+.cs-res.won{color:#16a34a;background:rgba(22,163,74,.1)}.cs-res.lost{color:#dc2626;background:rgba(220,38,38,.1)}
+.cs-past{font-size:13px;border-top:1px dashed var(--line);padding-top:8px}
+.cs-past summary{cursor:pointer}.cs-past ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.cs-pr{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:5px 8px;border-radius:8px;background:var(--panel2);text-transform:capitalize}
+.cs-pr.won b{color:#16a34a}.cs-pr.lost b{color:#dc2626}
+.cs-muted{color:var(--muted)}
+.cs-h3{font-size:13px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px}
 .cs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .cs-tier{min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
 .cs-tier.mine{border:2px solid var(--good);box-shadow:0 0 0 4px color-mix(in srgb,var(--good) 12%,transparent)}
@@ -1483,13 +1496,13 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260926-cpn"></script>
+<script src="js/i18n.js?v=20260926-cpn2"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
 <script src="js/paper_engine.js?v=20260926-gp2"></script>
-<script src="js/paper_ui.js?v=20260926-cpn"></script>
-<script src="js/coupon_suggest.js?v=20260926-cpn"></script>
+<script src="js/paper_ui.js?v=20260926-tgt"></script>
+<script src="js/coupon_suggest.js?v=20260926-cpn2"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
 <script src="js/stats_ui.js?v=20260926-cal"></script>

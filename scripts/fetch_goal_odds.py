@@ -99,24 +99,41 @@ def parse_iso(s):
     return datetime.fromisoformat(s.replace('Z', '+00:00'))
 
 
+def league_name_ok(x, want):
+    """API lig adı bizimkine uyuyor mu? ('LaLiga' / 'La Liga EA Sports' / 'Premier League' …)"""
+    n = norm(x.get('name', '')).replace(' ', '')
+    w = want.replace(' ', '')
+    return n == w or (n.startswith(w) and not any(c.isdigit() for c in n[len(w):]))
+
+
 def find_league_ids(budget, known, misses, now):
-    """misses: bulunamayan lig → son deneme; kota harcamamak için günde bir kez yeniden denenir."""
+    """misses: bulunamayan lig → {at, seen}; kota harcamamak için günde bir kez yeniden denenir.
+    seen: API'nin o ülke için döndürdüğü adlar (eşleşmeyince neden olduğunu görmek için)."""
     ids = dict(known)
     for ours, (country, want) in LEAGUES.items():
-        if ours in ids or (misses.get(ours) and now - parse_iso(misses[ours]) < timedelta(hours=24)):
+        m = misses.get(ours)
+        if ours in ids or (isinstance(m, dict) and now - parse_iso(m['at']) < timedelta(hours=24)):
             continue
         resp = api_get(budget, '/leagues', {'country': country, 'per_page': 100})
         if resp is None:
             continue
-        cands = [x for x in rows(resp) if norm(x.get('name', '')) == want]
+        got = rows(resp)
+        if not got and not resp.get('_error'):     # ülke filtresi boş döndüyse adla ara
+            resp = api_get(budget, '/leagues', {'search': want.title(), 'per_page': 100}) or {}
+            got = rows(resp)
+        cands = [x for x in got if league_name_ok(x, want)]
         if cands:
-            best = max(cands, key=lambda x: x.get('last_fixture_ts') or 0)
+            best = max(cands, key=lambda x: (x.get('is_popular') or 0, x.get('last_fixture_ts') or 0))
             ids[ours] = best['id']
             misses.pop(ours, None)
             print(f'  lig: {ours} → {best["id"]} ({best.get("name")})')
         else:
-            misses[ours] = now.isoformat(timespec='seconds')
-            print(f'  lig bulunamadı: {ours} ({country}): {[x.get("name") for x in rows(resp)][:15]}')
+            seen = [f"{x.get('name')} [{(x.get('country') or {}).get('code') if isinstance(x.get('country'), dict) else x.get('country')}]"
+                    for x in got][:25]
+            misses[ours] = {'at': now.isoformat(timespec='seconds'), 'seen': seen,
+                            'resp_keys': sorted(k for k in resp.keys()) if isinstance(resp, dict) else None,
+                            'error': resp.get('_body') if isinstance(resp, dict) and resp.get('_error') else None}
+            print(f'  lig bulunamadı: {ours} ({country}): {seen}')
     return ids
 
 

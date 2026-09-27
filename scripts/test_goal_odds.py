@@ -38,7 +38,7 @@ def fake(budget, path, params=None):
     calls.append(path)
     budget.remaining = 50
     if path == '/leagues':
-        c = params['country']
+        c = params.get('country')
         data = {'GB-ENG': [{'id': 11, 'name': 'Premier League', 'last_fixture_ts': 9}, {'id': 12, 'name': 'Premier League 2'}],
                 'DE': [{'id': 21, 'name': 'Bundesliga', 'last_fixture_ts': 9}, {'id': 22, 'name': '2. Bundesliga'}]}.get(c, [])
         return {'success': 1, 'data': data}
@@ -110,3 +110,9 @@ with tempfile.TemporaryDirectory() as td:
     assert not c2['0.5+']['real']
     print('✓ Kupon: Bet365 gol oranı gelince 0.5+/1.5+ gerçek oranla (tahmini değil) kuruluyor.')
 print('\nTüm gol oranı testleri geçti.')
+
+# Lig adı esnekliği
+ok = lambda n, w: G.league_name_ok({'name': n}, w)
+assert ok('LaLiga', 'LA LIGA') and ok('La Liga EA Sports', 'LA LIGA') and ok('Premier League', 'PREMIER LEAGUE')
+assert not ok('Premier League 2', 'PREMIER LEAGUE') and not ok('2. Bundesliga', 'BUNDESLIGA') and not ok('Serie B', 'SERIE A')
+print('✓ Lig adı eşlemesi: LaLiga / La Liga EA Sports kabul, Premier League 2 / 2. Bundesliga / Serie B red.')

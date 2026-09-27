@@ -1313,6 +1313,7 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
 .pill.pf.hot::after{opacity:.55}
 .fillin .pill.pf::after{animation:pfFill 1.1s cubic-bezier(.2,.8,.2,1) both}
 .fillin .tdy-ring{animation:rpFill 1.3s cubic-bezier(.2,.8,.2,1) both}
+.fillin .hlb-bar span{transform-origin:left center;animation:pfFill 1.2s cubic-bezier(.2,.8,.2,1) both}
 @keyframes pfFill{from{transform:scaleX(0)}}
 @keyframes rpFill{from{--rp:0}}
 
@@ -1361,6 +1362,35 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
   .aurora i,.sk,.fillin .pill.pf::after,.fillin .tdy-ring{animation:none!important}
   .tour-ring,.tour-tip,.tdy-pick{transition:none}
 }
+
+/* #27 Fikstür başlığında dönen top + lig yörüngesi (js/ball_orbit.js) */
+.hero.has-orb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);column-gap:24px;align-items:center}
+.hero.has-orb .hero-t,.hero.has-orb .hero-s{grid-column:1}
+.hero.has-orb .hero-t{align-self:end}.hero.has-orb .hero-s{align-self:start}
+.orb{grid-column:2;grid-row:1/3;position:relative;width:100%;max-width:400px;aspect-ratio:1/1;justify-self:end;user-select:none;margin:-10px 0 -18px}
+.orb-ball{position:absolute;left:50%;top:50%;width:40%;height:40%;transform:translate(-50%,-50%);z-index:5;cursor:grab;touch-action:none}
+.orb-ball:active{cursor:grabbing}
+.orb-ring{position:absolute;left:50%;top:50%;width:84%;height:40%;transform:translate(-50%,-50%);border:1.5px dashed color-mix(in srgb,var(--good) 30%,transparent);border-radius:50%;z-index:1;pointer-events:none}
+.orb-ring.r2{width:62%;height:28%;border-style:solid;opacity:.5}
+.orb-shadow{position:absolute;left:50%;top:73%;width:28%;height:5%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(19,41,61,.28),transparent);z-index:2;pointer-events:none}
+.orb-flag{position:absolute;left:0;top:0;z-index:8;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;font:inherit;will-change:transform,opacity}
+.orb-flag svg.flag{width:32px;height:auto;border-radius:3px;box-shadow:0 2px 8px rgba(19,41,61,.25);display:block}
+.orb-flag span{font-size:9.5px;font-weight:900;letter-spacing:.08em;color:var(--text);background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:5px;padding:0 5px;white-space:nowrap}
+.orb-flag:hover span,.orb-flag:focus-visible span{border-color:var(--good);color:var(--good)}
+.orb-flag:focus-visible{outline:none}.orb-flag:focus-visible svg{outline:2px solid var(--good);outline-offset:2px}
+.orb-stat{position:absolute;z-index:9;background:color-mix(in srgb,var(--panel) 80%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:7px 11px;box-shadow:var(--shadow);min-width:108px}
+.orb-stat small{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.orb-stat b{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:20px;line-height:1.15;color:var(--good);font-variant-numeric:tabular-nums}
+.orb-stat em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
+.orb-stat.s1{left:0;top:7%}.orb-stat.s2{right:0;top:13%}.orb-stat.s3{left:3%;bottom:8%}
+@media(max-width:900px){.hero.has-orb{grid-template-columns:minmax(0,1fr) minmax(0,300px)}.orb-stat{min-width:0}.orb-stat b{font-size:17px}}
+@media(max-width:650px){
+  .hero.has-orb{grid-template-columns:minmax(0,1fr)}
+  .hero.has-orb .hero-t,.hero.has-orb .hero-s,.orb{grid-column:1;grid-row:auto}
+  .orb{max-width:300px;justify-self:center;margin:4px auto -12px;order:3}
+  .orb-stat{padding:5px 8px}.orb-stat b{font-size:15px}.orb-stat small{font-size:9px}
+  .orb-flag svg.flag{width:26px}
+}
 </style>
 
 </head>
@@ -1394,9 +1424,10 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
       </div>
     </div>
   </header>
-  <div class="hero" lang="en">
-    <h1 class="hero-t" aria-label="Betting Analysis, Variance and Uncertainty System"><span class="hw"><b class="hx" style="--d:0s">Bet</b>ting</span> <span class="hw"><b class="hx" style="--d:.15s">A</b>nalysis,</span> <span class="hw"><b class="hx" style="--d:.3s">V</b>ariance</span> <span class="amp">&amp;</span> <span class="hw"><b class="hx" style="--d:.45s">U</b>ncertainty</span> <span class="hw"><b class="hx" style="--d:.6s">S</b>ystem</span></h1>
-    <div class="hero-s">
+  <div class="hero has-orb">
+    <h1 class="hero-t" lang="en" aria-label="Betting Analysis, Variance and Uncertainty System"><span class="hw"><b class="hx" style="--d:0s">Bet</b>ting</span> <span class="hw"><b class="hx" style="--d:.15s">A</b>nalysis,</span> <span class="hw"><b class="hx" style="--d:.3s">V</b>ariance</span> <span class="amp">&amp;</span> <span class="hw"><b class="hx" style="--d:.45s">U</b>ncertainty</span> <span class="hw"><b class="hx" style="--d:.6s">S</b>ystem</span></h1>
+    <div class="orb" id="orb"></div>
+    <div class="hero-s" lang="en">
       <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></svg>AI-powered</span>
       <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 4.5h-5L8 10Z"/></svg>Football goal probability engine</span>
       <span class="hero-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>Risk-free paper-betting simulation</span>
@@ -1672,7 +1703,7 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
 <script src="js/stats_ui.js?v=20260926-cal"></script>
-<script src="js/ux_extras.js?v=20260927-ux"></script>
+<script src="js/ux_extras.js?v=20260927-ux2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/auth_config.js?v=20260923-google"></script>
 <script src="js/auth_sync.js?v=20260926-nl"></script>
@@ -3407,5 +3438,6 @@ async function bootGate(){
 }
 bootGate();
 </script>
+<script src="js/ball_orbit.js?v=20260927-orb"></script>
 </body>
 </html>

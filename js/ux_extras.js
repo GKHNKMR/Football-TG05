@@ -26,7 +26,8 @@
   // ---------------------------------------------------------------- dolan göstergeler
   // Sekme açılınca (ve veri ilk geldiğinde) kısa bir pencere açılır: o sırada görünen / eklenen
   // çubuklar ve halkalar CSS ile sıfırdan dolar, büyük sayılar sıfırdan sayarak yükselir.
-  const COUNT_SEL = '.hlb-v,.st-kpi .v,.cs-sum b,.cs-pick em,.ei-sum b,.tdy-ring b';
+  // .hlb-v yok: başarı bandı kendi sayma animasyonunu çalıştırıyor (js/stats_ui.js)
+  const COUNT_SEL = '.hlb-ct i,.st-kpi .v,.cs-sum b,.cs-pick em,.ei-sum b,.tdy-ring b';
   const windows = new WeakMap();
   let counted = new WeakSet();
 

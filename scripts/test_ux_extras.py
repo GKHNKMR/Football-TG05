@@ -134,3 +134,48 @@ with sync_playwright() as p:
     assert not errs, errs
     b.close()
 print('\nTüm arayüz kolaylığı testleri geçti.')
+
+# ---- #27 dönen top + lig yörüngesi
+with sync_playwright() as p:
+    b = p.chromium.launch()
+    errs = []
+    pg = b.new_page(viewport={'width': 1280, 'height': 900})
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');localStorage.setItem('betavus.lang','tr');localStorage.setItem('betavus.tour_pred_v1','1');")
+    pg.goto(URL)
+    pg.wait_for_selector('#rows .row[data-mid]', timeout=15000)
+    pg.wait_for_selector('#orb .orb-flag', timeout=5000)
+    nflags = pg.locator('#orb .orb-flag').count()
+    nlg = pg.evaluate("new Set(window.__data.map(x=>x.league)).size")
+    assert nflags == nlg, (nflags, nlg)
+    a1 = pg.evaluate("document.querySelector('#orb .orb-flag').style.transform")
+    pg.wait_for_timeout(600)
+    a2 = pg.evaluate("document.querySelector('#orb .orb-flag').style.transform")
+    assert a1 != a2, 'yörünge dönmüyor'
+    pg.wait_for_timeout(1300)
+    n1 = pg.inner_text('#orbN1'); n2 = pg.inner_text('#orbN2'); n3 = pg.inner_text('#orbN3') + ' ' + pg.inner_text('#orbN3e')
+    up = pg.evaluate("window.__data.filter(x=>new Date(x.kickoff_utc)>Date.now()).length")
+    assert n1.replace('.', '') == str(up), (n1, up)
+    assert n2.startswith('%') and ',' in n2, n2
+    print(f'✓ #27 Top: {nflags} lig bayrağı dönüyor; sayılar canlı veriden: {n1} maç · {n2} · {n3}.')
+    # bayrağa tıklayınca Fikstür o lige filtrelenir (öndeki, tıklanabilir bir bayrak)
+    pg.mouse.move(5, 5)
+    i = pg.evaluate("[...document.querySelectorAll('#orb .orb-flag')].findIndex(b=>b.style.pointerEvents!=='none' && +b.style.opacity>0.8)")
+    lg = pg.evaluate(f"document.querySelectorAll('#orb .orb-flag')[{i}].title")
+    pg.locator('#orb .orb-flag').nth(i).click(force=True)
+    pg.wait_for_timeout(300)
+    leagues = set(pg.eval_on_selector_all('#rows .row[data-league]', 'els=>els.map(e=>e.dataset.league)'))
+    assert leagues == {lg}, (lg, leagues)
+    print(f'✓ #27 Bayrağa tıklama Fikstür\'ü {lg} ile filtreliyor.')
+    m = b.new_page(viewport={'width': 390, 'height': 844}, is_mobile=True)
+    m.on('pageerror', lambda e: errs.append(str(e)))
+    m.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');")
+    m.goto(URL)
+    m.wait_for_selector('#orb .orb-flag', timeout=15000)
+    assert m.evaluate('document.documentElement.scrollWidth') <= 390
+    ow = m.evaluate("document.getElementById('orb').getBoundingClientRect().width")
+    assert 200 <= ow <= 300, ow
+    print(f'✓ #27 Telefonda top başlığın altında ({ow:.0f}px), yatay taşma yok.')
+    assert not errs, errs
+    b.close()
+print('Dönen top testleri geçti.')

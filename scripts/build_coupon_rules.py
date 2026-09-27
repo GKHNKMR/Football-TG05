@@ -25,6 +25,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tune_coupon_profiles import (ROOT, load_odds, legs_by_day, build_coupons, summarize, season_of,  # noqa: E402
                                   poisson_over, lam_from_p25)
+from fetch_goal_odds import load_goal_odds  # noqa: E402
 from coupon_engine import MAX_LEGS, HL_MIN, pick_coupon, alt_coupons, dc_probs, hit  # noqa: E402
 
 DC = ['1X', '12', 'X2']
@@ -103,10 +104,15 @@ def table_odds(tables, mk, p):
     return t[-1][1] if k > t[-1][0] else t[0][1]
 
 
-def live_candidates(x, tables):
+GOAL_ODDS_KEY = {'0.5+': 'o05', '1.5+': 'o15', '2.5+': 'o25'}
+
+
+def live_candidates(x, tables, goal_odds=None):
     if limited(x):
         return []
     mk = x.get('market') or {}
+    # Bet365 gerçek gol oranları (scripts/fetch_goal_odds.py, iş listesi #20) — varsa tahminin önüne geçer
+    go = (goal_odds or {}).get((x['league'], x['home'], x['away'], x['kickoff_utc'])) or {}
     c = []
     o25, u25 = mk.get('o25_odds'), mk.get('u25_odds')
     lam_mkt = None
@@ -119,6 +125,8 @@ def live_candidates(x, tables):
             continue
         if m == '2.5+' and o25 and o25 > 1:
             odds, real = o25, True
+        elif (go.get(GOAL_ODDS_KEY[m]) or 0) > 1:
+            odds, real = go[GOAL_ODDS_KEY[m]], True
         elif m != '2.5+' and lam_mkt:
             lam, book = lam_mkt
             odds, real = max(1.01, 1 / min(0.999, poisson_over(lam, float(m[0]) + .5) * book)), False
@@ -168,11 +176,12 @@ def update_coupons(tables, now):
     coupons = old.get('coupons', {})
     preds = json.loads((ROOT / 'predictions.json').read_text(encoding='utf-8'))
     by_day = defaultdict(list)
+    goal_odds = load_goal_odds()
     for x in preds:
         ko = datetime.fromisoformat(x['kickoff_utc'].replace('Z', '+00:00'))
         if ko <= now or x.get('live'):
             continue
-        cands = live_candidates(x, tables)
+        cands = live_candidates(x, tables, goal_odds)
         if cands:
             by_day[ist_day(x['kickoff_utc'])].append(cands)
     # Donmamış (henüz başlamamış) öneriler canlı fikstürden yeniden kurulur

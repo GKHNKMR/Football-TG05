@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TESTS = [
     'test_sim_math.py',          # saf hesap (tarayıcısız)
     'test_validate_data.py',     # saatlik bot veri doğrulaması bozuk veriyi yakalıyor mu (tarayıcısız)
-    'test_coupon_engine.py',     # kasa hedefine göre kupon seçimi + sonuçlandırma (tarayıcısız)
+    'test_coupon_engine.py',
+    'test_goal_odds.py',         # Bet365 0.5+/1.5+ oran çekme: eşleme, zamanlama, kota, kupona geçiş (ağsız)     # kasa hedefine göre kupon seçimi + sonuçlandırma (tarayıcısız)
     'test_paper_betting.py',     # Sanal Kasa motoru + ekranı, menü, üst menü taşması
     'test_cifte_tab.py',         # Fikstür bülteni, Çifte Şans vurgusu, lig filtresi
     'test_cifte_backtest.py',    # Çifte Şans model doğruluğu (gizli sekme)

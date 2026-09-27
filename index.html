@@ -2649,10 +2649,10 @@ async function load(){
     const upd=remote[0]&&remote[0].updated_at;
     $('updated').innerHTML=_t('Kaynak: openfootball + football-data.co.uk · Poisson + Dixon-Coles motoru')+
       (upd?_t(' · güncelleme {ago}',{ago:timeAgo(upd)}):'')+
-      ` · <a href="#" onclick="setTab('stats');return false">${_t('İstatistikler →')}</a>`;
+      ` · <a href="#" onclick="setTab('stats');return false">${_t('İstatistikler →')}</a><br><a href="https://5dollarfootballapi.com" target="_blank" rel="noopener">Football data by 5DollarFootballAPI</a>`;
   }catch(e){
     window.__data=FALLBACK_DATA;
-    $('updated').innerHTML=`${_t('Canlı veri bekleniyor · Geçici fikstür')} · <a href="#" onclick="setTab('stats');return false">${_t('İstatistikler →')}</a>`;
+    $('updated').innerHTML=`${_t('Canlı veri bekleniyor · Geçici fikstür')} · <a href="#" onclick="setTab('stats');return false">${_t('İstatistikler →')}</a><br><a href="https://5dollarfootballapi.com" target="_blank" rel="noopener">Football data by 5DollarFootballAPI</a>`;
   }
   renderAll();
   if(window.BETAVUS_COUPON)BETAVUS_COUPON.mount();   // fikstür geldi: Sanal Kasa'daki kupon önerisini tazele

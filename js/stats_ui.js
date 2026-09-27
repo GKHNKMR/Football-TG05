@@ -211,7 +211,8 @@
   function cell(r, i, thr, hit) {
     const p = r[i], ok = hit(r[4], r[5]), hl = !r[12] && p >= thr;
     const cls = hl ? (ok ? ' hl win' : ' hl lose') : (ok ? ' ok' : '');
-    return `<td class="st-p${cls}" title="${T('Model {p}', { p: I.pct((p / 10).toFixed(1)) })}${hl ? T(' · vurgulandı · ') + T(ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? T(' · gerçekleşti') : ''}">${I.pctS((p / 10).toFixed(1))}${!hl && ok ? '<i>✓</i>' : ''}</td>`;
+    // --pv: hücre altındaki olasılık çubuğu; vurgulu hücrede köşede ✓ / ✗ işareti (index.html .st-p.hl)
+    return `<td class="st-p${cls}" style="--pv:${(p / 10).toFixed(1)}" title="${T('Model {p}', { p: I.pct((p / 10).toFixed(1)) })}${hl ? T(' · vurgulandı · ') + T(ok ? 'tuttu' : 'tutmadı') : ''}${!hl && ok ? T(' · gerçekleşti') : ''}">${I.pctS((p / 10).toFixed(1))}${!hl && ok ? '<i>✓</i>' : ''}${hl ? `<b class="st-mk" aria-hidden="true">${ok ? '✓' : '✗'}</b>` : ''}</td>`;
   }
 
   // Yalnızca vurgulu maçlar. Sayaçlar TAHMİN bazlıdır (bir maçta birden çok vurgu olabilir),
@@ -237,15 +238,15 @@
     const pages = Math.max(1, Math.ceil(list.length / PAGE));
     if (st.page >= pages) st.page = pages - 1;
     const slice = list.slice(st.page * PAGE, st.page * PAGE + PAGE);
-    const body = slice.map(r => {
+    const body = slice.map((r, k) => {
       const outs = hlOutcomes(r), h = outs.filter(Boolean).length, won = h === outs.length;
-      return `<tr>
+      return `<tr class="st-row ${won ? 'won' : 'lost'}" style="--d:${(k * 0.03).toFixed(2)}s">
         <td class="st-d">${dmyS(r[0])}</td>
         <td class="st-m"><span class="st-lgs">${flagOf(r[1], 10)} ${escH(r[1])}</span>${escH(r[2])} — ${escH(r[3])}
           <span class="st-lam" title="${T('Modelin maç öncesi tahmin ettiği toplam gol (λ)')}">${T('Tahmini toplam gol:')} <b>${r[13] != null ? I.dec(Number(r[13]).toFixed(2)) : '—'}</b></span></td>
-        <td class="st-s">${r[4]}-${r[5]}</td>
+        <td class="st-s"><span class="st-sb">${r[4]}-${r[5]}</span></td>
         ${MARKETS.map(([, i, thr, hit]) => cell(r, i, thr, hit)).join('')}
-        <td class="st-v"><span class="st-res ${won ? 'won' : 'lost'}">${T(won ? 'Tuttu' : 'Kaybetti')}</span><small>${h}/${outs.length}</small></td></tr>`;
+        <td class="st-v"><span class="st-res ${won ? 'won' : 'lost'}">${T(won ? 'Tuttu' : 'Kaybetti')}</span><small><span class="st-seg" aria-hidden="true">${outs.map(o => `<i class="${o ? 'y' : 'n'}"></i>`).join('')}</span>${h}/${outs.length}</small></td></tr>`;
     }).join('');
     const pager = `<div class="st-pager">
       <button class="hotbtn" data-pg="first" ${st.page ? '' : 'disabled'}>«</button>

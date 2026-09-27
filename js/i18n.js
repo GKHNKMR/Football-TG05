@@ -344,6 +344,7 @@
     'Ort. model olasılığı': { en: 'Avg. model probability', nl: 'Gem. modelkans' },
     'Gerçekleşme': { en: 'Occurrence', nl: 'Uitgekomen' },
     'Önce kasanın hedefine göre kupon, altında daha güvenli sabit kurallar.': { en: 'First the coupon for your bankroll target, then safer fixed rules below.', nl: 'Eerst de coupon voor het doel van je bankroll, daaronder veiligere vaste regels.' },
+    'cs.fixed': { tr: 'Kasa hedefinden bağımsız, tek başına en güvenli kurallar; oranları düşük olduğu için günlük kasa hedefine yetmez. Kasa hedefi için yukarıdaki kuponu kullan.', en: 'The safest standalone rules, independent of your bankroll target; their odds are low, so they do not reach the daily target. For your target, use the coupon above.', nl: 'De veiligste losse regels, los van je bankrolldoel; de odds zijn laag, dus ze halen het dagdoel niet. Gebruik voor je doel de coupon hierboven.' },
     'Daha güvenli sabit kurallar': { en: 'Safer fixed rules', nl: 'Veiligere vaste regels' },
     'Kasa hedefine göre kupon': { en: 'Coupon for your bankroll target', nl: 'Coupon voor je bankrolldoel' },
     'Kasana göre': { en: 'For your bankroll', nl: 'Voor je bankroll' },

@@ -169,7 +169,7 @@
     const head = `<div class="cs-head"><div><h2>🎯 ${T('Kupon önerisi')}</h2>
         <p class="cs-sub">${T('Önce kasanın hedefine göre kupon, altında daha güvenli sabit kurallar.')}</p></div>
       ${k ? `<div class="cs-nav"><button type="button" class="cs-nb" data-cs="-1" ${dayIdx ? '' : 'disabled'} aria-label="${T('Önceki gün')}">‹</button><span>${esc(dayLabel(k))}</span><button type="button" class="cs-nb" data-cs="1" ${dayIdx < days.length - 1 ? '' : 'disabled'} aria-label="${T('Sonraki gün')}">›</button></div>` : ''}</div>`;
-    const grid = k ? `${targetHtml(ctx, k)}<h3 class="cs-h3">${T('Daha güvenli sabit kurallar')}</h3><div class="cs-grid">${tiers.map(t => tierHtml(t, byDay[k], mineTier && t.id === mineTier.id)).join('')}</div>`
+    const grid = k ? `${targetHtml(ctx, k)}<h3 class="cs-h3">${T('Daha güvenli sabit kurallar')}</h3><p class="cs-sub" style="margin:-4px 0 8px">${T('cs.fixed')}</p><div class="cs-grid">${tiers.map(t => tierHtml(t, byDay[k], false)).join('')}</div>`
       : `<p class="cs-empty">${T('Önümüzdeki günlerde kurala uyan maç yok.')}</p>`;
     const note = `<p class="cs-note">${T('cs.note', { roi: esc(roi) })}</p>`;
     return `<div class="card cs-card" id="cpnSuggest">${head}${grid}${note}</div>`;

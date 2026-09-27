@@ -1,0 +1,113 @@
+"""#26 arayüz kolaylıkları (js/ux_extras.js): Aurora arka planı, günün öne çıkanları, iskelet +
+dolan göstergeler, sayarak yükselen sayılar, mobil alt menü, ilk giriş rehberi."""
+import os
+import sys
+import threading
+from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+
+sys.stdout.reconfigure(encoding='utf-8')
+ROOT = Path(__file__).resolve().parent.parent
+OUT = Path(os.environ.get('UX_SHOTS', '')) if os.environ.get('UX_SHOTS') else None
+ACCESS = '1f7b720c52ea3f6e8631a8eeaffaa7113fbed540ec0772108d39c52835d9855d'
+
+
+class Quiet(SimpleHTTPRequestHandler):
+    def log_message(self, *a):
+        pass
+
+
+srv = HTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
+PORT = srv.server_address[1]
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+URL = f'http://127.0.0.1:{PORT}/index.html'
+
+with sync_playwright() as p:
+    b = p.chromium.launch()
+    errs = []
+
+    # ---- masaüstü, ilk ziyaret: rehber açılır
+    pg = b.new_page(viewport={'width': 1280, 'height': 900})
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');localStorage.setItem('betavus.lang','tr');localStorage.setItem('betavus.tour_force','1');")
+    pg.goto(URL)
+    pg.wait_for_selector('#rows .row[data-mid]', timeout=15000)
+    assert pg.locator('.aurora').count() == 1
+    bg = pg.evaluate("getComputedStyle(document.querySelector('.table')).backdropFilter")
+    assert 'blur' in bg, bg
+    print('✓ A · Aurora: arka plan ışığı ve buzlu cam kutular var.')
+
+    pg.wait_for_selector('#todayCard:not([hidden]) .tdy-pick', timeout=5000)
+    picks = pg.eval_on_selector_all('#todayCard .tdy-pick', 'els=>els.map(e=>e.innerText.replace(/\\s+/g," "))')
+    assert 1 <= len(picks) <= 3, picks
+    ps = pg.eval_on_selector_all('#todayCard .tdy-ring', 'els=>els.map(e=>+getComputedStyle(e).getPropertyValue("--p"))')
+    assert ps == sorted(ps, reverse=True) and all(75 <= v <= 100 for v in ps), ps
+    print(f'✓ 2 · Günün öne çıkanları: {len(picks)} vurgu, olasılığa göre sıralı ({ps}).')
+
+    pv = pg.eval_on_selector_all('#rows .pill.pf', 'els=>els.slice(0,6).map(e=>e.style.getPropertyValue("--pv"))')
+    assert pv and all(v.isdigit() for v in pv), pv
+    allpv = pg.eval_on_selector_all('#rows .pill.pf', 'els=>els.map(e=>+e.style.getPropertyValue("--pv"))')
+    assert max(allpv) <= 100, f'çubuk 100 değerini aşıyor: {max(allpv)}'
+    print('✓ 3 · Olasılık kutularında dolan çubuk (--pv) var.')
+
+    pg.wait_for_selector('.tour .tour-tip', timeout=5000)
+    assert '1/' in pg.inner_text('.tour-n')
+    if OUT:
+        pg.screenshot(path=str(OUT / 'ux-tour-desktop.png'))
+    steps = int(pg.inner_text('.tour-n').split('/')[1])
+    for _ in range(steps):
+        pg.click('.tour-next')
+    assert pg.locator('.tour').count() == 0
+    assert pg.evaluate("localStorage.getItem('betavus.tour_v1')") == '1'
+    print(f'✓ 4 · İlk giriş rehberi {steps} adımda açılıp kapanıyor, bir daha gösterilmiyor.')
+    if OUT:
+        pg.screenshot(path=str(OUT / 'ux-desktop.png'))
+
+    # sayarak yükselme: İstatistikler sekmesine geçince büyük sayı önce 0'dan başlar
+    pg.evaluate("setTab('stats')")
+    pg.wait_for_selector('#pane-stats .st-kpi .v', timeout=15000)
+    assert pg.evaluate("document.getElementById('pane-stats').classList.contains('fillin')")
+    pg.wait_for_timeout(1300)
+    final = pg.inner_text('#pane-stats .st-kpi .v')
+    assert any(c.isdigit() for c in final) and not final.startswith('%0,0'), final
+    print(f'✓ 3 · Sekme açılınca göstergeler doluyor, sayı sonunda gerçek değerde: {final}')
+    nums = pg.evaluate("""[['%89,5','89,5'],['12.660','12660'],['1,57','1,57'],['€25,000.00','25,000.00'],['83.2%','83.2']].map(([t])=>{const p=BV_UX._parseNum(t);return BV_UX._fmtNum(p.v,p)})""")
+    assert nums == ['89,5', '12.660', '1,57', '25,000.00', '83.2'], nums
+    print('✓ Sayı biçimi korunuyor (89,5 · 12.660 · 1,57 · 25,000.00 · 83.2).')
+
+    # rehber yeniden: SSS'teki düğme
+    pg.evaluate("setTab('faq')")
+    pg.click('#tourAgain')
+    pg.wait_for_selector('.tour .tour-tip', timeout=5000)
+    pg.click('.tour-skip')
+    assert pg.locator('.tour').count() == 0
+    print("✓ 4 · SSS'teki 'Rehberi yeniden göster' çalışıyor, 'Atla' kapatıyor.")
+
+    # ---- telefon: alt menü
+    m = b.new_page(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    m.on('pageerror', lambda e: errs.append(str(e)))
+    m.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');localStorage.setItem('betavus.lang','tr');localStorage.setItem('betavus.tour_v1','1');")
+    m.goto(URL)
+    m.wait_for_selector('#rows .row[data-mid]', timeout=15000)
+    assert m.is_visible('#botNav') and not m.is_visible('.top .tabs')
+    assert m.locator('.tour').count() == 0, 'rehber bir kez görüldüyse açılmamalı'
+    if OUT:
+        m.screenshot(path=str(OUT / 'ux-mobile.png'))
+    m.click('#botNav [data-pg="plan"]')
+    assert m.evaluate("document.documentElement.dataset.page") == 'plan'
+    assert m.get_attribute('#botNav [data-pg="plan"]', 'aria-current') == 'page'
+    sw = m.evaluate('document.documentElement.scrollWidth')
+    assert sw <= 390, f'yatay kaydırma var: {sw}'
+    print('✓ 1 · Telefonda alt menü görünüyor, üst sekmeler gizli, sekme değişiyor, yatay taşma yok.')
+    d = b.new_page(viewport={'width': 1280, 'height': 900})
+    d.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');localStorage.setItem('betavus.tour_v1','1');")
+    d.goto(URL)
+    d.wait_for_selector('#rows .row[data-mid]', timeout=15000)
+    assert not d.is_visible('#botNav')
+    print('✓ 1 · Masaüstünde alt menü gizli.')
+
+    assert not errs, errs
+    b.close()
+print('\nTüm arayüz kolaylığı testleri geçti.')

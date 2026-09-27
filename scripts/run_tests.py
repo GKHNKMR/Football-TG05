@@ -17,6 +17,7 @@ TESTS = [
     'test_coupon_engine.py',
     'test_goal_odds.py',         # Bet365 0.5+/1.5+ oran çekme: eşleme, zamanlama, kota, kupona geçiş (ağsız)     # kasa hedefine göre kupon seçimi + sonuçlandırma (tarayıcısız)
     'test_paper_betting.py',     # Sanal Kasa motoru + ekranı, menü, üst menü taşması
+    'test_ux_extras.py',         # #26 Aurora + alt menü, günün öne çıkanları, dolan göstergeler, rehber
     'test_cifte_tab.py',         # Fikstür bülteni, Çifte Şans vurgusu, lig filtresi
     'test_cifte_backtest.py',    # Çifte Şans model doğruluğu (gizli sekme)
     'test_delete_account.py',    # Hesabımı sil akışı (sahte Supabase)

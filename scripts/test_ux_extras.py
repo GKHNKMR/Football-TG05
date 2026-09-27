@@ -152,12 +152,12 @@ with sync_playwright() as p:
     pg.wait_for_timeout(600)
     a2 = pg.evaluate("document.querySelector('#orb .orb-flag').style.transform")
     assert a1 != a2, 'yörünge dönmüyor'
-    pg.wait_for_timeout(1300)
-    n1 = pg.inner_text('#orbN1'); n2 = pg.inner_text('#orbN2'); n3 = pg.inner_text('#orbN3') + ' ' + pg.inner_text('#orbN3e')
-    up = pg.evaluate("window.__data.filter(x=>new Date(x.kickoff_utc)>Date.now()).length")
-    assert n1.replace('.', '') == str(up), (n1, up)
-    assert n2.startswith('%') and ',' in n2, n2
-    print(f'✓ #27 Top: {nflags} lig bayrağı dönüyor; sayılar canlı veriden: {n1} maç · {n2} · {n3}.')
+    assert pg.locator('#orb .orb-stat').count() == 0, 'bandı tekrar eden sayı kutuları olmamalı'
+    pg.evaluate("setTab('stats')")
+    assert not pg.is_visible('#orb'), 'top yalnız Fikstür sekmesinde'
+    pg.evaluate("setTab('pred')")
+    assert pg.is_visible('#orb')
+    print(f'✓ #27 Top: {nflags} lig bayrağı dönüyor, yalnız Fikstür sekmesinde, tekrar eden sayı kutusu yok.')
     # bayrağa tıklayınca Fikstür o lige filtrelenir (öndeki, tıklanabilir bir bayrak)
     pg.mouse.move(5, 5)
     i = pg.evaluate("[...document.querySelectorAll('#orb .orb-flag')].findIndex(b=>b.style.pointerEvents!=='none' && +b.style.opacity>0.8)")
@@ -174,7 +174,7 @@ with sync_playwright() as p:
     m.wait_for_selector('#orb .orb-flag', timeout=15000)
     assert m.evaluate('document.documentElement.scrollWidth') <= 390
     ow = m.evaluate("document.getElementById('orb').getBoundingClientRect().width")
-    assert 200 <= ow <= 300, ow
+    assert 200 <= ow <= 330, ow
     print(f'✓ #27 Telefonda top başlığın altında ({ow:.0f}px), yatay taşma yok.')
     assert not errs, errs
     b.close()

@@ -565,6 +565,16 @@ select.ks-input,.ks-input.ks-name{text-align:left}
 .ks-summary span{display:block;font-size:9.5px;font-weight:900;letter-spacing:.05em;color:var(--muted)}
 .ks-summary b{display:block;font-size:14px;font-weight:900;margin-top:2px}
 .ks-chart{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+/* #27 futuristik kasa grafiği: hafif ışıklı zemin; sekme açılınca sütunlar sırayla dolar, hedef çizgisi çizilir */
+.ks-chart{background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,#2ed3c3 9%,transparent),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--panel2) 60%,transparent),transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,#2ed3c3 18%,transparent)}
+.ksb{transform-box:fill-box;transform-origin:50% 100%}
+.fillin .ksb{animation:ksGrow .9s cubic-bezier(.2,.9,.25,1.05) both}
+.fillin .ks-path{stroke-dasharray:1;animation:ksDraw 1.8s .25s ease-out both}
+.fillin .ks-today{animation:ksFade .6s 1s both}
+@keyframes ksGrow{from{transform:scaleY(0);opacity:.3}}
+@keyframes ksDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes ksFade{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.fillin .ksb,.fillin .ks-path,.fillin .ks-today{animation:none}}
 .ks-right{display:flex;flex-direction:column;gap:12px;min-width:0}
 .ks-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ks-act{border-radius:10px;padding:14px 16px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s}
@@ -1363,33 +1373,29 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
   .tour-ring,.tour-tip,.tdy-pick{transition:none}
 }
 
-/* #27 Fikstür başlığında dönen top + lig yörüngesi (js/ball_orbit.js) */
-.hero.has-orb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);column-gap:24px;align-items:center}
-.hero.has-orb .hero-t,.hero.has-orb .hero-s{grid-column:1}
-.hero.has-orb .hero-t{align-self:end}.hero.has-orb .hero-s{align-self:start}
-.orb{grid-column:2;grid-row:1/3;position:relative;width:100%;max-width:400px;aspect-ratio:1/1;justify-self:end;user-select:none;margin:-10px 0 -18px}
-.orb-ball{position:absolute;left:50%;top:50%;width:40%;height:40%;transform:translate(-50%,-50%);z-index:5;cursor:grab;touch-action:none}
+/* #27 Fikstür başlığında dönen top + lig yörüngesi (js/ball_orbit.js) — yalnız Fikstür'de, başlıkla aynı
+   yükseklikte, altındaki başarı bandını tekrar eden sayı kutuları yok */
+.orb{display:none}
+html[data-page="pred"] .hero.has-orb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);column-gap:24px;align-items:center}
+html[data-page="pred"] .hero.has-orb .hero-t,html[data-page="pred"] .hero.has-orb .hero-s{grid-column:1}
+html[data-page="pred"] .hero.has-orb .hero-t{align-self:end}html[data-page="pred"] .hero.has-orb .hero-s{align-self:start}
+html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:relative;width:100%;max-width:340px;aspect-ratio:2/1;justify-self:end;user-select:none;margin:-6px 0 -10px}
+.orb-ball{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1/1;height:auto;transform:translate(-50%,-50%);z-index:5;cursor:grab;touch-action:none}
 .orb-ball:active{cursor:grabbing}
-.orb-ring{position:absolute;left:50%;top:50%;width:84%;height:40%;transform:translate(-50%,-50%);border:1.5px dashed color-mix(in srgb,var(--good) 30%,transparent);border-radius:50%;z-index:1;pointer-events:none}
-.orb-ring.r2{width:62%;height:28%;border-style:solid;opacity:.5}
-.orb-shadow{position:absolute;left:50%;top:73%;width:28%;height:5%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(19,41,61,.28),transparent);z-index:2;pointer-events:none}
-.orb-flag{position:absolute;left:0;top:0;z-index:8;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;font:inherit;will-change:transform,opacity}
-.orb-flag svg.flag{width:32px;height:auto;border-radius:3px;box-shadow:0 2px 8px rgba(19,41,61,.25);display:block}
-.orb-flag span{font-size:9.5px;font-weight:900;letter-spacing:.08em;color:var(--text);background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:5px;padding:0 5px;white-space:nowrap}
+.orb-ring{position:absolute;left:50%;top:50%;width:92%;height:56%;transform:translate(-50%,-50%);border:1.5px dashed color-mix(in srgb,var(--good) 30%,transparent);border-radius:50%;z-index:1;pointer-events:none}
+.orb-ring.r2{width:66%;height:38%;border-style:solid;opacity:.5}
+.orb-shadow{position:absolute;left:50%;top:86%;width:22%;height:7%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(19,41,61,.26),transparent);z-index:2;pointer-events:none}
+.orb-flag{position:absolute;left:0;top:0;z-index:8;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:0;cursor:pointer;font:inherit;will-change:transform,opacity}
+.orb-flag svg.flag{width:26px;height:auto;border-radius:3px;box-shadow:0 2px 6px rgba(19,41,61,.25);display:block}
+.orb-flag span{font-size:8.5px;font-weight:900;letter-spacing:.07em;color:var(--text);background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
 .orb-flag:hover span,.orb-flag:focus-visible span{border-color:var(--good);color:var(--good)}
 .orb-flag:focus-visible{outline:none}.orb-flag:focus-visible svg{outline:2px solid var(--good);outline-offset:2px}
-.orb-stat{position:absolute;z-index:9;background:color-mix(in srgb,var(--panel) 80%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:7px 11px;box-shadow:var(--shadow);min-width:108px}
-.orb-stat small{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.orb-stat b{font-family:Poppins,"Nunito Sans",sans-serif;font-style:italic;font-weight:900;font-size:20px;line-height:1.15;color:var(--good);font-variant-numeric:tabular-nums}
-.orb-stat em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
-.orb-stat.s1{left:0;top:7%}.orb-stat.s2{right:0;top:13%}.orb-stat.s3{left:3%;bottom:8%}
-@media(max-width:900px){.hero.has-orb{grid-template-columns:minmax(0,1fr) minmax(0,300px)}.orb-stat{min-width:0}.orb-stat b{font-size:17px}}
+@media(max-width:900px){html[data-page="pred"] .hero.has-orb{grid-template-columns:minmax(0,1fr) minmax(0,280px)}}
 @media(max-width:650px){
-  .hero.has-orb{grid-template-columns:minmax(0,1fr)}
-  .hero.has-orb .hero-t,.hero.has-orb .hero-s,.orb{grid-column:1;grid-row:auto}
-  .orb{max-width:300px;justify-self:center;margin:4px auto -12px;order:3}
-  .orb-stat{padding:5px 8px}.orb-stat b{font-size:15px}.orb-stat small{font-size:9px}
-  .orb-flag svg.flag{width:26px}
+  html[data-page="pred"] .hero.has-orb{grid-template-columns:minmax(0,1fr)}
+  html[data-page="pred"] .hero.has-orb .hero-t,html[data-page="pred"] .hero.has-orb .hero-s,html[data-page="pred"] .orb{grid-column:1;grid-row:auto}
+  html[data-page="pred"] .orb{max-width:320px;justify-self:center;margin:2px auto -4px;order:3}
+  .orb-flag svg.flag{width:22px}
 }
 </style>
 
@@ -1698,7 +1704,7 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
 <script src="js/paper_engine.js?v=20260926-gp2"></script>
-<script src="js/paper_ui.js?v=20260927-lt"></script>
+<script src="js/paper_ui.js?v=20260927-ch"></script>
 <script src="js/coupon_suggest.js?v=20260927-sh"></script>
 <script src="js/cifte_engine.js"></script>
 <script src="js/cifte_ui.js?v=20260922-dc-confidence-label"></script>
@@ -3438,6 +3444,6 @@ async function bootGate(){
 }
 bootGate();
 </script>
-<script src="js/ball_orbit.js?v=20260927-orb"></script>
+<script src="js/ball_orbit.js?v=20260927-orb2"></script>
 </body>
 </html>

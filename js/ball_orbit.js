@@ -1,7 +1,7 @@
 // Fikstür başlığında dönen futbol topu + lig yörüngesi (iş listesi #27).
 // Top: kesik ikosahedron (12 beşgen, 20 altıgen) küreye izdüşülerek canvas'a çizilir, kütüphane yok.
 // Bayraklar sitedeki FLAGS çizimleri; tıklayınca setLeague() ile Fikstür o lige filtrelenir.
-// Kutulardaki sayılar canlı veriden: bu ayki maç, vurgu isabeti (data/stats-summary.json), sıradaki gün.
+// Sayı kutusu yok: aynı bilgiyi hemen altındaki başarı bandı veriyor (27.09 Murat: tekrar kopuk duruyordu).
 // Sayfa görünmüyorsa ya da başlık ekran dışındaysa çizim durur; "hareketi azalt" açıksa top sabit.
 (function () {
   'use strict';
@@ -38,10 +38,7 @@
 
   // ---------------- DOM
   host.innerHTML = `<div class="orb-ring"></div><div class="orb-ring r2"></div><div class="orb-shadow"></div>
-    <canvas class="orb-ball" role="img" aria-label="${T('Dönen futbol topu; sürükleyerek çevirebilirsin')}"></canvas>
-    <div class="orb-stat s1"><small>${T('Bu ay')}</small><b id="orbN1">—</b><em>${T('maç')}</em></div>
-    <div class="orb-stat s2"><small>${T('Vurgu isabeti')}</small><b id="orbN2">—</b></div>
-    <div class="orb-stat s3"><small>${T('Sıradaki gün')}</small><b id="orbN3">—</b><em id="orbN3e"></em></div>`;
+    <canvas class="orb-ball" role="img" aria-label="${T('Dönen futbol topu; sürükleyerek çevirebilirsin')}"></canvas>`;
   const cv = host.querySelector('canvas'), ctx = cv.getContext('2d');
   let DPR = 1, S = 200, R = 90;
   function resize() {
@@ -122,7 +119,7 @@
   host.addEventListener('focusin', () => { hover = true; });
   host.addEventListener('focusout', () => { hover = false; });
   function placeFlags() {
-    const w = host.clientWidth, h = host.clientHeight, rx = w * 0.42, ry = h * 0.2, cx = w / 2, cy = h / 2, n = flags.length || 1;
+    const w = host.clientWidth, h = host.clientHeight, rx = w * 0.44, ry = h * 0.3, cx = w / 2, cy = h / 2, n = flags.length || 1;
     flags.forEach((b, i) => {
       const a = orbitA + i * (Math.PI * 2 / n);
       const x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry, depth = Math.sin(a);
@@ -130,7 +127,7 @@
       b.style.transform = `translate(${(x - b.offsetWidth / 2).toFixed(1)}px,${(y - b.offsetHeight / 2).toFixed(1)}px) scale(${sc.toFixed(3)})`;
       b.style.opacity = (0.45 + 0.55 * (depth + 1) / 2).toFixed(2);
       b.style.zIndex = depth > 0 ? 8 : 3;
-      const behind = depth < 0 && Math.abs(x - cx) < w * 0.2;      // topun arkasında: tıklanmasın
+      const behind = depth < 0 && Math.abs(x - cx) < w * 0.18;      // topun arkasında: tıklanmasın
       b.style.pointerEvents = behind ? 'none' : 'auto';
       b.tabIndex = behind ? -1 : 0;
     });
@@ -166,42 +163,18 @@
   function kick() { if (!raf && running()) raf = requestAnimationFrame(frame); }
   new MutationObserver(kick).observe(document.documentElement, { attributes: true, attributeFilter: ['data-page'] });
 
-  // ---------------- canlı sayılar
-  const istDay = iso => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
-  function countTo(el, v, fmt) {
-    if (RM) { el.textContent = fmt(v); return; }
-    const t0 = performance.now();
-    (function step(now) { const k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(v * e); if (k < 1) requestAnimationFrame(step); })(t0);
-  }
+  // ---------------- bayraklar veriden (fikstürde olan ligler)
   let shown = '';
   function refresh() {
     const data = (window.__data || []).filter(x => x && x.kickoff_utc);
     if (!data.length) return;
     const leagues = ORDER.filter(lg => data.some(x => x.league === lg));
-    const sig = leagues.join('|') + data.length;
+    const sig = leagues.join('|');
     if (sig === shown) return;
     shown = sig;
     buildFlags(leagues);
-    const now = Date.now();
-    const up = data.filter(x => new Date(x.kickoff_utc).getTime() > now);
-    countTo(document.getElementById('orbN1'), up.length, v => Math.round(v).toLocaleString((window.I18N && I18N.locale) || 'tr-TR'));
-    if (up.length) {
-      const day = up.map(x => istDay(x.kickoff_utc)).sort()[0];
-      const n = up.filter(x => istDay(x.kickoff_utc) === day).length;
-      const d = new Date(day + 'T12:00:00Z');
-      countTo(document.getElementById('orbN3'), d.getUTCDate(), v => String(Math.round(v)));
-      document.getElementById('orbN3e').textContent =
-        d.toLocaleDateString((window.I18N && I18N.locale) || 'tr-TR', { month: 'long', timeZone: 'UTC' }) + ' · ' + T('{n} maç', { n });
-    }
     placeFlags(); kick();
   }
-  fetch('data/stats-summary.json?ts=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(s => {
-    const pct = s && s.picks && +s.picks.pct;
-    if (!(pct > 0)) return;
-    const I = window.I18N, lang = (I && I.lang) || 'tr';
-    const f = v => { const t = I && I.dec ? I.dec(v.toFixed(1)) : v.toFixed(1); return lang === 'tr' ? '%' + t : t + '%'; };
-    countTo(document.getElementById('orbN2'), pct, f);
-  }).catch(() => {});
 
   resize(); draw();
   window.addEventListener('resize', () => { resize(); draw(); placeFlags(); });

@@ -1014,9 +1014,11 @@
   // ---------------------------------------------------------------------------
 
   const KASA_RISK_LABELS = { minimum: 'Minimum', medium: 'Medium', high: 'High' };
-  const KASA_COLOR_REAL = '#4F81BD';
-  const KASA_COLOR_TARGET = '#C0504D';
-  const KASA_COLOR_SECURED = '#9BBB59';   // kenara konan (cash-out) kısım
+  // Grafik renkleri (#27 futuristik grafik): oyundaki kasa turkuaz, hedef mor hayalet sütun + çizgi,
+  // kilitli kısım limon yeşili. Lejant düz renkleri bunlar; sütunlar aynı tonlarda degrade çizilir.
+  const KASA_COLOR_REAL = '#14b8a6';
+  const KASA_COLOR_TARGET = '#8b9dff';
+  const KASA_COLOR_SECURED = '#a3e635';   // kenara konan (cash-out) kısım
 
   function kasaRiskLabel(params) {
     return KASA_RISK_LABELS[params.riskProfile] || params.riskName;
@@ -1222,34 +1224,65 @@
     // Kümelenmiş sütunlar: her gün için yan yana Gerçek Kasa + Teorik Hedef Kasa.
     // Sütunlar tabandan yükselir, üst köşeleri yuvarlaktır; iki sütun arasında 2px boşluk.
     // Gerçek kasası girilmemiş günde yalnızca hedef sütunu çizilir (dispBlanksAs = gap).
+    // Görünüm: gerçek kasa turkuaz degrade + parıltı, hedef yarı saydam hayalet sütun ve üstünden
+    // geçen parlak "hedef yolu" çizgisi, bugün dikey ışık çizgisi. Sekme açılınca (.fillin) sütunlar
+    // soldan sağa sırayla tabandan dolar, hedef çizgisi kendini çizer (index.html .ksb / .ks-path).
     const slot = pw / n;
     const groupW = Math.min(slot * 0.72, 30);
     const barW = Math.max(1, (groupW - 2) / 2);
     const base = T + ph;
-    const bar = (bx, v, color) => {
-      if (v == null || !(v > 0)) return '';
+    const barPath = (bx, v) => {
       const top = y(v), h = base - top;
       const rad = Math.min(4, barW / 2, h);
-      return `<path d="M${bx.toFixed(1)},${base.toFixed(1)} V${(top + rad).toFixed(1)} Q${bx.toFixed(1)},${top.toFixed(1)} ${(bx + rad).toFixed(1)},${top.toFixed(1)} H${(bx + barW - rad).toFixed(1)} Q${(bx + barW).toFixed(1)},${top.toFixed(1)} ${(bx + barW).toFixed(1)},${(top + rad).toFixed(1)} V${base.toFixed(1)} Z" fill="${color}"/>`;
+      return `M${bx.toFixed(1)},${base.toFixed(1)} V${(top + rad).toFixed(1)} Q${bx.toFixed(1)},${top.toFixed(1)} ${(bx + rad).toFixed(1)},${top.toFixed(1)} H${(bx + barW - rad).toFixed(1)} Q${(bx + barW).toFixed(1)},${top.toFixed(1)} ${(bx + barW).toFixed(1)},${(top + rad).toFixed(1)} V${base.toFixed(1)} Z`;
     };
+    const bar = (bx, v, fill, extra) => (v == null || !(v > 0) ? '' : `<path d="${barPath(bx, v)}" fill="${fill}"${extra || ''}/>`);
+    const delay = i => `style="animation-delay:${Math.min(1.2, i * (1.2 / Math.max(1, n))).toFixed(3)}s"`;
     const bars = rows.map((r, i) => {
       const gx = x(i) - groupW / 2;
-      // Güven payı (yeşil) oyundaki kasanın (mavi) üstünde durur; mavi yükseklik hedefle kıyaslanır
+      // Güven payı (yeşil) oyundaki kasanın (turkuaz) üstünde durur; turkuaz yükseklik hedefle kıyaslanır
       const sec = r.actualBank != null && r.secured - r.cashout > 0 ? r.secured - r.cashout : 0;
       const real = sec > 0
-        ? bar(gx, r.actualBank + sec, KASA_COLOR_SECURED) + (r.actualBank > 0 ? `<rect x="${gx.toFixed(1)}" y="${y(r.actualBank).toFixed(1)}" width="${barW.toFixed(1)}" height="${(base - y(r.actualBank)).toFixed(1)}" fill="${KASA_COLOR_REAL}"/>` : '')
-        : bar(gx, r.actualBank, KASA_COLOR_REAL);
-      return real + bar(gx + barW + 2, r.targetBank, KASA_COLOR_TARGET);
+        ? bar(gx, r.actualBank + sec, 'url(#ksgS)') + (r.actualBank > 0 ? `<rect x="${gx.toFixed(1)}" y="${y(r.actualBank).toFixed(1)}" width="${barW.toFixed(1)}" height="${(base - y(r.actualBank)).toFixed(1)}" fill="url(#ksgR)"/>` : '')
+        : bar(gx, r.actualBank, 'url(#ksgR)');
+      const tgt = bar(gx + barW + 2, r.targetBank, 'url(#ksgT)', ` stroke="${KASA_COLOR_TARGET}" stroke-opacity=".55" stroke-width="1"`);
+      return `<g class="ksb" ${delay(i)}>${real ? `<g filter="url(#ksGlow)">${real}</g>` : ''}${tgt}</g>`;
     }).join('');
+    // Hedef yolu: hedef sütunlarının tepelerinden geçen yumuşak çizgi
+    const tp = rows.map((r, i) => [x(i) - groupW / 2 + barW + 2 + barW / 2, y(r.targetBank)]);
+    let tLine = '';
+    if (tp.length > 1) {
+      tLine = `M${tp[0][0].toFixed(1)},${tp[0][1].toFixed(1)}`;
+      // Catmull-Rom → Bezier: noktalardan geçen yumuşak eğri (basamak yapmaz)
+      for (let k = 1; k < tp.length; k++) {
+        const p0 = tp[Math.max(0, k - 2)], p1 = tp[k - 1], p2 = tp[k], p3 = tp[Math.min(tp.length - 1, k + 1)];
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        tLine += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+    }
+    const today = rows.findIndex(r => r.isToday);
+    const todayMark = today >= 0 ? `<g class="ks-today"><line x1="${x(today).toFixed(1)}" y1="${T}" x2="${x(today).toFixed(1)}" y2="${base}" stroke="${KASA_COLOR_REAL}" stroke-width="1.5" stroke-dasharray="3 4" opacity=".7"/>
+        <text x="${x(today).toFixed(1)}" y="${(T - 5).toFixed(1)}" fill="${KASA_COLOR_REAL}" font-size="10.5" font-weight="800" text-anchor="middle">${_t('Bugün')}</text></g>` : '';
+    const defs = `<defs>
+        <linearGradient id="ksgR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#0d9488" stop-opacity=".85"/></linearGradient>
+        <linearGradient id="ksgT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${KASA_COLOR_TARGET}" stop-opacity=".38"/><stop offset="1" stop-color="${KASA_COLOR_TARGET}" stop-opacity=".06"/></linearGradient>
+        <linearGradient id="ksgS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9ff4a"/><stop offset="1" stop-color="#65a30d" stop-opacity=".9"/></linearGradient>
+        <filter id="ksGlow" x="-50%" y="-10%" width="200%" height="130%"><feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="b"/><feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 .55 0" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="ksLineGlow" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>`;
 
     // Üzerine gelince günün iki değeri (sütundan geniş, tüm gün dilimi)
     const hover = rows.map((r, i) => `<rect class="ks-hit" x="${(L + i * slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ph}"><title>${_t('{day}. gün · Oyundaki Kasa: {real} · Teorik Hedef Kasa: {target}', { day: r.day, real: r.actualBank != null ? formatCurrency(r.actualBank, curr) : '—', target: formatCurrency(r.targetBank, curr) })}${r.secured > 0 && r.actualBank != null ? ' · ' + _t('Kilitli: {v}', { v: formatCurrency(r.secured, curr) }) : ''}</title></rect>`).join('');
 
     return `
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün', { n })}" style="display:block">
+        ${defs}
         ${grid}
+        ${todayMark}
         ${hover}
         <g pointer-events="none">${bars}</g>
+        ${tLine ? `<path class="ks-path" d="${tLine}" pathLength="1" fill="none" stroke="${KASA_COLOR_TARGET}" stroke-width="2" stroke-linecap="round" filter="url(#ksLineGlow)" pointer-events="none"/>` : ''}
         <line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>
         ${xLabels}
       </svg>`;

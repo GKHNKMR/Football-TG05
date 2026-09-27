@@ -160,17 +160,29 @@
     const vis = pts.filter(p => p.x >= lo && p.y >= lo);
     const nMax = Math.max(...pts.map(p => p.b.n));
     const rad = n => 4 + 5 * Math.sqrt(n / nMax);
-    const line = vis.filter(p => !p.weak).map((p, k) => `${k ? 'L' : 'M'}${sx(p.x).toFixed(1)} ${sy(p.y).toFixed(1)}`).join(' ');
+    const strongVis = vis.filter(p => !p.weak);
+    const line = strongVis.map((p, k) => `${k ? 'L' : 'M'}${sx(p.x).toFixed(1)} ${sy(p.y).toFixed(1)}`).join(' ');
+    // Çizginin altında yumuşak ışık alanı (grafiğin tabanına kadar)
+    const area = strongVis.length > 1 ? `${line} L${sx(strongVis[strongVis.length - 1].x).toFixed(1)} ${H - B} L${sx(strongVis[0].x).toFixed(1)} ${H - B} Z` : '';
     let g = '';
     for (const t of ticks) {
       g += `<line class="cal-grid" x1="${L}" x2="${W - R}" y1="${sy(t)}" y2="${sy(t)}"/><text class="cal-ax" x="${L - 6}" y="${sy(t) + 4}" text-anchor="end">${Math.round(t * 100)}</text>`;
       g += `<text class="cal-ax" x="${sx(t)}" y="${H - B + 16}" text-anchor="middle">${Math.round(t * 100)}</text>`;
     }
     const thrX = c.thr >= lo ? `<line class="cal-thr" x1="${sx(c.thr)}" x2="${sx(c.thr)}" y1="${Tp}" y2="${H - B}"/>` : '';
-    const dots = vis.map(p => `<g class="cal-pt${p.weak ? ' weak' : ''}" data-k="${c.bins.indexOf(p.b)}" tabindex="0"><circle class="cal-hit" cx="${sx(p.x)}" cy="${sy(p.y)}" r="14"/><circle class="cal-dot" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${rad(p.b.n).toFixed(1)}"/></g>`).join('');
+    // Noktalar sırayla belirir (--i); güçlü noktaların çevresinde yavaş radar halkası
+    const dots = vis.map((p, k) => `<g class="cal-pt${p.weak ? ' weak' : ''}" data-k="${c.bins.indexOf(p.b)}" tabindex="0" style="--i:${k}">${p.weak ? '' : `<circle class="cal-ping" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${rad(p.b.n).toFixed(1)}"/>`}<circle class="cal-hit" cx="${sx(p.x)}" cy="${sy(p.y)}" r="14"/><circle class="cal-dot" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${rad(p.b.n).toFixed(1)}"/></g>`).join('');
     return `<svg class="cal-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T('Kalibrasyon grafiği')}">
-      ${g}<line class="cal-diag" x1="${sx(lo)}" y1="${sy(lo)}" x2="${sx(1)}" y2="${sy(1)}"/>
-      ${thrX}<path class="cal-line" d="${line}"/>${dots}
+      <defs>
+        <linearGradient id="calLineG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#5eead4"/></linearGradient>
+        <linearGradient id="calAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ed3c3" stop-opacity=".22"/><stop offset="1" stop-color="#2ed3c3" stop-opacity="0"/></linearGradient>
+        <linearGradient id="calSweepG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2ed3c3" stop-opacity="0"/><stop offset=".5" stop-color="#2ed3c3" stop-opacity=".16"/><stop offset="1" stop-color="#2ed3c3" stop-opacity="0"/></linearGradient>
+        <filter id="calGlow" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <clipPath id="calClip"><rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - Tp - B}"/></clipPath>
+      </defs>
+      ${g}<g clip-path="url(#calClip)"><rect class="cal-sweep" x="${L - 90}" y="${Tp}" width="90" height="${H - Tp - B}" fill="url(#calSweepG)"/></g>
+      <line class="cal-diag" x1="${sx(lo)}" y1="${sy(lo)}" x2="${sx(1)}" y2="${sy(1)}"/>
+      ${thrX}${area ? `<path class="cal-area" d="${area}" fill="url(#calAreaG)"/>` : ''}<path class="cal-line" d="${line}" pathLength="1" stroke="url(#calLineG)" filter="url(#calGlow)"/>${dots}
       <text class="cal-ax cal-at" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">${T('Modelin verdiği olasılık (%)')}</text>
       <text class="cal-ax cal-at" transform="translate(12 ${(Tp + H - B) / 2}) rotate(-90)" text-anchor="middle">${T('Gerçekleşme (%)')}</text></svg>`;
   }

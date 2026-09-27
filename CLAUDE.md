@@ -57,3 +57,8 @@ başlar; `Özet` sayfası formüllerle kendini günceller, elle yazılmaz).
   `git pull --rebase origin main` ve tekrar push.
 - Değişiklikten sonra `python scripts/run_tests.py` (tüm testler) yeşil olmalı.
 - `scratch/` commit edilmez.
+- Botun da yazdığı veri dosyalarını (`data/*.json`, `predictions.json`) değiştirdiysen
+  `pull --rebase --autostash` KULLANMA: çakışmada dosyaya `<<<<<<<` işaretleri girer ve
+  geçersiz JSON canlıya gider (27.09'da oldu). Önce `git checkout -- data/…` ile bırak,
+  `git pull --rebase`, sonra betiği yeniden çalıştırıp üret ve commit et. Push'tan önce
+  `grep -l '^<<<<<<<' data/*.json` boş olmalı.

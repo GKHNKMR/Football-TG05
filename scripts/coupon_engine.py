@@ -78,3 +78,32 @@ def dc_probs(lam_h, lam_a, rho):
 def hit(market, hg, ag):
     t = hg + ag
     return {'0.5+': t >= 1, '1.5+': t >= 2, '2.5+': t >= 3, '1X': hg >= ag, '12': hg != ag, 'X2': ag >= hg}[market]
+
+
+def alt_coupons(matches, R, n=5, max_legs=MAX_LEGS):
+    """Shuffle için farklı kombinasyonlar: en iyi kuponun her tahmini sırayla dışarıda bırakılarak
+    yeniden kurulur (iki tur). Aynı maç-tahmin kümesi tekrarlanmaz; tutma olasılığına göre sıralı,
+    ilk eleman en iyi kupondur."""
+    def key(legs):
+        return frozenset((l.get('home'), l.get('away'), l.get('market'), l.get('tag')) for l in legs)
+
+    best = pick_coupon(matches, R, max_legs)
+    if not best:
+        return []
+    found = {key(best): best}
+    frontier = [best]
+    for _ in range(2):
+        nxt = []
+        for base in frontier:
+            for leg in base:
+                banned = id(leg)
+                m2 = [[c for c in cands if id(c) != banned] for cands in matches]
+                alt = pick_coupon(m2, R, max_legs)
+                if alt and key(alt) not in found:
+                    found[key(alt)] = alt
+                    nxt.append(alt)
+        frontier = nxt
+        if len(found) >= n * 2:
+            break
+    out = sorted(found.values(), key=lambda legs: -math.prod(l['p'] for l in legs))
+    return out[:n]

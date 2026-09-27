@@ -25,7 +25,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tune_coupon_profiles import (ROOT, load_odds, legs_by_day, build_coupons, summarize, season_of,  # noqa: E402
                                   poisson_over, lam_from_p25)
-from coupon_engine import MAX_LEGS, HL_MIN, pick_coupon, dc_probs, hit  # noqa: E402
+from coupon_engine import MAX_LEGS, HL_MIN, pick_coupon, alt_coupons, dc_probs, hit  # noqa: E402
 
 DC = ['1X', '12', 'X2']
 GOAL = {'0.5+': 'p_over_0_5', '1.5+': 'p_over_1_5', '2.5+': 'p_over_2_5'}
@@ -183,15 +183,19 @@ def update_coupons(tables, now):
             key = f'{d}|{prof}'
             if key in coupons:
                 continue
-            legs = pick_coupon(matches, cfg['R'])
-            if legs:
+            opts = alt_coupons(matches, cfg['R'])
+            if opts:
+                legs = opts[0]
                 coupons[key] = dict(date=d, profile=prof, R=cfg['R'], legs=legs, odds=round(math.prod(l['odds'] for l in legs), 3),
-                                    p=round(math.prod(l['p'] for l in legs), 4), status='pending', frozen=False)
+                                    p=round(math.prod(l['p'] for l in legs), 4), status='pending', frozen=False,
+                                    # shuffle: diğer kombinasyonlar (değerlendirme yalnız ilk / en olası kupondan)
+                                    alts=[dict(legs=o, odds=round(math.prod(l['odds'] for l in o), 3), p=round(math.prod(l['p'] for l in o), 4)) for o in opts[1:]])
     idx = result_index()
     for c in coupons.values():
         first = min(datetime.fromisoformat(l['kickoff_utc'].replace('Z', '+00:00')) for l in c['legs'])
         if first <= now:
             c['frozen'] = True
+            c.pop('alts', None)
         res = []
         for l in c['legs']:
             sc = idx.get((l['league'], l['home'], l['away'], ist_day(l['kickoff_utc'])))

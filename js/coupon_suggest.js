@@ -18,6 +18,7 @@
   const dkey = iso => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
 
   let RULES = null, CPN = null, loading = null, dayIdx = 0, lastProfile = null;
+  const SHUF = {};   // gün|profil → gösterilen kombinasyon sırası (0 = en olası)
 
   function load() {
     if (RULES || loading) return loading;
@@ -126,12 +127,16 @@
     const prof = profileFor(ctx); if (!prof) return '';
     const cfg = CPN.profiles[prof], f = cfg.f, cur = I().locale;
     const eur = v => Number(v).toLocaleString(cur, { style: 'currency', currency: 'EUR' });
-    const c = day && CPN.coupons[`${day}|${prof}`];
+    const base = day && CPN.coupons[`${day}|${prof}`];
+    const opts = base ? [base].concat(base.alts || []) : [];
+    const sk = `${day}|${prof}`, si = opts.length ? (SHUF[sk] || 0) % opts.length : 0;
+    const c = opts[si];
     const bank = +ctx.bank || +ctx.start || 0, goal = Math.max(0, (+ctx.target || 0) - (+ctx.secured || 0));
     let body;
     if (c) {
       const est = c.legs.some(l => !l.real);
-      body = `<ul class="cs-legs">${c.legs.map(cLegHtml).join('')}</ul>
+      const shuf = opts.length > 1 ? `<div class="cs-shuf"><button type="button" class="cs-sb" data-shuf="${esc(sk)}">🔀 ${T('Başka kombinasyon')}</button><span>${T('Seçenek {i} / {n}', { i: si + 1, n: opts.length })}${si ? ' · ' + T('1. seçenek en yüksek tutma olasılıklı') : ' · ' + T('en yüksek tutma olasılıklı')}</span></div>` : '';
+      body = `${shuf}<ul class="cs-legs">${c.legs.map(cLegHtml).join('')}</ul>
         <div class="cs-sum"><span>${T('Kupon oranı')} <b>${odd(c.odds)}</b>${est ? ` <em class="cs-est">${T('(tahmini — gerçek oran maç haftası gelir)')}</em>` : ''}</span><span>${T('Model: kuponun tutma olasılığı')} <b>${pc(c.p)}</b></span>${bank > 0 ? `<span>${T('Kupona yatacak')} <b>${eur(bank * f)}</b></span>` : ''}</div>`;
     } else {
       body = `<p class="cs-empty">${T('Bu gün en fazla 5 vurgulu maçla gereken orana ulaşılamıyor.')}</p>`;
@@ -161,17 +166,15 @@
     const byDay = legsByDay(), tiers = RULES.tiers || [];
     const prof = profileFor(ctx), today = dkey(new Date().toISOString());
     const cDays = Object.values(CPN.coupons || {}).filter(c => c.profile === prof && c.date >= today).map(c => c.date);
-    const days = [...new Set(Object.keys(byDay).filter(k => tiers.some(t => couponFor(byDay[k], t))).concat(cDays))].sort();
+    const days = [...new Set(cDays)].sort();
     if (dayIdx >= days.length) dayIdx = Math.max(0, days.length - 1);
     const k = days[dayIdx];
-    const mineTier = tiers.find(t => t.profile === profile);
-    const roi = tiers.map(t => t.history ? `${T(TIER_NAME[t.id])} ${I().dec(t.history.roi_pct.toFixed(1))}%` : '').filter(Boolean).join(' · ');
     const head = `<div class="cs-head"><div><h2>🎯 ${T('Kupon önerisi')}</h2>
-        <p class="cs-sub">${T('Önce kasanın hedefine göre kupon, altında daha güvenli sabit kurallar.')}</p></div>
+        <p class="cs-sub">${T('Kasanın risk profili ve günlük hedefine göre, vurgulu tahminlerden kurulan kupon.')}</p></div>
       ${k ? `<div class="cs-nav"><button type="button" class="cs-nb" data-cs="-1" ${dayIdx ? '' : 'disabled'} aria-label="${T('Önceki gün')}">‹</button><span>${esc(dayLabel(k))}</span><button type="button" class="cs-nb" data-cs="1" ${dayIdx < days.length - 1 ? '' : 'disabled'} aria-label="${T('Sonraki gün')}">›</button></div>` : ''}</div>`;
-    const grid = k ? `${targetHtml(ctx, k)}<h3 class="cs-h3">${T('Daha güvenli sabit kurallar')}</h3><p class="cs-sub" style="margin:-4px 0 8px">${T('cs.fixed')}</p><div class="cs-grid">${tiers.map(t => tierHtml(t, byDay[k], false)).join('')}</div>`
+    const grid = k ? targetHtml(ctx, k)
       : `<p class="cs-empty">${T('Önümüzdeki günlerde kurala uyan maç yok.')}</p>`;
-    const note = `<p class="cs-note">${T('cs.note', { roi: esc(roi) })}</p>`;
+    const note = `<p class="cs-note">${T('cs.note2')}</p>`;
     return `<div class="card cs-card" id="cpnSuggest">${head}${grid}${note}</div>`;
   }
 
@@ -186,7 +189,9 @@
   function wire() {}
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('#cpnSuggest [data-cs]');
-    if (b && !b.disabled) { dayIdx += +b.dataset.cs; mount(); }
+    if (b && !b.disabled) { dayIdx += +b.dataset.cs; mount(); return; }
+    const sh = e.target.closest && e.target.closest('#cpnSuggest [data-shuf]');
+    if (sh) { SHUF[sh.dataset.shuf] = (SHUF[sh.dataset.shuf] || 0) + 1; mount(); }
   });
 
   load();

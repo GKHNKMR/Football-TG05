@@ -1283,9 +1283,10 @@
       lock: null,
       drop: null
     };
-    // Bugün zaten kilitleme/geri alma yapıldıysa yeni öneri yok
+    // Bugün zaten kilitleme/geri alma yapıldıysa yeni öneri yok. Hedef geçilse de öneri sürer:
+    // kişi oynamaya devam ediyorsa kazancı korumak asıl o zaman önemli.
     const actedToday = !!(last && last.cashout);
-    if (last && !coach.reached && !actedToday && coach.level === 'red') {
+    if (last && !actedToday && coach.level === 'red') {
       const amount = eiLockAmount(plan, W, secured, profile);
       if (amount > 0) coach.lock = { amount, stakeAfter: round((W - amount) * f, 2), limitAfter: eiLimit(plan, secured + amount) };
     }
@@ -1294,7 +1295,7 @@
     const lastCashRow = lastCash ? sim.rows.find(r => r.day === lastCash) : null;
     const base0 = lastCashRow && lastCashRow.actualBank != null ? lastCashRow.actualBank - lastCashRow.cashout : S;
     const peak = Math.max(base0, ...filled.filter(r => r.day > lastCash).map(r => r.actualBank));
-    if (last && !coach.reached && W <= peak * (1 - EI_CONFIG.drawdownPct)) {
+    if (last && W <= peak * (1 - EI_CONFIG.drawdownPct)) {
       coach.drop = { pct: round((1 - W / peak) * 100, 0), peak: round(peak, 2) };
     }
     // Yol haritası: bugünün önerisi uygulanmış kabul edilir

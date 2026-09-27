@@ -1273,15 +1273,15 @@
     let status;
     if (!c.day) {
       status = `<p class="ei-msg">${_t('İlk günün kasasını tabloya girince başlar.')}</p>`;
-    } else if (c.reached) {
-      status = `<p class="ei-msg good">${_t('🏁 Hedefe ulaştın! Kasayı kapatıp kazancını koruyabilirsin.')}</p>`;
     } else {
       const line = {
         red: _t('🔴 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Sınırı aştın.', vars),
         yellow: _t('🟡 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Sınıra yaklaşıyorsun.', vars),
         green: _t('🟢 Bugünkü kuponun {stake}, güvenli sınırın {limit}. Rahatsın.', vars)
       }[c.level];
+      // Hedef geçildiyse de ışık ve kilitleme önerisi sürer (oynamaya devam eden kazancı korusun)
       status = `
+        ${c.reached ? `<p class="ei-msg good">${_t('🏁 Hedefe ulaştın! Kasayı kapatıp kazancını koruyabilirsin.')}</p>` : ''}
         <div class="ei-light ei-${c.level}">${line}</div>
         ${c.lock ? `
           <div class="ei-act">

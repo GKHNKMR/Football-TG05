@@ -647,6 +647,9 @@ def main():
             // Zirveden %40 düşüş → mola uyarısı; hedefe ulaşıldı
             out.drop = coach(mk({ 1: 100, 2: 60 })).drop;
             out.reached = coach(mk({ 1: 10000 })).reached;
+            // Hedef geçildikten sonra da kilit önerisi sürer (50 → 1.000 € Minimum, 1.500 € kasa)
+            const rc = coach(mk({ 1: 60, 2: 100, 3: 200, 4: 1500 }, 'minimum', 50, 1000));
+            out.reachedLock = { reached: rc.reached, level: rc.level, lock: rc.lock };
             // Yol haritası: 50 → 10.000 € Medium için durak sayısı
             out.stops = coach(mk({ 1: 55 })).roadmap.stops.length;
             return out;
@@ -665,6 +668,9 @@ def main():
         assert gp['min200'] == 'yellow' and gp['min210'] == 'red'
         print("  ✓ Minimum risk: kasa başlangıcın 4 katını geçince (210 €) kilit önerisi.")
         assert gp['drop'] is not None and gp['drop']['pct'] == 40 and gp['reached'] is True
+        rl = gp['reachedLock']
+        assert rl['reached'] and rl['level'] == 'red' and rl['lock'] and rl['lock']['amount'] == 720, f"Hedef sonrası kilit önerisi bekleniyordu: {rl}"
+        print("  ✓ Hedef geçildikten sonra da sınır aşılınca kilit önerisi çıkıyor (1.500 € → 720 € kilitle).")
         assert 4 <= gp['stops'] <= 7, f"50 → 10.000 € Medium için 4-7 durak bekleniyordu, bulunan {gp['stops']}"
         print(f"  ✓ Zirveden %40 düşüşte mola uyarısı, hedefe ulaşma ve yol haritası ({gp['stops']} durak) doğrulandı.")
 

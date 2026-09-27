@@ -993,7 +993,10 @@ body{font-family:"Nunito Sans",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 .cs-nb{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;line-height:1;cursor:pointer}
 .cs-nb:disabled{opacity:.35;cursor:default}
 .cs-target{border:2px solid var(--good);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:6px;background:color-mix(in srgb,var(--good) 5%,var(--panel))}
-.cs-target .cs-legs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.cs-target .cs-legs{display:flex;flex-direction:column;gap:6px;counter-reset:leg}
+.cs-target .cs-leg{counter-increment:leg;padding-left:36px;position:relative}
+.cs-target .cs-leg::before{content:counter(leg);position:absolute;left:10px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:var(--good);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.cs-target .cs-m b{white-space:normal}
 .cs-shuf{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);font-weight:700}
 .cs-sb{border:1px solid var(--good);background:var(--panel);color:var(--good);border-radius:9px;padding:6px 12px;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
 .cs-sb:hover{background:var(--good);color:#fff}

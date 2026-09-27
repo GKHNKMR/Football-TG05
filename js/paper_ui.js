@@ -1512,6 +1512,10 @@
       ${window.BETAVUS_COUPON ? window.BETAVUS_COUPON.html({ profile: p.riskProfile, g: p.dailyGrowthRate, reserve: p.reservePct, start: p.startingBank, target: p.targetBank, bank: sim.currentBank, secured: sim.secured, days: p.daysToTarget }) : ''}
 
       <div class="card excel-model-card" id="kasaSimCard">
+        <div class="ks-tbl-head">
+          <h2>${_t('Günlük kasa tablosu')}</h2>
+          <span>${_t('{n} gün · hedef {t} · bugün {d}. gün', { n: sim.rows.length, t: formatCurrency(p.targetBank, curr), d: sim.todayDay })}</span>
+        </div>
         <div class="tbl-scroll ks-table-wrap">
           <table class="excel-table kasa-sim-table">
             <thead>
@@ -1525,14 +1529,14 @@
               </tr>
             </thead>
             <tbody>
-              ${sim.rows.map(r => `
-                <tr class="${r.isToday ? 'row-today' : ''}${r.cashout ? ' row-cashout' : ''}">
-                  <td title="${dmy(r.date)}">${r.day}</td>
+              ${sim.rows.map((r, k) => `
+                <tr class="ksr${r.isToday ? ' row-today' : ''}${r.cashout ? ' row-cashout' : ''}${r.actualBank != null ? ' has-real' : ''}" style="--d:${Math.min(0.9, k * 0.03).toFixed(2)}s">
+                  <td title="${dmy(r.date)}"><span class="ks-day">${r.day}</span>${r.isToday ? `<span class="ks-today-tag">${_t('Bugün')}</span>` : ''}</td>
                   <td>${formatCurrency(r.targetBank, curr)}</td>
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
-                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kilitlendi', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? formatCurrency(r.secured, curr) + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}
-                  <td>${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
-                  <td class="${r.totalGrowthPct == null ? '' : r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct != null ? signedPct(r.totalGrowthPct) : ''}</td>
+                  ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kilitlendi', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? `<span class="ks-lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>${formatCurrency(r.secured, curr)}</span>` + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}
+                  <td class="ks-chg${r.dailyChange == null ? '' : r.dailyChange >= 0 ? ' up' : ' down'}">${r.dailyChange != null ? formatCurrency(r.dailyChange, curr) : ''}</td>
+                  <td class="ks-grow ${r.totalGrowthPct == null ? '' : r.totalGrowthPct >= 0 ? 'good' : 'bad'}">${r.totalGrowthPct != null ? signedPct(r.totalGrowthPct) : ''}${r.totalBank != null && p.targetBank > 0 ? `<span class="ks-reach" style="--r:${Math.min(100, Math.max(0, r.totalBank / p.targetBank * 100)).toFixed(1)}" title="${_t('Hedefe ulaşma: {p}', { p: formatPct(Math.min(100, r.totalBank / p.targetBank * 100), 0) })}"></span>` : ''}</td>
                 </tr>
               `).join('')}
             </tbody>

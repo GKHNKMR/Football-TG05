@@ -186,6 +186,8 @@
     'İleri': { en: 'Next', nl: 'Volgende' },
     'Bitir': { en: 'Done', nl: 'Klaar' },
     'Rehber': { en: 'Guide', nl: 'Uitleg' },
+    '{n} gün · hedef {t} · bugün {d}. gün': { en: '{n} days · target {t} · today is day {d}', nl: '{n} dagen · doel {t} · vandaag is dag {d}' },
+    'Hedefe ulaşma: {p}': { en: 'Progress to target: {p}', nl: 'Voortgang naar doel: {p}' },
     'Dönen futbol topu; sürükleyerek çevirebilirsin': { en: 'Spinning football; drag to turn it', nl: 'Draaiende voetbal; sleep om te draaien' },
     'Bu ay': { en: 'This month', nl: 'Deze maand' },
     'Vurgu isabeti': { en: 'Highlight hit rate', nl: 'Trefkans markeringen' },

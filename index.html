@@ -1376,10 +1376,12 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
 /* #27 Fikstür başlığında dönen top + lig yörüngesi (js/ball_orbit.js) — yalnız Fikstür'de, başlıkla aynı
    yükseklikte, altındaki başarı bandını tekrar eden sayı kutuları yok */
 .orb{display:none}
-html[data-page="pred"] .hero.has-orb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);column-gap:24px;align-items:center}
+html[data-page="pred"] .hero.has-orb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);column-gap:24px;align-items:center;container-type:inline-size}
+/* Başlık tek satır: doğal genişlik ≈ 24,9 × yazı boyu; top sütunu (300 + 24 px) düşülen alana sığacak kadar küçülür, en çok 31 px */
+@media(min-width:651px){html[data-page="pred"] .hero.has-orb .hero-t{white-space:nowrap;font-size:clamp(18px,calc((100cqi - 330px) / 24.9),31px)}}
 html[data-page="pred"] .hero.has-orb .hero-t,html[data-page="pred"] .hero.has-orb .hero-s{grid-column:1}
 html[data-page="pred"] .hero.has-orb .hero-t{align-self:end}html[data-page="pred"] .hero.has-orb .hero-s{align-self:start}
-html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:relative;width:100%;max-width:340px;aspect-ratio:2/1;justify-self:end;user-select:none;margin:-6px 0 -10px}
+html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:relative;width:100%;max-width:300px;aspect-ratio:2/1;justify-self:end;user-select:none;margin:-6px 0 -10px}
 .orb-ball{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1/1;height:auto;transform:translate(-50%,-50%);z-index:5;cursor:grab;touch-action:none}
 .orb-ball:active{cursor:grabbing}
 .orb-ring{position:absolute;left:50%;top:50%;width:92%;height:56%;transform:translate(-50%,-50%);border:1.5px dashed color-mix(in srgb,var(--good) 30%,transparent);border-radius:50%;z-index:1;pointer-events:none}
@@ -1390,7 +1392,7 @@ html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:re
 .orb-flag span{font-size:8.5px;font-weight:900;letter-spacing:.07em;color:var(--text);background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
 .orb-flag:hover span,.orb-flag:focus-visible span{border-color:var(--good);color:var(--good)}
 .orb-flag:focus-visible{outline:none}.orb-flag:focus-visible svg{outline:2px solid var(--good);outline-offset:2px}
-@media(max-width:900px){html[data-page="pred"] .hero.has-orb{grid-template-columns:minmax(0,1fr) minmax(0,280px)}}
+@media(max-width:900px){html[data-page="pred"] .hero.has-orb{grid-template-columns:minmax(0,1fr) minmax(0,240px)}html[data-page="pred"] .hero.has-orb .hero-t{font-size:clamp(16px,calc((100cqi - 270px) / 24.9),31px)}}
 @media(max-width:650px){
   html[data-page="pred"] .hero.has-orb{grid-template-columns:minmax(0,1fr)}
   html[data-page="pred"] .hero.has-orb .hero-t,html[data-page="pred"] .hero.has-orb .hero-s,html[data-page="pred"] .orb{grid-column:1;grid-row:auto}

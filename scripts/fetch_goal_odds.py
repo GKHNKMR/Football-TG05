@@ -52,6 +52,7 @@ FINAL_GIVE_UP_D = 3
 MAX_CALLS = 40             # bir çalıştırmada en fazla istek (saatlik kota 60)
 MIN_REMAINING = 3          # X-RateLimit-Remaining bunun altına inerse dur
 KEEP_DAYS = 400
+MISS_V = 2                 # eşleme kuralı değişince eski 'bulunamadı' kayıtları beklemeden yeniden denenir
 
 
 class Budget:
@@ -100,10 +101,19 @@ def parse_iso(s):
 
 
 def league_name_ok(x, want):
-    """API lig adı bizimkine uyuyor mu? ('LaLiga' / 'La Liga EA Sports' / 'Premier League' …)"""
-    n = norm(x.get('name', '')).replace(' ', '')
-    w = want.replace(' ', '')
-    return n == w or (n.startswith(w) and not any(c.isdigit() for c in n[len(w):]))
+    """API lig adı bizimkine uyuyor mu? API ülke önekiyle yazıyor: 'England Premier League',
+    'Spain La Liga', 'Germany Bundesliga I' — önek ve sondaki 'I' atılır; 'Bundesliga II',
+    'Premier League 2', 'Serie B' elenir."""
+    n = norm(x.get('name', ''))
+    c = x.get('country')
+    cname = norm(c.get('name', '')) if isinstance(c, dict) else ''
+    for pre in (cname, 'ENGLAND', 'SPAIN', 'GERMANY', 'ITALY', 'FRANCE'):
+        if pre and n.startswith(pre + ' '):
+            n = n[len(pre) + 1:]
+            break
+    if n.endswith(' I'):
+        n = n[:-2]
+    return n.replace(' ', '') == want.replace(' ', '')
 
 
 def find_league_ids(budget, known, misses, now):
@@ -112,7 +122,7 @@ def find_league_ids(budget, known, misses, now):
     ids = dict(known)
     for ours, (country, want) in LEAGUES.items():
         m = misses.get(ours)
-        if ours in ids or (isinstance(m, dict) and now - parse_iso(m['at']) < timedelta(hours=24)):
+        if ours in ids or (isinstance(m, dict) and m.get('v') == MISS_V and now - parse_iso(m['at']) < timedelta(hours=24)):
             continue
         resp = api_get(budget, '/leagues', {'country': country, 'per_page': 100})
         if resp is None:
@@ -130,7 +140,7 @@ def find_league_ids(budget, known, misses, now):
         else:
             seen = [f"{x.get('name')} [{(x.get('country') or {}).get('code') if isinstance(x.get('country'), dict) else x.get('country')}]"
                     for x in got][:25]
-            misses[ours] = {'at': now.isoformat(timespec='seconds'), 'seen': seen,
+            misses[ours] = {'v': MISS_V, 'at': now.isoformat(timespec='seconds'), 'seen': seen,
                             'resp_keys': sorted(k for k in resp.keys()) if isinstance(resp, dict) else None,
                             'error': resp.get('_body') if isinstance(resp, dict) and resp.get('_error') else None}
             print(f'  lig bulunamadı: {ours} ({country}): {seen}')

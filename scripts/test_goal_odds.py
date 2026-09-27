@@ -39,8 +39,11 @@ def fake(budget, path, params=None):
     budget.remaining = 50
     if path == '/leagues':
         c = params.get('country')
-        data = {'GB-ENG': [{'id': 11, 'name': 'Premier League', 'last_fixture_ts': 9}, {'id': 12, 'name': 'Premier League 2'}],
-                'DE': [{'id': 21, 'name': 'Bundesliga', 'last_fixture_ts': 9}, {'id': 22, 'name': '2. Bundesliga'}]}.get(c, [])
+        # gerçek API biçimi (27.09 canlı teşhis): ülke önekli adlar
+        data = {'GB-ENG': [{'id': 11, 'name': 'England Premier League', 'country': {'code': 'GB-ENG', 'name': 'England'}},
+                           {'id': 12, 'name': 'England Premier League 2', 'country': {'code': 'GB-ENG', 'name': 'England'}}],
+                'DE': [{'id': 21, 'name': 'Germany Bundesliga I', 'country': {'code': 'DE', 'name': 'Germany'}},
+                       {'id': 22, 'name': 'Germany Bundesliga II', 'country': {'code': 'DE', 'name': 'Germany'}}]}.get(c, [])
         return {'success': 1, 'data': data}
     if path == '/leagues/11/fixtures':
         return {'success': 1, 'data': [fx(101, 11, 'Wolves', 'Manchester Utd', KO1), fx(102, 11, 'Arsenal', 'Chelsea', KO2),
@@ -113,6 +116,10 @@ print('\nTüm gol oranı testleri geçti.')
 
 # Lig adı esnekliği
 ok = lambda n, w: G.league_name_ok({'name': n}, w)
-assert ok('LaLiga', 'LA LIGA') and ok('La Liga EA Sports', 'LA LIGA') and ok('Premier League', 'PREMIER LEAGUE')
-assert not ok('Premier League 2', 'PREMIER LEAGUE') and not ok('2. Bundesliga', 'BUNDESLIGA') and not ok('Serie B', 'SERIE A')
-print('✓ Lig adı eşlemesi: LaLiga / La Liga EA Sports kabul, Premier League 2 / 2. Bundesliga / Serie B red.')
+for n, w in [('England Premier League', 'PREMIER LEAGUE'), ('Spain La Liga', 'LA LIGA'), ('Germany Bundesliga I', 'BUNDESLIGA'),
+             ('Italy Serie A', 'SERIE A'), ('France Ligue 1', 'LIGUE 1'), ('LaLiga', 'LA LIGA')]:
+    assert ok(n, w), n
+for n, w in [('England Premier League 2', 'PREMIER LEAGUE'), ('Germany Bundesliga II', 'BUNDESLIGA'), ('Italy Serie B', 'SERIE A'),
+             ('France Ligue 2', 'LIGUE 1')]:
+    assert not ok(n, w), n
+print('✓ Lig adı eşlemesi: API gerçek adları (England Premier League, Germany Bundesliga I vb.) kabul, alt ligler red.')

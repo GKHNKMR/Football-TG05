@@ -1403,11 +1403,11 @@ html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:re
 /* #28 İstatistikler "Vurgulanan maçlar" listesi — futuristik görünüm (js/stats_ui.js matchList) */
 .st-list .st-rfs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel2) 55%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .st-list .st-rf{border-color:transparent;background:transparent;border-radius:9px;transition:background .2s,box-shadow .2s,color .2s}
-.st-list .st-rf.on{box-shadow:0 0 0 1px color-mix(in srgb,var(--good) 60%,transparent),0 4px 18px color-mix(in srgb,var(--good) 35%,transparent)}
-.st-list .st-rf-won.on{box-shadow:0 0 0 1px rgba(34,197,94,.6),0 4px 18px rgba(34,197,94,.35)}
-.st-list .st-rf-lost.on{box-shadow:0 0 0 1px rgba(239,68,68,.6),0 4px 18px rgba(239,68,68,.35)}
+.st-list .st-rf.on{background:var(--good);color:var(--good-ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--good) 60%,transparent),0 4px 18px color-mix(in srgb,var(--good) 35%,transparent)}
+.st-list .st-rf-won.on{background:#16a34a;color:#fff;box-shadow:0 0 0 1px rgba(34,197,94,.6),0 4px 18px rgba(34,197,94,.35)}
+.st-list .st-rf-lost.on{background:#dc2626;color:#fff;box-shadow:0 0 0 1px rgba(239,68,68,.6),0 4px 18px rgba(239,68,68,.35)}
 .st-matches{border-collapse:separate;border-spacing:0 4px}
-.st-matches thead th{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--panel) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid color-mix(in srgb,#2ed3c3 35%,var(--line))}
+.st-matches thead th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid color-mix(in srgb,#2ed3c3 35%,var(--line))}
 .st-matches tbody tr.st-row{animation:stIn .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
 .st-matches tbody tr.st-row td{background:color-mix(in srgb,var(--panel2) 45%,transparent);border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);transition:background .2s}
 .st-matches tbody tr.st-row td:first-child{border-left:3px solid var(--rc);border-radius:10px 0 0 10px;box-shadow:inset 8px 0 14px -10px var(--rc)}

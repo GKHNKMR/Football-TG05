@@ -179,3 +179,24 @@ with sync_playwright() as p:
     assert not errs, errs
     b.close()
 print('Dönen top testleri geçti.')
+
+# ---- İstatistikler listesi: 0.5+ … X2 sütunlarına göre sıralama
+with sync_playwright() as p:
+    b = p.chromium.launch()
+    pg = b.new_page(viewport={'width': 1280, 'height': 900})
+    pg.add_init_script(f"localStorage.setItem('betavus.access','{ACCESS}');localStorage.setItem('betavus.lang','tr');")
+    pg.goto(URL)
+    pg.wait_for_selector('#rows .row[data-mid]', timeout=15000)
+    pg.evaluate("setTab('stats')")
+    pg.wait_for_selector('.st-list .st-row', timeout=15000)
+    col = lambda i: pg.eval_on_selector_all(f'.st-matches tbody tr.st-row td:nth-child({i})', 'els=>els.map(e=>parseFloat(e.textContent.replace(",",".")))')
+    for k, i in [('1.5+', 5), ('X2', 9)]:
+        pg.click(f'.st-matches th[data-sort="{k}"]')
+        v = col(i); assert v == sorted(v, reverse=True), (k, v[:6])
+        pg.click(f'.st-matches th[data-sort="{k}"]')
+        v = col(i); assert v == sorted(v), (k, v[:6])
+    pg.click('#stDateSort')
+    d = pg.eval_on_selector_all('.st-matches tbody tr.st-row td:nth-child(1)', 'els=>els.map(e=>e.textContent.split(".").reverse().join(""))')
+    assert d == sorted(d, reverse=True), d[:5]
+    print('✓ İstatistikler listesi: 0.5+ … X2 başlıkları yüksekten düşüğe / düşükten yükseğe sıralıyor, Tarih geri alıyor.')
+    b.close()

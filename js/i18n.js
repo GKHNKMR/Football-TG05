@@ -186,6 +186,9 @@
     'İleri': { en: 'Next', nl: 'Volgende' },
     'Bitir': { en: 'Done', nl: 'Klaar' },
     'Rehber': { en: 'Guide', nl: 'Uitleg' },
+    'Tıkla: {k} olasılığına göre sırala ({x})': { en: 'Click: sort by {k} probability ({x})', nl: 'Klik: sorteer op kans {k} ({x})' },
+    'yüksekten düşüğe': { en: 'high to low', nl: 'hoog naar laag' },
+    'düşükten yükseğe': { en: 'low to high', nl: 'laag naar hoog' },
     '{n} gün · hedef {t} · bugün {d}. gün': { en: '{n} days · target {t} · today is day {d}', nl: '{n} dagen · doel {t} · vandaag is dag {d}' },
     'Hedefe ulaşma: {p}': { en: 'Progress to target: {p}', nl: 'Voortgang naar doel: {p}' },
     'Dönen futbol topu; sürükleyerek çevirebilirsin': { en: 'Spinning football; drag to turn it', nl: 'Draaiende voetbal; sleep om te draaien' },
@@ -490,9 +493,9 @@
     '✗ Tutmayan': { en: '✗ Lost', nl: '✗ Niet uitgekomen' },
     '{n} tahmin': { en: '{n} predictions', nl: '{n} voorspellingen' },
     'st.note.list': {
-      tr: 'Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Bir maçta birden fazla vurgu olabilir; sayaçlar vurgulu tahmin sayısını gösterir. Tarih başlığına tıklayarak sıralamayı değiştir.',
-      en: 'Each cell is the pre-match model probability. <span class="st-legend win">green</span> = highlighted prediction came true, <span class="st-legend lose">red</span> = highlighted prediction missed, <b>✓</b> = not highlighted but happened. A match can carry several highlights; the counters show highlighted predictions. Click the date header to change the order.',
-      nl: 'Elke cel is de modelkans van vóór de wedstrijd. <span class="st-legend win">groen</span> = gemarkeerde voorspelling uitgekomen, <span class="st-legend lose">rood</span> = gemarkeerde voorspelling niet uitgekomen, <b>✓</b> = niet gemarkeerd maar wel gebeurd. Een wedstrijd kan meerdere markeringen hebben; de tellers tonen gemarkeerde voorspellingen. Klik op de datumkop om de volgorde te wijzigen.'
+      tr: 'Her hücre maç öncesi model olasılığıdır. <span class="st-legend win">yeşil</span> = vurgulanan tahmin tuttu, <span class="st-legend lose">kırmızı</span> = vurgulanan tahmin tutmadı, <b>✓</b> = vurgusuz ama gerçekleşti. Bir maçta birden fazla vurgu olabilir; sayaçlar vurgulu tahmin sayısını gösterir. Tarih ya da 0.5+ … X2 başlığına tıklayarak sırala; aynı başlığa tekrar tıklamak yönü çevirir.',
+      en: 'Each cell is the pre-match model probability. <span class="st-legend win">green</span> = highlighted prediction came true, <span class="st-legend lose">red</span> = highlighted prediction missed, <b>✓</b> = not highlighted but happened. A match can carry several highlights; the counters show highlighted predictions. Click the date or a 0.5+ … X2 header to sort; click the same header again to reverse.',
+      nl: 'Elke cel is de modelkans van vóór de wedstrijd. <span class="st-legend win">groen</span> = gemarkeerde voorspelling uitgekomen, <span class="st-legend lose">rood</span> = gemarkeerde voorspelling niet uitgekomen, <b>✓</b> = niet gemarkeerd maar wel gebeurd. Een wedstrijd kan meerdere markeringen hebben; de tellers tonen gemarkeerde voorspellingen. Klik op de datumkop of een kop 0.5+ … X2 om te sorteren; klik nogmaals om om te draaien.'
     },
     'Tıkla: {x} sırala': { en: 'Click: sort {x}', nl: 'Klik: sorteer {x}' },
     'eskiden yeniye': { en: 'oldest first', nl: 'oudste eerst' },

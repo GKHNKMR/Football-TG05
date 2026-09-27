@@ -20,10 +20,12 @@
   ];
 
   let DATA = null, loading = null;
-  const st = { season: '', res: 'all', q: '', order: 'desc', page: 0, cal: '0.5+' };   // res: all | won | lost (vurgulu maçlar)
+  // res: all | won | lost (vurgulu maçlar) · sort: 'date' ya da pazar ('0.5+' … 'X2'), order: asc | desc
+  const st = { season: '', res: 'all', q: '', order: 'desc', sort: 'date', page: 0, cal: '0.5+' };
   try {
     st.season = localStorage.getItem('betavus.stats_season') || '';
     st.order = localStorage.getItem('betavus.stats_order2') || 'desc';   // varsayılan: yeniden eskiye
+    st.sort = localStorage.getItem('betavus.stats_sort') || 'date';
     st.cal = localStorage.getItem('betavus.stats_cal') || '0.5+';
   } catch (e) {}
 
@@ -234,7 +236,12 @@
   function matchList(rows) {
     const groups = hlRows(rows);
     let list = groups[st.res] || groups.all;
-    if (st.order === 'desc') list = list.slice().reverse();
+    const sortM = st.sort !== 'date' && MARKETS.find(([k]) => k === st.sort);
+    if (sortM) {
+      // Pazar sütunu: modelin o pazar için verdiği olasılığa göre; eşitlikte yeni maç önce
+      const i = sortM[1], dir = st.order === 'asc' ? 1 : -1;
+      list = list.map((r, k) => [r, k]).sort((a, b) => (a[0][i] - b[0][i]) * dir || b[1] - a[1]).map(x => x[0]);
+    } else if (st.order === 'desc') list = list.slice().reverse();
     const pages = Math.max(1, Math.ceil(list.length / PAGE));
     if (st.page >= pages) st.page = pages - 1;
     const slice = list.slice(st.page * PAGE, st.page * PAGE + PAGE);
@@ -259,7 +266,7 @@
       <div class="st-rfs">${fbtn('all')}${fbtn('won')}${fbtn('lost')}</div>
       <p class="st-note">${T('st.note.list')}</p>
       ${pager}
-      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort" id="stDateSort" title="${T('Tıkla: {x} sırala', { x: T(st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye') })}">${T('Tarih')} ${st.order === 'desc' ? '▼' : '▲'}</th><th>${T('Maç')}</th><th>${T('Skor')}</th>${MARKETS.map(([k]) => `<th>${k}</th>`).join('')}<th>${T('Vurgu')}</th></tr></thead>
+      <div class="tbl-scroll"><table class="bt-table st-table st-matches"><thead><tr><th class="st-sort${st.sort === 'date' ? ' on' : ''}" id="stDateSort" data-sort="date" title="${T('Tıkla: {x} sırala', { x: T(st.sort === 'date' && st.order === 'desc' ? 'eskiden yeniye' : 'yeniden eskiye') })}">${T('Tarih')} ${st.sort === 'date' ? (st.order === 'desc' ? '▼' : '▲') : ''}</th><th>${T('Maç')}</th><th>${T('Skor')}</th>${MARKETS.map(([k]) => `<th class="st-sort${st.sort === k ? ' on' : ''}" data-sort="${k}" title="${T('Tıkla: {k} olasılığına göre sırala ({x})', { k, x: T(st.sort === k && st.order === 'desc' ? 'düşükten yükseğe' : 'yüksekten düşüğe') })}">${k} ${st.sort === k ? (st.order === 'desc' ? '▼' : '▲') : ''}</th>`).join('')}<th>${T('Vurgu')}</th></tr></thead>
       <tbody>${body || `<tr><td colspan="10" class="st-mut" style="text-align:center;padding:24px">${T('Bu filtrede maç yok')}</td></tr>`}</tbody></table></div>
       ${pager}</div>`;
   }
@@ -295,7 +302,17 @@
     wireCal(host, rows);
     const $ = id => document.getElementById(id);
     $('stSeason').onchange = e => { st.season = e.target.value; st.page = 0; try { localStorage.setItem('betavus.stats_season', st.season); } catch (x) {} render(); };
-    $('stDateSort').onclick = () => { st.order = st.order === 'asc' ? 'desc' : 'asc'; st.page = 0; try { localStorage.setItem('betavus.stats_order2', st.order); } catch (x) {} render(); };
+    // Tarih ve pazar sütunları: aynı sütuna tekrar tıklamak yönü çevirir, yeni sütun yüksekten düşüğe (tarihte yeniden eskiye) başlar
+    host.querySelectorAll('.st-matches th[data-sort]').forEach(th => {
+      th.onclick = () => {
+        const k = th.dataset.sort;
+        if (st.sort === k) st.order = st.order === 'asc' ? 'desc' : 'asc';
+        else { st.sort = k; st.order = 'desc'; }
+        st.page = 0;
+        try { localStorage.setItem('betavus.stats_order2', st.order); localStorage.setItem('betavus.stats_sort', st.sort); } catch (x) {}
+        render();
+      };
+    });
     $('stLeague').onchange = e => { if (typeof setLeague === 'function') setLeague(e.target.value); st.page = 0; render(); };
     // Fikstür'deki modern açılır panel; sayılar sezon + aramaya göre, lig hariç
     if (typeof root.enhanceLeagueSelect === 'function') root.enhanceLeagueSelect($('stLeague'), () => {

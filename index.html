@@ -1459,9 +1459,9 @@ html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:re
 .ks-grow{font-weight:900}
 .ks-reach{display:block;height:3px;margin:4px auto 0;max-width:110px;border-radius:2px;background:color-mix(in srgb,var(--line) 80%,transparent);position:relative;overflow:hidden}
 .ks-reach::after{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--r,0)*1%);background:linear-gradient(90deg,#0d9488,#5eead4);box-shadow:0 0 8px #2ed3c3;transform-origin:left center}
-.fillin .kasa-sim-table tr.ksr{animation:stIn .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+/* satır giriş animasyonu yok: tablo her değer girişinde yeniden çiziliyor, animasyon sırasında kaydırma koruması şaşıyordu */
 .fillin .ks-reach::after{animation:pfFill 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
-@media(prefers-reduced-motion:reduce){.fillin .kasa-sim-table tr.ksr,.fillin .ks-reach::after{animation:none}}
+@media(prefers-reduced-motion:reduce){.fillin .ks-reach::after{animation:none}}
 </style>
 
 </head>

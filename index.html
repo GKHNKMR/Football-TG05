@@ -1348,7 +1348,14 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
 .tour-prev:disabled{opacity:.4;cursor:default}
 .tour .tour-skip{background:none;color:var(--muted);padding:2px 4px}
 .tour button:focus-visible{outline:2px solid var(--good);outline-offset:2px}
-.tour-again{margin:0 0 14px;border:1px solid var(--good);background:transparent;color:var(--good);font:inherit;font-weight:800;font-size:13.5px;border-radius:9px;padding:8px 14px;cursor:pointer}
+.tour-again-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;font-weight:700;color:var(--muted);font-size:13.5px}
+.tour-fab{position:fixed;right:16px;bottom:18px;z-index:70;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--text);font:inherit;font-weight:800;font-size:13px;border-radius:999px;padding:8px 14px 8px 10px;cursor:pointer;box-shadow:var(--shadow)}
+.tour-fab svg{width:18px;height:18px;fill:none;stroke:var(--good);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tour-fab[hidden]{display:none}
+.tour-fab:hover{border-color:var(--good)}
+.tour-fab:focus-visible{outline:2px solid var(--good);outline-offset:2px}
+@media(max-width:650px){.tour-fab{bottom:calc(76px + env(safe-area-inset-bottom,0px));right:12px;padding:7px}.tour-fab span{display:none}}
+.tour-again{margin:0;border:1px solid var(--good);background:transparent;color:var(--good);font:inherit;font-weight:800;font-size:13.5px;border-radius:9px;padding:8px 14px;cursor:pointer}
 
 @media(prefers-reduced-motion:reduce){
   .aurora i,.sk,.fillin .pill.pf::after,.fillin .tdy-ring{animation:none!important}
@@ -1436,7 +1443,10 @@ html .table,html .card,html .faq details,html .tdy{background:color-mix(in srgb,
   <section id="pane-cifte" hidden></section>
   <section id="pane-faq" hidden>
     <h1 class="st-h1" data-i18n="Sık Sorulan Sorular">Sık Sorulan Sorular</h1>
-    <button type="button" class="tour-again" id="tourAgain" data-i18n="Rehberi yeniden göster">Rehberi yeniden göster</button>
+    <div class="tour-again-row"><span data-i18n="Sayfa rehberleri:">Sayfa rehberleri:</span>
+      <button type="button" class="tour-again" data-tour="pred" data-i18n="Fikstür">Fikstür</button>
+      <button type="button" class="tour-again" data-tour="stats" data-i18n="İstatistikler">İstatistikler</button>
+      <button type="button" class="tour-again" data-tour="plan" data-i18n="Sanal Kasa">Sanal Kasa</button></div>
     <div class="intro-grid faq-intro">
       <div class="intro-box is-what">
         <div class="intro-tag" data-i18n-html="faq.what.tag"></div>

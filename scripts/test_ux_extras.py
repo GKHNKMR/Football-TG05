@@ -60,8 +60,29 @@ with sync_playwright() as p:
     for _ in range(steps):
         pg.click('.tour-next')
     assert pg.locator('.tour').count() == 0
-    assert pg.evaluate("localStorage.getItem('betavus.tour_v1')") == '1'
-    print(f'✓ 4 · İlk giriş rehberi {steps} adımda açılıp kapanıyor, bir daha gösterilmiyor.')
+    assert pg.evaluate("localStorage.getItem('betavus.tour_pred_v1')") == '1'
+    print(f'✓ 4 · Fikstür rehberi ilk açılışta {steps} adımda açılıp kapanıyor, bir daha gösterilmiyor.')
+    assert pg.is_visible('#tourBtn')
+
+    # her sekmenin kendi rehberi: ilk açılışta bir kez
+    for tab in ('stats', 'plan'):
+        pg.evaluate(f"setTab('{tab}')")
+        pg.wait_for_selector(f'.tour[data-tab="{tab}"] .tour-tip', timeout=8000)
+        n = int(pg.inner_text('.tour-n').split('/')[1])
+        titles = []
+        for _ in range(n):
+            titles.append(pg.inner_text('#tourT'))
+            pg.click('.tour-next')
+        assert pg.locator('.tour').count() == 0 and n >= 3, (tab, n)
+        print(f'✓ 4 · {tab} rehberi ilk açılışta: {n} adım ({" / ".join(titles)}).')
+    pg.evaluate("setTab('stats')")
+    pg.wait_for_timeout(1500)
+    assert pg.locator('.tour').count() == 0, 'görülen rehber tekrar açılmamalı'
+    pg.click('#tourBtn')
+    pg.wait_for_selector('.tour[data-tab="stats"] .tour-tip', timeout=5000)
+    pg.keyboard.press('Escape')
+    assert pg.locator('.tour').count() == 0
+    print("✓ 4 · Köşedeki 'Rehber' düğmesi o sekmenin turunu yeniden açıyor, Esc kapatıyor.")
     if OUT:
         pg.screenshot(path=str(OUT / 'ux-desktop.png'))
 
@@ -79,11 +100,13 @@ with sync_playwright() as p:
 
     # rehber yeniden: SSS'teki düğme
     pg.evaluate("setTab('faq')")
-    pg.click('#tourAgain')
-    pg.wait_for_selector('.tour .tour-tip', timeout=5000)
+    assert not pg.is_visible('#tourBtn')
+    pg.click('[data-tour="plan"]')
+    pg.wait_for_selector('.tour[data-tab="plan"] .tour-tip', timeout=5000)
+    assert pg.evaluate("document.documentElement.dataset.page") == 'plan'
     pg.click('.tour-skip')
     assert pg.locator('.tour').count() == 0
-    print("✓ 4 · SSS'teki 'Rehberi yeniden göster' çalışıyor, 'Atla' kapatıyor.")
+    print("✓ 4 · SSS'teki sayfa rehberi düğmeleri doğru sekmeye geçip turu açıyor, 'Atla' kapatıyor.")
 
     # ---- telefon: alt menü
     m = b.new_page(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)

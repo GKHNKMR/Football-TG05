@@ -164,17 +164,38 @@
     });
   }
 
-  // ---------------------------------------------------------------- 4 · ilk giriş rehberi
-  const TOUR_KEY = 'tour_v1';
-  const STEPS = [
-    { sel: () => document.querySelector('#rows .pill.hot') || $('rows'), t: 'Vurgu nedir?', p: 'tour.p1' },
-    { sel: () => $('todayCard') && !$('todayCard').hidden ? $('todayCard') : null, t: 'Günün öne çıkanları', p: 'tour.p2' },
-    { sel: () => (getComputedStyle($('botNav') || document.body).display !== 'none' && document.querySelector('#botNav [data-pg="plan"]')) || $('tab-plan'), t: 'Sanal Kasa', p: 'tour.p3' }
-  ];
-  let tourEl = null, tourI = 0, tourSteps = [];
+  // ---------------------------------------------------------------- 4 · sekme rehberleri
+  // Her sekmenin kendi kısa turu: sekme ilk açıldığında bir kez kendiliğinden başlar; köşedeki
+  // "Rehber" düğmesi ve SSS'teki düğmeler o sekmenin turunu yeniden açar.
+  const q = s => document.querySelector(s);
+  const vis = el => (el && el.offsetParent !== null ? el : null);
+  const TOURS = {
+    pred: [
+      { sel: () => vis(q('#rows .pill.hot')) || vis($('rows')), t: 'Vurgu nedir?', p: 'tour.p1' },
+      { sel: () => vis($('todayCard')), t: 'Günün öne çıkanları', p: 'tour.p2' },
+      { sel: () => vis($('dayStrip')), t: 'Gün seçimi', p: 'tour.pred3' },
+      { sel: () => vis(q('#pane-pred .datectl')), t: 'Arama ve filtreler', p: 'tour.pred4' }
+    ],
+    stats: [
+      { sel: () => vis(q('#pane-stats .st-kpis')), t: 'Geçmiş başarı', p: 'tour.st1' },
+      { sel: () => (vis($('stLeague')) || vis($('stSeason'))) && ($('stSeason') || $('stLeague')).parentElement, t: 'Lig, sezon ve takım', p: 'tour.st2' },
+      { sel: () => vis($('stCal')), t: 'Model ne kadar güvenilir?', p: 'tour.st3' },
+      { sel: () => vis(q('#pane-stats .st-list')), t: 'Maç maç sonuçlar', p: 'tour.st4' }
+    ],
+    plan: [
+      { sel: () => vis(q('#pane-plan .kasa-sheet')), t: 'Kasanı kur', p: 'tour.pl1' },
+      { sel: () => vis($('cpnSuggest')), t: 'Kupon önerisi', p: 'tour.pl2' },
+      { sel: () => vis($('eiCoachCard')), t: 'Güven Payı', p: 'tour.pl3' },
+      { sel: () => vis($('kasaSimCard')), t: 'Günlük kasa tablosu', p: 'tour.pl4' }
+    ]
+  };
+  const tourKeyOf = tab => 'tour_' + tab + '_v1';
+  const seen = tab => !!(get(tourKeyOf(tab)) || (tab === 'pred' && get('tour_v1')));
+  let tourEl = null, tourI = 0, tourSteps = [], tourTab = null;
   function endTour() {
-    put(TOUR_KEY, '1');
+    if (tourTab) put(tourKeyOf(tourTab), '1');
     if (tourEl) { tourEl.remove(); tourEl = null; }
+    tourTab = null;
     window.removeEventListener('resize', placeTour);
     window.removeEventListener('scroll', placeTour, true);
     document.removeEventListener('keydown', tourKey);
@@ -185,11 +206,14 @@
     const s = tourSteps[tourI], el = s && s.sel();
     const ring = tourEl.querySelector('.tour-ring'), tip = tourEl.querySelector('.tour-tip');
     if (!el) return;
-    const r = el.getBoundingClientRect(), pad = 6;
-    Object.assign(ring.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
-    const vw = document.documentElement.clientWidth, vh = window.innerHeight, tw = Math.min(330, vw - 24), th = tip.offsetHeight || 150;
-    let top = r.bottom + 14;
-    if (top + th > vh - 12) top = Math.max(12, r.top - th - 14);
+    const r = el.getBoundingClientRect(), pad = 6, vh = window.innerHeight;
+    const top0 = Math.max(r.top, 4), bot0 = Math.min(r.bottom, vh - 4);        // çok uzun öğede görünen kısmı
+    Object.assign(ring.style, { left: r.left - pad + 'px', top: top0 - pad + 'px', width: r.width + pad * 2 + 'px', height: Math.max(0, bot0 - top0) + pad * 2 + 'px' });
+    const vw = document.documentElement.clientWidth, tw = Math.min(340, vw - 24), th = tip.offsetHeight || 160;
+    const bottomSafe = document.body.classList.contains('has-botnav') && vw <= 650 ? 70 : 0;
+    let top = bot0 + 14;
+    if (top + th > vh - 12 - bottomSafe) top = top0 - th - 14;
+    if (top < 12) top = Math.max(12, vh - th - 12 - bottomSafe);
     tip.style.width = tw + 'px';
     tip.style.left = Math.max(12, Math.min(vw - tw - 12, r.left + r.width / 2 - tw / 2)) + 'px';
     tip.style.top = top + 'px';
@@ -197,7 +221,10 @@
   function showStep(i) {
     tourI = i;
     const s = tourSteps[i], el = s.sel();
-    el.scrollIntoView({ block: 'center', behavior: 'auto' });
+    if (el) {
+      const r = el.getBoundingClientRect();
+      el.scrollIntoView({ block: r.height > window.innerHeight * 0.55 ? 'start' : 'center', behavior: 'auto' });
+    }
     const tip = tourEl.querySelector('.tour-tip');
     tip.querySelector('.tour-n').textContent = `${i + 1}/${tourSteps.length}`;
     tip.querySelector('b').textContent = T(s.t);
@@ -208,13 +235,17 @@
     requestAnimationFrame(placeTour);
     tip.querySelector('.tour-next').focus({ preventScroll: true });
   }
-  function startTour() {
-    if (tourEl) return;
-    if (document.documentElement.dataset.page !== 'pred' && typeof setTab === 'function') setTab('pred');
-    tourSteps = STEPS.filter(s => s.sel());
-    if (!tourSteps.length) return;
+  function startTour(tab) {
+    tab = tab || document.documentElement.dataset.page || 'pred';
+    if (!TOURS[tab]) tab = 'pred';
+    if (tourEl) endTour();
+    if (document.documentElement.dataset.page !== tab && typeof setTab === 'function') setTab(tab);
+    tourSteps = TOURS[tab].filter(s => s.sel());
+    if (!tourSteps.length) return false;
+    tourTab = tab;
     tourEl = document.createElement('div');
     tourEl.className = 'tour';
+    tourEl.dataset.tab = tab;
     tourEl.innerHTML = `<div class="tour-ring"></div><div class="tour-tip" role="dialog" aria-modal="true" aria-labelledby="tourT">
       <div class="tour-top"><span class="tour-n"></span><button type="button" class="tour-skip">${T('Atla')}</button></div>
       <b id="tourT"></b><p></p>
@@ -228,22 +259,55 @@
     window.addEventListener('scroll', placeTour, true);
     document.addEventListener('keydown', tourKey);
     showStep(0);
+    return true;
   }
+  // Sekme ilk açıldığında: ilk adımın hedefi çizilene kadar (en çok ~6 sn) bekler, sonra bir kez başlar
+  let autoTimer = null;
   function maybeTour() {
-    if (get(TOUR_KEY) || tourEl || document.documentElement.dataset.page !== 'pred') return;
+    clearTimeout(autoTimer);
+    const tab = document.documentElement.dataset.page;
+    if (!TOURS[tab] || seen(tab) || tourEl) return;
     if (navigator.webdriver && !get('tour_force')) return;   // otomasyon testleri: rehber tıklamaları engellemesin
-    if ($('gate') && !$('gate').hidden) return;
-    setTimeout(() => { if (!get(TOUR_KEY) && document.querySelector('#rows .row[data-mid]')) startTour(); }, 900);
+    let n = 0;
+    const still = () => document.documentElement.dataset.page === tab && !seen(tab) && !tourEl;
+    const tick = () => {
+      if (!still()) return;
+      if ($('gate') && !$('gate').hidden) { autoTimer = setTimeout(tick, 1000); return; }
+      const ready = tab === 'pred' ? !!q('#rows .row[data-mid]') : !!TOURS[tab][0].sel();
+      if (ready) { autoTimer = setTimeout(() => { if (still()) startTour(tab); }, 700); return; }
+      if (++n < 20) autoTimer = setTimeout(tick, 300);
+    };
+    autoTimer = setTimeout(tick, 300);
+  }
+  function buildHelpBtn() {
+    if ($('tourBtn')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'tourBtn';
+    b.className = 'tour-fab';
+    b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.4c-.7.3-1 .8-1 1.5M12 17h.01"/></svg><span>${T('Rehber')}</span>`;
+    b.title = T('Bu sayfanın rehberi');
+    b.addEventListener('click', () => startTour(document.documentElement.dataset.page));
+    document.body.appendChild(b);
+    syncHelpBtn();
+  }
+  function syncHelpBtn() {
+    const b = $('tourBtn');
+    if (b) b.hidden = !TOURS[document.documentElement.dataset.page];
   }
 
   // ---------------------------------------------------------------- kurulum
   function init() {
     buildNav();
+    buildHelpBtn();
     const sl = document.querySelector('#statsBody > .loading');
     if (sl) sl.outerHTML = skeletonBlocks();
     ['pred', 'stats', 'plan', 'faq'].forEach(k => { const p = $('pane-' + k); if (p) watchPane(p); });
-    new MutationObserver(() => { syncNav(); openWindow(activePane()); })
-      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-page'] });
+    new MutationObserver(() => {
+      syncNav(); syncHelpBtn(); openWindow(activePane());
+      if (tourEl && tourEl.dataset.tab !== document.documentElement.dataset.page) endTour();
+      maybeTour();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-page'] });
     const rows = $('rows');
     if (rows) {
       let wasSkeleton = !!rows.querySelector('[data-skeleton]');
@@ -259,9 +323,8 @@
       const b = e.target.closest('.tdy-pick');
       if (b && b.dataset.mid && typeof openSheet === 'function') openSheet(b.dataset.mid);
     });
-    const tb = $('tourAgain');
-    if (tb) tb.addEventListener('click', () => { put(TOUR_KEY, ''); startTour(); });
-    if (document.documentElement.dataset.page) openWindow(activePane());
+    document.querySelectorAll('[data-tour]').forEach(b => b.addEventListener('click', () => startTour(b.dataset.tour)));
+    if (document.documentElement.dataset.page) { openWindow(activePane()); maybeTour(); }
   }
 
   window.BV_UX = { skeleton, skeletonBlocks, renderToday, startTour, openWindow, _parseNum: parseNum, _fmtNum: fmtNum };

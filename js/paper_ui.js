@@ -1314,6 +1314,26 @@
       </div>`;
   }
 
+  // Kilitleme önerisi bildirimi: tabloya tutar girilince kasa güvenli sınırı aşarsa ekranın altında çıkar
+  function hideLockToast() { const t = document.getElementById('lockToast'); if (t) t.remove(); }
+  function showLockToast(lock) {
+    hideLockToast();
+    const curr = (paperState.settings && paperState.settings.currency) || 'EUR';
+    const sim = PE.buildKasaSimulation(paperState.plan, paperState);
+    const c = PE.getEICoach(paperState.plan, sim);
+    const t = document.createElement('div');
+    t.id = 'lockToast'; t.className = 'lock-toast'; t.setAttribute('role', 'alert');
+    t.innerHTML = `<div class="lt-txt"><b>${_t('🔒 Kilitleme zamanı')}</b><span>${_t('Bugünkü kuponun {stake}, güvenli sınırın {limit}. {amount} kilitlersen kuponun {after} olur.', { stake: formatCurrency(c.stake, curr), limit: formatCurrency(c.limit, curr), amount: formatCurrency(lock.amount, curr), after: formatCurrency(lock.stakeAfter, curr) })}</span></div>
+      <div class="lt-act"><button type="button" class="lt-lock">${_t('🔒 {amount} kilitle', { amount: formatCurrency(lock.amount, curr) })}</button><button type="button" class="lt-show">${_t('Güven Payı')}</button><button type="button" class="lt-x" aria-label="${_t('Kapat')}">×</button></div>`;
+    document.body.appendChild(t);
+    t.querySelector('.lt-lock').onclick = () => {
+      PE.applyCashout(paperState, { day: c.day, amount: lock.amount, reason: 'lock' });
+      hideLockToast(); rerenderAllPanes();
+    };
+    t.querySelector('.lt-show').onclick = () => { hideLockToast(); const k = document.getElementById('eiCoachCard'); if (k) k.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+    t.querySelector('.lt-x').onclick = hideLockToast;
+  }
+
   function wireEICoachEvents() {
     const card = document.getElementById('eiCoachCard');
     if (!card) return;
@@ -1674,9 +1694,15 @@
         renderPlanPane({ anchor: '#kasaSimCard', focusDay: inp.dataset.day });
         return;
       }
+      const lockOf = () => { try { return PE.getEICoach(paperState.plan, PE.buildKasaSimulation(paperState.plan, paperState)).lock; } catch (e) { return null; } };
+      const before = lockOf();
       PE.setPlanDailyBank(paperState, inp.dataset.day, val === '' ? null : val);
       saveState();
       renderPlanPane({ anchor: '#kasaSimCard', focusDay });
+      // Girilen tutar kilitleme gerektiriyorsa öneriyi tablonun yanında göster (kart sayfanın yukarısında kalıyor)
+      const after = lockOf();
+      if (after && (!before || before.amount !== after.amount)) showLockToast(after);
+      else if (!after) hideLockToast();
     };
     document.querySelectorAll('#kasaSimCard .kasa-input').forEach(inp => {
       inp.onchange = () => {

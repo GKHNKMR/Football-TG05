@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-27T12:39:46+00:00",
+ "generated_at": "2026-09-27T12:50:19+00:00",
  "source": "5DollarFootballAPI · Bet365 goal_line_fixed",
  "attribution": "Football data by 5DollarFootballAPI",
  "leagues": {},
@@ -67,9 +67,9 @@
  },
  "listed_at": {},
  "last_run": {
-  "calls": 5,
+  "calls": 0,
   "odds_fetched": 0,
-  "rate_remaining": 45,
+  "rate_remaining": null,
   "stopped": null,
   "unmatched": []
  },

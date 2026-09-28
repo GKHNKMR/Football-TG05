@@ -55,16 +55,47 @@
     location.reload();
   }
 
-  // Üst menüdeki TR / EN / NL seçici
+  // Bayraklar SVG: Windows bayrak emojisi göstermiyor (yalnızca "TR" harfleri çıkar)
+  const FLAGS = {
+    tr: '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#E30A17"/><circle cx="11" cy="10" r="5" fill="#fff"/><circle cx="12.3" cy="10" r="4" fill="#E30A17"/><polygon fill="#fff" points="16.2,10 19.9,8.8 17.6,11.9 17.6,8.1 19.9,11.2"/></svg>',
+    en: '<svg viewBox="0 0 60 30"><clipPath id="fgUK"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath><rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" clip-path="url(#fgUK)" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></svg>',
+    nl: '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#21468B"/><rect width="30" height="13.33" fill="#fff"/><rect width="30" height="6.67" fill="#AE1C28"/></svg>',
+  };
+  const NAMES = { tr: 'Türkçe', en: 'English', nl: 'Nederlands' };
+  const flag = l => `<span class="lang-flag" aria-hidden="true">${FLAGS[l]}</span>`;
+
+  // Üst menüdeki TR / EN / NL seçici: bayraklı açılır menü
   function mountSwitcher() {
     const host = document.querySelector('.topbtns');
     if (!host || document.getElementById('langSel')) return;
-    const sel = document.createElement('select');
-    sel.id = 'langSel'; sel.className = 'langsel';
-    sel.setAttribute('aria-label', t('Dil'));
-    sel.innerHTML = SUPPORTED.map(l => `<option value="${l}"${l === lang ? ' selected' : ''}>${l.toUpperCase()}</option>`).join('');
-    sel.onchange = () => setLang(sel.value);
-    host.insertBefore(sel, host.firstChild);
+    const box = document.createElement('div');
+    box.id = 'langSel'; box.className = 'lang-dd';
+    box.innerHTML = `<button type="button" class="lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="${t('Dil')}">${flag(lang)}<b>${lang.toUpperCase()}</b><svg class="lang-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="lang-menu" role="listbox" aria-label="${t('Dil')}" hidden>${SUPPORTED.map(l => `<button type="button" role="option" class="lang-opt${l === lang ? ' on' : ''}" aria-selected="${l === lang}" data-l="${l}">${flag(l)}<span><b>${l.toUpperCase()}</b><small>${NAMES[l]}</small></span><i aria-hidden="true"></i></button>`).join('')}</div>`;
+    const btn = box.querySelector('.lang-btn'), menu = box.querySelector('.lang-menu');
+    const opts = [...menu.querySelectorAll('.lang-opt')];
+    // Üst bar clip-path ile kırpılıyor: menü body'ye taşınır, düğmenin altına sabitlenir
+    document.body.appendChild(menu);
+    const open = on => {
+      if (on) {
+        const r = btn.getBoundingClientRect();
+        menu.style.top = (r.bottom + 8) + 'px';
+        menu.style.right = Math.max(8, document.documentElement.clientWidth - r.right) + 'px';
+      }
+      menu.hidden = !on; box.classList.toggle('open', on); btn.setAttribute('aria-expanded', String(on));
+      if (on) (menu.querySelector('.on') || opts[0]).focus();
+    };
+    addEventListener('resize', () => open(false));
+    addEventListener('scroll', () => { if (!menu.hidden) open(false); }, { passive: true });
+    btn.onclick = e => { e.stopPropagation(); open(menu.hidden); };
+    opts.forEach(o => { o.onclick = () => { open(false); setLang(o.dataset.l); }; });
+    menu.addEventListener('keydown', e => {
+      const i = opts.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); opts[(i + (e.key === 'ArrowDown' ? 1 : opts.length - 1)) % opts.length].focus(); }
+      if (e.key === 'Escape') { open(false); btn.focus(); }
+    });
+    document.addEventListener('click', e => { if (!box.contains(e.target) && !menu.contains(e.target)) open(false); });
+    host.insertBefore(box, host.firstChild);
   }
 
   function add(dict) { Object.assign(D, dict); }

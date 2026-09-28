@@ -300,10 +300,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
   clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);background:linear-gradient(145deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));position:relative}
 .mx-team.away .mx-crest{--c:var(--fxa)}
 .mx-crest em{font-style:inherit}
-.mx-crest img{width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
-.mx-crest.has-logo{background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.2),color-mix(in srgb,var(--c) 14%,transparent) 70%)}
+.mx-crest img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
+.mx-crest.has-logo{width:68px;height:68px;clip-path:none;background:none}
 .mx-crest.has-logo em{display:none}
-:root[data-theme="light"] .mx-crest.has-logo{background:radial-gradient(circle at 50% 45%,#fff,color-mix(in srgb,var(--c) 16%,#fff) 75%)}
+:root[data-theme="light"] .mx-crest.has-logo img{filter:drop-shadow(0 2px 5px rgba(20,40,60,.2))}
+@media(max-width:650px){.mx-crest.has-logo{width:50px;height:50px}}
 .mx-tn{min-width:0}
 .mx-tn b{display:block;font-family:Poppins,Inter,sans-serif;font-style:italic;font-weight:900;font-size:21px;line-height:1.1;letter-spacing:-.4px;overflow-wrap:anywhere}
 .mx-tn small{display:block;margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--muted)}

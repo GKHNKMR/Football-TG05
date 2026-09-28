@@ -721,6 +721,16 @@ def main():
         assert focus_day == '6', f"Tab sonrası 6. güne geçilmeliydi, odak: {focus_day}"
         assert saved == 62 and abs(top_after - top_before) <= 1, (saved, top_before, top_after)
         print("  ✓ Değer girip Tab: kayıt yapıldı, imleç 6. güne geçti, tablo ekranda yerinde kaldı.")
+        # Tablo kaydırılınca satırlar yapışkan başlığın üstüne/arkasına geçmemeli (başlık opak ve en üstte)
+        hdr = page.evaluate("""() => { const w = document.querySelector('#kasaSimCard .ks-table-wrap'); w.scrollTop = 160;
+            const ths = [...w.querySelectorAll('thead th')];
+            return ths.map(th => { const r = th.getBoundingClientRect(), el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+              return { bg: getComputedStyle(th).backgroundColor, onTop: !!el && th.contains(el) }; }); }""")
+        if os.environ.get('KASA_SHOT'):
+            page.locator('#kasaSimCard').screenshot(path=os.environ['KASA_SHOT'])
+        assert all(h['onTop'] and h['bg'] not in ('transparent', 'rgba(0, 0, 0, 0)') for h in hdr), hdr
+        page.evaluate("document.querySelector('#kasaSimCard .ks-table-wrap').scrollTop = 0")
+        print("  ✓ Tablo kaydırılınca başlık opak ve satırların üstünde kalıyor.")
 
         # ----------------------------------------------------------------------
         # TEST 14: Kapatılan kasayı yeniden aç / sil + senkronda geri gelmeme

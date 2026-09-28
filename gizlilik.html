@@ -28,14 +28,37 @@
   a{color:var(--link)}
   ul{padding-left:22px} li{margin:4px 0}
   article[hidden]{display:none}
+  /* Futuristik katman (ana siteyle aynı dil); tema sistem ayarını izler */
+  :root{--fx1:#2ed3c3;--fx2:#d9ff4a;--fx1rgb:46,211,195}
+  @media (prefers-color-scheme:light){:root{--fx1:#0d9488;--fx2:#65a30d;--fx1rgb:13,148,136}}
+  body{background:radial-gradient(ellipse 70% 40% at 50% -5%,rgba(var(--fx1rgb),.13),transparent 70%),
+    linear-gradient(rgba(var(--fx1rgb),.04) 1px,transparent 1px) 0 0/100% 32px,linear-gradient(90deg,rgba(var(--fx1rgb),.04) 1px,transparent 1px) 0 0/32px 100%,var(--bg)}
+  .brand img{height:46px;display:block}
+  .brand .logo-l{display:none}
+  @media (prefers-color-scheme:light){.brand .logo-d{display:none}.brand .logo-l{display:block}}
+  .langs button{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 7px;border-color:rgba(var(--fx1rgb),.3);
+    background:linear-gradient(180deg,rgba(var(--fx1rgb),.09),rgba(var(--fx1rgb),.02)),var(--panel);letter-spacing:.08em;transition:border-color .2s,box-shadow .2s}
+  .langs button svg{width:22px;height:15px;border-radius:3px;display:block;box-shadow:0 0 0 1px rgba(127,127,127,.35)}
+  .langs button:hover{border-color:var(--fx1);box-shadow:0 0 0 1px rgba(var(--fx1rgb),.25),0 0 14px rgba(var(--fx1rgb),.3)}
+  .langs button.on{border-color:var(--fx1);color:var(--fx1);box-shadow:0 0 12px rgba(var(--fx1rgb),.35)}
+  h1{font-family:Poppins,Inter,sans-serif;font-style:italic;font-weight:900;background:linear-gradient(100deg,var(--fx1),var(--fx2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{display:flex;align-items:center;gap:10px}
+  h2::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--fx1);box-shadow:0 0 8px var(--fx1);transform:rotate(45deg);flex:none}
+  .card{position:relative;background:linear-gradient(90deg,transparent,rgba(var(--fx1rgb),.55),transparent) top/100% 1px no-repeat,var(--panel);border-color:rgba(var(--fx1rgb),.25)}
+  .card::before,.card::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--fx1);opacity:.75}
+  .card::before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-top-left-radius:12px}
+  .card::after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-bottom-right-radius:12px}
+  a{color:var(--fx1)}
+  li::marker{color:var(--fx1)}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@1,900&display=swap" rel="stylesheet">
 </head>
 <body>
 <main>
   <div class="top">
-    <a class="brand" href="/"><span class="b1">BET</span><span class="b2">AVUS</span></a>
+    <a class="brand" href="/" aria-label="BETAVUS"><img class="logo-d" src="/brand/betavus-logo-dark.svg" alt="BETAVUS"><img class="logo-l" src="/brand/betavus-logo-light.svg" alt=""></a>
     <div class="langs" role="group" aria-label="Dil / Language / Taal">
-      <button type="button" data-l="tr">TR</button><button type="button" data-l="en">EN</button><button type="button" data-l="nl">NL</button>
+      <button type="button" data-l="tr"><svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#E30A17"/><circle cx="11" cy="10" r="5" fill="#fff"/><circle cx="12.3" cy="10" r="4" fill="#E30A17"/><polygon fill="#fff" points="16.2,10 19.9,8.8 17.6,11.9 17.6,8.1 19.9,11.2"/></svg>TR</button><button type="button" data-l="en"><svg viewBox="0 0 60 30" aria-hidden="true"><clipPath id="fgUK"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath><rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" clip-path="url(#fgUK)" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></svg>EN</button><button type="button" data-l="nl"><svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#21468B"/><rect width="30" height="13.33" fill="#fff"/><rect width="30" height="6.67" fill="#AE1C28"/></svg>NL</button>
     </div>
   </div>
 

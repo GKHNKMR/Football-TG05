@@ -50,6 +50,21 @@ with sync_playwright() as p:
     assert not no_h2h, f'H2H verisi olmayan maç listede: {no_h2h}'
     print(f'✓ 2 · Yaklaşan öne çıkan maçlar: {len(picks)} vurgu, hepsi ●●● (H2H), olasılığa göre sıralı ({ps}).')
 
+    # Gün seçiliyken de Vurgu filtresi açılabilmeli ve yalnız o günün vurgulu maçlarını bırakmalı (28.09 Murat)
+    day = pg.evaluate("""(() => { const c = {};
+        (window.__data || []).filter(x => new Date(x.kickoff_utc) > Date.now()).forEach(x => { const k = dayKey(x.kickoff_utc); c[k] = c[k] || [0, 0]; c[k][0]++; if (hlPass(x)) c[k][1]++; });
+        const k = Object.keys(c).sort().find(k => c[k][1] && c[k][1] < c[k][0]);
+        if (k) { dayPred = k; renderPred(); } return k; })()""")
+    assert day, 'vurgulu ve vurgusuz maçı olan gelecek gün bulunamadı'
+    assert not pg.evaluate("document.getElementById('hotToggle').disabled"), 'gün seçiliyken Vurgu kapalı'
+    n_all = pg.locator('#rows .row[data-mid]').count()
+    pg.evaluate("hotOnly || document.getElementById('hotToggle').click()")
+    rows_hl = pg.evaluate("[...document.querySelectorAll('#rows .row[data-mid]')].map(r => hlPass((window.__data || []).find(x => x.match_id === r.dataset.mid)))")
+    assert rows_hl and all(rows_hl) and len(rows_hl) < n_all, (day, n_all, rows_hl)
+    assert f'{len(rows_hl)} / {n_all}' in pg.inner_text('#count'), pg.inner_text('#count')
+    pg.evaluate("document.getElementById('hotToggle').click(); dayPred = null; renderPred()")
+    print(f'✓ Gün seçiliyken Vurgu: {day} günü {n_all} maçtan {len(rows_hl)} vurgulu kaldı.')
+
     pv = pg.eval_on_selector_all('#rows .pill.pf', 'els=>els.slice(0,6).map(e=>e.style.getPropertyValue("--pv"))')
     assert pv and all(v.isdigit() for v in pv), pv
     allpv = pg.eval_on_selector_all('#rows .pill.pf', 'els=>els.map(e=>+e.style.getPropertyValue("--pv"))')

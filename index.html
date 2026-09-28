@@ -2087,8 +2087,9 @@ function visible(list){
   let r;
   if(qPred){                         // takım araması → hafta penceresi ve gün filtresi devre dışı, tüm fikstür
     r=list.filter(x=>inLeague(x)&&teamHit(x,qPred));
-  }else if(dayPred){                  // belirli bir gün seçili → tüm fikstür içinden o gün (hafta penceresi devre dışı)
+  }else if(dayPred){                  // belirli bir gün seçili → tüm fikstür içinden o gün (hafta penceresi devre dışı); Vurgu burada da süzer
     r=list.filter(x=>inLeague(x)&&dayKey(x.kickoff_utc)===dayPred);
+    if(hotOnly&&hlActive().length)r=r.filter(hlPass);
   }else{
     r=visibleAll(list);
     if(hotOnly&&hlActive().length)r=r.filter(hlPass);
@@ -2226,8 +2227,8 @@ function renderPred(){
   document.querySelectorAll('#pane-pred .sortcol').forEach(c=>c.classList.toggle('act',c.dataset.sort===sortLine||(c.dataset.sort==='date'&&!sortLine)));
   const list=visible(src);const[ws,we]=weekWindow();
   $('window').textContent=qPred?_t('«{q}» araması',{q:qPred}):dayPred?dayLabel(dayPred):_t('{from} – {to} · yaklaşan maçlar',{from:fmtDay(ws),to:fmtDay(new Date(we-86400000))});
-  const total=winMs.length;
-  const anyHl=hlActive().length, lock=!!dayPred||!!qPred;
+  const total=dayPred?src.filter(x=>inLeague(x)&&dayKey(x.kickoff_utc)===dayPred).length:winMs.length;
+  const anyHl=hlActive().length, lock=!!qPred;       // gün seçiliyken de Vurgu açılabilir; yalnız takım aramasında kapalı
   const hlLabel=hlKey==='all'?_t('Vurgulu'):(HL[hlKey]?HL[hlKey].label:'');
     $('hotToggle').classList.toggle('on',hotOnly&&anyHl&&!lock);
   $('hotToggle').disabled=!anyHl||lock;

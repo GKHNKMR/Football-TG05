@@ -731,6 +731,15 @@ def main():
         assert all(h['onTop'] and h['bg'] not in ('transparent', 'rgba(0, 0, 0, 0)') for h in hdr), hdr
         page.evaluate("document.querySelector('#kasaSimCard .ks-table-wrap').scrollTop = 0")
         print("  ✓ Tablo kaydırılınca başlık opak ve satırların üstünde kalıyor.")
+        # Kasa trendi (#37): en az 3 oynanan günde grafikte trend + bant, altında üç kutu
+        tr = page.evaluate("""() => ({ past: !!document.querySelector('#pane-plan .ks-chart .ks-trend-past'),
+            fut: document.querySelectorAll('#pane-plan .ks-chart .ks-trend-fut').length,
+            chips: [...document.querySelectorAll('#pane-plan .ks-trend-strip .ks-tchip')].map(c => c.innerText.replace(/\\s+/g, ' ')) })""")
+        if os.environ.get('KASA_SHOT'):
+            page.locator('#pane-plan .ks-chart').screenshot(path=os.environ['KASA_SHOT'].replace('.png', '_chart.png'))
+        assert tr['past'] and tr['fut'] >= 2 and len(tr['chips']) == 3, tr
+        assert 'TREND' in tr['chips'][0].upper() and '/ gün' in tr['chips'][0] and 'gün' in tr['chips'][2], tr
+        print(f"  ✓ Kasa trendi: grafikte trend + belirsizlik bandı; kutular: {tr['chips']}")
 
         # ----------------------------------------------------------------------
         # TEST 14: Kapatılan kasayı yeniden aç / sil + senkronda geri gelmeme

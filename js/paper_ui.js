@@ -1199,6 +1199,39 @@
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
   }
 
+  // Kasa trendi (iş listesi #37): son 7 oynanan günün kasasına (oyundaki + kilitli) üstel eğri
+  // ln(kasa) = a + b·gün. Oynanmayan günler atlanır; en az 3 gün yoksa trend yok.
+  // Bant: son günlerdeki sapmanın geleceğe yansıması (tahmin aralığı, ±1 standart hata), uzaklaştıkça genişler.
+  const TREND_WINDOW = 7, TREND_MIN_DAYS = 3;
+  function kasaTrend(sim) {
+    const pts = sim.rows.filter(r => r.totalBank != null && r.totalBank > 0).map(r => [r.day, r.totalBank]).slice(-TREND_WINDOW);
+    if (pts.length < TREND_MIN_DAYS) return null;
+    const n = pts.length, xs = pts.map(q => q[0]), ys = pts.map(q => Math.log(q[1]));
+    const mx = xs.reduce((s2, v) => s2 + v, 0) / n, my = ys.reduce((s2, v) => s2 + v, 0) / n;
+    const sxx = xs.reduce((s2, v) => s2 + (v - mx) ** 2, 0);
+    if (!(sxx > 0)) return null;
+    const b = xs.reduce((s2, v, i) => s2 + (v - mx) * (ys[i] - my), 0) / sxx, a = my - b * mx;
+    const se = Math.sqrt(ys.reduce((s2, v, i) => s2 + (v - a - b * xs[i]) ** 2, 0) / Math.max(1, n - 2));
+    const f = d => Math.exp(a + b * d);
+    const band = d => { const w = se * Math.sqrt(1 + 1 / n + (d - mx) ** 2 / sxx); return [Math.exp(a + b * d - w), Math.exp(a + b * d + w)]; };
+    const goal = Number(sim.params.targetBank) || 0, lastDay = xs[n - 1];
+    let hitDay = null;                                   // trend hedefi hangi gün geçer (en çok 1 yıl)
+    if (goal > 0 && b > 0) { const d = (Math.log(goal) - a) / b; hitDay = d <= lastDay ? lastDay : d <= 365 ? Math.ceil(d) : null; }
+    return { f, band, rate: Math.exp(b) - 1, firstDay: xs[0], lastDay, hitDay };
+  }
+
+  // Grafiğin altındaki üç kutu: trend büyüme, bu gidişle son gün kasası (bant), hedefe varış günü
+  function renderTrendStrip(tr, sim, p, curr) {
+    const endDay = sim.rows.length ? sim.rows[sim.rows.length - 1].day : 0;
+    const endBand = tr.band(endDay), plan = Number(p.dailyGrowthRate) || 0;
+    const ahead = tr.rate >= plan, onTime = tr.hitDay != null && tr.hitDay <= endDay;
+    return `<div class="ks-trend-strip">
+        <div class="ks-tchip"><small>${_t('Trend büyüme')}</small><b class="${ahead ? 'good' : 'warn'}">${formatPct(tr.rate * 100, 1)}</b><em>${_t('/ gün (plan {p})', { p: formatPct(plan * 100, 1) })}</em></div>
+        <div class="ks-tchip"><small>${_t('Bu gidişle {d}. gün', { d: endDay })}</small><b>${formatCurrency(tr.f(endDay), curr)}</b><em>${formatCurrency(endBand[0], curr)} – ${formatCurrency(endBand[1], curr)}</em></div>
+        <div class="ks-tchip"><small>${_t('Hedefe ({t}) varış', { t: formatCurrency(p.targetBank, curr) })}</small><b class="${onTime ? 'good' : 'warn'}">${tr.hitDay != null ? _t('{d}. gün', { d: tr.hitDay }) : '—'}</b><em>${_t('plan: {d}. gün', { d: endDay })}</em></div>
+      </div>`;
+  }
+
   function renderKasaChartSvg(sim, curr) {
     const W = 820, H = 330, L = 64, R = 18, T = 18, B = 34;
     const pw = W - L - R, ph = H - T - B;
@@ -1261,6 +1294,24 @@
         tLine += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
       }
     }
+    // Trend: oynanan pencerede düz, hedef gününe kadar kesikli + belirsizlik bandı (grafik alanına kırpılır)
+    const tr = kasaTrend(sim);
+    let trendSvg = '';
+    if (tr) {
+      const xd = d => L + (d - 0.5) * (pw / n), yc = v => T + ph - (Math.min(Math.max(0, v), maxY * 1.5) / maxY) * ph;
+      const curve = (d0, d1) => { const o = []; for (let d = d0; d <= d1 + 1e-9; d += 0.5) o.push(`${xd(d).toFixed(1)},${yc(tr.f(d)).toFixed(1)}`); return 'M' + o.join(' L'); };
+      const endDay = rows[n - 1].day;
+      let cone = '';
+      if (endDay > tr.lastDay) {
+        const up = [], lo = [];
+        for (let d = tr.lastDay; d <= endDay + 1e-9; d += 0.5) { const [l, h] = tr.band(d); up.push(`${xd(d).toFixed(1)},${yc(h).toFixed(1)}`); lo.unshift(`${xd(d).toFixed(1)},${yc(l).toFixed(1)}`); }
+        cone = `<path class="ks-trend-fut" d="M${up.join(' L')} L${lo.join(' L')} Z" fill="url(#ksgC)" style="stroke:var(--ks-trend)" stroke-opacity=".25" stroke-width="1"/>
+          <path class="ks-trend-fut" d="${curve(tr.lastDay, endDay)}" fill="none" style="stroke:var(--ks-trend)" stroke-width="2.4" stroke-dasharray="7 6" stroke-linecap="round"/>`;
+      }
+      trendSvg = `<g clip-path="url(#ksClip)" pointer-events="none">${cone}
+          <path class="ks-trend-past" d="${curve(tr.firstDay, tr.lastDay)}" pathLength="1" fill="none" style="stroke:var(--ks-trend)" stroke-width="2.6" stroke-linecap="round" filter="url(#ksLineGlow)"/>
+          <circle class="ks-trend-fut" cx="${xd(tr.lastDay).toFixed(1)}" cy="${yc(tr.f(tr.lastDay)).toFixed(1)}" r="4.5" style="fill:var(--ks-trend)" stroke="var(--panel)" stroke-width="2"/></g>`;
+    }
     const today = rows.findIndex(r => r.isToday);
     const todayMark = today >= 0 ? `<g class="ks-today"><line x1="${x(today).toFixed(1)}" y1="${T}" x2="${x(today).toFixed(1)}" y2="${base}" stroke="${KASA_COLOR_REAL}" stroke-width="1.5" stroke-dasharray="3 4" opacity=".7"/>
         <text x="${x(today).toFixed(1)}" y="${(T - 5).toFixed(1)}" fill="${KASA_COLOR_REAL}" font-size="10.5" font-weight="800" text-anchor="middle">${_t('Bugün')}</text></g>` : '';
@@ -1270,6 +1321,8 @@
         <linearGradient id="ksgS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9ff4a"/><stop offset="1" stop-color="#65a30d" stop-opacity=".9"/></linearGradient>
         <filter id="ksGlow" x="-50%" y="-10%" width="200%" height="130%"><feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="b"/><feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 .55 0" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="ksLineGlow" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="ksgC" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--ks-trend)" stop-opacity=".22"/><stop offset="1" style="stop-color:var(--ks-trend)" stop-opacity=".07"/></linearGradient>
+        <clipPath id="ksClip"><rect x="${L}" y="${T - 4}" width="${pw}" height="${ph + 4}"/></clipPath>
       </defs>`;
 
     // Üzerine gelince günün iki değeri (sütundan geniş, tüm gün dilimi)
@@ -1283,6 +1336,7 @@
         ${hover}
         <g pointer-events="none">${bars}</g>
         ${tLine ? `<path class="ks-path" d="${tLine}" pathLength="1" fill="none" stroke="${KASA_COLOR_TARGET}" stroke-width="2" stroke-linecap="round" filter="url(#ksLineGlow)" pointer-events="none"/>` : ''}
+        ${trendSvg}
         <line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>
         ${xLabels}
       </svg>`;
@@ -1425,6 +1479,7 @@
     const riskOptions = Object.keys(KASA_RISK_LABELS).concat(p.riskProfile === 'custom' ? ['custom'] : []);
     const hasCash = sim.cashouts.length > 0;
     const lastCashDay = hasCash ? sim.cashouts[sim.cashouts.length - 1].day : 0;
+    const trend = kasaTrend(sim);
 
     // Yeniden çizimde tablo/sayfa kaydırması ve odaktaki gerçek kasa hücresi korunur
     // (aksi halde giriş sonrası tablo başa sarar, sayfa zıplar)
@@ -1497,7 +1552,9 @@
                 <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Oyundaki Kasa ({sym})', { sym })}</span>
                 <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
                 ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Kilitli ({sym})', { sym })}</span>` : ''}
+                ${trend ? `<span><i class="ks-lg-trend"></i>${_t('Trend (son {n} gün)', { n: TREND_WINDOW })}</span><span><i class="ks-lg-cone"></i>${_t('Belirsizlik bandı')}</span>` : ''}
               </div>
+              ${trend ? renderTrendStrip(trend, sim, p, curr) : ''}
             </div>
             <div class="ks-actions">
               <button type="button" class="ks-act ks-act-close" id="btnCloseKasa">${_t('🔒 Kasayı Kapat')}</button>

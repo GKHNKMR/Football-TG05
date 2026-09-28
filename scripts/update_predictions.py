@@ -77,8 +77,9 @@ FD_LEAGUES = {
     144: ("B1", "Belgian Pro League", "BE", "Europe/Brussels"),
 }
 # FD leagues whose month-ahead schedule comes from ESPN's public scoreboard
-# (openfootball has no be.1; fixtures.csv only lists the imminent round).
-ESPN_FIXTURE_SLUG = {"B1": "bel.1"}
+# (openfootball has no be.1/tur.1; fixtures.csv only lists the imminent round).
+# T1: tff.org is only a fallback - its page can stay stuck on a past round.
+ESPN_FIXTURE_SLUG = {"B1": "bel.1", "T1": "tur.1"}
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard"
 FD_HIST_SEASONS = ["2223", "2324", "2425", "2526", "2627"]   # oldest -> newest
 FD_MODEL_CODES = ["2627", "2526", "2425", "2324"]            # nearest -> ...
@@ -426,9 +427,14 @@ def _espn_json(url):
         return json.loads(resp.read().decode("utf-8"))
 
 
+# ESPN names too far from football-data.co.uk's to substring-match
+ESPN_FD_ALIAS = {"Istanbul Basaksehir": "Buyuksehyr"}
+
+
 def _espn_to_fd(raw, fd_teams):
     """ESPN display name -> football-data.co.uk name (accent/alias-folded
     substring match, longest candidate wins)."""
+    raw = ESPN_FD_ALIAS.get(raw, raw)
     key = norm_team(raw)
     best = None
     for t in fd_teams:
@@ -521,12 +527,11 @@ def fd_predictions(now, start, end, odds, live):
                             for c, w in zip(FD_MODEL_CODES, FD_MODEL_WEIGHTS)])
         fd_teams = {m["home"] for m in hist} | {m["away"] for m in hist}
         recent = {m[s] for m in hist if m["season"] in FD_MODEL_CODES[:2] for s in ("home", "away")}
-        if div == "T1":
-            up, src = tff_upcoming(fd_teams, start, end), "tff.org"
-        elif div in ESPN_FIXTURE_SLUG:
+        up, src = [], ""
+        if div in ESPN_FIXTURE_SLUG:
             up, src = espn_upcoming(ESPN_FIXTURE_SLUG[div], recent or fd_teams, start, end), "espn.com"
-        else:
-            up, src = [], ""
+        if not up and div == "T1":
+            up, src = tff_upcoming(fd_teams, start, end), "tff.org"
         if not up:
             up, src = _fd_upcoming(div, start, end), "football-data.co.uk"
         n = dropped = 0

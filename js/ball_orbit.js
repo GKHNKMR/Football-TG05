@@ -1,94 +1,101 @@
-// Fikstür başlığında dönen futbol topu + lig yörüngesi (iş listesi #27).
-// Top: kesik ikosahedron (12 beşgen, 20 altıgen) küreye izdüşülerek canvas'a çizilir, kütüphane yok.
+// Fikstür başlığında "olasılık çekirdeği" + lig yörüngesi (iş listesi #27, #30).
+// Çekirdek: iç içe üç halka vurgu isabet oranlarıyla dolar (genel, 1X, 2.5+), ortada genel isabet yazar;
+// değerler başarı bandıyla aynı kaynaktan (data/stats-summary.json). Tıklayınca İstatistikler açılır.
 // Bayraklar sitedeki FLAGS çizimleri; tıklayınca setLeague() ile Fikstür o lige filtrelenir.
-// Sayı kutusu yok: aynı bilgiyi hemen altındaki başarı bandı veriyor (27.09 Murat: tekrar kopuk duruyordu).
-// Sayfa görünmüyorsa ya da başlık ekran dışındaysa çizim durur; "hareketi azalt" açıksa top sabit.
+// Sayfa görünmüyorsa ya da başlık ekran dışındaysa çizim durur; "hareketi azalt" açıksa halkalar sabit.
 (function () {
   'use strict';
   const host = document.getElementById('orb');
   if (!host) return;
   const T = (s, v) => (window._t ? window._t(s, v) : s);
+  const I = () => window.I18N || { pct: x => '%' + x, dec: x => String(x).replace('.', ',') };
   const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SPIN = 0.0032;          // top: rad / kare (yavaş)
   const ORBIT = 0.0014;         // yörünge: rad / kare
-
-  // ---------------- geometri
-  const phi = (1 + Math.sqrt(5)) / 2;
-  const norm = v => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
-  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-  const arc = (a, b, n) => { const o = []; for (let k = 0; k <= n; k++) o.push(norm(lerp(a, b, k / n))); return o; };
-  const ico = [];                                   // (0,±1,±φ) (±1,±φ,0) (±φ,0,±1)
-  for (const s1 of [1, -1]) for (const s2 of [1, -1]) { ico.push([0, s1, s2 * phi]); ico.push([s1, s2 * phi, 0]); ico.push([s2 * phi, 0, s1]); }
-  const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
-  const nb = ico.map((v, i) => ico.map((_, j) => j).filter(j => j !== i && Math.abs(d2(v, ico[j]) - 4) < 1e-6));
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  // beşgen köşeleri: köşeden komşuya giden kenarın 1/3'ü; açıya göre sıralı
-  const pents = ico.map((v, i) => {
-    const c = norm(v), u = norm(cross(c, Math.abs(c[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0])), w = cross(c, u);
-    const cs = nb[i].map(j => { const p = norm(lerp(v, ico[j], 1 / 3)); return { p, a: Math.atan2(dot(p, w), dot(p, u)) }; })
-      .sort((x, y) => x.a - y.a).map(o => o.p);
-    const poly = [];
-    for (let k = 0; k < 5; k++) poly.push(...arc(cs[k], cs[(k + 1) % 5], 6).slice(0, -1));
-    return { c, poly };
-  });
-  // dikişler: her ikosahedron kenarının orta üçte biri (iki beşgeni bağlayan altıgen kenarı)
-  const seams = [];
-  ico.forEach((v, i) => nb[i].forEach(j => { if (j > i) seams.push(arc(norm(lerp(v, ico[j], 1 / 3)), norm(lerp(v, ico[j], 2 / 3)), 6)); }));
+  const FILL_MS = 1600;         // halkaların dolma süresi
 
   // ---------------- DOM
-  host.innerHTML = `<div class="orb-ring"></div><div class="orb-ring r2"></div><div class="orb-shadow"></div>
-    <canvas class="orb-ball" role="img" aria-label="${T('Dönen futbol topu; sürükleyerek çevirebilirsin')}"></canvas>`;
+  host.innerHTML = `<div class="orb-ring"></div><div class="orb-ring r2"></div>
+    <canvas class="orb-core" role="img" tabindex="0"></canvas>`;
   const cv = host.querySelector('canvas'), ctx = cv.getContext('2d');
   let DPR = 1, S = 200, R = 90;
   function resize() {
     DPR = Math.min(2, window.devicePixelRatio || 1);
-    S = cv.clientWidth || 180;
+    S = cv.clientWidth || 100;
     cv.width = Math.round(S * DPR); cv.height = Math.round(S * DPR);
-    R = S * 0.46;
+    R = S * 0.42;
   }
-  let ax = -0.35, ay = 0, vx = 0, vy = SPIN;
-  const L = norm([-0.5, -0.65, 0.75]);
-  function rot(p) {
-    const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax);
-    const x = p[0] * cy + p[2] * sy, z = -p[0] * sy + p[2] * cy, y = p[1];
-    return [x, y * cx - z * sx, y * sx + z * cx];
-  }
-  function proj(p) {                     // arkadaki nokta ufka itilir: yarım küredeki kenarlar düzgün kırpılır
-    let [x, y, z] = p;
-    if (z < 0) { const l = Math.hypot(x, y) || 1; x /= l; y /= l; }
-    return [S / 2 + x * R, S / 2 + y * R];
-  }
-  function path(pts) { pts.forEach((p, k) => { const q = proj(p); k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); }
-  function draw() {
+
+  // ---------------- veri
+  let rings = null, fillT0 = 0;
+  const RING_DEF = [['all', 1], ['1X', -1.4], ['2.5+', 1.9]];   // [pazar, dönüş yönü/hızı]
+  // [renk başı, renk sonu] halka başına; açık temada limon beyaz zeminde kaybolur, koyu tonlar
+  const PAL = {
+    dark: { rings: [['#2ed3c3', '#d9ff4a'], ['#66e3a1', '#2ed3c3'], ['#d9ff4a', '#66e3a1']], tick: '46,211,195', glow: 0.14 },
+    light: { rings: [['#009f93', '#65a30d'], ['#0f9d58', '#009f93'], ['#65a30d', '#0f9d58']], tick: '0,159,147', glow: 0.05 },
+  };
+  const fmt = v => I().pct(I().dec(Number(v).toFixed(1)));
+  fetch('data/stats-summary.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(s => {
+    if (!s || !s.picks) return;
+    const mk = s.markets || {};
+    rings = RING_DEF.map(([k, sp]) => ({ k, sp, v: +(k === 'all' ? s.picks.pct : (mk[k] || {}).pct) / 100 }))
+      .filter(r => r.v > 0);
+    const all = rings.find(r => r.k === 'all');
+    cv.setAttribute('aria-label', T('Vurgulanan tahminlerin isabet oranı {p}; istatistikleri aç', { p: all ? fmt(all.v * 100) : '—' }));
+    cv.title = rings.map(r => `${r.k === 'all' ? T('Genel') : r.k} ${fmt(r.v * 100)}`).join(' · ');
+    fillT0 = performance.now();
+    draw(fillT0); kick();
+  }).catch(() => {});
+
+  // ---------------- çizim
+  function draw(t) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, S, S);
-    const c0 = S / 2;
-    const g = ctx.createRadialGradient(c0 - R * 0.38, c0 - R * 0.42, R * 0.08, c0, c0, R);
-    g.addColorStop(0, '#ffffff'); g.addColorStop(0.55, '#eef1f4'); g.addColorStop(1, '#b9c3cc');
-    ctx.beginPath(); ctx.arc(c0, c0, R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
-    ctx.save(); ctx.beginPath(); ctx.arc(c0, c0, R, 0, Math.PI * 2); ctx.clip();
-    ctx.lineWidth = Math.max(1, R * 0.012); ctx.lineCap = 'round';
-    seams.forEach(pts => {
-      const rp = pts.map(rot);
-      if (rp[3][2] < 0) return;
-      ctx.beginPath(); path(rp);
-      ctx.strokeStyle = `rgba(40,56,70,${0.25 + 0.35 * rp[3][2]})`; ctx.stroke();
-    });
-    pents.map(pt => ({ pt, c: rot(pt.c) })).filter(o => o.c[2] > -0.35).sort((a, b) => a.c[2] - b.c[2]).forEach(({ pt, c }) => {
-      ctx.beginPath(); path(pt.poly.map(rot)); ctx.closePath();
-      const sh = Math.round(18 + 46 * Math.max(0, dot(c, L)));
-      ctx.fillStyle = `rgb(${sh},${sh + 6},${sh + 14})`; ctx.fill();
-      ctx.strokeStyle = 'rgba(20,30,40,.55)'; ctx.lineWidth = Math.max(1, R * 0.01); ctx.stroke();
-    });
+    const c0 = S / 2, cs = getComputedStyle(host);
+    const txt = cs.getPropertyValue('--text').trim() || '#f4f6f8';
+    const P = /^#[0-3]/.test(txt) ? PAL.light : PAL.dark;          // koyu yazı = açık tema
+    const halo = ctx.createRadialGradient(c0, c0, R * 0.2, c0, c0, R * 1.12);
+    halo.addColorStop(0, `rgba(${P.tick},.18)`); halo.addColorStop(1, `rgba(${P.tick},0)`);
+    ctx.beginPath(); ctx.arc(c0, c0, R * 1.12, 0, Math.PI * 2); ctx.fillStyle = halo; ctx.fill();
+    const k = RM ? 1 : Math.min(1, (t - fillT0) / FILL_MS), e = 1 - Math.pow(1 - k, 3);
+    const spin = RM ? 0 : t / 1000;
+    // dış ölçek çizgileri
+    ctx.save(); ctx.translate(c0, c0); ctx.rotate(-spin * 0.12);
+    ctx.lineWidth = Math.max(1, R * 0.015);
+    for (let i = 0; i < 48; i++) {
+      const a = i / 48 * Math.PI * 2, big = i % 4 === 0, r2 = R * (big ? 1.1 : 1.06);
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * R * 1.02, Math.sin(a) * R * 1.02); ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      ctx.strokeStyle = `rgba(${P.tick},${big ? 0.7 : 0.28})`; ctx.stroke();
+    }
     ctx.restore();
-    const hl = ctx.createRadialGradient(c0 - R * 0.42, c0 - R * 0.46, 0, c0 - R * 0.42, c0 - R * 0.46, R * 0.55);
-    hl.addColorStop(0, 'rgba(255,255,255,.55)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.beginPath(); ctx.arc(c0, c0, R, 0, Math.PI * 2); ctx.fillStyle = hl; ctx.fill();
-    const rim = ctx.createRadialGradient(c0, c0, R * 0.7, c0, c0, R);
-    rim.addColorStop(0, 'rgba(19,41,61,0)'); rim.addColorStop(1, 'rgba(19,41,61,.28)');
-    ctx.fillStyle = rim; ctx.fill();
+    const lw = R * 0.12, radii = [0.93, 0.74, 0.56];
+    ctx.lineWidth = lw; ctx.lineCap = 'round';
+    radii.forEach((rr, i) => {
+      const r = R * rr - lw / 2;
+      ctx.beginPath(); ctx.arc(c0, c0, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(128,140,150,.16)'; ctx.stroke();
+      const g = rings && rings[i];
+      if (!g || !e) return;
+      const a0 = -Math.PI / 2 + spin * 0.35 * g.sp, a1 = a0 + Math.PI * 2 * g.v * e;
+      const gr = ctx.createLinearGradient(c0 + Math.cos(a0) * r, c0 + Math.sin(a0) * r, c0 + Math.cos(a1) * r, c0 + Math.sin(a1) * r);
+      const [c1, c2] = P.rings[i];
+      gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+      ctx.save(); ctx.shadowColor = c2; ctx.shadowBlur = R * P.glow;
+      ctx.beginPath(); ctx.arc(c0, c0, r, a0, a1); ctx.strokeStyle = gr; ctx.stroke();
+      ctx.beginPath(); ctx.arc(c0 + Math.cos(a1) * r, c0 + Math.sin(a1) * r, lw * 0.32, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.restore();
+    });
+    // orta: genel isabet, sayarak yükselir (renkler temadan: açık temada koyu yazı)
+    const all = rings && rings.find(r => r.k === 'all');
+    if (all) {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = txt; ctx.font = `italic 900 ${R * 0.3}px Poppins, sans-serif`;
+      ctx.fillText(fmt(all.v * 100 * e), c0, c0 - R * 0.02);
+      ctx.fillStyle = cs.getPropertyValue('--muted').trim() || '#8e98a7'; ctx.font = `800 ${R * 0.105}px "Nunito Sans", sans-serif`;
+      ctx.fillText(T('İSABET'), c0, c0 + R * 0.2);
+    }
   }
+  const openStats = () => { if (typeof setTab === 'function') setTab('stats'); };
+  cv.addEventListener('click', openStats);
+  cv.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStats(); } });
 
   // ---------------- lig yörüngesi
   const ORDER = ['Premier League', 'LaLiga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Eredivisie', 'Turkish Süper Lig', 'Primeira Liga', 'Belgian Pro League', 'Championship'];
@@ -127,41 +134,28 @@
       b.style.transform = `translate(${(x - b.offsetWidth / 2).toFixed(1)}px,${(y - b.offsetHeight / 2).toFixed(1)}px) scale(${sc.toFixed(3)})`;
       b.style.opacity = (0.45 + 0.55 * (depth + 1) / 2).toFixed(2);
       b.style.zIndex = depth > 0 ? 8 : 3;
-      const behind = depth < 0 && Math.abs(x - cx) < w * 0.18;      // topun arkasında: tıklanmasın
+      const behind = depth < 0 && Math.abs(x - cx) < w * 0.18;      // çekirdeğin arkasında: tıklanmasın
       b.style.pointerEvents = behind ? 'none' : 'auto';
       b.tabIndex = behind ? -1 : 0;
     });
   }
-
-  // ---------------- sürükleyerek çevirme
-  let drag = null;
-  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); vx = vy = 0; });
-  cv.addEventListener('pointermove', e => {
-    if (!drag) return;
-    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    drag = { x: e.clientX, y: e.clientY };
-    vy = dx * 0.006; vx = -dy * 0.006; ay += vy; ax += vx;
-    if (RM) draw();
-  });
-  const endDrag = () => { drag = null; };
-  cv.addEventListener('pointerup', endDrag);
-  cv.addEventListener('pointercancel', endDrag);
 
   // ---------------- döngü: yalnız görünürken
   let onScreen = true, raf = 0;
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { onScreen = es[0].isIntersecting; kick(); }).observe(host);
   document.addEventListener('visibilitychange', kick);
   function running() { return !RM && onScreen && !document.hidden && host.offsetParent !== null; }
-  function frame() {
+  function frame(t) {
     raf = 0;
     if (!running()) return;
-    if (!drag) { vy += (SPIN - vy) * 0.02; vx += (0 - vx) * 0.03; ay += vy; ax += vx; ax += (-0.35 - ax) * 0.01; }
     if (!hover) orbitA += ORBIT;
-    draw(); placeFlags();
+    draw(t); placeFlags();
     raf = requestAnimationFrame(frame);
   }
   function kick() { if (!raf && running()) raf = requestAnimationFrame(frame); }
   new MutationObserver(kick).observe(document.documentElement, { attributes: true, attributeFilter: ['data-page'] });
+  // Poppins geç yüklenirse ortadaki yazı yedek fontla kalmasın
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw(performance.now()));
 
   // ---------------- bayraklar veriden (fikstürde olan ligler)
   let shown = '';
@@ -176,8 +170,8 @@
     placeFlags(); kick();
   }
 
-  resize(); draw();
-  window.addEventListener('resize', () => { resize(); draw(); placeFlags(); });
+  resize(); draw(performance.now());
+  window.addEventListener('resize', () => { resize(); draw(performance.now()); placeFlags(); });
   const rows = document.getElementById('rows');
   if (rows) new MutationObserver(refresh).observe(rows, { childList: true });
   refresh(); kick();

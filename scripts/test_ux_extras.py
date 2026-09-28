@@ -44,7 +44,11 @@ with sync_playwright() as p:
     assert 1 <= len(picks) <= 3, picks
     ps = pg.eval_on_selector_all('#todayCard .tdy-ring', 'els=>els.map(e=>+getComputedStyle(e).getPropertyValue("--p"))')
     assert ps == sorted(ps, reverse=True) and all(75 <= v <= 100 for v in ps), ps
-    print(f'✓ 2 · Günün öne çıkanları: {len(picks)} vurgu, olasılığa göre sıralı ({ps}).')
+    assert 'Yaklaşan öne çıkan maçlar' in pg.inner_text('#todayCard .tdy-h h2')
+    no_h2h = pg.evaluate("""[...document.querySelectorAll('#todayCard .tdy-pick')].map(b => (window.__data || []).find(x => x.match_id === b.dataset.mid))
+        .filter(x => !x || !(x.h2h_tier || x.basis === 'form+h2h')).map(x => x && x.home)""")
+    assert not no_h2h, f'H2H verisi olmayan maç listede: {no_h2h}'
+    print(f'✓ 2 · Yaklaşan öne çıkan maçlar: {len(picks)} vurgu, hepsi ●●● (H2H), olasılığa göre sıralı ({ps}).')
 
     pv = pg.eval_on_selector_all('#rows .pill.pf', 'els=>els.slice(0,6).map(e=>e.style.getPropertyValue("--pv"))')
     assert pv and all(v.isdigit() for v in pv), pv

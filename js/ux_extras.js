@@ -91,9 +91,12 @@
   }
   const activePane = () => $('pane-' + (document.documentElement.dataset.page || 'pred'));
 
-  // ---------------------------------------------------------------- 2 · günün öne çıkanları
+  // ---------------------------------------------------------------- 2 · yaklaşan öne çıkan maçlar
   function istDay(iso) { return new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' }); }
+  // Yalnız ●●● maçlar: H2H + form (ya da alt lig H2H'ı). Yalnız formlu (●●) ve kısıtlı verililer listeye girmez (28.09 Murat)
+  const hasH2H = x => !!(x.h2h_tier || x.basis === 'form+h2h');
   function bestPick(x) {
+    if (!hasH2H(x)) return null;
     if (typeof isLimitedData === 'function' && isLimitedData(x)) return null;
     if (x.live) return null;
     const c = [];
@@ -128,7 +131,7 @@
     if (host.dataset.sig === sig && !host.hidden) return;
     host.dataset.sig = sig;
     host.hidden = false;
-    host.innerHTML = `<div class="tdy-h"><h2>${T('Günün öne çıkanları')}</h2><span>${today ? T('Bugün · en yüksek olasılıklı {n} vurgu', { n: top.length }) : T('{day} · en yüksek olasılıklı {n} vurgu', { day: dl, n: top.length })}</span></div>
+    host.innerHTML = `<div class="tdy-h"><h2>${T('Yaklaşan öne çıkan maçlar')}</h2><span>${today ? T('Bugün · en yüksek olasılıklı {n} vurgu', { n: top.length }) : T('{day} · en yüksek olasılıklı {n} vurgu', { day: dl, n: top.length })}</span></div>
       <div class="tdy-picks">${top.map(o => `<button type="button" class="tdy-pick" data-mid="${esc(o.x.match_id || '')}" aria-label="${esc(T('Maç detayını aç'))}: ${esc(o.x.home)} — ${esc(o.x.away)}">
         <span class="tdy-ring" style="--p:${Math.round(o.b.p * 1000) / 10}"><b>${pctTxt(o.b.p)}</b></span>
         <span class="tdy-txt"><b>${esc(o.x.home)} — ${esc(o.x.away)}</b><small>${esc(o.x.league)} · ${time(o.x.kickoff_utc)} · <em>${esc(o.b.m)}</em></small></span></button>`).join('')}</div>`;
@@ -173,7 +176,7 @@
   const TOURS = {
     pred: [
       { sel: () => vis(q('#rows .pill.hot')) || vis($('rows')), t: 'Vurgu nedir?', p: 'tour.p1' },
-      { sel: () => vis($('todayCard')), t: 'Günün öne çıkanları', p: 'tour.p2' },
+      { sel: () => vis($('todayCard')), t: 'Yaklaşan öne çıkan maçlar', p: 'tour.p2' },
       { sel: () => vis($('dayStrip')), t: 'Gün seçimi', p: 'tour.pred3' },
       { sel: () => vis(q('#pane-pred .datectl')), t: 'Arama ve filtreler', p: 'tour.pred4' }
     ],

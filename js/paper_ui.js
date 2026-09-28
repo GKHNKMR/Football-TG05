@@ -1514,7 +1514,7 @@
       <div class="card excel-model-card" id="kasaSimCard">
         <div class="ks-tbl-head">
           <h2>${_t('Günlük kasa tablosu')}</h2>
-          <span>${_t('{n} gün · hedef {t} · bugün {d}. gün', { n: sim.rows.length, t: formatCurrency(p.targetBank, curr), d: sim.todayDay })}</span>
+          <span>${_t('{n} gün · hedef {t}', { n: sim.rows.length, t: formatCurrency(p.targetBank, curr) })}</span>
         </div>
         <div class="tbl-scroll ks-table-wrap">
           <table class="excel-table kasa-sim-table">
@@ -1530,8 +1530,8 @@
             </thead>
             <tbody>
               ${sim.rows.map((r, k) => `
-                <tr class="ksr${r.isToday ? ' row-today' : ''}${r.cashout ? ' row-cashout' : ''}${r.actualBank != null ? ' has-real' : ''}" style="--d:${Math.min(0.9, k * 0.03).toFixed(2)}s">
-                  <td title="${dmy(r.date)}"><span class="ks-day">${r.day}</span>${r.isToday ? `<span class="ks-today-tag">${_t('Bugün')}</span>` : ''}</td>
+                <tr class="ksr${r.cashout ? ' row-cashout' : ''}${r.actualBank != null ? ' has-real' : ''}" style="--d:${Math.min(0.9, k * 0.03).toFixed(2)}s">
+                  <td title="${dmy(r.date)}"><span class="ks-day">${r.day}</span></td>
                   <td>${formatCurrency(r.targetBank, curr)}</td>
                   <td class="real ${r.belowTarget ? 'below-target' : ''}"><input type="text" inputmode="decimal" class="kasa-input${r.isManual ? ' manual' : r.actualBank != null ? ' auto' : ''}" data-day="${r.day}" value="${r.actualBank != null ? formatAmount(r.actualBank) : ''}" title="${r.isManual ? _t('Elle girildi — silerseniz boş/otomatik değere döner') : r.actualBank != null ? _t('Sonuçlanan kuponlardan otomatik hesaplandı') : ''}" aria-label="${_t('{day}. gün gerçek kasa', { day: r.day })}"></td>
                   ${hasCash ? `<td class="ks-secured" ${r.cashout ? `title="${r.cashout > 0 ? _t('Bu gün {amount} kilitlendi', { amount: formatCurrency(r.cashout, curr) }) : _t('Bu gün {amount} kasaya geri alındı', { amount: formatCurrency(-r.cashout, curr) })}"` : ''}>${(r.secured > 0 || r.cashout) && (r.actualBank != null || r.day <= lastCashDay) ? `<span class="ks-lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>${formatCurrency(r.secured, curr)}</span>` + (r.cashout ? ` <span class="ks-co">${r.cashout > 0 ? '+' : '−'}${formatAmount(Math.abs(r.cashout))}</span>` : '') : ''}</td>` : ''}

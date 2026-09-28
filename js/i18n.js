@@ -189,7 +189,7 @@
     'Tıkla: {k} olasılığına göre sırala ({x})': { en: 'Click: sort by {k} probability ({x})', nl: 'Klik: sorteer op kans {k} ({x})' },
     'yüksekten düşüğe': { en: 'high to low', nl: 'hoog naar laag' },
     'düşükten yükseğe': { en: 'low to high', nl: 'laag naar hoog' },
-    '{n} gün · hedef {t} · bugün {d}. gün': { en: '{n} days · target {t} · today is day {d}', nl: '{n} dagen · doel {t} · vandaag is dag {d}' },
+    '{n} gün · hedef {t}': { en: '{n} days · target {t}', nl: '{n} dagen · doel {t}' },
     'Hedefe ulaşma: {p}': { en: 'Progress to target: {p}', nl: 'Voortgang naar doel: {p}' },
     'Vurgulanan tahminlerin isabet oranı {p}; istatistikleri aç': { en: 'Hit rate of highlighted predictions {p}; open statistics', nl: 'Trefpercentage van uitgelichte voorspellingen {p}; statistieken openen' },
     'İSABET': { en: 'HIT RATE', nl: 'TREFFERS' },

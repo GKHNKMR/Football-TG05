@@ -299,6 +299,11 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .mx-crest{--c:var(--fxh);flex:none;width:52px;height:52px;display:grid;place-items:center;font-family:Poppins,sans-serif;font-style:italic;font-weight:900;font-size:17px;color:var(--c);
   clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);background:linear-gradient(145deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));position:relative}
 .mx-team.away .mx-crest{--c:var(--fxa)}
+.mx-crest em{font-style:inherit}
+.mx-crest img{width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.mx-crest.has-logo{background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.2),color-mix(in srgb,var(--c) 14%,transparent) 70%)}
+.mx-crest.has-logo em{display:none}
+:root[data-theme="light"] .mx-crest.has-logo{background:radial-gradient(circle at 50% 45%,#fff,color-mix(in srgb,var(--c) 16%,#fff) 75%)}
 .mx-tn{min-width:0}
 .mx-tn b{display:block;font-family:Poppins,Inter,sans-serif;font-style:italic;font-weight:900;font-size:21px;line-height:1.1;letter-spacing:-.4px;overflow-wrap:anywhere}
 .mx-tn small{display:block;margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
@@ -1928,7 +1933,7 @@ html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:re
 <script>
 const leagues=['Tümü','Premier League','Championship','LaLiga','Bundesliga','Serie A','Ligue 1','Eredivisie','Turkish Süper Lig','Primeira Liga','Belgian Pro League'];
 const DATA_URL='predictions.json',STATS_URL='data/match-stats.json',RES_URL='data/results.json',BT_URL='data/backtest.json',H2H_URL='data/h2h.json';
-let STATS={matches:{}},RESULTS=null,BACKTEST=(window.BACKTEST_DATA||null),H2H={pairs:{}};
+let STATS={matches:{}},RESULTS=null,BACKTEST=(window.BACKTEST_DATA||null),H2H={pairs:{}},LOGOS={};
 const FALLBACK_DATA=[
  {match_id:'ED-F1',league:'Eredivisie',kickoff_utc:'2026-09-09T16:45:00Z',home:'FC Twente',away:'Telstar',p_over_0_5:null,p_over_1_5:null,p_over_2_5:null}
 ];
@@ -2974,6 +2979,7 @@ async function load(){
   rows.innerHTML=window.BV_UX?BV_UX.skeleton(6):`<div class="loading">${_t('Fikstürler yükleniyor…')}</div>`;
   fetch(STATS_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){STATS=s;if(tab==='pred')renderPred();}}).catch(()=>{});
   fetch(H2H_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.pairs)H2H=s;}).catch(()=>{});
+  fetch('data/team-logos.json').then(r=>r.ok?r.json():null).then(s=>{if(s&&s.leagues)LOGOS=s.leagues;}).catch(()=>{});
   fetch(RES_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s&&s.matches){RESULTS=s;if(tab==='pred')renderPred();if(tab==='res'||tab==='bt'){renderResults();renderBacktest();}if(tab==='cpn')renderCoupons();}}).catch(()=>{});
   fetch(BT_URL+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null)
     .then(s=>{if(s&&s.overall){BACKTEST=s;if(tab==='res'||tab==='bt'){renderResults();renderBacktest();}if(tab==='gun')renderGun();}else btLoadFailed();}).catch(btLoadFailed);
@@ -3449,7 +3455,9 @@ function crest(n){const w=String(n||'?').replace(/[^\p{L}\p{N} ]/gu,' ').trim().
   return esc((w.length>1?w[0][0]+w[1][0]:(w[0]||'?').slice(0,2)).toUpperCase());}
 function matchHero(home,away,league,when,pred,hs,as,src){
   const lam=pred?(pred.exp_goals??pred.pred_lambda):null;
-  const side=(n,s,cls,tag)=>`<div class="mx-team ${cls}"><span class="mx-crest">${crest(n)}</span><div class="mx-tn"><b>${esc(n)}</b><small><i>${_t(tag)}</i>${s?` · #${s.rank} · ${s.pts} ${_t('std.cols').split(',').pop()}`:''}</small></div></div>`;
+  // Arma (data/team-logos.json, ESPN); yoksa ya da yüklenemezse baş harfler
+  const logo=n=>{const u=(LOGOS[league]||{})[n];return u?`<img src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-logo');this.remove()">`:'';};
+  const side=(n,s,cls,tag)=>`<div class="mx-team ${cls}"><span class="mx-crest${logo(n)?' has-logo':''}">${logo(n)}<em>${crest(n)}</em></span><div class="mx-tn"><b>${esc(n)}</b><small><i>${_t(tag)}</i>${s?` · #${s.rank} · ${s.pts} ${_t('std.cols').split(',').pop()}`:''}</small></div></div>`;
   const orb=lam!=null?`<div class="mx-orb" style="--p:${Math.min(1,lam/5).toFixed(3)}"><div><b>${I18N.dec(Number(lam).toFixed(2))}</b><small>${_t('Beklenen gol')}</small></div></div>`:`<div class="mx-orb" style="--p:0"><div><b>VS</b></div></div>`;
   return `<div class="mx-hero"><div class="mx-meta">${league?`<span class="mx-chip live">${esc(league)}</span>`:''}${when?`<span class="mx-chip">${when}</span>`:''}</div>
     <div class="mx-vs">${side(home,hs,'home','EV')}${orb}${side(away,as,'away','DEP')}</div>${src?`<div class="mx-src">${src}</div>`:''}</div>`;

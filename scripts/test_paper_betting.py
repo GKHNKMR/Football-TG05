@@ -738,6 +738,9 @@ def main():
         if os.environ.get('KASA_SHOT'):
             page.locator('#pane-plan .ks-chart').screenshot(path=os.environ['KASA_SHOT'].replace('.png', '_chart.png'))
         assert tr['past'] and tr['fut'] >= 2 and len(tr['chips']) == 3, tr
+        lg = page.inner_text('#pane-plan .ks-legend')
+        assert 'Trend (tüm günler)' in lg, f'7. güne kadar trend tüm günlerden: {lg}'
+        assert not page.query_selector('#pane-plan .ks-chart .ks-today'), 'grafikte Bugün çizgisi olmamalı'
         assert 'TREND' in tr['chips'][0].upper() and '/ gün' in tr['chips'][0] and 'gün' in tr['chips'][2], tr
         print(f"  ✓ Kasa trendi: grafikte trend + belirsizlik bandı; kutular: {tr['chips']}")
 

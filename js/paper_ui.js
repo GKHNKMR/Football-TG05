@@ -1199,13 +1199,19 @@
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
   }
 
-  // Kasa trendi (iş listesi #37): son 7 oynanan günün kasasına (oyundaki + kilitli) üstel eğri
-  // ln(kasa) = a + b·gün. Oynanmayan günler atlanır; en az 3 gün yoksa trend yok.
-  // Bant: son günlerdeki sapmanın geleceğe yansıması (tahmin aralığı, ±1 standart hata), uzaklaştıkça genişler.
-  const TREND_WINDOW = 7, TREND_MIN_DAYS = 3;
+  // Kasa trendi (iş listesi #37, #38): pencere içindeki oynanan günlerin kasasına (oyundaki + kilitli) üstel eğri
+  // ln(kasa) = a + b·gün. Pencere son oynanan güne (D) göre (28.09 Murat):
+  //   D ≤ 7 → tüm günler · D ≤ 14 → son 7 gün · D ≥ 15 → son ⌊D/2⌋ gün (20. gün → 10, 26. gün → 13)
+  // Oynanmayan günler atlanır; pencerede 3 günden az kalırsa son 3 oynanan gün alınır, toplam 3 gün yoksa trend yok.
+  // Bant: pencerede trendden sapmanın geleceğe yansıması (tahmin aralığı, ±1 standart hata), uzaklaştıkça genişler.
+  const TREND_MIN_DAYS = 3;
+  function trendWindow(lastDay) { return lastDay <= 7 ? lastDay : lastDay <= 14 ? 7 : Math.floor(lastDay / 2); }
   function kasaTrend(sim) {
-    const pts = sim.rows.filter(r => r.totalBank != null && r.totalBank > 0).map(r => [r.day, r.totalBank]).slice(-TREND_WINDOW);
-    if (pts.length < TREND_MIN_DAYS) return null;
+    const all = sim.rows.filter(r => r.totalBank != null && r.totalBank > 0).map(r => [r.day, r.totalBank]);
+    if (all.length < TREND_MIN_DAYS) return null;
+    const win = trendWindow(all[all.length - 1][0]), from = all[all.length - 1][0] - win + 1;
+    let pts = all.filter(q => q[0] >= from);
+    if (pts.length < TREND_MIN_DAYS) pts = all.slice(-TREND_MIN_DAYS);
     const n = pts.length, xs = pts.map(q => q[0]), ys = pts.map(q => Math.log(q[1]));
     const mx = xs.reduce((s2, v) => s2 + v, 0) / n, my = ys.reduce((s2, v) => s2 + v, 0) / n;
     const sxx = xs.reduce((s2, v) => s2 + (v - mx) ** 2, 0);
@@ -1217,7 +1223,7 @@
     const goal = Number(sim.params.targetBank) || 0, lastDay = xs[n - 1];
     let hitDay = null;                                   // trend hedefi hangi gün geçer (en çok 1 yıl)
     if (goal > 0 && b > 0) { const d = (Math.log(goal) - a) / b; hitDay = d <= lastDay ? lastDay : d <= 365 ? Math.ceil(d) : null; }
-    return { f, band, rate: Math.exp(b) - 1, firstDay: xs[0], lastDay, hitDay };
+    return { f, band, rate: Math.exp(b) - 1, firstDay: xs[0], lastDay, hitDay, win, allDays: win >= lastDay };
   }
 
   // Grafiğin altındaki üç kutu: trend büyüme, bu gidişle son gün kasası (bant), hedefe varış günü
@@ -1312,9 +1318,6 @@
           <path class="ks-trend-past" d="${curve(tr.firstDay, tr.lastDay)}" pathLength="1" fill="none" style="stroke:var(--ks-trend)" stroke-width="2.6" stroke-linecap="round" filter="url(#ksLineGlow)"/>
           <circle class="ks-trend-fut" cx="${xd(tr.lastDay).toFixed(1)}" cy="${yc(tr.f(tr.lastDay)).toFixed(1)}" r="4.5" style="fill:var(--ks-trend)" stroke="var(--panel)" stroke-width="2"/></g>`;
     }
-    const today = rows.findIndex(r => r.isToday);
-    const todayMark = today >= 0 ? `<g class="ks-today"><line x1="${x(today).toFixed(1)}" y1="${T}" x2="${x(today).toFixed(1)}" y2="${base}" stroke="${KASA_COLOR_REAL}" stroke-width="1.5" stroke-dasharray="3 4" opacity=".7"/>
-        <text x="${x(today).toFixed(1)}" y="${(T - 5).toFixed(1)}" fill="${KASA_COLOR_REAL}" font-size="10.5" font-weight="800" text-anchor="middle">${_t('Bugün')}</text></g>` : '';
     const defs = `<defs>
         <linearGradient id="ksgR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#0d9488" stop-opacity=".85"/></linearGradient>
         <linearGradient id="ksgT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${KASA_COLOR_TARGET}" stop-opacity=".38"/><stop offset="1" stop-color="${KASA_COLOR_TARGET}" stop-opacity=".06"/></linearGradient>
@@ -1332,7 +1335,6 @@
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${_t('Kasa Gelişim Grafiği: gerçek kasa ve teorik hedef kasa, 1-{n}. gün', { n })}" style="display:block">
         ${defs}
         ${grid}
-        ${todayMark}
         ${hover}
         <g pointer-events="none">${bars}</g>
         ${tLine ? `<path class="ks-path" d="${tLine}" pathLength="1" fill="none" stroke="${KASA_COLOR_TARGET}" stroke-width="2" stroke-linecap="round" filter="url(#ksLineGlow)" pointer-events="none"/>` : ''}
@@ -1552,7 +1554,7 @@
                 <span><i style="background:${KASA_COLOR_REAL}"></i>${_t('Oyundaki Kasa ({sym})', { sym })}</span>
                 <span><i style="background:${KASA_COLOR_TARGET}"></i>${_t('Teorik Hedef Kasa ({sym})', { sym })}</span>
                 ${hasCash ? `<span><i style="background:${KASA_COLOR_SECURED}"></i>${_t('Kilitli ({sym})', { sym })}</span>` : ''}
-                ${trend ? `<span><i class="ks-lg-trend"></i>${_t('Trend (son {n} gün)', { n: TREND_WINDOW })}</span><span><i class="ks-lg-cone"></i>${_t('Belirsizlik bandı')}</span>` : ''}
+                ${trend ? `<span><i class="ks-lg-trend"></i>${trend.allDays ? _t('Trend (tüm günler)') : _t('Trend (son {n} gün)', { n: trend.win })}</span><span><i class="ks-lg-cone"></i>${_t('Belirsizlik bandı')}</span>` : ''}
               </div>
               ${trend ? renderTrendStrip(trend, sim, p, curr) : ''}
             </div>

@@ -191,6 +191,7 @@
     'düşükten yükseğe': { en: 'low to high', nl: 'laag naar hoog' },
     '{n} gün · hedef {t}': { en: '{n} days · target {t}', nl: '{n} dagen · doel {t}' },
     'Trend (son {n} gün)': { en: 'Trend (last {n} days)', nl: 'Trend (laatste {n} dagen)' },
+    'Trend (tüm günler)': { en: 'Trend (all days)', nl: 'Trend (alle dagen)' },
     'Belirsizlik bandı': { en: 'Uncertainty band', nl: 'Onzekerheidsband' },
     'Trend büyüme': { en: 'Trend growth', nl: 'Trendgroei' },
     '/ gün (plan {p})': { en: '/ day (plan {p})', nl: '/ dag (plan {p})' },

@@ -255,6 +255,118 @@ body{margin:0;background:radial-gradient(circle at 50% -10%,#1b222d 0,#090b0f 42
 .kp-tag.out{background:rgba(235,87,87,0.18);color:#ff6b6b;border:1px solid rgba(235,87,87,0.3)}
 .kp-tag.ok{background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid rgba(46,204,113,0.25)}
 @media(max-width:650px){.sheet-bg{padding:0}.sheet{border-radius:0;min-height:100vh;max-width:none}.s-cols{grid-template-columns:1fr}}
+/* --- Maç kartı v2: futuristik HUD görünümü (cam paneller, neon çubuklar, köşe vurguları) --- */
+:root{--fx1:#2ed3c3;--fx2:#d9ff4a;--fx1rgb:46,211,195;--fxh:#3ab8ff;--fxa:#ff7a3d;--fxglass:rgba(255,255,255,.035);--fxgrid:rgba(46,211,195,.05)}
+:root[data-theme="light"]{--fx1:#0d9488;--fx2:#65a30d;--fx1rgb:13,148,136;--fxh:#2563eb;--fxa:#ea580c;--fxglass:rgba(255,255,255,.75);--fxgrid:rgba(13,148,136,.06)}
+.sheet-bg{background:radial-gradient(ellipse at 50% 0,rgba(var(--fx1rgb),.14),rgba(3,5,8,.82) 60%);backdrop-filter:blur(6px) saturate(1.2)}
+.sheet{position:relative;overflow:hidden;background:
+  radial-gradient(ellipse 80% 40% at 50% -8%,rgba(var(--fx1rgb),.16),transparent 70%),
+  linear-gradient(var(--fxgrid) 1px,transparent 1px) 0 0/100% 28px,
+  linear-gradient(90deg,var(--fxgrid) 1px,transparent 1px) 0 0/28px 100%,
+  linear-gradient(165deg,#111a24,#0a0e14 60%);
+  border:1px solid rgba(var(--fx1rgb),.28);box-shadow:0 0 0 1px rgba(0,0,0,.4),0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(var(--fx1rgb),.08) inset;
+  animation:fxIn .45s cubic-bezier(.2,.9,.3,1) both}
+:root[data-theme="light"] .sheet{background:
+  radial-gradient(ellipse 80% 40% at 50% -8%,rgba(var(--fx1rgb),.12),transparent 70%),
+  linear-gradient(var(--fxgrid) 1px,transparent 1px) 0 0/100% 28px,
+  linear-gradient(90deg,var(--fxgrid) 1px,transparent 1px) 0 0/28px 100%,
+  linear-gradient(165deg,#ffffff,#f1f6f9 60%);box-shadow:0 30px 80px rgba(20,40,60,.25)}
+.sheet::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--fx1),var(--fx2),transparent);opacity:.9}
+@keyframes fxIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.sheet .s-close{position:relative;z-index:2;border-radius:50%;background:var(--fxglass);border-color:rgba(var(--fx1rgb),.35);color:var(--fx1);transition:transform .25s,box-shadow .25s}
+.sheet .s-close:hover{transform:rotate(90deg);box-shadow:0 0 14px rgba(var(--fx1rgb),.45)}
+.sheet h2{font-family:Poppins,Inter,sans-serif;font-style:italic;letter-spacing:-.3px}
+/* kartlar: cam panel + köşe braketleri */
+.s-card{position:relative;background:var(--fxglass);border:1px solid rgba(var(--fx1rgb),.16);border-radius:14px;padding:15px 16px;margin-top:14px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);animation:fxIn .5s cubic-bezier(.2,.9,.3,1) both}
+.s-card::before,.s-card::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--fx1);opacity:.75;pointer-events:none}
+.s-card::before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-top-left-radius:14px}
+.s-card::after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-bottom-right-radius:14px}
+.sheet>.s-card:nth-of-type(2){animation-delay:.06s}.sheet>.s-card:nth-of-type(3){animation-delay:.12s}.sheet>.s-card:nth-of-type(4){animation-delay:.18s}
+.sheet>.s-card:nth-of-type(5){animation-delay:.24s}.sheet>.s-card:nth-of-type(6){animation-delay:.3s}.sheet>.s-card:nth-of-type(n+7){animation-delay:.36s}
+.s-card h3{display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.16em;color:var(--fx1);margin-bottom:12px}
+.s-card h3::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--fx1);box-shadow:0 0 8px var(--fx1);transform:rotate(45deg);flex:none}
+.s-card h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(var(--fx1rgb),.35),transparent)}
+/* maç başlığı: iki takım + beklenen gol göstergesi */
+.mx-hero{position:relative;margin:-4px 0 2px}
+.mx-meta{display:flex;flex-wrap:wrap;gap:6px;padding-right:44px}
+.mx-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px;border:1px solid rgba(var(--fx1rgb),.3);background:rgba(var(--fx1rgb),.08);color:var(--text)}
+.mx-chip.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--fx2);box-shadow:0 0 8px var(--fx2);animation:fxBlink 1.6s ease-in-out infinite}
+@keyframes fxBlink{50%{opacity:.25}}
+.mx-vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:16px 0 6px}
+.mx-team{display:flex;align-items:center;gap:12px;min-width:0}
+.mx-team.away{flex-direction:row-reverse;text-align:right}
+.mx-crest{--c:var(--fxh);flex:none;width:52px;height:52px;display:grid;place-items:center;font-family:Poppins,sans-serif;font-style:italic;font-weight:900;font-size:17px;color:var(--c);
+  clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);background:linear-gradient(145deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));position:relative}
+.mx-team.away .mx-crest{--c:var(--fxa)}
+.mx-tn{min-width:0}
+.mx-tn b{display:block;font-family:Poppins,Inter,sans-serif;font-style:italic;font-weight:900;font-size:21px;line-height:1.1;letter-spacing:-.4px;overflow-wrap:anywhere}
+.mx-tn small{display:block;margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+.mx-tn small i{font-style:normal;color:var(--fxh)}.mx-team.away .mx-tn small i{color:var(--fxa)}
+.mx-orb{--p:.5;position:relative;width:92px;height:92px;border-radius:50%;display:grid;place-items:center;text-align:center;
+  background:conic-gradient(from 210deg,var(--fx1),var(--fx2) calc(var(--p)*300deg),rgba(var(--fx1rgb),.1) calc(var(--p)*300deg) 300deg,transparent 300deg);
+  filter:drop-shadow(0 0 12px rgba(var(--fx1rgb),.35))}
+.mx-orb::before{content:"";position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#16232e,#0a0f15)}
+:root[data-theme="light"] .mx-orb::before{background:radial-gradient(circle at 50% 35%,#ffffff,#eaf2f5)}
+.mx-orb::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px dashed rgba(var(--fx1rgb),.35);animation:fxSpin 18s linear infinite}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+.mx-orb b,.mx-orb small{position:relative}
+.mx-orb b{display:block;font-family:Poppins,sans-serif;font-style:italic;font-weight:900;font-size:25px;line-height:1;color:var(--fx1)}
+.mx-orb small{display:block;max-width:62px;margin:4px auto 0;font-size:7.5px;line-height:1.2;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mx-src{font-size:10.5px;color:var(--muted);text-align:center;letter-spacing:.04em;opacity:.8}
+@media(max-width:650px){.mx-vs{gap:8px}.mx-crest{width:40px;height:40px;font-size:13px}.mx-tn b{font-size:15px}.mx-team{gap:8px}.mx-orb{width:74px;height:74px}.mx-orb b{font-size:20px}.mx-tn small{font-size:9px;letter-spacing:.06em}}
+@media(max-width:420px){.mx-team,.mx-team.away{flex-direction:column;text-align:center}}
+/* olasılık çubukları: segmentli iz, neon dolgu, eşik işareti */
+.sheet .pb-list{gap:11px}
+.sheet .pb-row{grid-template-columns:140px 1fr 64px}
+.sheet .pb-l{font-family:Poppins,Inter,sans-serif;font-style:italic;font-size:14px}
+.sheet .pb-l small{font-family:Inter,sans-serif;font-style:normal}
+.sheet .pb-t{height:12px;border-radius:3px;background:
+  repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(var(--fx1rgb),.18) calc(10% - 1px) 10%),rgba(var(--fx1rgb),.07);
+  box-shadow:inset 0 0 0 1px rgba(var(--fx1rgb),.14)}
+.sheet .pb-f{border-radius:3px;background:linear-gradient(90deg,rgba(142,152,167,.25),rgba(142,152,167,.7));opacity:1;animation:pbGrow 1s cubic-bezier(.2,.9,.3,1) both;overflow:hidden}
+.sheet .pb-row.hot .pb-f{background:linear-gradient(90deg,rgba(var(--fx1rgb),.35),var(--fx1) 60%,var(--fx2));box-shadow:0 0 12px rgba(var(--fx1rgb),.55)}
+.sheet .pb-row.hot .pb-f::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);width:30%;animation:pbSweep 2.6s ease-in-out 1s infinite}
+@keyframes pbGrow{from{width:0}}
+@keyframes pbSweep{from{transform:translateX(-120%)}to{transform:translateX(420%)}}
+.sheet .pb-thr{top:-5px;bottom:-5px;width:2px;background:var(--text);opacity:.8;box-shadow:0 0 6px var(--text)}
+.sheet .pb-thr::before{content:"";position:absolute;top:-4px;left:-3px;border:4px solid transparent;border-top-color:var(--text)}
+.sheet .pb-v{font-family:Poppins,sans-serif;font-style:italic;font-size:15px}
+.sheet .pb-row.hot .pb-v{color:var(--fx1);text-shadow:0 0 12px rgba(var(--fx1rgb),.5)}
+.sheet .pb-row.hot .pb-l{color:var(--fx1)}
+.sheet .pb-note{margin-top:12px;padding-top:10px;border-top:1px dashed rgba(var(--fx1rgb),.2)}
+@media(max-width:640px){.sheet .pb-row{grid-template-columns:100px 1fr 54px}}
+/* puan durumu */
+.sheet .std-tbl{border-collapse:separate;border-spacing:0 6px}
+.sheet .std-tbl th{border:0;color:var(--muted);letter-spacing:.12em}
+.sheet .std-tbl td{border:0;background:rgba(var(--fx1rgb),.05);font-variant-numeric:tabular-nums;padding:9px 4px}
+.sheet .std-tbl td:first-child{border-radius:9px 0 0 9px;color:var(--fx1);font-family:Poppins,sans-serif;font-style:italic;font-size:15px}
+.sheet .std-tbl td:last-child{border-radius:0 9px 9px 0;font-family:Poppins,sans-serif;font-style:italic;font-size:15px;color:var(--fx2)}
+:root[data-theme="light"] .sheet .std-tbl td:last-child{color:var(--fx1)}
+/* H2H: dağılım çubuğu + skorbord */
+.mx-split{display:flex;height:8px;border-radius:999px;overflow:hidden;gap:2px;margin:4px 0 8px}
+.mx-split i{display:block;min-width:4px}
+.mx-split .h{background:var(--fxh);box-shadow:0 0 8px var(--fxh)}.mx-split .d{background:rgba(142,152,167,.5)}.mx-split .a{background:var(--fxa);box-shadow:0 0 8px var(--fxa)}
+.sheet .h2h-row{grid-template-columns:86px 1fr auto;align-items:center;padding:7px 8px;margin:0 -8px;border-top:0;border-radius:8px;transition:background .2s}
+.sheet .h2h-row:nth-child(odd){background:rgba(var(--fx1rgb),.035)}
+.sheet .h2h-row:hover{background:rgba(var(--fx1rgb),.1)}
+.sheet .h2h-row>span:first-child{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px}
+.sheet .h2h-row .sc{display:inline-block;min-width:44px;text-align:center;margin:0 6px;padding:2px 8px;border-radius:6px;font-family:ui-monospace,Consolas,monospace;letter-spacing:.08em;
+  background:#05080c;color:var(--fx2);border:1px solid rgba(var(--fx1rgb),.3);text-shadow:0 0 8px rgba(217,255,74,.5)}
+:root[data-theme="light"] .sheet .h2h-row .sc{background:#0f1a22;color:#d9ff4a}
+@media(max-width:650px){.sheet .h2h-row{grid-template-columns:1fr auto;row-gap:1px}.sheet .h2h-row>span:first-child{grid-column:1/-1;font-size:10.5px}.sheet .h2h-row .sc{min-width:38px;margin:0 4px;padding:1px 5px}}
+.sheet .h2h-tot{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(var(--fx1rgb),.1);color:var(--fx1);white-space:nowrap}
+/* form ve sezon */
+.sheet .s-stat{padding:6px 0;border-bottom:1px dashed rgba(var(--fx1rgb),.14)}
+.sheet .s-stat b{font-variant-numeric:tabular-nums;color:var(--fx1)}
+.sheet .s-team{font-family:Poppins,Inter,sans-serif;font-style:italic;font-size:15px}
+.sheet .fchip{border-radius:6px;border:1px solid transparent;font-family:Poppins,sans-serif;font-style:italic}
+.sheet .fchip.W{border-color:color-mix(in srgb,var(--good) 45%,transparent);box-shadow:0 0 8px color-mix(in srgb,var(--good) 30%,transparent)}
+.sheet .fchip.L{border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.sheet .fchip small{font-family:Inter,sans-serif;font-style:normal}
+.sheet .fchip.recent{outline:0;box-shadow:0 0 0 2px var(--fx2),0 0 10px rgba(217,255,74,.4)}
+.sheet .kp-team-status{background:rgba(var(--fx1rgb),.05);border-color:rgba(var(--fx1rgb),.18)}
+@media(prefers-reduced-motion:reduce){.sheet,.s-card,.sheet .pb-f,.sheet .pb-row.hot .pb-f::after,.mx-orb::after,.mx-chip.live::before{animation:none}}
 /* tahmin vs gerçekleşen (sonuçlar + model doğruluğu) */
 #pane-res .lede,#pane-bt .lede{color:var(--muted);font-size:12px;margin:0 2px 8px;line-height:1.55}
 #pane-res .tiles,#pane-bt .tiles{grid-template-columns:repeat(4,1fr)}
@@ -1799,7 +1911,7 @@ html[data-page="pred"] .orb{display:block;grid-column:2;grid-row:1/3;position:re
     <p id="gateErr" hidden data-i18n="Kod hatalı.">Kod hatalı.</p>
   </div>
 </div>
-<script src="js/i18n.js?v=20260927-sh"></script>
+<script src="js/i18n.js?v=20260928-fx"></script>
 <script>I18N.apply(document);I18N.mountSwitcher();</script>
 <script src="js/backtest_data.js"></script>
 <script src="js/cifte_backtest_data.js"></script>
@@ -3271,7 +3383,7 @@ function teamBlock(t){
     <div class="form">${form||`<span class="s-note">${_t('form verisi yok')}</span>`}</div>
   </div>`;
 }
-const S_HOME='#3987e5',S_AWAY='#d95926';
+const S_HOME='#3ab8ff',S_AWAY='#ff7a3d';
 function goalChart(h,a){
   const HS=h.goals5||[],AS=a.goals5||[];
   const labels=(HS.length>=AS.length?HS:AS).map(g=>g.label);
@@ -3284,15 +3396,20 @@ function goalChart(h,a){
   const X=i=>labels.length>1?L+i*(pw/(labels.length-1)):L+pw/2;
   const Y=v=>T+ph-(v/ymax)*ph;
   let g='';
-  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
+  g+=`<defs><filter id="gcGlow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`+
+    [['gcH',S_HOME],['gcA',S_AWAY]].map(([id,c])=>`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".22"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient>`).join('')+`</defs>`;
+  for(let t=0;t<=ymax;t++){const y=Y(t);g+=`<line x1="${L}" y1="${y}" x2="${L+pw}" y2="${y}" stroke="var(--line)" stroke-dasharray="2 4"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`;}
   const xl=labels.map((lb,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lb)}</text>`).join('');
   const draw=(vals,src,color,name)=>{
     let segs=[],cur=[];
     vals.forEach((v,i)=>{if(v==null){if(cur.length){segs.push(cur);cur=[];}}else cur.push([X(i),Y(v),i,v]);});
     if(cur.length)segs.push(cur);
-    const lines=segs.filter(s=>s.length>1).map(s=>`<polyline points="${s.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
+    const gid=color===S_HOME?'gcH':'gcA';
+    const lines=segs.filter(s=>s.length>1).map(s=>{const pts=s.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+      return `<polygon points="${pts} ${s[s.length-1][0].toFixed(1)},${T+ph} ${s[0][0].toFixed(1)},${T+ph}" fill="url(#${gid})"/>`+
+        `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" filter="url(#gcGlow)"/>`;}).join('');
     const dots=segs.flat().map(p=>{const r=src[p[2]]||{};
-      return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.3" fill="${color}"><title>${esc(name)} · ${esc(labels[p[2]])}: ${_t('{v} gol/maç',{v:I18N.dec(p[3])})}${r.gf_avg!=null?_t(' ({gf} attı · {ga} yedi)',{gf:I18N.dec(r.gf_avg),ga:I18N.dec(r.ga_avg)}):''}</title></circle>`;}).join('');
+      return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" style="fill:var(--panel)" stroke="${color}" stroke-width="2.2"><title>${esc(name)} · ${esc(labels[p[2]])}: ${_t('{v} gol/maç',{v:I18N.dec(p[3])})}${r.gf_avg!=null?_t(' ({gf} attı · {ga} yedi)',{gf:I18N.dec(r.gf_avg),ga:I18N.dec(r.ga_avg)}):''}</title></circle>`;}).join('');
     return lines+dots;
   };
   const lgx2=L+Math.min(pw*0.55,240);
@@ -3327,14 +3444,24 @@ function probCard(x){
   return `<div class="s-card"><h3>${_t('Model olasılıkları')}</h3><div class="pb-list">${bars}</div>
     <div class="pb-note">${lam!=null?_t('Beklenen toplam gol (λ): <b>{l}</b>',{l:I18N.dec(Number(lam).toFixed(2))})+' · ':''}${_t('İnce çizgi vurgu eşiği; renkli çubuk ve ★ = vurgulanan tahmin.')}${lim?' '+_t('Kısıtlı veri: vurgulanmaz.'):''}</div></div>`;
 }
+// Maç kartı başlığı: iki takım (monogram + sıra/puan) ve ortada beklenen gol (λ) göstergesi
+function crest(n){const w=String(n||'?').replace(/[^\p{L}\p{N} ]/gu,' ').trim().split(/\s+/).filter(Boolean);
+  return esc((w.length>1?w[0][0]+w[1][0]:(w[0]||'?').slice(0,2)).toUpperCase());}
+function matchHero(home,away,league,when,pred,hs,as,src){
+  const lam=pred?(pred.exp_goals??pred.pred_lambda):null;
+  const side=(n,s,cls,tag)=>`<div class="mx-team ${cls}"><span class="mx-crest">${crest(n)}</span><div class="mx-tn"><b>${esc(n)}</b><small><i>${_t(tag)}</i>${s?` · #${s.rank} · ${s.pts} ${_t('std.cols').split(',').pop()}`:''}</small></div></div>`;
+  const orb=lam!=null?`<div class="mx-orb" style="--p:${Math.min(1,lam/5).toFixed(3)}"><div><b>${I18N.dec(Number(lam).toFixed(2))}</b><small>${_t('Beklenen gol')}</small></div></div>`:`<div class="mx-orb" style="--p:0"><div><b>VS</b></div></div>`;
+  return `<div class="mx-hero"><div class="mx-meta">${league?`<span class="mx-chip live">${esc(league)}</span>`:''}${when?`<span class="mx-chip">${when}</span>`:''}</div>
+    <div class="mx-vs">${side(home,hs,'home','EV')}${orb}${side(away,as,'away','DEP')}</div>${src?`<div class="mx-src">${src}</div>`:''}</div>`;
+}
 function openSheet(mid){
   const m=STATS.matches&&STATS.matches[mid];
   sheet.hidden=false;
-  if(!m){const pr=(window.__data||[]).find(p=>p.match_id===mid);sheet.innerHTML=`<div class="sheet"><button class="s-close">×</button><h2>${pr?esc(pr.home)+' — '+esc(pr.away):_t('İstatistik yok')}</h2><div class="s-sub">${_t('Bu maç için CSV verisi bulunamadı.')}</div>${probCard(pr)}</div>`;return;}
+  if(!m){const pr=(window.__data||[]).find(p=>p.match_id===mid);sheet.innerHTML=`<div class="sheet"><button class="s-close">×</button>${pr?matchHero(pr.home,pr.away,pr.league,pr.kickoff_utc?localDate(pr.kickoff_utc):'',pr,null,null,_t('Bu maç için CSV verisi bulunamadı.')):`<h2>${_t('İstatistik yok')}</h2><div class="s-sub">${_t('Bu maç için CSV verisi bulunamadı.')}</div>`}${probCard(pr)}</div>`;return;}
   const h=m.home,a=m.away,x=m.h2h||{count:0,matches:[]};
   const pred=(window.__data||[]).find(p=>p.match_id===mid);
   const tierInfo=(pred&&pred.h2h_tier)||(x.tier_label)?_t(' ({t} dahil)',{t:esc((pred&&pred.h2h_tier)||x.tier_label)}):'';
-  const h2hHead=x.count?`<div class="s-sub" style="margin-bottom:6px">${_t('Son {n} maç{tier} · {home} {hw} – {d} B – {aw} {away} · ort. {avg} gol · 0.5Ü {o05} · 1.5Ü {o15} · 2.5Ü {o25}',{n:x.count,tier:tierInfo,home:esc(h.name),hw:x.home_wins,d:x.draws,aw:x.away_wins,away:esc(a.name),avg:I18N.dec(n1(x.avg_total)),o05:I18N.pctS(x.over05_pct),o15:I18N.pctS(x.over15_pct),o25:I18N.pctS(x.over25_pct)})}</div>`:`<div class="s-note">${_t('Kayıtlı karşılaşma yok.')}</div>`;
+  const h2hHead=x.count?`<div class="mx-split" title="${esc(_t('Galibiyet dağılımı'))}"><i class="h" style="flex:${x.home_wins||0}"></i><i class="d" style="flex:${x.draws||0}"></i><i class="a" style="flex:${x.away_wins||0}"></i></div><div class="s-sub" style="margin-bottom:6px">${_t('Son {n} maç{tier} · {home} {hw} – {d} B – {aw} {away} · ort. {avg} gol · 0.5Ü {o05} · 1.5Ü {o15} · 2.5Ü {o25}',{n:x.count,tier:tierInfo,home:esc(h.name),hw:x.home_wins,d:x.draws,aw:x.away_wins,away:esc(a.name),avg:I18N.dec(n1(x.avg_total)),o05:I18N.pctS(x.over05_pct),o15:I18N.pctS(x.over15_pct),o25:I18N.pctS(x.over25_pct)})}</div>`:`<div class="s-note">${_t('Kayıtlı karşılaşma yok.')}</div>`;
   const h2hRows=(x.matches||[]).map(r=>`<div class="h2h-row"><span>${dmy(r.date)}${r.league?` <small style="color:var(--good);font-weight:700">(${esc(r.league)})</small>`:''}</span><span>${esc(r.home)} <b class="sc">${r.score}</b> ${esc(r.away)}</span><span class="h2h-tot">${_t('{n} gol',{n:r.total})}</span></div>`).join('');
   let kpCard='';
   if(pred&&(pred.lineup||pred.injury)){
@@ -3390,8 +3517,7 @@ function openSheet(mid){
   }
   sheet.innerHTML=`<div class="sheet">
     <button class="s-close">×</button>
-    <h2>${esc(h.name)} — ${esc(a.name)}</h2>
-    <div class="s-sub">${esc(m.league)} · ${localDate(m.kickoff_utc)}${_t(' · kaynak: football-data.co.uk')}</div>
+    ${matchHero(h.name,a.name,m.league,localDate(m.kickoff_utc),pred,h.standing,a.standing,_t(' · kaynak: football-data.co.uk').replace(/^\s*·\s*/,''))}
     ${probCard(pred)}
     ${lowerTierCard}
     ${limCard}

@@ -87,41 +87,12 @@
     const f = 1 - (+ctx.reserve || 0), Rq = f > 0 ? 1 + (+ctx.g || 0) / f : 0;   // özel risk: en yakın standart profil
     return Object.keys(P).sort((a, b) => Math.abs(P[a].R - Rq) - Math.abs(P[b].R - Rq))[0] || null;
   }
-  function ruleFor(Rq) {
-    const rs = (RULES && RULES.target && RULES.target.rules) || [];
-    return rs.find(r => r.R >= Rq - 1e-9) || rs[rs.length - 1] || null;
-  }
-  // Geçmişteki gerçek kuponlarla (oran, tuttu mu) 1 yıllık Monte Carlo: bugünkü kasa → hedef
-  function simulate(rule, bank, goal, f) {
-    const N = 2000, H = 365, out = rule.outcomes, n = out.length, pd = rule.per_day, floor = bank * 0.1;
-    let reach = 0, bust = 0; const days = [];
-    let seed = 12345; const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-    for (let i = 0; i < N; i++) {
-      let b = bank;
-      for (let d = 1; d <= H; d++) {
-        if (rnd() > pd) continue;
-        const v = out[Math.floor(rnd() * n)], st = b * f;
-        b += v > 0 ? st * (v / 1000 - 1) : -st;
-        if (b >= goal) { reach++; days.push(d); break; }
-        if (b < floor) { bust++; break; }
-      }
-    }
-    days.sort((a, b) => a - b);
-    return { reach: reach / N, med: days.length ? days[Math.floor(days.length / 2)] : null, bust: bust / N };
-  }
   function cLegHtml(l) {
     const t = new Date(l.kickoff_utc).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' });
     const fl = typeof root.flag === 'function' ? root.flag(l.league, 11) : '';
     const res = l.result ? `<span class="cs-res ${l.result}">${l.result === 'won' ? '✓' : '✗'} ${esc(l.score || '')}</span>` : '';
     return `<li class="cs-leg"><div class="cs-m"><span class="cs-lg">${fl} ${esc(l.league)} · ${t}</span><b>${esc(l.home)} — ${esc(l.away)}</b></div>
       ${res}<span class="cs-pick" title="${esc(T(MK_MEANING[l.market] || ''))} · ${T('oran')} ${odd(l.odds)}${l.real ? '' : ' ' + T('(tahmini)')}">${l.market} <em>${pc(l.p)}</em></span></li>`;
-  }
-  function historyHtml(prof) {
-    const all = Object.values((CPN && CPN.coupons) || {}).filter(c => c.profile === prof && c.status !== 'pending').sort((a, b) => (a.date < b.date ? 1 : -1));
-    if (!all.length) return `<div class="cs-past"><b>${T('Geçmiş öneriler')}</b> <span class="cs-muted">${T('Henüz sonuçlanan önerilen kupon yok; maçlar oynandıkça burada tuttu / tutmadı olarak listelenir.')}</span></div>`;
-    const w = all.filter(c => c.status === 'won').length;
-    const rows = all.slice(0, 10).map(c => `<li class="cs-pr ${c.status}"><span>${esc(dayLabel(c.date))}</span><span>${c.legs.length} ${T('maç')} · ${T('oran')} ${odd(c.odds)}</span><b>${c.status === 'won' ? '✓ ' + T('Tuttu') : '✗ ' + T('Tutmadı')}</b></li>`).join('');
-    return `<details class="cs-past"><summary><b>${T('Geçmiş öneriler')}</b> — ${T('{n} kupondan {w} tuttu', { n: all.length, w })}</summary><ul>${rows}</ul></details>`;
   }
   function targetHtml(ctx, day) {
     const prof = profileFor(ctx); if (!prof) return '';
@@ -131,7 +102,7 @@
     const opts = base ? [base].concat(base.alts || []) : [];
     const sk = `${day}|${prof}`, si = opts.length ? (SHUF[sk] || 0) % opts.length : 0;
     const c = opts[si];
-    const bank = +ctx.bank || +ctx.start || 0, goal = Math.max(0, (+ctx.target || 0) - (+ctx.secured || 0));
+    const bank = +ctx.bank || +ctx.start || 0;
     let body;
     if (c) {
       const est = c.legs.some(l => !l.real);
@@ -141,18 +112,11 @@
     } else {
       body = `<p class="cs-empty">${T('Bu gün en fazla 5 vurgulu maçla gereken orana ulaşılamıyor.')}</p>`;
     }
-    const rule = ruleFor(cfg.R);
-    let proj = '';
-    if (rule && bank > 0 && goal > bank) {
-      const m = simulate(rule, bank, goal, f);
-      proj = `<div class="cs-proj"><b>${T('Gerçekçi beklenti')}</b> — ${T('cs.proj', { bank: eur(bank), goal: eur(goal), p: pc(m.reach), med: m.med ? T('ortanca {d} gün', { d: m.med }) : '—', bust: pc(m.bust), site: ctx.days || '—' })}
-        <div class="cs-projm">${T('cs.projm', { n: rule.coupons.toLocaleString(cur), w: pc(rule.win_pct / 100), o: odd(rule.avg_odds), l: I().dec(String(rule.avg_legs)), per: I().dec((1 / rule.per_day).toFixed(1)) })}</div></div>`;
-    }
     const note = ctx.profile !== prof ? ` ${T('(özel risk: en yakın standart profil)')}` : '';
     return `<div class="cs-target">
       <div class="cs-th"><b>${T('Kasa hedefine göre kupon')}</b><span class="cs-badge">${T('Kasana göre')}</span></div>
       <div class="cs-rule">${T('cs.need', { g: I().pct(I().dec(String(Math.round(cfg.g * 1000) / 10))), f: I().pct(Math.round(f * 100)), r: odd(cfg.R), max: CPN.max_legs || 5 })}${note}</div>
-      ${body}${proj}${historyHtml(prof)}</div>`;
+      ${body}</div>`;
   }
 
   function html(ctxIn) {

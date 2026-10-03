@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>BETAVUS SistemGol Savunma</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 9.6pt; color: #1d2430; line-height: 1.42; background: #fff; }
+  h1 { color: #1b5e8c; font-size: 19pt; margin: 0 0 4px; }
+  .meta { color: #5a6472; font-size: 8.6pt; border-bottom: 3px solid #1b5e8c; padding-bottom: 8px; margin-bottom: 12px; }
+  h2 { color: #1b5e8c; font-size: 12.5pt; border-bottom: 1px solid #c9d3de; padding-bottom: 3px; margin: 18px 0 8px; page-break-after: avoid; }
+  .box { background: #f2f6fa; border-left: 5px solid #1b5e8c; padding: 8px 12px; margin: 8px 0 12px; }
+  .box ul { margin: 0; padding-left: 18px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 8.7pt; }
+  th, td { border: 1px solid #d3dbe4; padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eaf0f6; }
+  tr { page-break-inside: avoid; }
+  .ok { color: #1e7b3c; font-weight: 600; white-space: nowrap; }
+  .no { color: #b3261e; font-weight: 600; white-space: nowrap; }
+  .part { color: #a35b00; font-weight: 600; white-space: nowrap; }
+  code { font-family: Consolas, monospace; font-size: 8.4pt; background: #eef1f4; padding: 0 3px; border-radius: 2px; }
+  .note { color: #5a6472; font-size: 8.4pt; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+</style>
+</head>
+<body>
+
+<h1>BETAVUS ve SistemGol: savunma ve iyileştirme raporu</h1>
+<div class="meta">3 Ekim 2026 · BETAVUS tarafının yanıtı<br>
+Kaynaklar: <i>BETAVUS_SistemGol_KarsilastirmaR01.pdf</i> (Ufuk Özbek) · <code>SISTEM_RAPORU.md</code> · <code>SISTEMGOL_RAPORU.md</code> · BETAVUS kodu ve git geçmişi üzerinde yapılan bağımsız ölçümler (<code>GKHNKMR/Football-TG05</code>, salt okuma, hiçbir dosya değiştirilmedi)</div>
+
+<div class="box"><ul>
+<li><b>Raporun ana sonuçlarına katılıyoruz:</b> iki sistemde de ölçülebilir bir avantaj yok, kasa planı sürdürülemez, eşikler örneklem-içi seçilmiş ve 0,5/1,5 oranları tahmini.</li>
+<li><b>Bir tez bugün için yanlış:</b> openfootball'da 0-0'lar eksik değil. <code>"score": [0, 0]</code> biçiminde duruyorlar ve model bunları 20.09.2026'dan beri okuyor. Raporun ölçtüğü canlı dönem (09–20.09) ise gerçekten 0-0'suz modelle üretildi.</li>
+<li><b>"Canlı piyasasız (0/384)" kısmen doğru:</b> piyasa harmanı canlıya 23.09'da girdi ve o tarihten beri maç oynanmadı. Asıl sorun, arşivin maçtan medyan 4,2 gün önceki <i>ilk</i> tahmini, yani oran gelmeden üretilen sürümü saklaması.</li>
+<li><b>Canlı %92,5 istatistiksel olarak ayırt edici değil:</b> 107 seçimde 8 kayıp var. %95,8 beklentide bu kadar kayıp olasılığı ~%8. Ölçülen motor da bugünkü motor değil.</li>
+<li><b>Karşılaştırma pencereleri farklı:</b> SistemGol'ün tam canlı ledger'ı 66/69 (%95,65), V1.1 dönemi 17/19 (%89,5). Aynı tarihlerde ölçülünce iki sistem birbirine çok yakın.</li>
+</ul></div>
+
+<h2>1. Karşılaştırma raporunun özeti (R01)</h2>
+<ul>
+<li>0,5 Üst'te iki sistem aynı tavana çıkıyor: model "≥ %95" dediğinde isabet ~%96,7–96,8. Hiç seçim yapmadan taban ~%93,5.</li>
+<li>Motor, piyasanın bildiğine anlamlı bilgi eklemiyor. Fark ölçüm dürüstlüğünde, gerçek fiyatta ve kasa disiplininde çıkıyor.</li>
+<li>BETAVUS'un en büyük riski kasa planı: stake %25–50 ve hedef oran günlük büyüme hedefinden türetiliyor. Simülasyonda Dengeli profilde 1.000 €, 30 kupon sonra medyan 54 €'ya iniyor.</li>
+<li>İkinci sorun: sitede gösterilen başarı, bültendeki canlı modelin başarısı değil.</li>
+<li>SistemGol tarafında: A1 yönü (oransız dinamik Dixon-Coles) güç kazandı ve piyasa favori filtresi bağımsız teyit aldı.</li>
+</ul>
+
+<h2>2. Savunma: tez tez</h2>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Tez</th><th style="width:14%">Hüküm</th><th>Kanıt / gerekçe</th></tr>
+<tr><td>1</td><td>openfootball skorlarında 0-0'lar eksik; canlı model iyimser</td><td><span class="no">Bugün için yanlış</span><br><span class="ok">Ölçülen dönem için doğru</span></td><td>0-0'lar kaynakta var, ancak <code>"score": [0, 0]</code> biçiminde. <code>ft_goals</code> bu biçimi <b>20.09.2026 17:55'ten beri</b> okuyor (<code>db2f1d0</code>). Ölçüm: model bugün 2025-26 PL'de 380/380 maç ve 27/27 0-0 görüyor; 8 ligin hepsi football-data ile neredeyse birebir. 09–20.09 canlı penceresi ise 0-0'suz modelle üretildi; gol ortalaması o dönemde %4–11 şişikti. Raporun bu tezi, <code>_league_rho</code> içindeki eskimiş kod yorumunu tekrarlıyor.</td></tr>
+<tr><td>2</td><td>Canlı tahminler piyasasız (0/384)</td><td><span class="part">Kısmen</span></td><td>0/384'ün sebebi milli ara: Ekim maçlarının oranı football-data'nın <code>fixtures.csv</code>'sine henüz gelmedi. Piyasa harmanı canlıya <b>23.09'da</b> girdi (<code>864da10</code>) ve o tarihten beri maç oynanmadı. Yani canlıda çalıştığı da çalışmadığı da kanıtlanmış değil. <b>Kabul ettiğimiz asıl sorun:</b> arşiv, maçtan medyan 4,2 gün önceki <i>ilk</i> tahmini saklıyor. Harman devreye girse bile arşiv piyasasız sürümü kaydeder.</td></tr>
+<tr><td>3</td><td>Canlı 0,5 isabeti %92,5, tabanın altında</td><td><span class="part">Zayıf kanıt</span></td><td>n = 107, 8 kayıp. %95,8 beklenti altında ≥ 8 kayıp olasılığı <b>~%8</b>. Wilson %95 aralığı (85,9–96,2) backtest değerini içeriyor. Ölçülen motor bugünkü motor değil: 0-0'suz, harmansız ve o dönemde aynı gün birkaç kez değişmiş. Kayıpların üçü (Liverpool–Fulham, Gaziantep–Fenerbahçe, Schalke–Elversberg) SistemGol'ü de yaktı. <b>Kabul:</b> motor sürümü kaydedilmediği için bunu kanıtla ayıramıyoruz.</td></tr>
+<tr><td>4</td><td>Alt lig tarih biçimi hatası (<code>update_predictions.py:641</code>)</td><td><span class="ok">Kabul</span></td><td>Gerçek hata. <code>dd/mm/YYYY</code> biçimli tarihler ISO tarihlerle dize olarak sıralanıyor (<code>goals_model.py:259, 409</code>). Yalnız yükselen takımları etkiliyor (~11 maç); etkisi küçük ama düzeltilmeli.</td></tr>
+<tr><td>5</td><td>Eşikler ve %90 piyasa ağırlığı aynı veride seçildi</td><td><span class="ok">Kabul</span></td><td>0,5 eşiği 25.09'da 17.002 maç üzerinde taranarak %95'ten %93,5'e indirildi. Sitedeki başarı oranı bu açıdan örneklem-içi.</td></tr>
+<tr><td>6</td><td>0,5 ve 1,5 oranları tahmini</td><td><span class="ok">Kabul</span></td><td>İş listesinde zaten açık iş #20. Gerçek fiyat gelene kadar bu bacaklar kuponda olmamalı.</td></tr>
+<tr><td>7</td><td>Kasa planı iflasa gider</td><td><span class="ok">Tam kabul</span></td><td>Matematik doğru: Dengeli profilde kasanın büyümesi için %80,4 kupon isabeti gerekiyor, geçmişte gerçekleşen %68,6. Kupon kartının Güven Payı kilidini hesaba katmaması gerçek bir hata. Tek bağlam: profiller <i>Paper_Betting_Kasa_Simulasyonu v01</i> tablosundan geliyor ve site "sanal" ifadesini kullanıyor. Ama "Kupona yatacak 150 €" gibi bir yazı gerçek tavsiye gibi okunuyor.</td></tr>
+<tr><td>8</td><td>Çifte Şans piyasadan zayıf</td><td><span class="ok">Kabul</span></td><td>Brier farkı 1X'te +0,014, X2'de +0,016.</td></tr>
+<tr><td>9</td><td>Başabaş ve ROI gösterilmiyor; "AI-powered" ve "Doğrulanmış" yanıltıcı</td><td><span class="ok">Kabul</span></td><td>İsabetin yanında başabaş ve ROI gösterilmeli; etiketler ne anlama geldikleri açıklanarak yumuşatılmalı.</td></tr>
+<tr><td>10</td><td>Alarm yok</td><td><span class="part">Kısmen</span></td><td><code>validate_data.py</code> her saatlik bot koşusunda veri bütünlüğünü kontrol ediyor (#6). Bildirim kanalı ve "X gündür yeni sonuç yok" kontrolü ise yok.</td></tr>
+<tr><td>11</td><td>Avantaj (edge) yok</td><td><span class="ok">Kabul</span></td><td>BETAVUS'un savunulabilir iddiası "iyi kalibre edilmiş olasılık" olabilir, "kazandırır" olamaz. Kalibrasyon kartı bunu zaten dürüstçe gösteriyor.</td></tr>
+</table>
+
+<p><b>Karşılaştırmanın kendisine itiraz.</b> R01 Bölüm 2'deki tabloda BETAVUS'un canlı rakamı 09–20.09 dönemine, SistemGol'ünki (53/54, %98,1) ise <b>14.08–12.09</b> dönemine ait. Bu pencere iki ortak 0-0 kaybını (14.09 ve 20.09) dışarıda bırakıyor. SistemGol'ün kendi raporunda tam ledger <b>66/69 (%95,65)</b>, V1.1 dönemi (13.09'dan beri) <b>17/19 (%89,5)</b>. Aynı pencerede ölçülse iki sistem birbirine çok yakın çıkar.</p>
+
+<h2>3. Audit: R01'deki her iddia için karar</h2>
+<p class="note">Durum: iddia olgusal olarak doğru mu. Karar: BETAVUS olarak kabul edip etmediğimiz. "Doğrulanmadı" = ekran gözlemi, kodda kanıtını bulamadık.</p>
+<table>
+<tr><th style="width:5%">#</th><th style="width:30%">İddia (R01 bölümü)</th><th style="width:11%">Durum</th><th style="width:10%">Karar</th><th>Neden</th></tr>
+<tr><td>A1</td><td>0,5'te iki sistem aynı tavanda, ≥ %95 bandında ~%97 (§2)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Kalibrasyon tablolarımızla tutarlı (0,95–0,97: %96,5; ≥ 0,97: %98,4).</td></tr>
+<tr><td>A2</td><td>Motor piyasanın bildiğine bilgi eklemiyor (özet)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Brier: 2,5'te piyasayla eşit, ÇŞ'de piyasadan kötü. Hiçbir pazarda piyasadan iyi değiliz.</td></tr>
+<tr><td>A3</td><td>Canlı tahminler piyasasız, 0/384 (§3)</td><td><span class="part">Kısmen</span></td><td><span class="part">Kısmen</span></td><td>Sayı doğru ama sebep milli ara (Ekim oranları henüz yok). Harman 23.09'dan beri kodda. Kabul ettiğimiz kısım arşivin ilk, oransız tahmini saklaması (B4).</td></tr>
+<tr><td>A4</td><td>openfootball'da 0-0'lar eksik, canlı λ şişik (§3, §6, §7.2)</td><td><span class="no">Bugün yanlış</span></td><td><span class="no">Red</span> (güncel)</td><td>0-0'lar <code>[0, 0]</code> biçiminde kaynakta var ve 20.09'dan beri okunuyor; ölçtük, veri football-data ile birebir. Yalnız 09–20.09 dönemi için doğru; o dönem için kabul.</td></tr>
+<tr><td>A5</td><td>Canlı 0,5 %92,5, tabanın altında (özet, §2)</td><td><span class="part">Sayı doğru, yorum zayıf</span></td><td><span class="part">Kısmen</span></td><td>n = 107'de 8 kayıp, %95,8 beklentide olasılığı ~%8; anlamlı değil. Ölçülen motor bugünkü değil. Sürüm takibi olmadığı için ayıramıyoruz, bu eksikliği kabul ediyoruz.</td></tr>
+<tr><td>A6</td><td>Liverpool–Fulham 0-0 önlenemez varyans (§2)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Piyasa da Ü2,5 @1,50 veriyordu.</td></tr>
+<tr><td>A7</td><td>SistemGol canlı 53/54, %98,1 (§2 tablosu)</td><td><span class="part">Sayı doğru, pencere farklı</span></td><td><span class="no">Red</span> (kıyas olarak)</td><td>14.08–12.09 penceresi iki ortak 0-0 kaybını dışlıyor. Tam ledger 66/69 (%95,65), V1.1 17/19 (%89,5). Kıyas aynı pencerede yapılmalı.</td></tr>
+<tr><td>A8</td><td>0,5 ve 1,5 oranları tahmini, taban 1,01 (§3)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>İş #20 açık; gerçek fiyat yok.</td></tr>
+<tr><td>A9</td><td>Eşikler aynı veride seçilmiş, örneklem-içi (§3, §6)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>25.09 taraması ve MARKET_WEIGHT seçimi aynı dönemde yapıldı.</td></tr>
+<tr><td>A10</td><td>Kasa "simülasyonla test edilmemiş" (§3)</td><td><span class="part">Kısmen</span></td><td><span class="part">Kısmen</span></td><td>Arayüzde 5.000 yollu Monte Carlo vardı; 28.09'da kullanıcı isteğiyle kaldırıldı (#28). Ama negatif beklentiyle sınanıp ekranda gösterilmedi; bu eleştiri yerinde.</td></tr>
+<tr><td>A11</td><td>İzleme / alarm yok (§3, §6)</td><td><span class="part">Kısmen</span></td><td><span class="ok">Kabul</span></td><td><code>validate_data.py</code> var ama bildirim ve "sonuç gelmiyor" kontrolü yok.</td></tr>
+<tr><td>A12</td><td>Sonuçlandırma iki kaynakla 20/20 tutarlı (§3)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>SISTEM_RAPORU 206 maçta fark 0.</td></tr>
+<tr><td>A13</td><td>Şerit yalnız isabet gösteriyor; başabaş, ROI, oran yok (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Düşük oranlı pazarda yüksek isabet doğal; tek başına yanıltıcı (B9).</td></tr>
+<tr><td>A14</td><td>Kupon oranı tahmini, bacak oranı yazmıyor (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Kart "(tahmini)" diyor ama bacak oranları görünmüyor.</td></tr>
+<tr><td>A15</td><td>Medium'da stake kasanın %50'si (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td><code>paper_engine.js</code>: rezerv 0,50 → stake %50.</td></tr>
+<tr><td>A16</td><td>Önerilen kupon −%12 beklentili (%66,6 × 1,32) (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Hesap doğru; gerçek oran tahminiden düşükse daha da kötü.</td></tr>
+<tr><td>A17</td><td>Kalibrasyon iyi (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Vurgu bandında model hafif temkinli.</td></tr>
+<tr><td>A18</td><td>Kupon kartı Güven Payı kilidini hesaba katmıyor (§4, §6.3)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>İki bileşen birbirinden habersiz; gerçek hata (B2).</td></tr>
+<tr><td>A19</td><td>Plan %15/gün, gerçekleşen trend %3,4/gün (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Büyüme hedefinin gerçekçi olmadığının ekrandaki kanıtı.</td></tr>
+<tr><td>A20</td><td>"AI-powered" ve "Doğrulanmış" etiketleri yanıltıcı (§4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Model klasik istatistik; "doğrulanmış" = kendi geriye dönük testimiz.</td></tr>
+<tr><td>A21</td><td>Gizli "Admin Kuponlarım" / "Gerçek Kuponlarım" düğmeleri kodda (§4)</td><td><span class="ok">Doğru</span></td><td><span class="part">Kısmen</span></td><td><code>index.html:1744, 1747</code>'de <code>hidden</code> olarak duruyorlar. Kullanıcıya görünmüyorlar ve güvenlik riski değiller; temizlik işi, düşük öncelik.</td></tr>
+<tr><td>A22</td><td>Sağ üstteki halka sürekli "%0,0 isabet" gösteriyor (§4)</td><td><span class="part">Doğrulanmadı</span></td><td><span class="part">İncelenecek</span></td><td>Kodda bu metni üreten yeri bulamadık. Ekranda kontrol edip hata ise düzeltilmeli.</td></tr>
+<tr><td>A23</td><td>Bir kayıp kasanın yarısını götürür; telafi için ~4 kazanç gerekir (§5)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>1,183<sup>4</sup> ≈ 1,96. Gerekli isabet %80,4, gerçekleşen %68,6; kontrol ettik.</td></tr>
+<tr><td>A24</td><td>1.000 € bootstrap akıbeti (30 kupon → 54 €) (§5)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Yöntem makul. Varsayımlar (bağımsız kuponlar, %52–62 tahmini oran) raporda açıkça yazılı.</td></tr>
+<tr><td>A25</td><td>%75 isabette bile doğru Kelly stake'i ~%7 (§5)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>(0,37 × 0,75 − 0,25) / 0,37 ≈ 0,074; hesap doğru.</td></tr>
+<tr><td>A26</td><td>Rezerv gerçek koruma değil (§6.1)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Rezerv her kuponda yeniden kalan kasanın yüzdesi; 1.000 → 500 → 250.</td></tr>
+<tr><td>A27</td><td>Güven Payı geç devreye giriyor (2× / 4×) (§6.2)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Sınır L = S + kilitli. Stake f·W &gt; L olması için W &gt; S/f gerekiyor: f = 0,5'te 2×, f = 0,25'te 4×.</td></tr>
+<tr><td>A28</td><td>Zarar durdurma yok, yalnız %30 uyarısı (§6.4)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Otomatik duraklama eklenmeli.</td></tr>
+<tr><td>A29</td><td>Kombine marjı çarpıyor (§6.6)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Bacak başına −%3, 5 bacakta ~−%14.</td></tr>
+<tr><td>A30</td><td>Ertelenen maç kuponu askıda bırakıyor (§6.7)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>İade kuralı yok (B13).</td></tr>
+<tr><td>A31</td><td>Plan gün bazlı ama kuponlar seyrek, ~0,3/gün (§6.8)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>"30 günlük plan" fiilen 90–100 gün sürüyor.</td></tr>
+<tr><td>A32</td><td>Gerçekçi beklenti ekranı kaldırılmış (§6.9)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Kaldırılması kullanıcı kararıydı (#28); doğru göstergelerle geri gelmeli (B3).</td></tr>
+<tr><td>A33</td><td>Kasa kaydı elle, tarayıcıda (§6.10)</td><td><span class="part">Kısmen</span></td><td><span class="part">Kısmen</span></td><td>Üyelerde Supabase senkronu var; üye olmayanlarda yalnız tarayıcı. Düşük öncelik.</td></tr>
+<tr><td>A34</td><td>Canlı geçmiş çok kısa, model aynı gün birkaç kez değişmiş (§6)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>178 maç / 11 gün; sürüm takibi (B4) bunun çözümü.</td></tr>
+<tr><td>A35</td><td>Öneri: skorları openfootball yerine football-data'dan almak (§7.2)</td><td><span class="no">Gereksiz</span></td><td><span class="no">Red</span></td><td>Bugün iki kaynak aynı veriyi veriyor (A4). Değişiklik bir şey kazandırmaz; yerine 0-0 biçimini kapsayan bir regresyon testi önerilir.</td></tr>
+<tr><td>A36</td><td>Öneri: Ü/A oranı yoksa vurgu vermemek (§7.2)</td><td><span class="part">Kısmen</span></td><td><span class="part">Kısmen</span></td><td>Vurguyu tamamen kapatmak bülteni maçtan 4–5 gün önce boşaltır. Önce "ön tahmin" etiketi (B7); piyasasız vurguların başarısı ayrıca ölçülsün, kötüyse kapatılsın.</td></tr>
+<tr><td>A37</td><td>Öneri: 0,5 eşiğini ≥ %95'e yükseltmek (§7.3)</td><td><span class="ok">Doğru yön</span></td><td><span class="part">Teste bağlı</span></td><td>Eşik yine örneklem-içi seçilmesin; ≤ 2023/24 ile seçilip dondurulmuş haliyle ölçülsün (B8).</td></tr>
+<tr><td>A38</td><td>Gerçek parayla kullanım kuralları (%1–3 stake, tekli/2'li) (§8)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Siteye açık bir uyarı metni olarak eklenebilir.</td></tr>
+<tr><td>A39</td><td>BETAVUS'ta xG bilgi taşımadı (§9.5)</td><td><span class="part">Kısmen yanlış</span></td><td><span class="part">Düzeltme</span></td><td>xG, Premier League'de gerçek backtest sonucuyla canlıda kullanılıyor (ağırlık 1,0). Diğer 8 ligde gürültü düzeyinde kaldığı için kapalı.</td></tr>
+<tr><td>A40</td><td>Canlıdaki 8 kaybın 8'inde piyasa düşük gol bekliyordu, filtre teyidi (§9.2)</td><td><span class="part">Doğru ama eksik</span></td><td><span class="part">Kısmen</span></td><td>Yalnız kayıplara bakmak filtre kanıtı değil; aynı oran aralığında kazanan seçimlerin oranı da bilinmeli. Gölgede, kazananlarla birlikte ölçülmeli (B14).</td></tr>
+<tr><td>A41</td><td>Elle yazılmış veto zinciri sade tek formülden iyi değil (§9.1)</td><td><span class="ok">Doğru</span></td><td><span class="ok">Kabul</span></td><td>Aynı bantta isabet ve hacim neredeyse eşit; SistemGol'ün A1'e geçiş yönünü destekliyor.</td></tr>
+</table>
+<p class="note">Özet sayım: 41 iddiadan 28'i tam kabul, 10'u kısmen kabul, teste bağlı ya da incelenecek (A22 ekranda kontrol edilecek), 3'ü red (A4 güncel durum, A7 pencere seçimi, A35 gereksiz öneri).</p>
+
+<h2>4. SistemGol'e karşı eleştiriler (kendi raporundan)</h2>
+<ol>
+<li><b>Canlı ≠ yeniden hesap, BETAVUS'tan daha belirgin.</b> Canlı 0,5 Garanti seçimlerinin 21/69'unu (~%30) motor bugün tam veriyle seçmiyor. Cron Bonus'u hiç yazmıyor. Pencere ayarda 3 gün, cron'da 1 gün.</li>
+<li><b>Kasa planı BETAVUS'tan agresif.</b> Varsayılan Dengeli mod oyun kasasının %100'ünü günlük kombineye koyuyor; mod seçiminin futbol kanıtı 26 gün. 3 × 0,5 Garanti kuponun beklentisi −%7 ile −%11 arası.</li>
+<li><b>Canlı motor (A0) olasılık üretmiyor.</b> Kalibrasyon ve EV hesabı yapılamıyor. Veto zinciri aşırı uyumlu: örneklem-içinde %100, dış testte %94,4.</li>
+<li>Ledger'da 19 tekrar satır var, unique index yok.</li>
+<li>0,5'te oran kapsamı %12,8. 1X2 fiyatı toplanmadığı için en güçlü bulunan sinyal (favori filtresi) canlıda kullanılamıyor.</li>
+<li>Cron ~6,5 saat gecikiyor; pencere 1 gün olduğu için öğleden önce başlayan maçlar kaçabiliyor.</li>
+<li>Ana motor için regresyon testi yok. Kod yorumları kodla çelişiyor (kara liste, Estrela, EV kapısı).</li>
+<li>z-skor standardizasyon havuzunda hafif dağılım sızıntısı var (sonraki maçlar da havuzda).</li>
+</ol>
+
+<h2>5. Sistemler birbirinden ne öğrenebilir</h2>
+<table>
+<tr><th style="width:50%">BETAVUS'tan SistemGol'e</th><th>SistemGol'den BETAVUS'a</th></tr>
+<tr><td>Olasılık üreten tek formül ve kalibrasyon kartı (A1'e geçişi hızlandırır)</td><td>Dondurulmuş dış test: eşiği eski sezonda seç, yeni sezonda dondurulmuş haliyle ölç</td></tr>
+<tr><td>Piyasayı girdi olarak ölçmek (Ü/A 2,5 harmanı)</td><td>Motor sürüm numarası ve maç bazında ledger</td></tr>
+<tr><td>Otomatik test takımı (7 suite)</td><td>Oranı seçim anında kaydetmek; 1,01 altını seçmemek</td></tr>
+<tr><td>Hedef orana göre en güvenli kombineyi kuran algoritma (analiz aracı olarak)</td><td>Maç öncesi yeniden kontrol ve seçimi geri çekme</td></tr>
+<tr><td>Ölçülüp kapatılan fikirler listesi</td><td>Skor yoksa sonuçlandırmamak; takım kimliği kontrolü; tazelik alarmı</td></tr>
+<tr><td>İki kaynaklı rastgele sonuç denetimi</td><td>Kâr eşiğe gelince otomatik cebe aktarma</td></tr>
+</table>
+
+<h2>6. İyileştirme listesi: BETAVUS (önerilen sıra)</h2>
+<table>
+<tr><th style="width:5%">#</th><th style="width:52%">İş</th><th style="width:28%">Gerekçe</th><th>Boyut</th></tr>
+<tr><td>B1</td><td><b>Kasa:</b> günlük büyüme hedefini ve gerekli kupon oranını (R) kaldırmak; stake %1–3 ya da kesirli Kelly; edge ≤ 0 ise "oynanmaz"</td><td>Tez 7</td><td>Orta</td></tr>
+<tr><td>B2</td><td>Kupon kartını Güven Payı ile tutarlı yapmak (önce kilit, sonra stake)</td><td>Gerçek hata</td><td>Küçük</td></tr>
+<tr><td>B3</td><td>"Gerçekçi beklenti" simülasyonunu geri getirmek; beklenen log büyüme ve iflas olasılığını göstermek</td><td>Tez 7</td><td>Orta</td></tr>
+<tr><td>B4</td><td>Arşive hem ilk hem <b>son maç öncesi</b> tahmini, <code>engine_version</code> ve <code>market_used</code> yazmak; canlı başarıyı son tahminden ölçmek</td><td>Tez 2–3</td><td>Küçük-orta</td></tr>
+<tr><td>B5</td><td>Alt lig tarihlerini ISO biçimine çevirmek (<code>update_predictions.py:641</code>)</td><td>Tez 4</td><td>Çok küçük</td></tr>
+<tr><td>B6</td><td>Eskimiş yorumu ve rapordaki 0-0 iddiasını düzeltmek (<code>_league_rho</code> docstring, <code>SISTEM_RAPORU.md</code>)</td><td>Tez 1</td><td>Çok küçük</td></tr>
+<tr><td>B7</td><td>Oran gelmemişken vurguyu "ön tahmin / piyasasız" diye etiketlemek</td><td>Tez 2</td><td>Küçük</td></tr>
+<tr><td>B8</td><td>Eşikleri ≤ 2023/24 verisiyle seçip dondurulmuş haliyle ölçmek; 0,5 eşiğini ≥ %95'e almayı test etmek</td><td>Tez 5</td><td>Orta</td></tr>
+<tr><td>B9</td><td>Başarı şeridine başabaş ve ROI eklemek; "AI-powered" ve "Doğrulanmış" etiketlerini yumuşatmak</td><td>Tez 9</td><td>Küçük</td></tr>
+<tr><td>B10</td><td>Gerçek oran gelene kadar 0,5 ve 1,5'i kupon motorundan çıkarmak (#20 ile bağlantılı)</td><td>Tez 6</td><td>Küçük</td></tr>
+<tr><td>B11</td><td>Çifte Şans'ı 1X2 piyasasıyla harmanlamak ya da kaldırmak</td><td>Tez 8</td><td>Orta</td></tr>
+<tr><td>B12</td><td>İş akışı hatası ve "X gündür yeni sonuç yok" durumu için bildirim</td><td>Tez 10</td><td>Küçük</td></tr>
+<tr><td>B13</td><td>Ertelenen maç içeren kuponlar için iade kuralı</td><td>R01 6.7</td><td>Küçük</td></tr>
+<tr><td>B14</td><td>Piyasa favori / düşük gol filtresini önce gölgede ölçmek (canlıdaki 8 kaybın 8'inde piyasa düşük gol bekliyordu)</td><td>SistemGol bulgusu</td><td>Orta</td></tr>
+</table>
+
+<h2>7. İyileştirme listesi: SistemGol</h2>
+<table>
+<tr><th style="width:5%">#</th><th>İş</th></tr>
+<tr><td>S1</td><td>Cron'u ayar dosyasıyla eşitlemek (<code>--engines</code>, <code>--window-days</code>); haftalık sırayı maç haftasının tamamı üzerinden hesaplamak, çerçeve eksikse seçimi bekletmek</td></tr>
+<tr><td>S2</td><td>Dengeli moddaki %100 stake'i düşürmek; log büyüme ve iflas olasılığını 10 sezonluk dış test seçimleriyle ölçmek</td></tr>
+<tr><td>S3</td><td>Kambi'den 1X2 fiyatı toplamak; favori filtresini gölgede ileriye dönük ölçmek</td></tr>
+<tr><td>S4</td><td>A1 gölge doğrulamasını sürdürmek; yanına Ü/A 2,5 fiyatını gölge özellik olarak eklemek</td></tr>
+<tr><td>S5</td><td>Ledger'a unique index eklemek; 19 tekrar satırı temizlemek</td></tr>
+<tr><td>S6</td><td>0,5'teki oran kapsamını artırmak (bugün %12,8)</td></tr>
+<tr><td>S7</td><td>Ana motor için sabit maçlarla regresyon testi</td></tr>
+<tr><td>S8</td><td>Cron gecikmesini çözmek (daha erken saat ya da daha geniş pencere)</td></tr>
+<tr><td>S9</td><td>Ölü kodu ve kodla çelişen yorumları temizlemek; z-skor havuzunu yalnız geçmiş maçlardan kurmak</td></tr>
+<tr><td>S10</td><td>Karşılaştırmalarda iki sistemi aynı tarih penceresinde ölçmek</td></tr>
+</table>
+
+<h2>8. Sonuç</h2>
+<p>Raporun büyük çerçevesi doğru ve adil. İki sistemde de avantaj yok, ve bundan sonraki kazanç motoru karmaşıklaştırmaktan değil ölçüm, gerçek fiyat ve kasa disiplininden gelecek. BETAVUS'un en acil işi kasa planı (B1–B3). Raporun "canlı ≠ backtest" tespitinin bir kısmı (0-0 eksikliği) 20.09'da kendiliğinden düzelmiş. Kalan kısmı ise bir ölçüm altyapısı sorunu (B4): arşiv, maç öncesi son tahmini ve motor sürümünü kaydetmeli ki iki sistem aynı dürüstlükte kıyaslanabilsin.</p>
+<p class="note">Bu rapordaki ölçümler BETAVUS reposu üzerinde salt okuma betikleriyle yapıldı. SistemGol için yalnızca SISTEMGOL_RAPORU.md kullanıldı; SistemGol kodu incelenmedi. Listelenen iyileştirmelerin hiçbiri henüz uygulanmadı; sahiplerin onayını bekliyor.</p>
+
+</body>
+</html>

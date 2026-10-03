@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-03T19:48:13+00:00",
+ "generated_at": "2026-10-03T22:46:01+00:00",
  "source": "5DollarFootballAPI · Bet365 goal_line_fixed",
  "attribution": "Football data by 5DollarFootballAPI",
  "leagues": {
@@ -11,16 +11,16 @@
  },
  "league_misses": {},
  "listed_at": {
-  "Premier League": "2026-10-03T17:05:30+00:00",
-  "LaLiga": "2026-10-03T17:05:30+00:00",
-  "Bundesliga": "2026-10-03T17:05:30+00:00",
-  "Serie A": "2026-10-03T17:05:30+00:00",
-  "Ligue 1": "2026-10-03T17:05:30+00:00"
+  "Premier League": "2026-10-03T22:46:01+00:00",
+  "LaLiga": "2026-10-03T22:46:01+00:00",
+  "Bundesliga": "2026-10-03T22:46:01+00:00",
+  "Serie A": "2026-10-03T22:46:01+00:00",
+  "Ligue 1": "2026-10-03T22:46:01+00:00"
  },
  "last_run": {
-  "calls": 0,
+  "calls": 5,
   "odds_fetched": 0,
-  "rate_remaining": null,
+  "rate_remaining": 55,
   "stopped": null,
   "unmatched": []
  },
